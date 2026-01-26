@@ -4,10 +4,18 @@ import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.api.world.AgeDirector;
 import art.arcane.mystcraft.symbol.SymbolBase;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
-import net.minecraft.resources.ResourceLocation;
+import art.arcane.mystcraft.world.gen.populate.BiomeDecorationPopulator;
+import art.arcane.mystcraft.world.gen.populate.StandardOresPopulator;
+import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorEnd;
+import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorFlat;
+import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorNether;
+import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorNormal;
+import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorVoid;
 
 /**
  * Terrain generation symbols.
+ * These symbols now register actual terrain generator implementations
+ * rather than just setting configuration strings.
  */
 public final class TerrainSymbols {
 
@@ -32,9 +40,24 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setTerrainType("normal");
             director.setAverageGroundLevel(64);
             director.setSeaLevel(63);
+
+            // Create and register actual terrain generator
+            TerrainGeneratorNormal generator = new TerrainGeneratorNormal(director, seed, false);
+
+            // Apply terrain block modifiers if any were pushed
+            // (from BlockSymbols like terrain_stone, terrain_deepslate, etc.)
+            // The generator will use its defaults if none specified
+
+            director.registerInterface(generator);
+
+            // Register default populators for normal terrain
+            // Standard ores provide baseline ore generation (unless Dense Ores is used)
+            director.registerInterface(new StandardOresPopulator(seed));
+
+            // Biome decoration provides trees, grass, flowers
+            director.registerInterface(new BiomeDecorationPopulator(seed));
         }
     }
 
@@ -48,9 +71,17 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setTerrainType("amplified");
             director.setAverageGroundLevel(96);
             director.setSeaLevel(63);
+
+            // Create amplified terrain generator (same as normal but with amplified flag)
+            TerrainGeneratorNormal generator = new TerrainGeneratorNormal(director, seed, true);
+            director.registerInterface(generator);
+
+            // Register default populators for amplified terrain
+            director.registerInterface(new StandardOresPopulator(seed));
+            director.registerInterface(new BiomeDecorationPopulator(seed));
+
             director.addInstability(getInstabilityCost());
         }
     }
@@ -65,10 +96,16 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setTerrainType("flat");
             director.setAverageGroundLevel(4);
             director.setSeaLevel(-64); // Below world, effectively no sea
             director.setHasSea(false);
+
+            // Create flat terrain generator
+            TerrainGeneratorFlat generator = new TerrainGeneratorFlat(director, seed);
+            director.registerInterface(generator);
+
+            // Flat terrain still has ores underground, but no vegetation
+            director.registerInterface(new StandardOresPopulator(seed));
         }
     }
 
@@ -82,10 +119,14 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setTerrainType("void");
             director.setAverageGroundLevel(0);
             director.setSeaLevel(-64);
             director.setHasSea(false);
+
+            // Create void terrain generator
+            TerrainGeneratorVoid generator = new TerrainGeneratorVoid(director, seed);
+            director.registerInterface(generator);
+
             director.addInstability(getInstabilityCost());
         }
     }
@@ -100,11 +141,18 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setTerrainType("end");
             director.setAverageGroundLevel(64);
             director.setSeaLevel(-64);
             director.setHasSea(false);
             director.setSkyColor(0x000000);
+
+            // Create End terrain generator
+            TerrainGeneratorEnd generator = new TerrainGeneratorEnd(director, seed);
+            director.registerInterface(generator);
+
+            // End terrain has ores hidden in the end stone
+            director.registerInterface(new StandardOresPopulator(seed));
+
             director.addInstability(getInstabilityCost());
         }
     }
@@ -119,12 +167,19 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setTerrainType("nether");
             director.setAverageGroundLevel(64);
             director.setSeaLevel(-64);
             director.setHasSea(false);
             director.setSkyColor(0x330808);
             director.setFogColor(0x330808);
+
+            // Create Nether terrain generator
+            TerrainGeneratorNether generator = new TerrainGeneratorNether(director, seed);
+            director.registerInterface(generator);
+
+            // Nether terrain has ores in the netherrack
+            director.registerInterface(new StandardOresPopulator(seed));
+
             director.addInstability(getInstabilityCost());
         }
     }

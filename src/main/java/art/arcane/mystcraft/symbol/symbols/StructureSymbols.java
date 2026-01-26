@@ -4,6 +4,7 @@ import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.api.world.AgeDirector;
 import art.arcane.mystcraft.symbol.SymbolBase;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.world.gen.populate.DungeonPopulator;
 
 /**
  * Structure generation symbols.
@@ -65,6 +66,9 @@ public final class StructureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setDungeonsEnabled(true);
+
+            // Register the dungeon populator for mob spawner dungeon generation
+            director.registerInterface(new DungeonPopulator(seed));
         }
     }
 

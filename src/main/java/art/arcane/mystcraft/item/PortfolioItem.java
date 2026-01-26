@@ -29,9 +29,19 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * The Portfolio item.
- * A larger container for holding pages, with collection sorting features.
- * Can store up to 64 pages.
+ * The Portfolio item - an UNORDERED, COLLECTION-BASED page archive.
+ *
+ * Key differences from Folder:
+ * - UNORDERED: Pages are a collection, not fixed slots
+ * - NOT WRITABLE: Cannot write symbols directly to pages
+ * - SORTING: Has automatic sorting by category/name
+ * - COLLECTION: Removes pages by content matching, not index
+ * - CAPACITY: 64 pages (mass storage)
+ * - ALWAYS STACK 1: Cannot stack even when empty
+ *
+ * The Portfolio is designed as a permanent storage archive for
+ * collected pages, with automatic organization features.
+ * It's crafted FROM a Folder (upgrade path).
  */
 public class PortfolioItem extends Item {
 
@@ -39,7 +49,7 @@ public class PortfolioItem extends Item {
     public static final int MAX_PAGES = 64;
 
     public PortfolioItem(Properties properties) {
-        super(properties);
+        super(properties.stacksTo(1)); // Portfolio never stacks (unlike Folder)
     }
 
     @Override
@@ -201,5 +211,126 @@ public class PortfolioItem extends Item {
      */
     public static boolean isEmpty(ItemStack stack) {
         return getPages(stack).isEmpty();
+    }
+
+    // ==================== PORTFOLIO-SPECIFIC: COLLECTION SEMANTICS ====================
+
+    /**
+     * Removes a page by CONTENT matching (not by index).
+     * This is the collection-based removal that distinguishes Portfolio from Folder.
+     * Portfolio is a COLLECTION - you remove items by what they ARE, not where they are.
+     *
+     * @param portfolio The portfolio item stack
+     * @param pageToRemove The page to find and remove (matched by NBT content)
+     * @return The removed page, or ItemStack.EMPTY if not found
+     */
+    public static ItemStack removeByContent(ItemStack portfolio, ItemStack pageToRemove) {
+        List<ItemStack> pages = getPages(portfolio);
+
+        for (int i = 0; i < pages.size(); i++) {
+            ItemStack page = pages.get(i);
+            if (ItemStack.isSameItemSameTags(page, pageToRemove)) {
+                ItemStack removed = pages.remove(i);
+                setPages(portfolio, pages);
+                return removed;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    /**
+     * Checks if this portfolio contains a page matching the given content.
+     */
+    public static boolean containsPage(ItemStack portfolio, ItemStack pageToFind) {
+        for (ItemStack page : getPages(portfolio)) {
+            if (ItemStack.isSameItemSameTags(page, pageToFind)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Counts how many copies of a specific page are in this portfolio.
+     */
+    public static int countMatchingPages(ItemStack portfolio, ItemStack pageToCount) {
+        int count = 0;
+        for (ItemStack page : getPages(portfolio)) {
+            if (ItemStack.isSameItemSameTags(page, pageToCount)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // ==================== PORTFOLIO-SPECIFIC: CATEGORY STATISTICS ====================
+
+    /**
+     * Counts pages by type in this portfolio.
+     */
+    public static int countLinkPanels(ItemStack portfolio) {
+        int count = 0;
+        for (ItemStack page : getPages(portfolio)) {
+            if (Page.isLinkPanel(page)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Counts blank pages in this portfolio.
+     */
+    public static int countBlankPages(ItemStack portfolio) {
+        int count = 0;
+        for (ItemStack page : getPages(portfolio)) {
+            if (Page.isBlank(page)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Counts symbol pages in this portfolio.
+     */
+    public static int countSymbolPages(ItemStack portfolio) {
+        int count = 0;
+        for (ItemStack page : getPages(portfolio)) {
+            if (Page.getSymbol(page) != null) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // ==================== PORTFOLIO-SPECIFIC: BULK OPERATIONS ====================
+
+    /**
+     * Imports all pages from another portfolio or folder into this one.
+     * Returns any pages that couldn't fit.
+     */
+    public static List<ItemStack> importFrom(ItemStack portfolio, List<ItemStack> pagesToImport) {
+        List<ItemStack> overflow = new ArrayList<>();
+        for (ItemStack page : pagesToImport) {
+            if (!addPage(portfolio, page)) {
+                overflow.add(page);
+            }
+        }
+        return overflow;
+    }
+
+    /**
+     * Gets unique symbol types in this portfolio (for display purposes).
+     */
+    public static List<ResourceLocation> getUniqueSymbols(ItemStack portfolio) {
+        List<ResourceLocation> symbols = new ArrayList<>();
+        for (ItemStack page : getPages(portfolio)) {
+            ResourceLocation symbol = Page.getSymbol(page);
+            if (symbol != null && !symbols.contains(symbol)) {
+                symbols.add(symbol);
+            }
+        }
+        return symbols;
     }
 }

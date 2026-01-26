@@ -1,5 +1,6 @@
 package art.arcane.mystcraft;
 
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.registry.ModBlocks;
@@ -46,6 +47,9 @@ public class Mystcraft {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         LOGGER.info("Mystcraft initializing...");
+
+        // Register configuration
+        MystcraftConfig.register();
 
         // Register all deferred registers to the mod event bus
         MystcraftRegistries.register(modEventBus);

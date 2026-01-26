@@ -62,6 +62,12 @@
 
   "item.mystcraft.glasses": "Glasses",
   "item.mystcraft.ink_bucket": "Black Ink Bucket",
+  "item.mystcraft.guidebook": "The Art of Writing",
+  "item.mystcraft.guidebook.tooltip": "A comprehensive guide to Mystcraft",
+
+  "gui.mystcraft.guidebook.title": "The Art of Writing",
+  "gui.mystcraft.guidebook.subtitle": "A Guide to Age Creation",
+  "gui.mystcraft.guidebook.contents": "Contents",
 
   "fluid_type.mystcraft.black_ink": "Black Ink",
 

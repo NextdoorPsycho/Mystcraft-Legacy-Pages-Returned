@@ -1,89 +1,125 @@
 package art.arcane.mystcraft.item;
 
 import art.arcane.mystcraft.data.LinkOptions;
+import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.registry.ModItems;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * The Unlinked Linkbook item.
  * A blank linkbook that can be linked to the current location.
- * When used, converts to a linked linkbook at the current position.
+ *
+ * Legacy behavior (exact match):
+ * - Stack size of 16
+ * - When right-clicked with exactly 1 in hand, converts to a linked linkbook at current position
+ * - Does NOT convert if stack count > 1 (legacy line 54)
+ * - Transfers any link panel properties from the unlinked book to the new linked book
  */
 public class LinkbookUnlinkedItem extends Item {
 
     public LinkbookUnlinkedItem(Properties properties) {
-        super(properties);
+        super(properties.stacksTo(16)); // Legacy: setMaxStackSize(16)
+    }
+
+    @Override
+    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+        // Legacy: Show link panel properties in tooltip
+        if (stack.getTag() != null) {
+            Page.getTooltip(stack, tooltip);
+        }
     }
 
     @Override
     @NotNull
     public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
+        ItemStack inHand = player.getItemInHand(hand);
 
-        if (!level.isClientSide) {
-            // Create a linked linkbook at the current position
-            ItemStack linkedBook = createLinkedBook(level, player);
-
-            // Replace the unlinked book with the linked one
-            stack.shrink(1);
-
-            if (stack.isEmpty()) {
-                player.setItemInHand(hand, linkedBook);
-            } else {
-                // Add to inventory or drop
-                if (!player.getInventory().add(linkedBook)) {
-                    player.drop(linkedBook, false);
-                }
-            }
+        // Legacy behavior: Only convert if on server AND stack count is exactly 1
+        // See legacy ItemLinkbookUnlinked.java line 54: if (worldIn.isRemote || inHand.getCount() > 1)
+        if (level.isClientSide || inHand.getCount() > 1) {
+            return InteractionResultHolder.pass(inHand);
         }
 
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+        // Create a new linked linkbook
+        ItemStack linkBook = new ItemStack(ModItems.LINKBOOK.get());
+
+        // Initialize the linkbook with current position (legacy: ((ItemLinkbook) ModItems.linkbook).initialize(worldIn, linkBook, playerIn))
+        initializeLinkbook(linkBook, level, player);
+
+        // Apply link panel properties from unlinked book to linked book (legacy: Page.applyLinkPanel(inHand, linkBook))
+        Page.applyLinkPanel(inHand, linkBook);
+
+        // Replace the unlinked book with the linked one (legacy lines 60-61)
+        player.setItemInHand(hand, linkBook);
+        inHand.setCount(0);
+
+        return InteractionResultHolder.pass(linkBook);
     }
 
     /**
-     * Creates a linked linkbook at the player's current position.
+     * Initializes a linkbook with the current position.
+     * Matches legacy ItemLinkbook.initialize() behavior.
      */
-    private ItemStack createLinkedBook(Level level, Player player) {
-        ItemStack linkedBook = new ItemStack(ModItems.LINKBOOK.get());
+    private void initializeLinkbook(ItemStack linkBook, Level level, Player player) {
         CompoundTag tag = new CompoundTag();
 
         // Set spawn position to player's current position
         LinkOptions.setSpawn(tag, player.blockPosition());
         LinkOptions.setSpawnYaw(tag, player.getYRot());
 
-        // Set dimension
-        int dimId = getDimensionId(level);
+        // Set dimension UID
+        int dimId = LinkingManager.getDimensionUID(level);
         LinkOptions.setDimensionUID(tag, dimId);
 
-        // Set a default name based on position
-        String defaultName = String.format("Link (%d, %d, %d)",
-                player.getBlockX(), player.getBlockY(), player.getBlockZ());
-        LinkOptions.setDisplayName(tag, defaultName);
+        // Set a default display name based on dimension
+        String dimName = getDimensionDisplayName(level);
+        LinkOptions.setDisplayName(tag, dimName);
 
-        linkedBook.setTag(tag);
-        return linkedBook;
+        linkBook.setTag(tag);
     }
 
     /**
-     * Gets a numeric dimension ID from a level.
+     * Gets a display name for the dimension.
      */
-    private int getDimensionId(Level level) {
+    private String getDimensionDisplayName(Level level) {
         ResourceKey<Level> dimension = level.dimension();
         if (dimension == Level.OVERWORLD) {
-            return 0;
+            return "Overworld";
         } else if (dimension == Level.NETHER) {
-            return -1;
+            return "The Nether";
         } else if (dimension == Level.END) {
-            return 1;
+            return "The End";
         }
-        return dimension.location().hashCode();
+        // For custom dimensions, use the path
+        return dimension.location().getPath();
+    }
+
+    /**
+     * Creates an unlinked book with a link panel's properties.
+     * Legacy: ItemLinkbookUnlinked.createItem()
+     */
+    public static ItemStack createItem(@NotNull ItemStack linkpanel, @NotNull ItemStack covermat) {
+        ItemStack linkbook = new ItemStack(ModItems.LINKBOOK_UNLINKED.get());
+        CompoundTag prev = linkpanel.getTag();
+        if (prev == null) {
+            prev = new CompoundTag();
+        }
+        linkbook.setTag(prev.copy());
+        return linkbook;
     }
 }

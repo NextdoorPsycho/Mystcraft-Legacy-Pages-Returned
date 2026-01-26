@@ -1,5 +1,13 @@
 package art.arcane.mystcraft.api.world;
 
+import art.arcane.mystcraft.api.world.logic.IBiomeController;
+import art.arcane.mystcraft.api.world.logic.ICelestial;
+import art.arcane.mystcraft.api.world.logic.IChunkProviderFinalization;
+import art.arcane.mystcraft.api.world.logic.ILightingController;
+import art.arcane.mystcraft.api.world.logic.IPopulate;
+import art.arcane.mystcraft.api.world.logic.ITerrainAlteration;
+import art.arcane.mystcraft.api.world.logic.ITerrainGenerator;
+import art.arcane.mystcraft.api.world.logic.IWeatherController;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
@@ -659,4 +667,123 @@ public interface AgeDirector {
      * @param natural true for weather-dependent color
      */
     void setCloudColorNatural(boolean natural);
+
+    // ========================= Interface Registration =========================
+    // These methods allow symbols to register actual generation logic objects
+    // rather than just configuration strings. This enables the full legacy
+    // Mystcraft world generation pipeline.
+
+    /**
+     * Registers a terrain generator for this Age.
+     * Only one terrain generator can be active. Registering a second one
+     * replaces the first and adds instability.
+     *
+     * @param generator The terrain generator implementation
+     */
+    void registerInterface(ITerrainGenerator generator);
+
+    /**
+     * Registers a biome controller for this Age.
+     * Only one biome controller can be active. Registering a second one
+     * replaces the first and adds instability.
+     *
+     * @param controller The biome controller implementation
+     */
+    void registerInterface(IBiomeController controller);
+
+    /**
+     * Registers a terrain alteration for this Age.
+     * Multiple alterations can be registered (caves, ravines, floating islands).
+     *
+     * @param alteration The terrain alteration implementation
+     */
+    void registerInterface(ITerrainAlteration alteration);
+
+    /**
+     * Registers a chunk finalization handler for this Age.
+     * Multiple handlers can be registered.
+     *
+     * @param finalizer The chunk finalization implementation
+     */
+    void registerInterface(IChunkProviderFinalization finalizer);
+
+    /**
+     * Registers a population function for this Age.
+     * Multiple population functions can be registered.
+     *
+     * @param populate The population implementation
+     */
+    void registerInterface(IPopulate populate);
+
+    /**
+     * Registers a lighting controller for this Age.
+     * Only one lighting controller can be active.
+     *
+     * @param controller The lighting controller implementation
+     */
+    void registerInterface(ILightingController controller);
+
+    /**
+     * Registers a weather controller for this Age.
+     * Only one weather controller can be active.
+     *
+     * @param controller The weather controller implementation
+     */
+    void registerInterface(IWeatherController controller);
+
+    /**
+     * Registers a celestial object for this Age.
+     * Multiple celestials can be registered (multiple suns, moons, etc.)
+     *
+     * @param celestial The celestial implementation
+     */
+    void registerInterface(ICelestial celestial);
+
+    /**
+     * Gets the registered terrain generator.
+     * @return The terrain generator, or null if none registered
+     */
+    ITerrainGenerator getTerrainGenerator();
+
+    /**
+     * Gets the registered biome controller.
+     * @return The biome controller, or null if none registered
+     */
+    IBiomeController getBiomeControllerImpl();
+
+    /**
+     * Gets all registered terrain alterations.
+     * @return List of terrain alterations (never null)
+     */
+    List<ITerrainAlteration> getTerrainAlterations();
+
+    /**
+     * Gets all registered chunk finalizers.
+     * @return List of chunk finalizers (never null)
+     */
+    List<IChunkProviderFinalization> getChunkFinalizers();
+
+    /**
+     * Gets all registered population functions.
+     * @return List of population functions (never null)
+     */
+    List<IPopulate> getPopulateFunctions();
+
+    /**
+     * Gets the registered lighting controller.
+     * @return The lighting controller, or null if none registered
+     */
+    ILightingController getLightingController();
+
+    /**
+     * Gets the registered weather controller.
+     * @return The weather controller, or null if none registered
+     */
+    IWeatherController getWeatherController();
+
+    /**
+     * Gets all registered celestial objects.
+     * @return List of celestials (never null)
+     */
+    List<ICelestial> getCelestials();
 }

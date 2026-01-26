@@ -4,6 +4,7 @@ import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.BoosterPackItem;
 import art.arcane.mystcraft.item.FolderItem;
 import art.arcane.mystcraft.item.GlassesItem;
+import art.arcane.mystcraft.item.GuidebookItem;
 import art.arcane.mystcraft.item.InkVialItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.item.LinkbookUnlinkedItem;
@@ -44,9 +45,11 @@ public final class ModItems {
             MystcraftRegistries.ITEMS.register("booster",
                     () -> new BoosterPackItem(new Item.Properties().stacksTo(16)));
 
+    // Folder: stacksTo is controlled dynamically by FolderItem.getMaxStackSize()
+    // Empty folders stack to 32, folders with pages stack to 1
     public static final RegistryObject<Item> FOLDER =
             MystcraftRegistries.ITEMS.register("folder",
-                    () -> new FolderItem(new Item.Properties().stacksTo(1)));
+                    () -> new FolderItem(new Item.Properties()));
 
     public static final RegistryObject<Item> PORTFOLIO =
             MystcraftRegistries.ITEMS.register("portfolio",
@@ -59,6 +62,10 @@ public final class ModItems {
     public static final RegistryObject<Item> GLASSES =
             MystcraftRegistries.ITEMS.register("glasses",
                     () -> new GlassesItem(new Item.Properties().stacksTo(1)));
+
+    public static final RegistryObject<Item> GUIDEBOOK =
+            MystcraftRegistries.ITEMS.register("guidebook",
+                    () -> new GuidebookItem(new Item.Properties().stacksTo(1)));
 
     // Ink bucket
     public static final RegistryObject<Item> INK_BUCKET =

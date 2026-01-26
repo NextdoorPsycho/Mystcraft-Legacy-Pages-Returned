@@ -2,11 +2,11 @@ package art.arcane.mystcraft.item;
 
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.FolderMenu;
-import art.arcane.mystcraft.registry.ModMenuTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -25,17 +25,38 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The Folder item.
- * A small container for holding pages.
- * Can store up to 16 pages.
+ * The Folder item - an ORDERED, WRITABLE page container.
+ *
+ * Key differences from Portfolio:
+ * - ORDERED: Pages have fixed slot positions (0, 1, 2, ...)
+ * - WRITABLE: Can write symbols directly to blank pages inside
+ * - STACKABLE: Stacks to 32 when empty (workspace items)
+ * - BOOKBINDER: Can be used as a book cover (when empty)
+ * - CAPACITY: 16 pages (a working set for Age creation)
+ *
+ * The Folder is designed as a portable workspace for organizing
+ * pages at the Writing Desk and binding them into Age books.
  */
 public class FolderItem extends Item {
 
     private static final String TAG_PAGES = "Pages";
     public static final int MAX_PAGES = 16;
 
+    // Folder stacks to 32 when empty (workspace item behavior)
+    private static final int STACK_SIZE_EMPTY = 32;
+    private static final int STACK_SIZE_FILLED = 1;
+
     public FolderItem(Properties properties) {
-        super(properties);
+        super(properties.stacksTo(STACK_SIZE_EMPTY)); // Default max stack when empty
+    }
+
+    /**
+     * Folders stack to 32 when empty, but only 1 when containing pages.
+     * This is legacy Mystcraft behavior for workspace items.
+     */
+    @Override
+    public int getMaxStackSize(ItemStack stack) {
+        return isEmpty(stack) ? STACK_SIZE_EMPTY : STACK_SIZE_FILLED;
     }
 
     @Override
@@ -164,5 +185,103 @@ public class FolderItem extends Item {
      */
     public static boolean isEmpty(ItemStack stack) {
         return getPages(stack).isEmpty();
+    }
+
+    // ==================== FOLDER-SPECIFIC: WRITABLE ====================
+
+    /**
+     * Writes a symbol to the first blank page in this folder.
+     * This is a key feature that distinguishes Folder from Portfolio.
+     * Folders are WRITABLE - you can write symbols directly to pages inside.
+     *
+     * @param folder The folder item stack
+     * @param symbol The symbol ResourceLocation to write
+     * @return true if a blank page was found and written to
+     */
+    public static boolean writeSymbol(ItemStack folder, ResourceLocation symbol) {
+        List<ItemStack> pages = getPages(folder);
+
+        for (int i = 0; i < pages.size(); i++) {
+            ItemStack page = pages.get(i);
+            if (!page.isEmpty() && Page.isBlank(page)) {
+                // Found a blank page - write the symbol to it
+                Page.setSymbol(page, symbol);
+                setPages(folder, pages);
+                return true;
+            }
+        }
+        return false; // No blank pages found
+    }
+
+    /**
+     * Counts the number of blank pages in this folder that can be written to.
+     */
+    public static int countBlankPages(ItemStack folder) {
+        int count = 0;
+        for (ItemStack page : getPages(folder)) {
+            if (!page.isEmpty() && Page.isBlank(page)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Checks if this folder has any blank pages that can be written to.
+     */
+    public static boolean hasBlankPages(ItemStack folder) {
+        return countBlankPages(folder) > 0;
+    }
+
+    // ==================== FOLDER-SPECIFIC: BOOKBINDER COVER ====================
+
+    /**
+     * Checks if this folder can be used as a BookBinder cover.
+     * Only empty folders can serve as book covers.
+     */
+    public static boolean canBeBookCover(ItemStack folder) {
+        return isEmpty(folder);
+    }
+
+    /**
+     * Extracts all pages from this folder (for BookBinder batch import).
+     * Returns the list and clears the folder.
+     */
+    public static List<ItemStack> extractAllPages(ItemStack folder) {
+        List<ItemStack> pages = getPages(folder);
+        clearPages(folder);
+        return pages;
+    }
+
+    // ==================== FOLDER-SPECIFIC: ORDERED ACCESS ====================
+
+    /**
+     * Gets a page at a specific slot index.
+     * Folders support ORDERED access - pages have fixed positions.
+     */
+    public static ItemStack getPageAt(ItemStack folder, int index) {
+        List<ItemStack> pages = getPages(folder);
+        if (index < 0 || index >= pages.size()) {
+            return ItemStack.EMPTY;
+        }
+        return pages.get(index);
+    }
+
+    /**
+     * Sets a page at a specific slot index, returning the displaced page.
+     * Folders support ORDERED placement - you can put pages at specific positions.
+     */
+    public static ItemStack setPageAt(ItemStack folder, int index, ItemStack page) {
+        List<ItemStack> pages = getPages(folder);
+
+        // Extend the list if needed
+        while (pages.size() <= index) {
+            pages.add(ItemStack.EMPTY);
+        }
+
+        ItemStack displaced = pages.get(index);
+        pages.set(index, page.copy());
+        setPages(folder, pages);
+        return displaced;
     }
 }

@@ -4,9 +4,16 @@ import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.api.world.AgeDirector;
 import art.arcane.mystcraft.symbol.SymbolBase;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.world.gen.feature.MapGenCavesMyst;
+import art.arcane.mystcraft.world.gen.feature.MapGenFloatingIslands;
+import art.arcane.mystcraft.world.gen.feature.MapGenRavineMyst;
+import art.arcane.mystcraft.world.gen.populate.DenseOresPopulator;
+import art.arcane.mystcraft.world.gen.populate.HugeTreePopulator;
 
 /**
  * Terrain feature symbols (caves, ravines, etc).
+ * These symbols now register actual terrain alteration implementations
+ * in addition to setting configuration flags.
  */
 public final class FeatureSymbols {
 
@@ -30,7 +37,7 @@ public final class FeatureSymbols {
         SymbolRegistry.register(new LushCaves());
         SymbolRegistry.register(new DeepDark());
 
-        // Star Fissure feature (generation symbol - distinct from the star_fissure teleport symbol in SpecialSymbols)
+        // Star Fissure feature
         SymbolRegistry.register(new StarFissureFeature());
     }
 
@@ -45,6 +52,10 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setCavesEnabled(true);
+
+            // Register actual cave generation implementation
+            MapGenCavesMyst caves = new MapGenCavesMyst(seed);
+            director.registerInterface(caves);
         }
     }
 
@@ -59,6 +70,10 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setRavinesEnabled(true);
+
+            // Register actual ravine generation implementation
+            MapGenRavineMyst ravines = new MapGenRavineMyst(seed);
+            director.registerInterface(ravines);
         }
     }
 
@@ -73,6 +88,11 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setFloatingIslandsEnabled(true);
+
+            // Register actual floating island generation implementation
+            MapGenFloatingIslands islands = new MapGenFloatingIslands(seed);
+            director.registerInterface(islands);
+
             director.addInstability(getInstabilityCost());
         }
     }
@@ -89,6 +109,12 @@ public final class FeatureSymbols {
         public void registerLogic(AgeDirector director, long seed) {
             director.setSkylandsEnabled(true);
             director.setHasSea(false);
+
+            // Skylands use a denser floating island generation
+            MapGenFloatingIslands skylands = new MapGenFloatingIslands(seed, 3, // Higher density
+                    director.getTerrainBlock(), director.getTerrainBlock());
+            director.registerInterface(skylands);
+
             director.addInstability(getInstabilityCost());
         }
     }
@@ -104,6 +130,10 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setDenseOresEnabled(true);
+
+            // Register the dense ores populator (matching legacy Mystcraft behavior)
+            director.registerInterface(new DenseOresPopulator(seed));
+
             director.addInstability(getInstabilityCost());
         }
     }
@@ -119,6 +149,10 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setHugeTreesEnabled(true);
+
+            // Register the huge tree populator for mega/giant tree generation
+            director.registerInterface(new HugeTreePopulator(seed));
+
             director.addInstability(getInstabilityCost());
         }
     }
@@ -243,16 +277,11 @@ public final class FeatureSymbols {
 
     // ========================= Star Fissure Generation =========================
 
-    /**
-     * Star Fissure Feature - Generates Star Fissure structures in the world.
-     * This is a world generation symbol (FEATURE category) distinct from the
-     * star_fissure teleport symbol in SpecialSymbols.
-     */
     public static class StarFissureFeature extends SymbolBase {
         public StarFissureFeature() {
             super(SymbolRegistry.mystcraftId("star_fissure_feature"), SymbolCategory.FEATURE);
             setCardRank(4);
-            setInstabilityCost(-10.0f); // Reduces instability as it provides safety
+            setInstabilityCost(-10.0f);
             setPoem("Link", "Form", "Star", "Escape");
         }
 

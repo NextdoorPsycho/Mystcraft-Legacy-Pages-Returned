@@ -26,6 +26,9 @@ public final class ModCreativeTabs {
                             .title(Component.translatable("itemGroup." + Mystcraft.MOD_ID))
                             .icon(() -> new ItemStack(ModItems.AGEBOOK.get()))
                             .displayItems((params, output) -> {
+                                // Guidebook (tutorial)
+                                output.accept(ModItems.GUIDEBOOK.get());
+
                                 // Books
                                 output.accept(ModItems.AGEBOOK.get());
                                 output.accept(ModItems.LINKBOOK.get());

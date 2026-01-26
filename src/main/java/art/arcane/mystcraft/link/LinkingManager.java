@@ -349,24 +349,31 @@ public final class LinkingManager {
      */
     @Nullable
     public static ServerLevel findDimensionByUID(MinecraftServer server, int uid) {
-        // Check vanilla dimensions first
+        // Check vanilla dimensions with negative or zero UIDs first
         if (uid == 0) {
             return server.getLevel(Level.OVERWORLD);
         } else if (uid == -1) {
             return server.getLevel(Level.NETHER);
-        } else if (uid == 1) {
-            return server.getLevel(Level.END);
         }
 
-        // Check if this is a registered Mystcraft Age
-        AgeManager ageManager = AgeManager.get(server);
-        ResourceLocation ageDimension = ageManager.getDimension(uid);
-        if (ageDimension != null) {
-            // This is a Mystcraft Age, try to get or create the dimension
-            ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(server, uid);
-            if (ageLevel != null) {
-                return ageLevel;
+        // For positive UIDs, check Mystcraft Ages BEFORE The End
+        // This ensures registered Ages take priority over the End's hardcoded UID 1
+        // (handles both new Ages with UID >= 2 and any legacy Ages with UID 1)
+        if (uid > 0) {
+            AgeManager ageManager = AgeManager.get(server);
+            ResourceLocation ageDimension = ageManager.getDimension(uid);
+            if (ageDimension != null) {
+                // This is a Mystcraft Age, try to get or create the dimension
+                ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(server, uid);
+                if (ageLevel != null) {
+                    return ageLevel;
+                }
             }
+        }
+
+        // Only now check for The End (uid == 1 but not a registered Age)
+        if (uid == 1) {
+            return server.getLevel(Level.END);
         }
 
         // Search for other custom dimensions by hash

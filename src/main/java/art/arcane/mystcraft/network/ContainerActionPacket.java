@@ -5,9 +5,11 @@ import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
 import art.arcane.mystcraft.blockentity.LinkModifierBlockEntity;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
 import art.arcane.mystcraft.item.AgebookItem;
+import art.arcane.mystcraft.item.PortfolioItem;
 import art.arcane.mystcraft.menu.BookBinderMenu;
 import art.arcane.mystcraft.menu.InkMixerMenu;
 import art.arcane.mystcraft.menu.LinkModifierMenu;
+import art.arcane.mystcraft.menu.PortfolioMenu;
 import art.arcane.mystcraft.menu.WritingDeskMenu;
 
 import java.util.ArrayList;
@@ -40,7 +42,8 @@ public class ContainerActionPacket {
         LINK_MODIFIER_SET_SEED,
         LINK_MODIFIER_RECYCLE,
         FOLDER_ADD_PAGE,
-        FOLDER_REMOVE_PAGE
+        FOLDER_REMOVE_PAGE,
+        PORTFOLIO_SORT
     }
 
     private final Action action;
@@ -107,6 +110,7 @@ public class ContainerActionPacket {
                 case LINK_MODIFIER_SET_TITLE -> handleLinkModifierSetTitle(player, packet.stringData);
                 case LINK_MODIFIER_SET_SEED -> handleLinkModifierSetSeed(player, packet.stringData);
                 case LINK_MODIFIER_RECYCLE -> handleLinkModifierRecycle(player);
+                case PORTFOLIO_SORT -> handlePortfolioSort(player);
             }
         });
         ctx.setPacketHandled(true);
@@ -312,5 +316,24 @@ public class ContainerActionPacket {
             player.containerMenu.setCarried(removed);
             player.containerMenu.broadcastChanges();
         }
+    }
+
+    /**
+     * Handles Portfolio sort action.
+     * Sorts pages by category/name - Portfolio's unique feature.
+     */
+    private static void handlePortfolioSort(ServerPlayer player) {
+        if (!(player.containerMenu instanceof PortfolioMenu menu)) {
+            return;
+        }
+
+        // Get the portfolio item and sort its pages
+        PortfolioItem.sortPages(menu.getPortfolioStack());
+
+        // Reload the menu's inventory handler from the sorted NBT
+        menu.reloadFromPortfolio();
+
+        // Sync the sorted order to the client
+        player.containerMenu.broadcastChanges();
     }
 }

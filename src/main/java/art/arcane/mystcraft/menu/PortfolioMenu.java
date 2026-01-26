@@ -165,6 +165,14 @@ public class PortfolioMenu extends AbstractContainerMenu {
     }
 
     /**
+     * Reloads the inventory slots from the portfolio NBT.
+     * Called after sorting to sync the new order to the GUI.
+     */
+    public void reloadFromPortfolio() {
+        portfolioInventory.reloadFromPortfolio();
+    }
+
+    /**
      * Custom inventory handler that wraps portfolio page storage.
      */
     private static class PortfolioInventoryHandler extends ItemStackHandler {
@@ -173,13 +181,22 @@ public class PortfolioMenu extends AbstractContainerMenu {
         public PortfolioInventoryHandler(ItemStack portfolio) {
             super(PortfolioItem.MAX_PAGES);
             this.portfolio = portfolio;
-            loadFromPortfolio();
+            reloadFromPortfolio();
         }
 
-        private void loadFromPortfolio() {
+        /**
+         * Reloads all slots from the portfolio NBT data.
+         * Used after external modifications like sorting.
+         */
+        public void reloadFromPortfolio() {
+            // Clear all slots first
+            for (int i = 0; i < getSlots(); i++) {
+                stacks.set(i, ItemStack.EMPTY);
+            }
+            // Load from portfolio
             List<ItemStack> pages = PortfolioItem.getPages(portfolio);
             for (int i = 0; i < pages.size() && i < getSlots(); i++) {
-                setStackInSlot(i, pages.get(i).copy());
+                stacks.set(i, pages.get(i).copy());
             }
         }
 

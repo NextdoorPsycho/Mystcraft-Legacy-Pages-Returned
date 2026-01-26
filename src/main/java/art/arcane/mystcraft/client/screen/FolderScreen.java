@@ -1,62 +1,39 @@
 package art.arcane.mystcraft.client.screen;
 
-import art.arcane.mystcraft.Mystcraft;
-import art.arcane.mystcraft.client.gui.element.MystGuiPanel;
-import art.arcane.mystcraft.client.gui.element.MystGuiTextField;
-import art.arcane.mystcraft.client.gui.element.MystGuiToggleButton;
-import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.FolderItem;
 import art.arcane.mystcraft.menu.FolderMenu;
-import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 /**
  * Screen for the Folder item.
- * Shows pages stored in the folder with sort and search features.
- * Replicates legacy GuiInventoryFolder.
+ * Shows 16 page slots (2 rows x 8 columns) plus player inventory.
+ * Renders slots programmatically with standard Minecraft styling.
  */
 public class FolderScreen extends AbstractContainerScreen<FolderMenu> {
 
-    private static final ResourceLocation TEXTURE =
-            new ResourceLocation(Mystcraft.MOD_ID, "gui/notebook.png");
-
-    private MystGuiPanel rootPanel;
-    private MystGuiTextField searchField;
-    private MystGuiToggleButton sortAZButton;
-    private MystGuiToggleButton showAllButton;
-
-    private boolean sortAlphabetically = false;
-    private boolean showAll = false;
-    private String searchText = "";
+    // Slot colors for programmatic rendering (matches vanilla Minecraft)
+    private static final int SLOT_BORDER_DARK = 0xFF373737;
+    private static final int SLOT_BORDER_LIGHT = 0xFFFFFFFF;
+    private static final int SLOT_BG = 0xFF8B8B8B;
+    private static final int CONTAINER_BG = 0xFFC6C6C6;
 
     public FolderScreen(FolderMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 154;
-        this.inventoryLabelY = this.imageHeight - 94;
+        this.imageHeight = 154; // Compact height for 2 rows of pages + player inventory
     }
 
     @Override
     protected void init() {
         super.init();
         this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
-        // Note: Custom GUI elements (sort, search) disabled for now - texture doesn't support them
-    }
-
-    @Override
-    public void containerTick() {
-        super.containerTick();
+        this.inventoryLabelY = 60; // Position "Inventory" label above player inv
     }
 
     @Override
@@ -64,51 +41,53 @@ public class FolderScreen extends AbstractContainerScreen<FolderMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
-        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
-    }
+        // Draw container background
+        guiGraphics.fill(this.leftPos, this.topPos, this.leftPos + this.imageWidth, this.topPos + this.imageHeight, CONTAINER_BG);
 
-    private void highlightMatchingSlots(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        if (searchText.isEmpty()) return;
+        // Draw border (3D effect)
+        guiGraphics.fill(this.leftPos, this.topPos, this.leftPos + this.imageWidth, this.topPos + 2, SLOT_BORDER_LIGHT);
+        guiGraphics.fill(this.leftPos, this.topPos, this.leftPos + 2, this.topPos + this.imageHeight, SLOT_BORDER_LIGHT);
+        guiGraphics.fill(this.leftPos + this.imageWidth - 2, this.topPos, this.leftPos + this.imageWidth, this.topPos + this.imageHeight, SLOT_BORDER_DARK);
+        guiGraphics.fill(this.leftPos, this.topPos + this.imageHeight - 2, this.leftPos + this.imageWidth, this.topPos + this.imageHeight, SLOT_BORDER_DARK);
 
-        String lowerSearch = searchText.toLowerCase();
-
-        // Highlight slots that match search
-        for (int i = 0; i < FolderMenu.FOLDER_SLOTS; i++) {
-            Slot slot = menu.getSlot(i);
-            ItemStack stack = slot.getItem();
-            if (!stack.isEmpty()) {
-                String name = getPageDisplayName(stack);
-                if (name != null && name.toLowerCase().contains(lowerSearch)) {
-                    // Green highlight for matches
-                    int x = leftPos + slot.x;
-                    int y = topPos + slot.y;
-                    guiGraphics.fill(x, y, x + 16, y + 16, 0x4000FF00);
-                } else {
-                    // Dim non-matches
-                    int x = leftPos + slot.x;
-                    int y = topPos + slot.y;
-                    guiGraphics.fill(x, y, x + 16, y + 16, 0x80000000);
-                }
+        // Draw folder page slots (2 rows of 8) - matches FolderMenu slot positions
+        for (int row = 0; row < 2; row++) {
+            for (int col = 0; col < 8; col++) {
+                int x = this.leftPos + 17 + col * 18;
+                int y = this.topPos + 18 + row * 18;
+                drawSlot(guiGraphics, x, y);
             }
         }
+
+        // Draw player inventory slots (3 rows of 9) - matches FolderMenu slot positions
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                int x = this.leftPos + 8 + col * 18;
+                int y = this.topPos + 72 + row * 18;
+                drawSlot(guiGraphics, x, y);
+            }
+        }
+
+        // Draw hotbar slots - matches FolderMenu slot positions
+        for (int col = 0; col < 9; col++) {
+            int x = this.leftPos + 8 + col * 18;
+            int y = this.topPos + 130;
+            drawSlot(guiGraphics, x, y);
+        }
     }
 
-    private String getPageDisplayName(ItemStack stack) {
-        ResourceLocation symbolId = Page.getSymbol(stack);
-        if (symbolId != null) {
-            var symbol = SymbolRegistry.get(symbolId);
-            if (symbol != null) {
-                return symbol.getLocalizedName();
-            }
-            return symbolId.getPath();
-        }
-        if (Page.isLinkPanel(stack)) {
-            return "Link Panel";
-        }
-        if (Page.isBlank(stack)) {
-            return "Blank Page";
-        }
-        return stack.getHoverName().getString();
+    /**
+     * Draws a single slot background at the given position.
+     * Mimics the standard Minecraft slot appearance with 3D border effect.
+     */
+    private void drawSlot(GuiGraphics guiGraphics, int x, int y) {
+        // Draw slot border (3D inset effect)
+        guiGraphics.fill(x, y, x + 18, y + 1, SLOT_BORDER_DARK);      // Top edge
+        guiGraphics.fill(x, y, x + 1, y + 18, SLOT_BORDER_DARK);      // Left edge
+        guiGraphics.fill(x + 17, y, x + 18, y + 18, SLOT_BORDER_LIGHT); // Right edge
+        guiGraphics.fill(x, y + 17, x + 18, y + 18, SLOT_BORDER_LIGHT); // Bottom edge
+        // Draw slot interior
+        guiGraphics.fill(x + 1, y + 1, x + 17, y + 17, SLOT_BG);
     }
 
     @Override
@@ -123,7 +102,7 @@ public class FolderScreen extends AbstractContainerScreen<FolderMenu> {
         guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
 
-        // Show page count
+        // Show page count in top-right area
         int pageCount = FolderItem.getPageCount(menu.getFolderStack());
         String countText = pageCount + "/" + FolderItem.MAX_PAGES;
         int countWidth = this.font.width(countText);

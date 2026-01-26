@@ -34,8 +34,8 @@ public class AgeManager extends SavedData {
     private static final String TAG_UUID = "UUID";
     private static final String TAG_DIMENSION = "Dimension";
 
-    /** Next available age UID */
-    private int nextUID = 1;
+    /** Next available age UID (starts at 2 to avoid collision with The End which is UID 1) */
+    private int nextUID = 2;
 
     /** Map of age UID to dimension ResourceLocation */
     private final Map<Integer, ResourceLocation> ageUIDtoDimension = new HashMap<>();
@@ -70,8 +70,8 @@ public class AgeManager extends SavedData {
      */
     private void loadFromTag(CompoundTag tag) {
         this.nextUID = tag.getInt(TAG_NEXT_UID);
-        if (this.nextUID < 1) {
-            this.nextUID = 1;
+        if (this.nextUID < 2) {
+            this.nextUID = 2; // Ensure we never use UID 1 (reserved for The End)
         }
 
         this.ageUIDtoDimension.clear();

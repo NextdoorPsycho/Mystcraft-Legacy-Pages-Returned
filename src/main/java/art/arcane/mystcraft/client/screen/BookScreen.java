@@ -3,7 +3,10 @@ package art.arcane.mystcraft.client.screen;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
+import art.arcane.mystcraft.network.LinkBookActivatePacket;
+import art.arcane.mystcraft.network.MystcraftNetwork;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -11,16 +14,19 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 /**
  * Screen for viewing book contents (Agebooks and Linkbooks).
  * Displays the book's link panel, pages, and allows linking.
+ *
+ * Legacy behavior: The book GUI shows info and has a Link button
+ * that triggers the actual linking via a packet to the server.
  */
 public class BookScreen extends Screen {
 
@@ -32,6 +38,7 @@ public class BookScreen extends Screen {
     private static final int BOOK_HEIGHT = 192;
 
     private final ItemStack book;
+    private final InteractionHand hand;
     private final boolean isAgebook;
     private final boolean isLinkbook;
 
@@ -40,9 +47,10 @@ public class BookScreen extends Screen {
 
     private Button linkButton;
 
-    public BookScreen(ItemStack book) {
+    public BookScreen(ItemStack book, InteractionHand hand) {
         super(getBookTitle(book));
         this.book = book;
+        this.hand = hand;
         this.isAgebook = book.getItem() instanceof AgebookItem;
         this.isLinkbook = book.getItem() instanceof LinkbookItem;
     }
@@ -168,15 +176,14 @@ public class BookScreen extends Screen {
 
     /**
      * Performs the link when the button is clicked.
+     * Sends a packet to the server to activate the book.
      */
     private void performLink() {
         // Send packet to server to perform the link
-        // For now, just close the screen - actual linking happens on server
-        // when the player uses the book item
-        this.onClose();
+        MystcraftNetwork.sendToServer(new LinkBookActivatePacket(hand));
 
-        // The link will happen through the item use action
-        // This screen is mainly for viewing book info
+        // Close the screen
+        this.onClose();
     }
 
     @Override
@@ -186,10 +193,20 @@ public class BookScreen extends Screen {
 
     /**
      * Opens a book screen for the given item.
+     * Determines which hand the book is in for proper activation.
      */
     public static void open(ItemStack book) {
         if (book.getItem() instanceof AgebookItem || book.getItem() instanceof LinkbookItem) {
-            net.minecraft.client.Minecraft.getInstance().setScreen(new BookScreen(book));
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player == null) return;
+
+            // Determine which hand the book is in
+            InteractionHand hand = InteractionHand.MAIN_HAND;
+            if (ItemStack.isSameItemSameTags(mc.player.getOffhandItem(), book)) {
+                hand = InteractionHand.OFF_HAND;
+            }
+
+            mc.setScreen(new BookScreen(book, hand));
         }
     }
 }

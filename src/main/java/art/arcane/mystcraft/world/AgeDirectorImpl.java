@@ -1,6 +1,14 @@
 package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.api.world.AgeDirector;
+import art.arcane.mystcraft.api.world.logic.IBiomeController;
+import art.arcane.mystcraft.api.world.logic.ICelestial;
+import art.arcane.mystcraft.api.world.logic.IChunkProviderFinalization;
+import art.arcane.mystcraft.api.world.logic.ILightingController;
+import art.arcane.mystcraft.api.world.logic.IPopulate;
+import art.arcane.mystcraft.api.world.logic.ITerrainAlteration;
+import art.arcane.mystcraft.api.world.logic.ITerrainGenerator;
+import art.arcane.mystcraft.api.world.logic.IWeatherController;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
@@ -8,6 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
 
@@ -122,6 +131,16 @@ public class AgeDirectorImpl implements AgeDirector {
     private final Deque<Float> phaseStack = new ArrayDeque<>();
     private final Deque<Holder<Biome>> biomeStack = new ArrayDeque<>();
     private final Deque<Integer> gradientStack = new ArrayDeque<>();
+
+    // Registered logic interfaces (for full world generation pipeline)
+    private ITerrainGenerator terrainGenerator;
+    private IBiomeController biomeControllerImpl;
+    private ILightingController lightingControllerImpl;
+    private IWeatherController weatherControllerImpl;
+    private final List<ITerrainAlteration> terrainAlterations = new ArrayList<>();
+    private final List<IChunkProviderFinalization> chunkFinalizers = new ArrayList<>();
+    private final List<IPopulate> populateFunctions = new ArrayList<>();
+    private final List<ICelestial> celestials = new ArrayList<>();
 
     public AgeDirectorImpl() {
         this(0L);
@@ -889,5 +908,125 @@ public class AgeDirectorImpl implements AgeDirector {
     @Override
     public int popGradient() {
         return gradientStack.isEmpty() ? -1 : gradientStack.pop();
+    }
+
+    // ========================= Interface Registration =========================
+
+    @Override
+    public void registerInterface(ITerrainGenerator generator) {
+        if (this.terrainGenerator != null) {
+            addInstability(10.0f); // Penalty for replacing terrain generator
+        }
+        this.terrainGenerator = generator;
+        // Also sync the terrain type string for backwards compatibility
+        if (generator != null) {
+            this.terrainType = generator.getType();
+        }
+    }
+
+    @Override
+    public void registerInterface(IBiomeController controller) {
+        if (this.biomeControllerImpl != null) {
+            addInstability(10.0f); // Penalty for replacing biome controller
+        }
+        this.biomeControllerImpl = controller;
+        // Also sync the biome controller type string for backwards compatibility
+        if (controller != null) {
+            this.biomeController = controller.getType();
+        }
+    }
+
+    @Override
+    public void registerInterface(ITerrainAlteration alteration) {
+        if (alteration != null) {
+            terrainAlterations.add(alteration);
+            // Sort by priority (lower = earlier)
+            terrainAlterations.sort(Comparator.comparingInt(ITerrainAlteration::getPriority));
+        }
+    }
+
+    @Override
+    public void registerInterface(IChunkProviderFinalization finalizer) {
+        if (finalizer != null) {
+            chunkFinalizers.add(finalizer);
+        }
+    }
+
+    @Override
+    public void registerInterface(IPopulate populate) {
+        if (populate != null) {
+            populateFunctions.add(populate);
+        }
+    }
+
+    @Override
+    public void registerInterface(ILightingController controller) {
+        if (this.lightingControllerImpl != null) {
+            addInstability(5.0f); // Penalty for replacing lighting controller
+        }
+        this.lightingControllerImpl = controller;
+        // Also sync the lighting type string for backwards compatibility
+        if (controller != null) {
+            this.lightingType = controller.getType();
+        }
+    }
+
+    @Override
+    public void registerInterface(IWeatherController controller) {
+        if (this.weatherControllerImpl != null) {
+            addInstability(5.0f); // Penalty for replacing weather controller
+        }
+        this.weatherControllerImpl = controller;
+        // Also sync the weather type string for backwards compatibility
+        if (controller != null) {
+            this.weatherType = controller.getType();
+        }
+    }
+
+    @Override
+    public void registerInterface(ICelestial celestial) {
+        if (celestial != null) {
+            celestials.add(celestial);
+        }
+    }
+
+    @Override
+    public ITerrainGenerator getTerrainGenerator() {
+        return terrainGenerator;
+    }
+
+    @Override
+    public IBiomeController getBiomeControllerImpl() {
+        return biomeControllerImpl;
+    }
+
+    @Override
+    public List<ITerrainAlteration> getTerrainAlterations() {
+        return terrainAlterations;
+    }
+
+    @Override
+    public List<IChunkProviderFinalization> getChunkFinalizers() {
+        return chunkFinalizers;
+    }
+
+    @Override
+    public List<IPopulate> getPopulateFunctions() {
+        return populateFunctions;
+    }
+
+    @Override
+    public ILightingController getLightingController() {
+        return lightingControllerImpl;
+    }
+
+    @Override
+    public IWeatherController getWeatherController() {
+        return weatherControllerImpl;
+    }
+
+    @Override
+    public List<ICelestial> getCelestials() {
+        return celestials;
     }
 }

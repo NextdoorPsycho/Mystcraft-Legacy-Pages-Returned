@@ -3,6 +3,7 @@
   "entries": [
     "mystcraft:dungeon_pages",
     "mystcraft:mineshaft_pages",
-    "mystcraft:stronghold_pages"
+    "mystcraft:stronghold_pages",
+    "mystcraft:library_guidebook"
   ]
 }

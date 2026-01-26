@@ -16,7 +16,6 @@ import art.arcane.mystcraft.world.gen.populate.PillagerOutpostsPopulator;
 import art.arcane.mystcraft.world.gen.populate.RuinedPortalsPopulator;
 import art.arcane.mystcraft.world.gen.populate.NetherFortressPopulator;
 import art.arcane.mystcraft.world.gen.populate.StrongholdsPopulator;
-import art.arcane.mystcraft.world.gen.populate.TrailRuinsPopulator;
 import art.arcane.mystcraft.world.gen.populate.VillagesPopulator;
 import art.arcane.mystcraft.world.gen.populate.WitchHutsPopulator;
 import art.arcane.mystcraft.world.gen.populate.WoodlandMansionsPopulator;
@@ -129,9 +128,6 @@ public final class StructureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setNetherFortEnabled(true);
-
-            // Register the nether fortress populator for custom structure generation
-            director.registerInterface(new NetherFortressPopulator(seed));
             director.addInstability(getInstabilityCost());
         }
     }
@@ -149,7 +145,6 @@ public final class StructureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setPillagerOutpostsEnabled(true);
-            director.registerInterface(new PillagerOutpostsPopulator(seed));
             director.addInstability(getInstabilityCost());
         }
     }
@@ -165,7 +160,6 @@ public final class StructureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setRuinedPortalsEnabled(true);
-            director.registerInterface(new RuinedPortalsPopulator(seed));
             director.addInstability(getInstabilityCost());
         }
     }
@@ -181,7 +175,6 @@ public final class StructureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setOceanMonumentsEnabled(true);
-            director.registerInterface(new OceanMonumentsPopulator(seed));
             director.addInstability(getInstabilityCost());
         }
     }
@@ -265,7 +258,6 @@ public final class StructureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setTrailRuinsEnabled(true);
-            director.registerInterface(new TrailRuinsPopulator(seed));
         }
     }
 
@@ -282,7 +274,6 @@ public final class StructureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setAncientCitiesEnabled(true);
-            director.registerInterface(new AncientCitiesPopulator(seed));
             director.addInstability(getInstabilityCost());
         }
     }
@@ -300,9 +291,6 @@ public final class StructureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setBastionRemnantsEnabled(true);
-
-            // Register the bastion remnants populator for custom structure generation
-            director.registerInterface(new BastionRemnantsPopulator(seed));
             director.addInstability(getInstabilityCost());
         }
     }
@@ -320,9 +308,6 @@ public final class StructureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setEndCitiesEnabled(true);
-
-            // Register the end cities populator for custom structure generation
-            director.registerInterface(new EndCitiesPopulator(seed));
             director.addInstability(getInstabilityCost());
         }
     }

@@ -176,5 +176,11 @@ public class Mystcraft {
             event.registerEntityRenderer(ModEntities.DUMMY.get(),
                     art.arcane.mystcraft.client.renderer.NoopEntityRenderer::new);
         }
+
+        @SubscribeEvent
+        public static void onRegisterItemColors(net.minecraftforge.client.event.RegisterColorHandlersEvent.Item event) {
+            // Tint the guidebook dark gray/black
+            event.register((stack, tintIndex) -> 0xFF303030, ModItems.GUIDEBOOK.get());
+        }
     }
 }

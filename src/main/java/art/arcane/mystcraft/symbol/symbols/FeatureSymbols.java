@@ -7,8 +7,17 @@ import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.gen.feature.MapGenCavesMyst;
 import art.arcane.mystcraft.world.gen.feature.MapGenFloatingIslands;
 import art.arcane.mystcraft.world.gen.feature.MapGenRavineMyst;
+import art.arcane.mystcraft.world.gen.populate.DeepDarkPopulator;
+import art.arcane.mystcraft.world.gen.populate.DeepLakesPopulator;
 import art.arcane.mystcraft.world.gen.populate.DenseOresPopulator;
+import art.arcane.mystcraft.world.gen.populate.DripstoneCavesPopulator;
 import art.arcane.mystcraft.world.gen.populate.HugeTreePopulator;
+import art.arcane.mystcraft.world.gen.populate.LushCavesPopulator;
+import art.arcane.mystcraft.world.gen.populate.SpheresPopulator;
+import art.arcane.mystcraft.world.gen.populate.SpikesPopulator;
+import art.arcane.mystcraft.world.gen.populate.StarFissurePopulator;
+import art.arcane.mystcraft.world.gen.populate.SurfaceLakesPopulator;
+import art.arcane.mystcraft.world.gen.populate.TendrilsPopulator;
 
 /**
  * Terrain feature symbols (caves, ravines, etc).
@@ -168,6 +177,9 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setDeepLakesEnabled(true);
+
+            // Register the deep lakes populator for underground water/lava pools
+            director.registerInterface(new DeepLakesPopulator(seed));
         }
     }
 
@@ -182,6 +194,9 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setSurfaceLakesEnabled(true);
+
+            // Register the surface lakes populator for surface water/lava lakes
+            director.registerInterface(new SurfaceLakesPopulator(seed));
         }
     }
 
@@ -196,6 +211,10 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setSpikesEnabled(true);
+
+            // Register the spikes populator for ice-spike style formations
+            director.registerInterface(new SpikesPopulator(seed));
+
             director.addInstability(getInstabilityCost());
         }
     }
@@ -211,6 +230,10 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setSpheresEnabled(true);
+
+            // Register the spheres populator for floating/embedded spherical formations
+            director.registerInterface(new SpheresPopulator(seed));
+
             director.addInstability(getInstabilityCost());
         }
     }
@@ -226,6 +249,10 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setTendrilsEnabled(true);
+
+            // Register the tendrils populator for vine-like terrain formations
+            director.registerInterface(new TendrilsPopulator(seed));
+
             director.addInstability(getInstabilityCost());
         }
     }
@@ -243,6 +270,9 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setDripstoneCavesEnabled(true);
+
+            // Register the dripstone caves populator for stalactites and stalagmites
+            director.registerInterface(new DripstoneCavesPopulator(seed));
         }
     }
 
@@ -257,6 +287,9 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setLushCavesEnabled(true);
+
+            // Register the lush caves populator for moss, glow berries, and vegetation
+            director.registerInterface(new LushCavesPopulator(seed));
         }
     }
 
@@ -271,6 +304,10 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setDeepDarkEnabled(true);
+
+            // Register the deep dark populator for sculk features
+            director.registerInterface(new DeepDarkPopulator(seed));
+
             director.addInstability(getInstabilityCost());
         }
     }
@@ -288,6 +325,9 @@ public final class FeatureSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setStarFissureEnabled(true);
+
+            director.registerInterface(new StarFissurePopulator(seed));
+
             director.addInstability(getInstabilityCost());
         }
     }

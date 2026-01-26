@@ -125,22 +125,29 @@ public abstract class Page {
     /**
      * Gets the link properties from a link panel page.
      */
-    @Nullable
-    public static Collection<String> getLinkProperties(@NotNull ItemStack page) {
+    @NotNull
+    public static List<String> getLinkProperties(@NotNull ItemStack page) {
+        List<String> result = new ArrayList<>();
         if (page.isEmpty() || page.getTag() == null) {
-            return null;
+            return result;
         }
         CompoundTag data = getData(page);
         if (!data.contains(TAG_LINK_PANEL)) {
-            return null;
+            return result;
         }
         CompoundTag linkpanel = data.getCompound(TAG_LINK_PANEL);
         ListTag list = linkpanel.getList(TAG_PROPERTIES, Tag.TAG_STRING);
-        List<String> result = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
             result.add(list.getString(i));
         }
         return result;
+    }
+
+    /**
+     * Checks if a page has link properties.
+     */
+    public static boolean hasLinkProperties(@NotNull ItemStack page) {
+        return !getLinkProperties(page).isEmpty();
     }
 
     /**

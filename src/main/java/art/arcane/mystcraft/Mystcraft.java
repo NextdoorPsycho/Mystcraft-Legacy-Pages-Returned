@@ -6,6 +6,7 @@ import art.arcane.mystcraft.registry.ModCreativeTabs;
 import art.arcane.mystcraft.registry.ModEntities;
 import art.arcane.mystcraft.registry.ModFluids;
 import art.arcane.mystcraft.registry.ModItems;
+import art.arcane.mystcraft.registry.ModMenuTypes;
 import art.arcane.mystcraft.registry.ModSounds;
 import art.arcane.mystcraft.registry.MystcraftRegistries;
 import com.mojang.logging.LogUtils;
@@ -47,6 +48,7 @@ public class Mystcraft {
         ModEntities.register();
         ModSounds.register();
         ModCreativeTabs.register();
+        ModMenuTypes.register();
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
@@ -75,15 +77,36 @@ public class Mystcraft {
     }
 
     // Client-side setup is handled separately via Mod.EventBusSubscriber
-    @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+    @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = net.minecraftforge.api.distmarker.Dist.CLIENT)
     public static class ClientModEvents {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             LOGGER.info("Mystcraft client setup");
 
+            event.enqueueWork(() -> {
+                // Register menu screens
+                net.minecraft.client.gui.screens.MenuScreens.register(
+                        ModMenuTypes.INK_MIXER.get(),
+                        art.arcane.mystcraft.client.screen.InkMixerScreen::new);
+                net.minecraft.client.gui.screens.MenuScreens.register(
+                        ModMenuTypes.BOOK_BINDER.get(),
+                        art.arcane.mystcraft.client.screen.BookBinderScreen::new);
+                net.minecraft.client.gui.screens.MenuScreens.register(
+                        ModMenuTypes.LINK_MODIFIER.get(),
+                        art.arcane.mystcraft.client.screen.LinkModifierScreen::new);
+                net.minecraft.client.gui.screens.MenuScreens.register(
+                        ModMenuTypes.WRITING_DESK.get(),
+                        art.arcane.mystcraft.client.screen.WritingDeskScreen::new);
+                net.minecraft.client.gui.screens.MenuScreens.register(
+                        ModMenuTypes.FOLDER.get(),
+                        art.arcane.mystcraft.client.screen.FolderScreen::new);
+                net.minecraft.client.gui.screens.MenuScreens.register(
+                        ModMenuTypes.PORTFOLIO.get(),
+                        art.arcane.mystcraft.client.screen.PortfolioScreen::new);
+            });
+
             // TODO: Register client-side renderers
             // TODO: Register key bindings
-            // TODO: Setup GUI screens
         }
     }
 }

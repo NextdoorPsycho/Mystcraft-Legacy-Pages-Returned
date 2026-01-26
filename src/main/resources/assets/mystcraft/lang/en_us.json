@@ -25,7 +25,11 @@
   "item.mystcraft.agebook.authors": "Authors: %s",
   "item.mystcraft.agebook.pages": "Pages: %d",
   "item.mystcraft.agebook.creating": "Creating new Age...",
+  "item.mystcraft.agebook.created": "Age %d created!",
+  "item.mystcraft.agebook.creation_failed": "Failed to create Age",
   "item.mystcraft.agebook.linking": "Linking to Age...",
+  "item.mystcraft.agebook.link_failed": "Link failed: %s",
+  "item.mystcraft.agebook.no_age": "Book has no Age assigned",
   "item.mystcraft.agebook.no_panel": "Book requires a Link Panel as first page",
 
   "item.mystcraft.linkbook": "Linking Book",
@@ -70,5 +74,19 @@
   "subtitles.mystcraft.linking.link-intra": "Intra-dimensional Link",
   "subtitles.mystcraft.linking.link-fissure": "Star Fissure",
   "subtitles.mystcraft.linking.link-portal": "Link Portal",
-  "subtitles.mystcraft.entity.meteor.roar": "Meteor Roar"
+  "subtitles.mystcraft.entity.meteor.roar": "Meteor Roar",
+
+  "container.mystcraft.ink_mixer": "Ink Mixer",
+  "container.mystcraft.book_binder": "Book Binder",
+  "container.mystcraft.link_modifier": "Link Modifier",
+  "container.mystcraft.writing_desk": "Writing Desk",
+  "container.mystcraft.folder": "Collation Folder",
+  "container.mystcraft.portfolio": "Symbol Portfolio",
+
+  "gui.mystcraft.ink_mixer.has_ink": "Ink Ready",
+  "gui.mystcraft.book_binder.pages": "Pages: %d",
+  "gui.mystcraft.book_binder.ready": "Ready to Bind",
+  "gui.mystcraft.link_modifier.ready": "Ready to Modify",
+  "gui.mystcraft.writing_desk.ready": "Ready to Write",
+  "gui.mystcraft.writing_desk.needs_ink": "Needs Ink"
 }

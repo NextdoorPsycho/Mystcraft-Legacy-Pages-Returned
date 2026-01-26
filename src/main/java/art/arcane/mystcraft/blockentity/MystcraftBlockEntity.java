@@ -68,4 +68,12 @@ public abstract class MystcraftBlockEntity extends BlockEntity {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
+
+    /**
+     * Alias for sync() - marks dirty and sends update.
+     * Named to match legacy code style.
+     */
+    protected void markForUpdate() {
+        sync();
+    }
 }

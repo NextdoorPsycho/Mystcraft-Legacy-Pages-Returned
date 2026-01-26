@@ -1,12 +1,18 @@
 package art.arcane.mystcraft.item;
 
+import art.arcane.mystcraft.menu.PortfolioMenu;
+import art.arcane.mystcraft.registry.ModMenuTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -46,9 +52,20 @@ public class PortfolioItem extends Item {
     public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (!level.isClientSide) {
-            // TODO: Open portfolio GUI with sorting/organizing features
-            player.displayClientMessage(Component.translatable("item.mystcraft.portfolio.open"), true);
+        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+            int slot = hand == InteractionHand.MAIN_HAND ? player.getInventory().selected : 40;
+            serverPlayer.openMenu(new MenuProvider() {
+                @Override
+                public Component getDisplayName() {
+                    return Component.translatable("container.mystcraft.portfolio");
+                }
+
+                @Nullable
+                @Override
+                public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player p) {
+                    return new PortfolioMenu(containerId, playerInventory, slot);
+                }
+            }, buf -> buf.writeVarInt(slot));
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
@@ -57,7 +74,7 @@ public class PortfolioItem extends Item {
     /**
      * Gets all pages in this portfolio.
      */
-    public List<ItemStack> getPages(ItemStack stack) {
+    public static List<ItemStack> getPages(ItemStack stack) {
         if (stack.getTag() == null) {
             return new ArrayList<>();
         }
@@ -78,7 +95,7 @@ public class PortfolioItem extends Item {
      *
      * @return true if the page was added successfully
      */
-    public boolean addPage(ItemStack portfolio, ItemStack page) {
+    public static boolean addPage(ItemStack portfolio, ItemStack page) {
         if (portfolio.getTag() == null) {
             portfolio.setTag(new CompoundTag());
         }
@@ -96,7 +113,7 @@ public class PortfolioItem extends Item {
      *
      * @return the removed page, or ItemStack.EMPTY if not found
      */
-    public ItemStack removePage(ItemStack portfolio, int index) {
+    public static ItemStack removePage(ItemStack portfolio, int index) {
         List<ItemStack> pages = getPages(portfolio);
         if (index < 0 || index >= pages.size()) {
             return ItemStack.EMPTY;
@@ -109,7 +126,7 @@ public class PortfolioItem extends Item {
     /**
      * Sets the pages in this portfolio.
      */
-    public void setPages(ItemStack portfolio, List<ItemStack> pages) {
+    public static void setPages(ItemStack portfolio, List<ItemStack> pages) {
         CompoundTag tag = portfolio.getOrCreateTag();
         ListTag listTag = new ListTag();
         for (ItemStack page : pages) {
@@ -121,9 +138,16 @@ public class PortfolioItem extends Item {
     }
 
     /**
+     * Clears all pages from this portfolio.
+     */
+    public static void clearPages(ItemStack portfolio) {
+        setPages(portfolio, new ArrayList<>());
+    }
+
+    /**
      * Sorts pages alphabetically by symbol name.
      */
-    public void sortPages(ItemStack portfolio) {
+    public static void sortPages(ItemStack portfolio) {
         List<ItemStack> pages = getPages(portfolio);
         // TODO: Implement sorting by symbol type/name when SymbolManager is implemented
         setPages(portfolio, pages);
@@ -132,21 +156,21 @@ public class PortfolioItem extends Item {
     /**
      * Gets the number of pages in this portfolio.
      */
-    public int getPageCount(ItemStack stack) {
+    public static int getPageCount(ItemStack stack) {
         return getPages(stack).size();
     }
 
     /**
      * Checks if this portfolio is full.
      */
-    public boolean isFull(ItemStack stack) {
+    public static boolean isFull(ItemStack stack) {
         return getPageCount(stack) >= MAX_PAGES;
     }
 
     /**
      * Checks if this portfolio is empty.
      */
-    public boolean isEmpty(ItemStack stack) {
+    public static boolean isEmpty(ItemStack stack) {
         return getPages(stack).isEmpty();
     }
 }

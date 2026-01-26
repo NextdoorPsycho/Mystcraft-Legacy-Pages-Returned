@@ -1,11 +1,13 @@
 package art.arcane.mystcraft.item;
 
 import art.arcane.mystcraft.data.LinkOptions;
+import art.arcane.mystcraft.link.LinkingManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -105,6 +107,7 @@ public class LinkbookItem extends Item {
      */
     private void performLink(ItemStack stack, Level level, Player player) {
         if (stack.getTag() == null) {
+            player.displayClientMessage(Component.translatable("item.mystcraft.linkbook.invalid"), true);
             return;
         }
 
@@ -116,10 +119,25 @@ public class LinkbookItem extends Item {
             return;
         }
 
-        // TODO: Implement actual dimension teleportation
-        // This requires finding the target dimension and teleporting the player
-        // For now, just notify the player
+        // Perform the actual link
         player.displayClientMessage(Component.translatable("item.mystcraft.linkbook.linking"), true);
+
+        LinkingManager.LinkResult result = LinkingManager.performLink(player, stack.getTag());
+
+        switch (result) {
+            case SUCCESS -> {
+                // Link successful - nothing more to do
+            }
+            case INVALID_DESTINATION -> player.displayClientMessage(
+                    Component.translatable("item.mystcraft.linkbook.invalid"), true);
+            case DIMENSION_NOT_FOUND -> player.displayClientMessage(
+                    Component.literal("Dimension not found"), true);
+            case BLOCKED -> player.displayClientMessage(
+                    Component.literal("Link blocked"), true);
+            default -> {
+                // Handle other cases
+            }
+        }
     }
 
     /**
@@ -127,17 +145,7 @@ public class LinkbookItem extends Item {
      * Maps the vanilla dimensions to their classic IDs.
      */
     private int getDimensionId(Level level) {
-        ResourceKey<Level> dimension = level.dimension();
-        if (dimension == Level.OVERWORLD) {
-            return 0;
-        } else if (dimension == Level.NETHER) {
-            return -1;
-        } else if (dimension == Level.END) {
-            return 1;
-        }
-        // For custom dimensions, we'll need a registry system
-        // For now return a hash-based ID
-        return dimension.location().hashCode();
+        return LinkingManager.getDimensionUID(level);
     }
 
     /**

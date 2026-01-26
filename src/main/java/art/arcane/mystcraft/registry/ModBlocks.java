@@ -81,7 +81,7 @@ public final class ModBlocks {
                     () -> new CrystalBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.COLOR_LIGHT_BLUE)
                             .strength(1.5F)
-                            .lightLevel(state -> 7)
+                            .lightLevel(CrystalBlock::getLightLevel)
                             .noOcclusion()));
 
     public static final RegistryObject<Block> DECAY =

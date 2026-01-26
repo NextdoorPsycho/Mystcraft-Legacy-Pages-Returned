@@ -1,32 +1,96 @@
 package art.arcane.mystcraft.block;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 
 /**
  * The Crystal block.
  * Powers book receptacles to create portals.
+ * When active, becomes part of the portal structure.
  */
 public class CrystalBlock extends Block {
 
+    public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
+    public static final DirectionProperty SOURCE_DIRECTION = BlockStateProperties.FACING;
+
     public CrystalBlock(Properties properties) {
         super(properties);
+        registerDefaultState(stateDefinition.any()
+                .setValue(ACTIVE, false)
+                .setValue(SOURCE_DIRECTION, Direction.DOWN));
     }
 
     @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
-        super.onPlace(state, level, pos, oldState, movedByPiston);
-        // TODO: Notify nearby book receptacles
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(ACTIVE, SOURCE_DIRECTION);
+    }
+
+    /**
+     * Sets this crystal as part of an active portal.
+     */
+    public void setActive(Level level, BlockPos pos, Direction sourceDirection) {
+        BlockState current = level.getBlockState(pos);
+        if (current.getBlock() == this) {
+            level.setBlock(pos, current
+                    .setValue(ACTIVE, true)
+                    .setValue(SOURCE_DIRECTION, sourceDirection), 2);
+        }
+    }
+
+    /**
+     * Deactivates this crystal's portal state.
+     */
+    public void setInactive(Level level, BlockPos pos) {
+        BlockState current = level.getBlockState(pos);
+        if (current.getBlock() == this) {
+            level.setBlock(pos, defaultBlockState(), 2);
+        }
     }
 
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        // TODO: Notify nearby book receptacles to deactivate
-        super.onRemove(state, level, pos, newState, movedByPiston);
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        if (level.isClientSide) {
+            return;
+        }
+
+        if (!state.getValue(ACTIVE)) {
+            return;
+        }
+
+        // Check if the receptacle is still valid
+        Direction sourceDir = state.getValue(SOURCE_DIRECTION);
+        BlockPos receptaclePos = pos.relative(sourceDir);
+        BlockState receptacleState = level.getBlockState(receptaclePos);
+
+        // If the receptacle is gone or doesn't have a book, deactivate
+        if (!(receptacleState.getBlock() instanceof BookReceptacleBlock)) {
+            setInactive(level, pos);
+            // TODO: Call PortalUtils.shutdownPortal when implemented
+        }
     }
 
-    // TODO: Add crystal power range
-    // TODO: Add visual effects
+    @Override
+    public boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        return state.getValue(ACTIVE) ? 15 : 0;
+    }
+
+    /**
+     * Gets the light level based on active state.
+     * This is handled via block properties in 1.20.
+     */
+    public static int getLightLevel(BlockState state) {
+        return state.getValue(ACTIVE) ? 8 : 0;
+    }
 }

@@ -4,6 +4,7 @@ import art.arcane.mystcraft.Mystcraft;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -44,6 +45,9 @@ public final class MystcraftRegistries {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Mystcraft.MOD_ID);
 
+    public static final DeferredRegister<MenuType<?>> MENUS =
+            DeferredRegister.create(ForgeRegistries.MENU_TYPES, Mystcraft.MOD_ID);
+
     private MystcraftRegistries() {
     }
 
@@ -60,5 +64,6 @@ public final class MystcraftRegistries {
         FLUID_TYPES.register(modEventBus);
         SOUNDS.register(modEventBus);
         CREATIVE_TABS.register(modEventBus);
+        MENUS.register(modEventBus);
     }
 }

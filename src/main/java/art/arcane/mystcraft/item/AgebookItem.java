@@ -2,6 +2,12 @@ package art.arcane.mystcraft.item;
 
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.link.LinkingManager;
+import art.arcane.mystcraft.world.AgeData;
+import art.arcane.mystcraft.world.AgeDimensionFactory;
+import art.arcane.mystcraft.world.AgeManager;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -95,6 +101,13 @@ public class AgebookItem extends Item {
      * Activates the book, potentially creating a new Age.
      */
     private void activate(ItemStack stack, Level level, Player player) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+
         if (stack.getTag() == null) {
             stack.setTag(new CompoundTag());
         }
@@ -105,15 +118,80 @@ public class AgebookItem extends Item {
             // This is a new book - check if it has a link panel
             List<ItemStack> pages = getPageList(stack);
             if (!pages.isEmpty() && Page.isLinkPanel(pages.get(0))) {
-                // TODO: Create a new Age dimension
-                player.displayClientMessage(Component.translatable("item.mystcraft.agebook.creating"), true);
+                // Create a new Age dimension
+                createAge(stack, serverLevel, serverPlayer);
             } else {
                 player.displayClientMessage(Component.translatable("item.mystcraft.agebook.no_panel"), true);
             }
         } else {
             // Existing Age - perform linking
-            // TODO: Implement teleportation to Age
-            player.displayClientMessage(Component.translatable("item.mystcraft.agebook.linking"), true);
+            linkToAge(stack, serverLevel, serverPlayer);
+        }
+    }
+
+    /**
+     * Creates a new Age dimension for this Agebook.
+     */
+    private void createAge(ItemStack stack, ServerLevel level, ServerPlayer player) {
+        player.displayClientMessage(Component.translatable("item.mystcraft.agebook.creating"), true);
+
+        // Allocate a new age UID
+        AgeManager ageManager = AgeManager.get(level);
+        int ageUID = ageManager.allocateUID();
+
+        // Create the dimension
+        ServerLevel ageLevel = AgeDimensionFactory.createAgeDimension(level.getServer(), ageUID, java.util.UUID.randomUUID());
+
+        if (ageLevel == null) {
+            player.displayClientMessage(Component.translatable("item.mystcraft.agebook.creation_failed"), true);
+            return;
+        }
+
+        // Initialize the AgeData
+        AgeData ageData = AgeData.get(ageLevel);
+        ageData.setAgeUID(ageUID);
+        ageData.setAgeName(getDisplayName(stack));
+        for (String author : getAuthors(stack)) {
+            ageData.addAuthor(author);
+        }
+        ageData.setPages(getPageList(stack));
+
+        // Set spawn point at the center of spawn chunk
+        net.minecraft.core.BlockPos spawn = ageLevel.getSharedSpawnPos();
+        ageData.setSpawn(spawn.getX(), spawn.getY() + 1, spawn.getZ());
+
+        // Update the book with the Age's dimension ID and spawn
+        LinkOptions.setDimensionUID(stack.getTag(), ageUID);
+        LinkOptions.setSpawn(stack.getTag(), spawn.above());
+
+        player.displayClientMessage(Component.translatable("item.mystcraft.agebook.created", ageUID), true);
+
+        // Link to the newly created Age
+        linkToAge(stack, level, player);
+    }
+
+    /**
+     * Links the player to the Age described in this book.
+     */
+    private void linkToAge(ItemStack stack, ServerLevel level, ServerPlayer player) {
+        CompoundTag linkData = stack.getTag();
+        if (linkData == null) {
+            return;
+        }
+
+        Integer ageUID = LinkOptions.getDimensionUID(linkData);
+        if (ageUID == null) {
+            player.displayClientMessage(Component.translatable("item.mystcraft.agebook.no_age"), true);
+            return;
+        }
+
+        player.displayClientMessage(Component.translatable("item.mystcraft.agebook.linking"), true);
+
+        // Perform the link
+        LinkingManager.LinkResult result = LinkingManager.performLink(player, linkData);
+
+        if (result != LinkingManager.LinkResult.SUCCESS) {
+            player.displayClientMessage(Component.translatable("item.mystcraft.agebook.link_failed", result.name()), true);
         }
     }
 

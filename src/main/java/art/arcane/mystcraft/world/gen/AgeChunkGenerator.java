@@ -2,20 +2,25 @@ package art.arcane.mystcraft.world.gen;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.api.world.logic.IBiomeController;
 import art.arcane.mystcraft.api.world.logic.IChunkProviderFinalization;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import art.arcane.mystcraft.api.world.logic.ITerrainAlteration;
-import art.arcane.mystcraft.api.world.logic.ITerrainGenerator;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
+import art.arcane.mystcraft.world.gen.biome.AgeBiomeSource;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerNoise;
 import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorFlat;
-import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorNormal;
+import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorVoid;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.util.RandomSource;
@@ -29,11 +34,15 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
+import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,10 +50,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 /**
- * Custom chunk generator for Mystcraft Ages.
- * Uses registered terrain generators, biome controllers, and terrain alterations
- * from the AgeDirector to generate world terrain following the legacy Mystcraft
- * world generation pipeline.
+ * Chunk generator for Mystcraft Ages that WRAPS vanilla's NoiseBasedChunkGenerator.
+ *
+ * For normal/amplified terrain: Delegates to vanilla's terrain generation, then applies
+ * Mystcraft alterations and populators on top. This allows symbols to MODULATE vanilla
+ * terrain rather than replace it entirely.
+ *
+ * For special terrain (void, flat): Uses custom lightweight generators.
+ *
+ * This matches how legacy Mystcraft worked - most symbols modified vanilla generation
+ * rather than replacing it.
  */
 public class AgeChunkGenerator extends ChunkGenerator {
 
@@ -68,19 +83,21 @@ public class AgeChunkGenerator extends ChunkGenerator {
     private final long seed;
     private final int ageUID;
 
-    // Director with registered interfaces
+    // Director with registered interfaces (symbols register here)
     private AgeDirectorImpl director;
 
-    // Default block states (used when no director is set)
-    private final BlockState stoneBlock = Blocks.STONE.defaultBlockState();
-    private final BlockState waterBlock = Blocks.WATER.defaultBlockState();
+    // Vanilla generator delegate - used for normal/amplified terrain
+    private NoiseBasedChunkGenerator vanillaDelegate;
+    private boolean delegateInitialized = false;
+
+    // Default block states
     private final BlockState bedrockBlock = Blocks.BEDROCK.defaultBlockState();
-    private final BlockState airBlock = Blocks.AIR.defaultBlockState();
 
     /**
      * Creates a chunk generator from codec deserialization.
      */
-    public AgeChunkGenerator(BiomeSource biomeSource, String terrainType, int groundLevel, int seaLevel, boolean hasSea, long seed, int ageUID) {
+    public AgeChunkGenerator(BiomeSource biomeSource, String terrainType, int groundLevel,
+                             int seaLevel, boolean hasSea, long seed, int ageUID) {
         super(biomeSource);
         this.terrainType = terrainType;
         this.groundLevel = groundLevel;
@@ -88,12 +105,10 @@ public class AgeChunkGenerator extends ChunkGenerator {
         this.hasSea = hasSea;
         this.seed = seed;
         this.ageUID = ageUID;
-        // Director will be reconstructed on first terrain generation if needed
     }
 
     /**
      * Creates a chunk generator from an AgeDirector configuration.
-     * This is the preferred constructor that uses registered interfaces.
      */
     public AgeChunkGenerator(AgeDirectorImpl director, BiomeSource biomeSource, long seed, int ageUID) {
         super(biomeSource);
@@ -107,7 +122,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
     }
 
     /**
-     * Creates a chunk generator from an AgeDirector configuration (legacy method).
+     * Creates a chunk generator from an AgeDirector.
      */
     public static AgeChunkGenerator fromDirector(AgeDirectorImpl director, BiomeSource biomeSource, int ageUID) {
         return new AgeChunkGenerator(director, biomeSource, director.getSeed(), ageUID);
@@ -115,19 +130,67 @@ public class AgeChunkGenerator extends ChunkGenerator {
 
     /**
      * Sets the director for this generator.
-     * Used when the generator is deserialized and needs to be reconnected to its director.
      */
     public void setDirector(AgeDirectorImpl director) {
         this.director = director;
     }
 
     /**
+     * Checks if this terrain type should use vanilla delegation.
+     */
+    private boolean usesVanillaDelegate() {
+        return "normal".equals(terrainType) || "amplified".equals(terrainType) || terrainType == null;
+    }
+
+    /**
+     * Initializes the vanilla delegate generator lazily.
+     * This gets the overworld's NoiseGeneratorSettings and creates a NoiseBasedChunkGenerator.
+     */
+    private void ensureVanillaDelegate() {
+        if (delegateInitialized) {
+            return;
+        }
+        delegateInitialized = true;
+
+        if (!usesVanillaDelegate()) {
+            return;
+        }
+
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) {
+            Mystcraft.LOGGER.warn("Cannot initialize vanilla delegate: server not available");
+            return;
+        }
+
+        try {
+            // Get the overworld's NoiseGeneratorSettings
+            Holder<NoiseGeneratorSettings> noiseSettings;
+            if ("amplified".equals(terrainType)) {
+                noiseSettings = server.registryAccess()
+                        .registryOrThrow(Registries.NOISE_SETTINGS)
+                        .getHolderOrThrow(NoiseGeneratorSettings.AMPLIFIED);
+            } else {
+                noiseSettings = server.registryAccess()
+                        .registryOrThrow(Registries.NOISE_SETTINGS)
+                        .getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
+            }
+
+            // Create vanilla generator with our biome source
+            vanillaDelegate = new NoiseBasedChunkGenerator(biomeSource, noiseSettings);
+
+            Mystcraft.LOGGER.info("Age {} initialized vanilla terrain delegate (type: {})",
+                    ageUID, terrainType);
+        } catch (Exception e) {
+            Mystcraft.LOGGER.error("Failed to initialize vanilla delegate for age {}", ageUID, e);
+        }
+    }
+
+    /**
      * Reconstructs the director from saved AgeData.
-     * Called when the generator is deserialized and needs its director rebuilt.
      */
     public void reconstructDirectorFromAgeData(ServerLevel level) {
         if (director != null) {
-            return; // Already have a director
+            return;
         }
 
         if (ageUID <= 0) {
@@ -141,7 +204,6 @@ public class AgeChunkGenerator extends ChunkGenerator {
             return;
         }
 
-        // Get pages from AgeData and extract symbols
         List<ItemStack> pages = ageData.getPages();
         List<IAgeSymbol> symbols = new ArrayList<>();
 
@@ -158,12 +220,22 @@ public class AgeChunkGenerator extends ChunkGenerator {
         Mystcraft.LOGGER.info("Reconstructing director for age {} from {} pages ({} symbols)",
                 ageUID, pages.size(), symbols.size());
 
-        // Rebuild director using AgeBuilder
         AgeBuilder builder = new AgeBuilder(symbols, seed);
         this.director = builder.build();
-
-        // Copy back any settings that might have been modified
         this.director.setInstability(ageData.getInstability());
+
+        // Update the biome source if we have an AgeBiomeSource
+        if (biomeSource instanceof AgeBiomeSource ageBiomeSource) {
+            IBiomeController biomeController = director.getBiomeControllerImpl();
+            if (biomeController != null) {
+                ageBiomeSource.setBiomeController(biomeController);
+            } else if (!director.getBiomes().isEmpty()) {
+                IBiomeController defaultController = new BiomeControllerNoise(
+                        director.getBiomes(), seed, BiomeControllerNoise.Scale.MEDIUM);
+                director.registerInterface(defaultController);
+                ageBiomeSource.setBiomeController(defaultController);
+            }
+        }
 
         Mystcraft.LOGGER.info("Director reconstructed successfully for age {}", ageUID);
     }
@@ -177,38 +249,121 @@ public class AgeChunkGenerator extends ChunkGenerator {
     public void applyCarvers(WorldGenRegion level, long seed, RandomState randomState,
                              BiomeManager biomeManager, StructureManager structureManager,
                              ChunkAccess chunk, GenerationStep.Carving step) {
-        // Cave and ravine carving is now handled by ITerrainAlteration implementations
-        // that are applied during fillFromNoise
+        ensureVanillaDelegate();
+
+        // Delegate carving to vanilla for normal terrain
+        if (vanillaDelegate != null) {
+            vanillaDelegate.applyCarvers(level, seed, randomState, biomeManager,
+                    structureManager, chunk, step);
+        }
+
+        // Apply any Mystcraft terrain alterations that work during carving
+        // (most alterations apply during fillFromNoise instead)
     }
 
     @Override
     public void buildSurface(WorldGenRegion level, StructureManager structureManager,
                              RandomState randomState, ChunkAccess chunk) {
-        // Surface building is handled by the terrain generators themselves
-        // or by biome-specific surface rules
+        ensureVanillaDelegate();
+
+        // Delegate surface building to vanilla - this applies proper biome surfaces
+        if (vanillaDelegate != null) {
+            vanillaDelegate.buildSurface(level, structureManager, randomState, chunk);
+        }
+
+        // Mystcraft surface type symbols can modify the surface AFTER vanilla builds it
+        // This allows symbols like "Sand Surface" to replace grass with sand
+        if (director != null) {
+            applySurfaceModifications(chunk);
+        }
+    }
+
+    /**
+     * Applies Mystcraft surface modifications after vanilla surface building.
+     * This is where symbols like "Sand Surface" or "Snow Surface" take effect.
+     */
+    private void applySurfaceModifications(ChunkAccess chunk) {
+        BlockState surfaceOverride = director.getSurfaceBlock();
+        BlockState subsurfaceOverride = director.getSubsurfaceBlock();
+
+        if (surfaceOverride == null && subsurfaceOverride == null) {
+            return; // No modifications needed
+        }
+
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+        int maxY = chunk.getMaxBuildHeight();
+
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                // Find surface
+                for (int y = maxY - 1; y >= minY; y--) {
+                    pos.set(x, y, z);
+                    BlockState state = chunk.getBlockState(pos);
+
+                    if (state.isAir() || state.getBlock() == Blocks.WATER) {
+                        continue;
+                    }
+
+                    // Found surface - check if it's a replaceable surface block
+                    if (isSurfaceBlock(state)) {
+                        if (surfaceOverride != null) {
+                            chunk.setBlockState(pos, surfaceOverride, false);
+                        }
+
+                        // Replace subsurface (next 3 blocks down)
+                        if (subsurfaceOverride != null) {
+                            for (int d = 1; d <= 3 && y - d >= minY; d++) {
+                                pos.set(x, y - d, z);
+                                BlockState sub = chunk.getBlockState(pos);
+                                if (isSubsurfaceBlock(sub)) {
+                                    chunk.setBlockState(pos, subsurfaceOverride, false);
+                                }
+                            }
+                        }
+                    }
+                    break; // Move to next column
+                }
+            }
+        }
+    }
+
+    private boolean isSurfaceBlock(BlockState state) {
+        return state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT) ||
+               state.is(Blocks.SAND) || state.is(Blocks.GRAVEL) ||
+               state.is(Blocks.SNOW_BLOCK) || state.is(Blocks.MYCELIUM) ||
+               state.is(Blocks.PODZOL) || state.is(Blocks.MUD);
+    }
+
+    private boolean isSubsurfaceBlock(BlockState state) {
+        return state.is(Blocks.DIRT) || state.is(Blocks.SAND) ||
+               state.is(Blocks.GRAVEL) || state.is(Blocks.SANDSTONE) ||
+               state.is(Blocks.MUD);
     }
 
     @Override
     public void spawnOriginalMobs(WorldGenRegion level) {
-        // Default mob spawning
+        ensureVanillaDelegate();
+        if (vanillaDelegate != null) {
+            vanillaDelegate.spawnOriginalMobs(level);
+        }
     }
 
     /**
-     * Applies biome decoration including Mystcraft populators.
-     * This is the correct place to add ores, trees, dungeons, and other features
-     * in 1.20.2+ - during the FEATURES chunk status, NOT after chunk loading.
-     *
-     * WorldGenLevel provides a limited view of the world that is safe for
-     * generation - setBlock() calls here don't trigger lighting updates or
-     * cascade chunk loads like they would on a fully-loaded chunk.
+     * Applies biome decoration including vanilla features AND Mystcraft populators.
+     * This is the correct place for trees, ores, dungeons, etc.
      */
     @Override
     public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager) {
-        // Let vanilla handle biome decoration first (trees, flowers, etc. from biomes)
-        // We skip this for now to avoid conflicts - Mystcraft controls all decoration
-        // super.applyBiomeDecoration(level, chunk, structureManager);
+        ensureVanillaDelegate();
 
-        // Now apply Mystcraft populators
+        // First, let vanilla do its biome decoration (trees, flowers, ores, etc.)
+        if (vanillaDelegate != null) {
+            vanillaDelegate.applyBiomeDecoration(level, chunk, structureManager);
+        }
+
+        // Then apply Mystcraft populators ON TOP of vanilla
+        // This is how "Big Trees" makes trees bigger, "Dense Ores" adds more ores, etc.
         if (director == null) {
             return;
         }
@@ -222,121 +377,59 @@ public class AgeChunkGenerator extends ChunkGenerator {
         int chunkZ = chunk.getPos().z;
         BlockPos chunkPos = new BlockPos(chunkX * 16, 0, chunkZ * 16);
 
-        // Create random source for this chunk (matching legacy behavior)
         long chunkSeed = (long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + seed;
         RandomSource random = RandomSource.create(chunkSeed);
 
-        Mystcraft.LOGGER.debug("[Population] Applying {} populators to chunk [{}, {}]",
+        Mystcraft.LOGGER.trace("[Population] Applying {} Mystcraft populators to chunk [{}, {}]",
                 populators.size(), chunkX, chunkZ);
 
-        // Call all registered population functions
         for (IPopulate populator : populators) {
-            String id = populator.getIdentifier();
             try {
                 populator.populate(level, random, chunkPos);
             } catch (Exception e) {
                 Mystcraft.LOGGER.error("[Population] Error in populator {} on chunk [{}, {}]: {}",
-                        id, chunkX, chunkZ, e.getMessage(), e);
+                        populator.getIdentifier(), chunkX, chunkZ, e.getMessage(), e);
             }
         }
     }
 
     @Override
     public int getGenDepth() {
-        return 384; // Default world height
+        ensureVanillaDelegate();
+        if (vanillaDelegate != null) {
+            return vanillaDelegate.getGenDepth();
+        }
+        return 384;
     }
 
     @Override
     public CompletableFuture<ChunkAccess> fillFromNoise(Executor executor, Blender blender,
-                                                        RandomState randomState, StructureManager structureManager, ChunkAccess chunk) {
+                                                        RandomState randomState, StructureManager structureManager,
+                                                        ChunkAccess chunk) {
+        ensureVanillaDelegate();
+
+        // For normal/amplified terrain, delegate to vanilla
+        if (vanillaDelegate != null) {
+            return vanillaDelegate.fillFromNoise(executor, blender, randomState, structureManager, chunk)
+                    .thenApply(filledChunk -> {
+                        // Apply Mystcraft terrain alterations AFTER vanilla fills the chunk
+                        applyTerrainAlterations(filledChunk, randomState);
+                        return filledChunk;
+                    });
+        }
+
+        // For special terrain types (void, flat), use custom generation
         return CompletableFuture.supplyAsync(() -> {
-            int chunkX = chunk.getPos().x;
-            int chunkZ = chunk.getPos().z;
-            long chunkSeed = (long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + seed;
-            RandomSource random = RandomSource.create(chunkSeed);
-
-            // 1. Base terrain generation using registered ITerrainGenerator
-            generateTerrain(chunk, chunkX, chunkZ, random);
-
-            // 2. Apply terrain alterations (caves, ravines, floating islands, etc.)
-            applyTerrainAlterations(chunk, chunkX, chunkZ, random);
-
-            // 3. Apply chunk finalizers
-            applyChunkFinalizers(chunk, chunkX, chunkZ);
-
+            generateSpecialTerrain(chunk, randomState);
             return chunk;
         }, executor);
     }
 
     /**
-     * Generates base terrain using the registered terrain generator.
+     * Applies Mystcraft terrain alterations after vanilla terrain generation.
+     * This includes caves, ravines, floating islands, tendrils, etc.
      */
-    private void generateTerrain(ChunkAccess chunk, int chunkX, int chunkZ, RandomSource random) {
-        if (director != null) {
-            ITerrainGenerator generator = director.getTerrainGenerator();
-            if (generator != null) {
-                // Pass BiomeSource to terrain generator if it supports it
-                if (generator instanceof TerrainGeneratorNormal normalGen) {
-                    normalGen.setBiomeSource(biomeSource);
-                }
-                // Use the registered terrain generator
-                generator.generateTerrain(chunkX, chunkZ, chunk, random);
-                return;
-            }
-        }
-
-        // Fallback: create a default terrain generator based on terrain type
-        generateFallbackTerrain(chunk, chunkX, chunkZ, random);
-    }
-
-    /**
-     * Fallback terrain generation when no generator is registered.
-     */
-    private void generateFallbackTerrain(ChunkAccess chunk, int chunkX, int chunkZ, RandomSource random) {
-        // Create a temporary director for the fallback generator
-        AgeDirectorImpl tempDirector = new AgeDirectorImpl(seed);
-        tempDirector.setAverageGroundLevel(groundLevel);
-        tempDirector.setSeaLevel(seaLevelValue);
-        tempDirector.setHasSea(hasSea);
-
-        ITerrainGenerator fallbackGen;
-        switch (terrainType) {
-            case "flat":
-                fallbackGen = new TerrainGeneratorFlat(tempDirector, seed);
-                break;
-            case "void":
-                // Void terrain - just bedrock at bottom
-                generateVoidFallback(chunk);
-                return;
-            default:
-                // Normal terrain
-                TerrainGeneratorNormal normalGen = new TerrainGeneratorNormal(tempDirector, seed, "amplified".equals(terrainType));
-                normalGen.setBiomeSource(biomeSource);
-                fallbackGen = normalGen;
-                break;
-        }
-
-        fallbackGen.generateTerrain(chunkX, chunkZ, chunk, random);
-    }
-
-    /**
-     * Simple void terrain fallback.
-     */
-    private void generateVoidFallback(ChunkAccess chunk) {
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-        int minY = chunk.getMinBuildHeight();
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                pos.set(x, minY, z);
-                chunk.setBlockState(pos, bedrockBlock, false);
-            }
-        }
-    }
-
-    /**
-     * Applies all registered terrain alterations (caves, ravines, etc.) in priority order.
-     */
-    private void applyTerrainAlterations(ChunkAccess chunk, int chunkX, int chunkZ, RandomSource random) {
+    private void applyTerrainAlterations(ChunkAccess chunk, RandomState randomState) {
         if (director == null) {
             return;
         }
@@ -346,68 +439,128 @@ public class AgeChunkGenerator extends ChunkGenerator {
             return;
         }
 
-        // Get server level if available (may be null during initial generation)
-        ServerLevel serverLevel = null;
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+        long chunkSeed = (long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + seed;
+        RandomSource random = RandomSource.create(chunkSeed);
 
-        // Apply each alteration in order (already sorted by priority in AgeDirectorImpl)
         for (ITerrainAlteration alteration : alterations) {
-            alteration.alterTerrain(serverLevel, chunkX, chunkZ, chunk, random);
+            alteration.alterTerrain(null, chunkX, chunkZ, chunk, random);
         }
     }
 
     /**
-     * Applies all registered chunk finalizers.
+     * Generates special terrain types (void, flat) that don't use vanilla generation.
      */
-    private void applyChunkFinalizers(ChunkAccess chunk, int chunkX, int chunkZ) {
-        if (director == null) {
-            return;
+    private void generateSpecialTerrain(ChunkAccess chunk, RandomState randomState) {
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+        long chunkSeed = (long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + seed;
+        RandomSource random = RandomSource.create(chunkSeed);
+
+        switch (terrainType) {
+            case "void" -> generateVoidTerrain(chunk, random);
+            case "flat" -> generateFlatTerrain(chunk, random);
+            default -> {
+                // Fallback to flat if unknown special type
+                Mystcraft.LOGGER.warn("Unknown terrain type '{}', using flat", terrainType);
+                generateFlatTerrain(chunk, random);
+            }
         }
 
-        List<IChunkProviderFinalization> finalizers = director.getChunkFinalizers();
-        for (IChunkProviderFinalization finalizer : finalizers) {
-            finalizer.finalizeChunk(chunk, chunkX, chunkZ);
+        // Apply terrain alterations even for special terrain
+        applyTerrainAlterations(chunk, randomState);
+    }
+
+    private void generateVoidTerrain(ChunkAccess chunk, RandomSource random) {
+        // Void terrain - just bedrock at bottom, everything else is air
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                pos.set(x, minY, z);
+                chunk.setBlockState(pos, bedrockBlock, false);
+            }
+        }
+    }
+
+    private void generateFlatTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+
+        BlockState terrainBlock = director != null && director.getTerrainBlock() != null
+                ? director.getTerrainBlock()
+                : Blocks.STONE.defaultBlockState();
+
+        // Flat terrain: bedrock at bottom, then terrain block up to ground level
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                for (int y = minY; y < groundLevel; y++) {
+                    pos.set(x, y, z);
+                    if (y == minY) {
+                        chunk.setBlockState(pos, bedrockBlock, false);
+                    } else {
+                        chunk.setBlockState(pos, terrainBlock, false);
+                    }
+                }
+            }
         }
     }
 
     @Override
     public int getSeaLevel() {
+        ensureVanillaDelegate();
+        if (vanillaDelegate != null) {
+            return vanillaDelegate.getSeaLevel();
+        }
         return seaLevelValue;
     }
 
     @Override
     public int getMinY() {
+        ensureVanillaDelegate();
+        if (vanillaDelegate != null) {
+            return vanillaDelegate.getMinY();
+        }
         return -64;
     }
 
     @Override
     public int getBaseHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState randomState) {
-        // Use the terrain type to estimate base height
+        ensureVanillaDelegate();
+        if (vanillaDelegate != null) {
+            return vanillaDelegate.getBaseHeight(x, z, type, level, randomState);
+        }
+
+        // Fallback for special terrain
         if ("void".equals(terrainType)) {
             return level.getMinBuildHeight();
         }
-        if ("flat".equals(terrainType)) {
-            return groundLevel;
-        }
-        // For noise-based terrain, return ground level as approximation
         return groundLevel;
     }
 
     @Override
     public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor level, RandomState randomState) {
-        int height = getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, level, randomState);
-        BlockState[] states = new BlockState[level.getHeight()];
+        ensureVanillaDelegate();
+        if (vanillaDelegate != null) {
+            return vanillaDelegate.getBaseColumn(x, z, level, randomState);
+        }
 
+        // Fallback for special terrain
+        BlockState[] states = new BlockState[level.getHeight()];
         int minY = level.getMinBuildHeight();
+
         for (int i = 0; i < states.length; i++) {
             int y = minY + i;
             if (y == minY) {
                 states[i] = bedrockBlock;
-            } else if (y <= height) {
-                states[i] = stoneBlock;
-            } else if (hasSea && y <= seaLevelValue) {
-                states[i] = waterBlock;
+            } else if ("void".equals(terrainType)) {
+                states[i] = Blocks.AIR.defaultBlockState();
+            } else if (y < groundLevel) {
+                states[i] = Blocks.STONE.defaultBlockState();
             } else {
-                states[i] = airBlock;
+                states[i] = Blocks.AIR.defaultBlockState();
             }
         }
 
@@ -416,34 +569,22 @@ public class AgeChunkGenerator extends ChunkGenerator {
 
     @Override
     public void addDebugScreenInfo(List<String> info, RandomState randomState, BlockPos pos) {
-        info.add("Mystcraft Age - Terrain: " + terrainType);
+        info.add("Mystcraft Age - Terrain: " + terrainType + (vanillaDelegate != null ? " (vanilla delegate)" : ""));
         info.add("Ground Level: " + groundLevel + ", Sea Level: " + seaLevelValue);
         if (director != null) {
-            ITerrainGenerator gen = director.getTerrainGenerator();
-            if (gen != null) {
-                info.add("Generator: " + gen.getType());
-            }
             info.add("Alterations: " + director.getTerrainAlterations().size());
+            info.add("Populators: " + director.getPopulateFunctions().size());
         }
     }
 
-    /**
-     * Gets the AgeDirector for this generator.
-     */
     public AgeDirectorImpl getDirector() {
         return director;
     }
 
-    /**
-     * Gets the age UID for this generator.
-     */
     public int getAgeUID() {
         return ageUID;
     }
 
-    /**
-     * Checks if this generator needs its director reconstructed.
-     */
     public boolean needsDirectorReconstruction() {
         return director == null && ageUID > 0;
     }

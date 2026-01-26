@@ -63,7 +63,8 @@ public class PageBakedModel implements BakedModel {
 
     @Override
     public boolean isCustomRenderer() {
-        return false;
+        // Return true to use the BEWLR for rendering pages with dynamic symbols
+        return true;
     }
 
     @Override

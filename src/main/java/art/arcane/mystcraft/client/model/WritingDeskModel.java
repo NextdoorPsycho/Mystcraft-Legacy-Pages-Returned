@@ -146,20 +146,18 @@ public class WritingDeskModel extends Model {
                         .addBox(0F, 0F, 0F, 30, 1, 6),
                 PartPose.offset(-7F, -4F, 1F));
 
-        // Floor to close off bottom - placed slightly above ground level to avoid z-fighting
-        // Extended to cover the full 2-block width of the desk
+        // Floor to close off bottom - single piece covering the full desk footprint
+        // Positioned at Y=22.99 to avoid z-fighting with ground
         partdefinition.addOrReplaceChild("floor",
                 CubeListBuilder.create()
                         .texOffs(0, 34)
-                        .addBox(0F, 0F, 0F, 32, 1, 16),
+                        .addBox(0F, 0.01F, 0F, 32, 1, 16),
                 PartPose.offset(-8F, 23F, -8F));
 
-        // Additional floor piece to fill any gaps (covers right side footprint)
+        // Empty placeholder to satisfy model part requirements (no geometry)
         partdefinition.addOrReplaceChild("floor2",
-                CubeListBuilder.create()
-                        .texOffs(0, 34)
-                        .addBox(0F, 0F, 0F, 16, 1, 16),
-                PartPose.offset(8F, 23F, -8F));
+                CubeListBuilder.create(),
+                PartPose.ZERO);
 
         return LayerDefinition.create(meshdefinition, 256, 128);
     }

@@ -4,8 +4,10 @@ import art.arcane.mystcraft.api.world.AgeDirector;
 import art.arcane.mystcraft.api.world.logic.IBiomeController;
 import art.arcane.mystcraft.api.world.logic.ICelestial;
 import art.arcane.mystcraft.api.world.logic.IChunkProviderFinalization;
+import art.arcane.mystcraft.api.world.logic.IDynamicColorProvider;
 import art.arcane.mystcraft.api.world.logic.ILightingController;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import art.arcane.mystcraft.api.world.logic.IStaticColorProvider;
 import art.arcane.mystcraft.api.world.logic.ITerrainAlteration;
 import art.arcane.mystcraft.api.world.logic.ITerrainGenerator;
 import art.arcane.mystcraft.api.world.logic.IWeatherController;
@@ -36,6 +38,8 @@ public class AgeDirectorImpl implements AgeDirector {
     private boolean hasSea = true;
     private BlockState terrainBlock = Blocks.STONE.defaultBlockState();
     private BlockState seaBlock = Blocks.WATER.defaultBlockState();
+    private BlockState surfaceBlock = null;      // Override for surface (grass, sand, etc.) - null means use vanilla
+    private BlockState subsurfaceBlock = null;   // Override for subsurface (dirt, sandstone, etc.) - null means use vanilla
 
     // Biomes
     private String biomeController = "native";
@@ -124,6 +128,10 @@ public class AgeDirectorImpl implements AgeDirector {
     // Gradient colors
     private int sunsetColor = -1;
 
+    // World heights
+    private float cloudHeight = 192.0f;
+    private float horizonHeight = 0.0f;
+
     // Modifier stacks
     private final Deque<Integer> colorStack = new ArrayDeque<>();
     private final Deque<Float> angleStack = new ArrayDeque<>();
@@ -141,6 +149,8 @@ public class AgeDirectorImpl implements AgeDirector {
     private final List<IChunkProviderFinalization> chunkFinalizers = new ArrayList<>();
     private final List<IPopulate> populateFunctions = new ArrayList<>();
     private final List<ICelestial> celestials = new ArrayList<>();
+    private final List<IDynamicColorProvider> dynamicColorProviders = new ArrayList<>();
+    private final List<IStaticColorProvider> staticColorProviders = new ArrayList<>();
 
     public AgeDirectorImpl() {
         this(0L);
@@ -232,6 +242,36 @@ public class AgeDirectorImpl implements AgeDirector {
     @Override
     public BlockState getSeaBlock() {
         return seaBlock;
+    }
+
+    /**
+     * Sets the surface block override (replaces grass/sand/etc.).
+     * Null means use vanilla biome surfaces.
+     */
+    public void setSurfaceBlock(BlockState block) {
+        this.surfaceBlock = block;
+    }
+
+    /**
+     * Gets the surface block override, or null to use vanilla.
+     */
+    public BlockState getSurfaceBlock() {
+        return surfaceBlock;
+    }
+
+    /**
+     * Sets the subsurface block override (replaces dirt/sandstone/etc.).
+     * Null means use vanilla biome subsurfaces.
+     */
+    public void setSubsurfaceBlock(BlockState block) {
+        this.subsurfaceBlock = block;
+    }
+
+    /**
+     * Gets the subsurface block override, or null to use vanilla.
+     */
+    public BlockState getSubsurfaceBlock() {
+        return subsurfaceBlock;
     }
 
     // ========================= Biomes =========================
@@ -603,6 +643,28 @@ public class AgeDirectorImpl implements AgeDirector {
 
     public boolean isHorizonHidden() {
         return horizonHidden;
+    }
+
+    // ========================= World Heights =========================
+
+    @Override
+    public void setCloudHeight(float height) {
+        this.cloudHeight = height;
+    }
+
+    @Override
+    public float getCloudHeight() {
+        return cloudHeight;
+    }
+
+    @Override
+    public void setHorizonHeight(float height) {
+        this.horizonHeight = height;
+    }
+
+    @Override
+    public float getHorizonHeight() {
+        return horizonHeight;
     }
 
     @Override
@@ -1037,5 +1099,45 @@ public class AgeDirectorImpl implements AgeDirector {
     @Override
     public List<ICelestial> getCelestials() {
         return celestials;
+    }
+
+    // ========================= Color Provider Registration =========================
+
+    @Override
+    public void registerInterface(IDynamicColorProvider provider) {
+        if (provider != null) {
+            // Check for duplicate identifiers
+            String newId = provider.getIdentifier();
+            boolean isDuplicate = dynamicColorProviders.stream()
+                    .anyMatch(existing -> existing.getIdentifier().equals(newId));
+
+            if (!isDuplicate) {
+                dynamicColorProviders.add(provider);
+            }
+        }
+    }
+
+    @Override
+    public void registerInterface(IStaticColorProvider provider) {
+        if (provider != null) {
+            // Check for duplicate identifiers
+            String newId = provider.getIdentifier();
+            boolean isDuplicate = staticColorProviders.stream()
+                    .anyMatch(existing -> existing.getIdentifier().equals(newId));
+
+            if (!isDuplicate) {
+                staticColorProviders.add(provider);
+            }
+        }
+    }
+
+    @Override
+    public List<IDynamicColorProvider> getDynamicColorProviders() {
+        return dynamicColorProviders;
+    }
+
+    @Override
+    public List<IStaticColorProvider> getStaticColorProviders() {
+        return staticColorProviders;
     }
 }

@@ -152,7 +152,7 @@ public class AgeBuilder {
         for (IAgeSymbol symbol : expandedSymbols) {
             try {
                 symbol.registerLogic(director, symbolRand.nextLong());
-                LOGGER.debug("Applied symbol: {}", symbol.getRegistryName());
+                LOGGER.trace("Applied symbol: {}", symbol.getRegistryName());
             } catch (Exception e) {
                 LOGGER.error("Failed to apply symbol {}: {}",
                         symbol.getRegistryName(), e.getMessage());

@@ -103,6 +103,10 @@ public class AgeDataSyncHandler {
         // Special
         config.putBoolean("HorizonHidden", ageData.isHorizonHidden());
 
+        // World heights
+        config.putFloat("CloudHeight", ageData.getCloudHeight());
+        config.putFloat("HorizonHeight", ageData.getHorizonHeight());
+
         syncData.put("AgeConfig", config);
 
         // Send the packet

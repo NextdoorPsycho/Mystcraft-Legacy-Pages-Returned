@@ -73,6 +73,8 @@ public class AgeData extends SavedData {
     private static final String TAG_SPIKES_ENABLED = "SpikesEnabled";
     private static final String TAG_SPHERES_ENABLED = "SpheresEnabled";
     private static final String TAG_TENDRILS_ENABLED = "TendrilsEnabled";
+    private static final String TAG_CLOUD_HEIGHT = "CloudHeight";
+    private static final String TAG_HORIZON_HEIGHT = "HorizonHeight";
     private static final String TAG_DECK_ORDERS = "DeckOrders";
 
     private int ageUID;
@@ -116,6 +118,8 @@ public class AgeData extends SavedData {
     private boolean spikesEnabled = false;
     private boolean spheresEnabled = false;
     private boolean tendrilsEnabled = false;
+    private float cloudHeight = 192.0f;
+    private float horizonHeight = 0.0f;
 
     // Instability deck order storage (for persistence across sessions)
     private final Map<String, List<String>> deckOrders = new HashMap<>();
@@ -217,6 +221,8 @@ public class AgeData extends SavedData {
             this.spikesEnabled = config.getBoolean(TAG_SPIKES_ENABLED);
             this.spheresEnabled = config.getBoolean(TAG_SPHERES_ENABLED);
             this.tendrilsEnabled = config.getBoolean(TAG_TENDRILS_ENABLED);
+            this.cloudHeight = config.contains(TAG_CLOUD_HEIGHT) ? config.getFloat(TAG_CLOUD_HEIGHT) : 192.0f;
+            this.horizonHeight = config.contains(TAG_HORIZON_HEIGHT) ? config.getFloat(TAG_HORIZON_HEIGHT) : 0.0f;
         }
 
         // Load deck orders
@@ -299,6 +305,8 @@ public class AgeData extends SavedData {
         config.putBoolean(TAG_SPIKES_ENABLED, spikesEnabled);
         config.putBoolean(TAG_SPHERES_ENABLED, spheresEnabled);
         config.putBoolean(TAG_TENDRILS_ENABLED, tendrilsEnabled);
+        config.putFloat(TAG_CLOUD_HEIGHT, cloudHeight);
+        config.putFloat(TAG_HORIZON_HEIGHT, horizonHeight);
         tag.put(TAG_CONFIG, config);
 
         // Save deck orders
@@ -498,6 +506,8 @@ public class AgeData extends SavedData {
     public boolean areSpikesEnabled() { return spikesEnabled; }
     public boolean areSpheresEnabled() { return spheresEnabled; }
     public boolean areTendrilsEnabled() { return tendrilsEnabled; }
+    public float getCloudHeight() { return cloudHeight; }
+    public float getHorizonHeight() { return horizonHeight; }
 
     /**
      * Copies configuration from an AgeDirectorImpl.
@@ -534,6 +544,8 @@ public class AgeData extends SavedData {
         this.spikesEnabled = director.areSpikesEnabled();
         this.spheresEnabled = director.areSpheresEnabled();
         this.tendrilsEnabled = director.areTendrilsEnabled();
+        this.cloudHeight = director.getCloudHeight();
+        this.horizonHeight = director.getHorizonHeight();
         this.instability = director.getInstability();
         setDirty();
     }

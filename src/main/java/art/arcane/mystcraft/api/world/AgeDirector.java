@@ -3,8 +3,10 @@ package art.arcane.mystcraft.api.world;
 import art.arcane.mystcraft.api.world.logic.IBiomeController;
 import art.arcane.mystcraft.api.world.logic.ICelestial;
 import art.arcane.mystcraft.api.world.logic.IChunkProviderFinalization;
+import art.arcane.mystcraft.api.world.logic.IDynamicColorProvider;
 import art.arcane.mystcraft.api.world.logic.ILightingController;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import art.arcane.mystcraft.api.world.logic.IStaticColorProvider;
 import art.arcane.mystcraft.api.world.logic.ITerrainAlteration;
 import art.arcane.mystcraft.api.world.logic.ITerrainGenerator;
 import art.arcane.mystcraft.api.world.logic.IWeatherController;
@@ -492,6 +494,32 @@ public interface AgeDirector {
      */
     void setHorizonHidden(boolean hidden);
 
+    // ========================= World Heights =========================
+
+    /**
+     * Sets the cloud height for this Age.
+     * @param height The Y level where clouds appear (default 192.0)
+     */
+    void setCloudHeight(float height);
+
+    /**
+     * Gets the cloud height.
+     * @return The cloud height Y level
+     */
+    float getCloudHeight();
+
+    /**
+     * Sets the horizon height for this Age.
+     * @param height The Y level of the horizon line (default 0.0)
+     */
+    void setHorizonHeight(float height);
+
+    /**
+     * Gets the horizon height.
+     * @return The horizon height Y level
+     */
+    float getHorizonHeight();
+
     // ========================= Additional Structures =========================
 
     /**
@@ -786,4 +814,34 @@ public interface AgeDirector {
      * @return List of celestials (never null)
      */
     List<ICelestial> getCelestials();
+
+    // ========================= Color Provider Registration =========================
+
+    /**
+     * Registers a dynamic color provider for this Age.
+     * Multiple providers can be registered per color type and their colors will be averaged.
+     *
+     * @param provider The color provider implementation
+     */
+    void registerInterface(IDynamicColorProvider provider);
+
+    /**
+     * Registers a static color provider for this Age.
+     * Multiple providers can be registered per color type and their colors will be averaged.
+     *
+     * @param provider The color provider implementation
+     */
+    void registerInterface(IStaticColorProvider provider);
+
+    /**
+     * Gets all registered dynamic color providers.
+     * @return List of dynamic color providers (never null)
+     */
+    List<IDynamicColorProvider> getDynamicColorProviders();
+
+    /**
+     * Gets all registered static color providers.
+     * @return List of static color providers (never null)
+     */
+    List<IStaticColorProvider> getStaticColorProviders();
 }

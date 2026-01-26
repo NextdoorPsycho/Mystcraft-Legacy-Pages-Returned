@@ -1,9 +1,16 @@
 package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.api.world.logic.IBiomeController;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
+import art.arcane.mystcraft.world.gen.biome.AgeBiomeSource;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerGrid;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerNoise;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerSingle;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerTiled;
 import com.mojang.serialization.Lifecycle;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -13,6 +20,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.border.BorderChangeListener;
@@ -43,6 +51,22 @@ import java.util.function.Supplier;
 public class AgeDimensionFactory {
 
     private static final String DIMENSION_PREFIX = "mystcraft_age_";
+
+    // Dimension type resource keys for different age styles
+    private static final ResourceKey<DimensionType> DIM_TYPE_NORMAL =
+            ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_normal"));
+    private static final ResourceKey<DimensionType> DIM_TYPE_NETHER =
+            ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_nether"));
+    private static final ResourceKey<DimensionType> DIM_TYPE_END =
+            ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_end"));
+    private static final ResourceKey<DimensionType> DIM_TYPE_DARK =
+            ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_dark"));
+    private static final ResourceKey<DimensionType> DIM_TYPE_BRIGHT =
+            ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_bright"));
+    private static final ResourceKey<DimensionType> DIM_TYPE_CAVE =
+            ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_cave"));
+    private static final ResourceKey<DimensionType> DIM_TYPE_SKYLANDS =
+            ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_skylands"));
 
     // Cached reflection fields
     private static Field executorField;
@@ -299,8 +323,55 @@ public class AgeDimensionFactory {
                 return null;
             }
 
-            // Get biome source from overworld
-            BiomeSource biomeSource = overworldStem.generator().getBiomeSource();
+            // Create biome source based on director configuration
+            BiomeSource biomeSource;
+            if (director != null) {
+                // Get the biome controller registered by symbols
+                IBiomeController biomeController = director.getBiomeControllerImpl();
+                List<Holder<Biome>> directorBiomes = director.getBiomes();
+
+                // Check if controller exists but has empty biomes while director has biomes
+                // This can happen if the biome controller symbol was applied before biome symbols
+                if (biomeController != null && biomeController.getBiomes().isEmpty() && !directorBiomes.isEmpty()) {
+                    Mystcraft.LOGGER.info("Age {} controller has 0 biomes but director has {}, recreating controller",
+                            ageUID, directorBiomes.size());
+                    // Recreate the controller with the actual biomes
+                    String controllerType = biomeController.getType();
+                    biomeController = switch (controllerType) {
+                        case "single" -> new BiomeControllerSingle(directorBiomes, director.getSeed());
+                        case "tiny" -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.TINY);
+                        case "small" -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.SMALL);
+                        case "large" -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.LARGE);
+                        case "huge" -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.HUGE);
+                        case "tiled" -> new BiomeControllerTiled(directorBiomes, director.getSeed());
+                        case "grid" -> new BiomeControllerGrid(directorBiomes, director.getSeed());
+                        default -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.MEDIUM);
+                    };
+                    director.registerInterface(biomeController);
+                }
+
+                if (biomeController != null && !biomeController.getBiomes().isEmpty()) {
+                    // Use the director's biome controller wrapped in AgeBiomeSource
+                    biomeSource = new AgeBiomeSource(biomeController, director.getSeed());
+                    Mystcraft.LOGGER.info("Created Age {} with biome controller type: {} ({} biomes)",
+                            ageUID, biomeController.getType(), biomeController.getBiomes().size());
+                } else if (!directorBiomes.isEmpty()) {
+                    // No controller but biomes were added - create a default medium noise controller
+                    Mystcraft.LOGGER.info("Age {} has {} biomes but no controller, creating default noise controller",
+                            ageUID, directorBiomes.size());
+                    IBiomeController defaultController = new BiomeControllerNoise(
+                            directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.MEDIUM);
+                    director.registerInterface(defaultController);
+                    biomeSource = new AgeBiomeSource(defaultController, director.getSeed());
+                } else {
+                    // No biomes or controller - use overworld biome source as fallback
+                    Mystcraft.LOGGER.warn("Age {} has no biomes or controller, using overworld biomes", ageUID);
+                    biomeSource = overworldStem.generator().getBiomeSource();
+                }
+            } else {
+                // No director - use overworld biome source
+                biomeSource = overworldStem.generator().getBiomeSource();
+            }
 
             // Create chunk generator based on director configuration
             ChunkGenerator generator;
@@ -313,14 +384,106 @@ public class AgeDimensionFactory {
                 generator = overworldStem.generator();
             }
 
+            // Select the appropriate dimension type based on director settings
+            Holder<DimensionType> dimensionType = selectDimensionType(server, director, overworldStem.type());
+
             return new LevelStem(
-                    overworldStem.type(),
+                    dimensionType,
                     generator
             );
         } catch (Exception e) {
             Mystcraft.LOGGER.error("Failed to create LevelStem", e);
             return null;
         }
+    }
+
+    /**
+     * Selects the appropriate dimension type based on AgeDirector settings.
+     * Falls back to the default (overworld) type if custom types aren't available.
+     *
+     * @param server The Minecraft server
+     * @param director The AgeDirector with age configuration (can be null)
+     * @param defaultType The default dimension type to use if no custom type matches
+     * @return The selected dimension type holder
+     */
+    private static Holder<DimensionType> selectDimensionType(
+            @NotNull MinecraftServer server,
+            @Nullable AgeDirectorImpl director,
+            @NotNull Holder<DimensionType> defaultType
+    ) {
+        if (director == null) {
+            return defaultType;
+        }
+
+        // Determine which dimension type to use based on director properties
+        ResourceKey<DimensionType> selectedKey = determineDimensionTypeKey(director);
+
+        // Try to get the dimension type from the registry
+        Registry<DimensionType> dimTypeRegistry = server.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);
+        Holder<DimensionType> holder = dimTypeRegistry.getHolder(selectedKey).orElse(null);
+
+        if (holder != null) {
+            Mystcraft.LOGGER.debug("Using dimension type {} for age", selectedKey.location());
+            return holder;
+        }
+
+        // Fallback to default if custom type not found
+        Mystcraft.LOGGER.warn("Dimension type {} not found, using default", selectedKey.location());
+        return defaultType;
+    }
+
+    /**
+     * Determines which dimension type resource key to use based on AgeDirector settings.
+     *
+     * Priority order:
+     * 1. Nether-style (nether terrain type or nether fort enabled)
+     * 2. End-style (end terrain type)
+     * 3. Cave-style (cave terrain or skylands disabled with no sea)
+     * 4. Skylands (floating islands or skylands terrain)
+     * 5. Bright (lighting type is "bright")
+     * 6. Dark (lighting type is "dark" or no sun/moon)
+     * 7. Normal (default)
+     */
+    private static ResourceKey<DimensionType> determineDimensionTypeKey(@NotNull AgeDirectorImpl director) {
+        String terrainType = director.getTerrainType();
+        String lightingType = director.getLightingType();
+
+        // Check for nether-style age
+        if ("nether".equalsIgnoreCase(terrainType) || director.isNetherFortEnabled()) {
+            return DIM_TYPE_NETHER;
+        }
+
+        // Check for end-style age
+        if ("end".equalsIgnoreCase(terrainType)) {
+            return DIM_TYPE_END;
+        }
+
+        // Check for cave-style age (has ceiling, no skylight)
+        if ("cave".equalsIgnoreCase(terrainType)) {
+            return DIM_TYPE_CAVE;
+        }
+
+        // Check for skylands
+        if (director.areSkylandsEnabled() || director.areFloatingIslandsEnabled() || "skylands".equalsIgnoreCase(terrainType)) {
+            return DIM_TYPE_SKYLANDS;
+        }
+
+        // Check lighting type for bright/dark variants
+        if ("bright".equalsIgnoreCase(lightingType)) {
+            return DIM_TYPE_BRIGHT;
+        }
+
+        if ("dark".equalsIgnoreCase(lightingType)) {
+            return DIM_TYPE_DARK;
+        }
+
+        // Check celestial visibility - no sun AND no moon suggests a dark world
+        if (!director.isSunVisible() && !director.isMoonVisible()) {
+            return DIM_TYPE_DARK;
+        }
+
+        // Default to normal
+        return DIM_TYPE_NORMAL;
     }
 
     /**

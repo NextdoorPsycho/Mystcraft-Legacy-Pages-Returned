@@ -114,6 +114,13 @@ public final class MystcraftNetwork {
                 .consumerMainThread(EntityBookActivatePacket::handle)
                 .add();
 
+        // Client -> Server: Activate linking book from GUI (block entity-based: bookstand/lectern)
+        CHANNEL.messageBuilder(BlockBookActivatePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(BlockBookActivatePacket::encode)
+                .decoder(BlockBookActivatePacket::decode)
+                .consumerMainThread(BlockBookActivatePacket::handle)
+                .add();
+
         Mystcraft.LOGGER.info("Registered {} network packets", packetId);
     }
 

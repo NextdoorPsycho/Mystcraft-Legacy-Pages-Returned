@@ -60,7 +60,10 @@ public final class InstabilityEffects {
             } else {
                 // Get instability level for this age
                 float instability = getInstability(dimension);
-                targetIntensity = instability;
+                // Normalize instability to 0-1 range for visual effects
+                // Instability values can range from 0 to 200+, so we normalize against a max of 200
+                // This gives a smooth progression: 0 = none, 50 = low, 100 = medium, 150 = high, 200+ = max
+                targetIntensity = Math.min(instability / 200.0f, 1.0f);
                 updateIntensity();
             }
 

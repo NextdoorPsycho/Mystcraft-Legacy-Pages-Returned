@@ -4,9 +4,19 @@ import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.api.world.AgeDirector;
 import art.arcane.mystcraft.symbol.SymbolBase;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.world.weather.WeatherControllerAlwaysRain;
+import art.arcane.mystcraft.world.weather.WeatherControllerAlwaysThunder;
+import art.arcane.mystcraft.world.weather.WeatherControllerNever;
+import art.arcane.mystcraft.world.weather.WeatherControllerNormal;
+import art.arcane.mystcraft.world.weather.WeatherControllerSnow;
+import art.arcane.mystcraft.world.weather.WeatherControllerCloudy;
+import art.arcane.mystcraft.world.weather.WeatherControllerFast;
+import art.arcane.mystcraft.world.weather.WeatherControllerSlow;
+import art.arcane.mystcraft.world.weather.WeatherControllerBlizzard;
 
 /**
  * Weather control symbols.
+ * These symbols register weather controllers that affect precipitation and weather events.
  */
 public final class WeatherSymbols {
 
@@ -36,7 +46,7 @@ public final class WeatherSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setWeatherType("normal");
+            director.registerInterface(new WeatherControllerNormal());
         }
     }
 
@@ -50,7 +60,7 @@ public final class WeatherSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setWeatherType("off");
+            director.registerInterface(new WeatherControllerNever());
         }
     }
 
@@ -64,7 +74,7 @@ public final class WeatherSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setWeatherType("always");
+            director.registerInterface(new WeatherControllerAlwaysRain());
             director.addInstability(getInstabilityCost());
         }
     }
@@ -79,7 +89,7 @@ public final class WeatherSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setWeatherType("rain");
+            director.registerInterface(new WeatherControllerAlwaysRain());
             director.addInstability(getInstabilityCost());
         }
     }
@@ -94,7 +104,7 @@ public final class WeatherSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setWeatherType("snow");
+            director.registerInterface(new WeatherControllerSnow());
             director.addInstability(getInstabilityCost());
         }
     }
@@ -109,7 +119,7 @@ public final class WeatherSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setWeatherType("storm");
+            director.registerInterface(new WeatherControllerAlwaysThunder());
             director.setLightningEnabled(true);
             director.addInstability(getInstabilityCost());
         }
@@ -125,7 +135,7 @@ public final class WeatherSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setWeatherType("cloudy");
+            director.registerInterface(new WeatherControllerCloudy());
         }
     }
 
@@ -139,7 +149,7 @@ public final class WeatherSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setWeatherType("fast");
+            director.registerInterface(new WeatherControllerFast());
             director.addInstability(getInstabilityCost());
         }
     }
@@ -154,7 +164,7 @@ public final class WeatherSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setWeatherType("slow");
+            director.registerInterface(new WeatherControllerSlow());
             director.addInstability(getInstabilityCost());
         }
     }
@@ -169,7 +179,7 @@ public final class WeatherSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setWeatherType("thunder");
+            director.registerInterface(new WeatherControllerAlwaysThunder());
             director.setLightningEnabled(true);
             director.addInstability(getInstabilityCost());
         }
@@ -185,7 +195,7 @@ public final class WeatherSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setWeatherType("blizzard");
+            director.registerInterface(new WeatherControllerBlizzard());
             director.addInstability(getInstabilityCost());
         }
     }

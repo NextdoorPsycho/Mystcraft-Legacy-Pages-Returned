@@ -4,9 +4,14 @@ import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.api.world.AgeDirector;
 import art.arcane.mystcraft.symbol.SymbolBase;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.world.lighting.LightingControllerBright;
+import art.arcane.mystcraft.world.lighting.LightingControllerDark;
+import art.arcane.mystcraft.world.lighting.LightingControllerNormal;
+import art.arcane.mystcraft.world.lighting.LightingControllerNether;
 
 /**
  * Lighting control symbols.
+ * These symbols register lighting controllers that affect the Age's brightness curve.
  */
 public final class LightingSymbols {
 
@@ -29,7 +34,7 @@ public final class LightingSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setLightingType("normal");
+            director.registerInterface(new LightingControllerNormal());
         }
     }
 
@@ -43,7 +48,7 @@ public final class LightingSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setLightingType("bright");
+            director.registerInterface(new LightingControllerBright());
             director.addInstability(getInstabilityCost());
         }
     }
@@ -58,7 +63,7 @@ public final class LightingSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setLightingType("dark");
+            director.registerInterface(new LightingControllerDark());
             director.addInstability(getInstabilityCost());
         }
     }
@@ -77,7 +82,7 @@ public final class LightingSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
-            director.setLightingType("nether");
+            director.registerInterface(new LightingControllerNether());
             director.addInstability(getInstabilityCost());
         }
     }

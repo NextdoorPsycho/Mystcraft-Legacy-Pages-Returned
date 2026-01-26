@@ -1,7 +1,10 @@
 package art.arcane.mystcraft.client;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
+import art.arcane.mystcraft.portal.PortalUtils;
+import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColor;
@@ -9,11 +12,12 @@ import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.FoliageColor;
 import net.minecraft.world.level.GrassColor;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
@@ -130,6 +134,28 @@ public class AgeBlockColorHandler {
                 Blocks.WATER,
                 Blocks.WATER_CAULDRON
         );
+
+        // Portal color handler - gets color from the book receptacle
+        // Note: In rendering context, level may be a ChunkRenderCache, not a Level
+        // We use Minecraft.getInstance().level for the trace which works for client
+        BlockColor portalColor = (state, blockAndTintGetter, pos, tintIndex) -> {
+            if (pos == null) {
+                return 0x4488FF; // Default mystcraft blue
+            }
+
+            // Use the client level for tracing to receptacle
+            Level clientLevel = Minecraft.getInstance().level;
+            if (clientLevel != null) {
+                BlockEntity be = PortalUtils.findReceptacle(clientLevel, pos);
+                if (be instanceof BookReceptacleBlockEntity receptacle) {
+                    return receptacle.getPortalColor();
+                }
+            }
+
+            return 0x4488FF; // Default mystcraft blue
+        };
+
+        event.register(portalColor, ModBlocks.LINK_PORTAL.get());
 
         Mystcraft.LOGGER.info("Registered Age block color handlers");
     }

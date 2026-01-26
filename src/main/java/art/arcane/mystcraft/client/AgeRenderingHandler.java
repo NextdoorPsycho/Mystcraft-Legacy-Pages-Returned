@@ -3,7 +3,6 @@ package art.arcane.mystcraft.client;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
-import art.arcane.mystcraft.world.AgeManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Camera;
@@ -13,11 +12,10 @@ import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.material.FogType;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
@@ -32,6 +30,9 @@ public class AgeRenderingHandler {
     private static final ResourceLocation SUN_LOCATION = new ResourceLocation("textures/environment/sun.png");
     private static final ResourceLocation MOON_PHASES_LOCATION = new ResourceLocation("textures/environment/moon_phases.png");
     private static final ResourceLocation END_SKY_LOCATION = new ResourceLocation("textures/environment/end_sky.png");
+
+    // Track the current age to detect dimension changes
+    private static int lastKnownAgeUID = -1;
 
     /**
      * Gets the current Age UID the player is in, or -1 if not in an Age.
@@ -57,10 +58,63 @@ public class AgeRenderingHandler {
     }
 
     /**
+     * Handles level load to register dimension effects for ages.
+     */
+    @SubscribeEvent
+    public static void onLevelLoad(LevelEvent.Load event) {
+        if (event.getLevel().isClientSide()) {
+            // Check if we're entering a Mystcraft age
+            int ageUID = getCurrentAgeUID();
+            if (ageUID >= 0 && ageUID != lastKnownAgeUID) {
+                // Register dimension effects for this age
+                AgeDimensionEffectsManager.registerAgeEffects(ageUID);
+                lastKnownAgeUID = ageUID;
+                Mystcraft.LOGGER.debug("Entered Age {}, registered dimension effects", ageUID);
+            }
+        }
+    }
+
+    /**
+     * Handles level unload to cleanup dimension effects.
+     */
+    @SubscribeEvent
+    public static void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel().isClientSide()) {
+            // Cleanup when leaving
+            if (lastKnownAgeUID >= 0) {
+                AgeDimensionEffectsManager.unregisterAgeEffects(lastKnownAgeUID);
+                lastKnownAgeUID = -1;
+            }
+        }
+    }
+
+    /**
+     * Tracks dimension changes during gameplay.
+     */
+    private static void checkDimensionChange() {
+        int currentAgeUID = getCurrentAgeUID();
+        if (currentAgeUID != lastKnownAgeUID) {
+            // Unregister old effects
+            if (lastKnownAgeUID >= 0) {
+                AgeDimensionEffectsManager.unregisterAgeEffects(lastKnownAgeUID);
+            }
+
+            // Register new effects
+            if (currentAgeUID >= 0) {
+                AgeDimensionEffectsManager.registerAgeEffects(currentAgeUID);
+            }
+
+            lastKnownAgeUID = currentAgeUID;
+        }
+    }
+
+    /**
      * Modifies fog color based on Age configuration.
      */
     @SubscribeEvent
     public static void onComputeFogColor(ViewportEvent.ComputeFogColor event) {
+        // Check for dimension changes
+        checkDimensionChange();
         int ageUID = getCurrentAgeUID();
         if (ageUID < 0) return;
 

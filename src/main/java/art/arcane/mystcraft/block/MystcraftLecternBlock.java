@@ -110,7 +110,7 @@ public class MystcraftLecternBlock extends BaseEntityBlock {
             } else {
                 // Open book GUI on client side
                 if (level.isClientSide) {
-                    openBookScreen(lectern.getBook());
+                    openBookScreen(lectern.getBook(), pos);
                 }
                 return InteractionResult.sidedSuccess(level.isClientSide);
             }
@@ -157,10 +157,10 @@ public class MystcraftLecternBlock extends BaseEntityBlock {
     }
 
     /**
-     * Opens the book screen on the client side.
+     * Opens the book screen on the client side for a book on this block.
      */
-    private void openBookScreen(ItemStack book) {
+    private void openBookScreen(ItemStack book, BlockPos pos) {
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
-            art.arcane.mystcraft.client.screen.BookScreen.open(book));
+            art.arcane.mystcraft.client.screen.BookScreen.openForBlock(book, pos));
     }
 }

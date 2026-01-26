@@ -190,6 +190,8 @@ public class Mystcraft {
                     art.arcane.mystcraft.client.renderer.StarFissureRenderer::new);
             event.registerBlockEntityRenderer(ModBlockEntities.WRITING_DESK.get(),
                     art.arcane.mystcraft.client.renderer.WritingDeskRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.BOOK_RECEPTACLE.get(),
+                    art.arcane.mystcraft.client.renderer.BookReceptacleRenderer::new);
 
             // Entity renderers
             event.registerEntityRenderer(ModEntities.LINKBOOK.get(),
@@ -212,5 +214,8 @@ public class Mystcraft {
             // Tint the ink bucket fluid layer black
             event.register((stack, tintIndex) -> tintIndex == 1 ? 0xFF1A1A1A : 0xFFFFFFFF, ModItems.INK_BUCKET.get());
         }
+
+        // Model wrapping removed - using builtin/entity parent in page.json instead
+        // which automatically uses the BEWLR registered via IClientItemExtensions
     }
 }

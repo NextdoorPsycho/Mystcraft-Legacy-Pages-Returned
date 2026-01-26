@@ -4,6 +4,7 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
+import art.arcane.mystcraft.network.BlockBookActivatePacket;
 import art.arcane.mystcraft.network.EntityBookActivatePacket;
 import art.arcane.mystcraft.network.LinkBookActivatePacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
@@ -58,6 +59,7 @@ public class BookScreen extends Screen {
     private final ItemStack book;
     private final InteractionHand hand;
     private final int entityId;
+    private final BlockPos blockPos;  // Non-null when book is on a block entity (bookstand/lectern)
     private final boolean isAgebook;
     private final boolean isLinkbook;
 
@@ -74,18 +76,36 @@ public class BookScreen extends Screen {
      * Constructor for hand-based book viewing.
      */
     public BookScreen(ItemStack book, InteractionHand hand) {
-        this(book, hand, HAND_BASED);
+        this(book, hand, HAND_BASED, null);
     }
 
     /**
-     * Constructor for entity-based or hand-based book viewing.
-     * @param entityId -1 for hand-based, or the entity ID for LinkbookEntity-based
+     * Constructor for entity-based book viewing.
+     * @param entityId the entity ID for LinkbookEntity-based
      */
     public BookScreen(ItemStack book, InteractionHand hand, int entityId) {
+        this(book, hand, entityId, null);
+    }
+
+    /**
+     * Constructor for block entity-based book viewing (bookstand/lectern).
+     * @param blockPos the position of the block entity holding the book
+     */
+    public BookScreen(ItemStack book, BlockPos blockPos) {
+        this(book, InteractionHand.MAIN_HAND, HAND_BASED, blockPos);
+    }
+
+    /**
+     * Full constructor for all book viewing modes.
+     * @param entityId -1 for non-entity, or the entity ID for LinkbookEntity-based
+     * @param blockPos null for non-block, or the position for bookstand/lectern-based
+     */
+    private BookScreen(ItemStack book, InteractionHand hand, int entityId, BlockPos blockPos) {
         super(getBookTitle(book));
         this.book = book;
         this.hand = hand;
         this.entityId = entityId;
+        this.blockPos = blockPos;
         this.isAgebook = book.getItem() instanceof AgebookItem;
         this.isLinkbook = book.getItem() instanceof LinkbookItem;
 
@@ -120,8 +140,13 @@ public class BookScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // Don't render dark background overlay - book has its own visual backing
+    }
+
+    @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // Don't render dark background overlay - book has its own backing
+        // Render with custom background handling
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(leftPos, topPos, 0);
         guiGraphics.pose().scale(xScale, yScale, 1);
@@ -269,8 +294,11 @@ public class BookScreen extends Screen {
             double localX = (mouseX - leftPos) / xScale;
             double localY = (mouseY - topPos) / yScale;
 
-            // Check link panel click (page 0, right page panel area)
-            if (currentPageIndex == 0 &&
+            // Check link panel click (page 0 always has panel, other pages may have link panels)
+            boolean hasLinkPanelOnCurrentPage = (currentPageIndex == 0) ||
+                (!getCurrentPage().isEmpty() && Page.isLinkPanel(getCurrentPage()));
+
+            if (hasLinkPanelOnCurrentPage &&
                 localX >= 173 && localX <= 305 &&
                 localY >= 20 && localY <= 103) {
                 if (canLink()) {
@@ -396,9 +424,14 @@ public class BookScreen extends Screen {
      * Performs the link when the link panel is clicked.
      */
     private void performLink() {
-        if (entityId == HAND_BASED) {
+        if (blockPos != null) {
+            // Book is on a block entity (bookstand/lectern)
+            MystcraftNetwork.sendToServer(new BlockBookActivatePacket(blockPos));
+        } else if (entityId == HAND_BASED) {
+            // Book is in player's hand
             MystcraftNetwork.sendToServer(new LinkBookActivatePacket(hand));
         } else {
+            // Book is on a LinkbookEntity
             MystcraftNetwork.sendToServer(new EntityBookActivatePacket(entityId));
         }
         this.onClose();
@@ -435,6 +468,18 @@ public class BookScreen extends Screen {
             if (mc.player == null) return;
 
             mc.setScreen(new BookScreen(book, InteractionHand.MAIN_HAND, entityId));
+        }
+    }
+
+    /**
+     * Opens a book screen for a book on a block entity (bookstand/lectern).
+     */
+    public static void openForBlock(ItemStack book, BlockPos blockPos) {
+        if (book.getItem() instanceof AgebookItem || book.getItem() instanceof LinkbookItem) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player == null) return;
+
+            mc.setScreen(new BookScreen(book, blockPos));
         }
     }
 }

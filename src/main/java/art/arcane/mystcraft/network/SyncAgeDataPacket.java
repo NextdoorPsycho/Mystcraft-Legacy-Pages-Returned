@@ -1,10 +1,14 @@
 package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.api.world.logic.ICelestial;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.event.network.CustomPayloadEvent;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Packet sent from server to client to sync Age data.
@@ -201,6 +205,35 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
         public static boolean areExplosionsEnabled(int ageUID) {
             CompoundTag config = getConfig(ageUID);
             return config != null && config.getBoolean("ExplosionsEnabled");
+        }
+
+        public static int getSunsetColor(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.contains("SunsetColor") ? config.getInt("SunsetColor") : -1;
+        }
+
+        public static float getCloudHeight(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.contains("CloudHeight") ? config.getFloat("CloudHeight") : 192.0f;
+        }
+
+        public static float getHorizonHeight(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.contains("HorizonHeight") ? config.getFloat("HorizonHeight") : 0.0f;
+        }
+
+        /**
+         * Gets the list of celestial objects for the age.
+         * Currently returns empty list - celestials are not synced via packets yet.
+         * This will be populated when custom celestial symbols are implemented.
+         *
+         * @param ageUID The age UID
+         * @return List of celestials (may be empty)
+         */
+        public static List<ICelestial> getCelestials(int ageUID) {
+            // TODO: Implement celestial serialization/deserialization when celestial symbols are added
+            // For now, return empty list to use default sun/moon rendering
+            return Collections.emptyList();
         }
     }
 }

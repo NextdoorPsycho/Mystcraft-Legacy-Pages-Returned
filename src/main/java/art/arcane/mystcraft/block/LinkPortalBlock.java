@@ -164,28 +164,13 @@ public class LinkPortalBlock extends Block {
 
     /**
      * Finds the book receptacle controlling this portal.
+     * Uses PortalUtils.findReceptacle() which correctly follows the direction chain.
      */
     private BookReceptacleBlockEntity findReceptacle(Level level, BlockPos pos, BlockState state) {
-        Direction sourceDir = state.getValue(SOURCE_DIRECTION);
-
-        // Search along the source direction for the receptacle
-        BlockPos checkPos = pos.relative(sourceDir);
-        for (int i = 0; i < 16; i++) {
-            BlockState checkState = level.getBlockState(checkPos);
-
-            if (checkState.getBlock() instanceof BookReceptacleBlock) {
-                BlockEntity be = level.getBlockEntity(checkPos);
-                if (be instanceof BookReceptacleBlockEntity receptacle) {
-                    return receptacle;
-                }
-            } else if (!(checkState.getBlock() instanceof CrystalBlock ||
-                         checkState.getBlock() instanceof LinkPortalBlock)) {
-                break;
-            }
-
-            checkPos = checkPos.relative(sourceDir);
+        BlockEntity be = PortalUtils.findReceptacle(level, pos);
+        if (be instanceof BookReceptacleBlockEntity receptacle) {
+            return receptacle;
         }
-
         return null;
     }
 

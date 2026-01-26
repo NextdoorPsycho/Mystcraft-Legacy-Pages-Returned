@@ -2,33 +2,45 @@ package art.arcane.mystcraft.grammar;
 
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.world.AgeDirector;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
- * Builds an Age configuration from symbols using the grammar system.
+ * Builds an Age configuration from symbols using the CFG grammar system.
  * This is the main entry point for creating Ages from page collections.
+ *
+ * Uses the full Context-Free Grammar tree expansion like the original Mystcraft,
+ * ensuring diverse and vibrant ages with proper symbol expansion.
  */
 public class AgeBuilder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AgeBuilder.class);
 
-    private final List<IAgeSymbol> symbols;
+    private final List<IAgeSymbol> inputSymbols;
     private final long seed;
-    private final GrammarGenerator.GenerationResult result;
+    private List<IAgeSymbol> expandedSymbols;
     private AgeDirectorImpl director;
+    private float instability;
+    private int providedCount;
+    private int generatedCount;
 
     /**
      * Creates an AgeBuilder with the given symbols and seed.
      */
     public AgeBuilder(List<IAgeSymbol> symbols, long seed) {
-        this.symbols = symbols;
+        this.inputSymbols = new ArrayList<>(symbols);
         this.seed = seed;
-        this.result = GrammarGenerator.generateAge(symbols, seed);
+        this.providedCount = symbols.size();
+
+        // Perform CFG expansion
+        expandSymbols();
     }
 
     /**
@@ -36,6 +48,72 @@ public class AgeBuilder {
      */
     public static AgeBuilder random(long seed) {
         return new AgeBuilder(List.of(), seed);
+    }
+
+    /**
+     * Performs CFG-based symbol expansion like the original Mystcraft.
+     * Uses the grammar tree to expand provided symbols into a complete age specification.
+     */
+    private void expandSymbols() {
+        Random rand = new Random(seed);
+
+        // Convert input symbols to their registry names (terminals)
+        List<ResourceLocation> terminals = new ArrayList<>();
+        for (IAgeSymbol symbol : inputSymbols) {
+            terminals.add(symbol.getRegistryName());
+        }
+
+        LOGGER.info("Expanding Age with {} input symbols using CFG grammar", terminals.size());
+
+        // Build grammar tree and parse terminals
+        CFGGrammarTree tree = new CFGGrammarTree(GrammarRules.ROOT);
+        tree.parseTerminals(terminals, rand);
+
+        // Get the fully expanded symbol list
+        List<ResourceLocation> expandedNames = tree.getExpanded(rand);
+
+        LOGGER.info("CFG expansion produced {} symbols from {} inputs",
+                expandedNames.size(), terminals.size());
+
+        // Convert expanded names back to IAgeSymbol objects
+        expandedSymbols = new ArrayList<>();
+        for (ResourceLocation name : expandedNames) {
+            IAgeSymbol symbol = SymbolRegistry.get(name);
+            if (symbol != null) {
+                expandedSymbols.add(symbol);
+            } else {
+                LOGGER.debug("No symbol registered for grammar token: {}", name);
+            }
+        }
+
+        // Calculate counts and instability
+        generatedCount = expandedSymbols.size() - providedCount;
+        instability = calculateInstability();
+
+        LOGGER.info("Age generation complete: {} provided, {} generated, {} total, instability: {}",
+                providedCount, generatedCount, expandedSymbols.size(), instability);
+    }
+
+    /**
+     * Calculates instability based on symbols present.
+     */
+    private float calculateInstability() {
+        float total = 0.0f;
+
+        // Generated symbols add base instability
+        total += generatedCount * 5.0f;
+
+        // Each symbol contributes its own instability cost
+        for (IAgeSymbol symbol : expandedSymbols) {
+            total += symbol.getInstabilityCost();
+        }
+
+        // Bonus for well-written Ages (low generated count)
+        if (generatedCount == 0 && providedCount >= 5) {
+            total *= 0.8f; // 20% reduction for complete Ages
+        }
+
+        return Math.max(0.0f, total);
     }
 
     /**
@@ -49,12 +127,13 @@ public class AgeBuilder {
         director = new AgeDirectorImpl();
 
         LOGGER.info("Building Age with {} symbols (instability: {})",
-                result.getSymbols().size(), result.getInstability());
+                expandedSymbols.size(), instability);
 
         // Apply each symbol's logic to the director
-        for (IAgeSymbol symbol : result.getSymbols()) {
+        Random symbolRand = new Random(seed);
+        for (IAgeSymbol symbol : expandedSymbols) {
             try {
-                symbol.registerLogic(director, seed);
+                symbol.registerLogic(director, symbolRand.nextLong());
                 LOGGER.debug("Applied symbol: {}", symbol.getRegistryName());
             } catch (Exception e) {
                 LOGGER.error("Failed to apply symbol {}: {}",
@@ -63,37 +142,30 @@ public class AgeBuilder {
         }
 
         // Set the instability
-        director.setInstability(result.getInstability());
+        director.setInstability(instability);
 
         return director;
-    }
-
-    /**
-     * Gets the generation result containing symbols and instability info.
-     */
-    public GrammarGenerator.GenerationResult getResult() {
-        return result;
     }
 
     /**
      * Gets the final instability value.
      */
     public float getInstability() {
-        return result.getInstability();
+        return instability;
     }
 
     /**
      * Gets the list of all symbols (provided + generated).
      */
     public List<IAgeSymbol> getAllSymbols() {
-        return result.getSymbols();
+        return expandedSymbols;
     }
 
     /**
      * Gets the original input symbols.
      */
     public List<IAgeSymbol> getInputSymbols() {
-        return symbols;
+        return inputSymbols;
     }
 
     /**
@@ -107,14 +179,40 @@ public class AgeBuilder {
      * Checks if the Age was completely specified (no symbols were generated).
      */
     public boolean isComplete() {
-        return result.isComplete();
+        return generatedCount == 0;
+    }
+
+    /**
+     * Gets the number of provided symbols.
+     */
+    public int getProvidedCount() {
+        return providedCount;
+    }
+
+    /**
+     * Gets the number of generated symbols.
+     */
+    public int getGeneratedCount() {
+        return generatedCount;
     }
 
     /**
      * Gets validation issues with the symbol set.
      */
     public List<String> getValidationIssues() {
-        return GrammarGenerator.validateSymbols(result.getSymbols());
+        List<String> issues = new ArrayList<>();
+
+        // Check for conflicting symbols
+        boolean hasVoidTerrain = expandedSymbols.stream()
+                .anyMatch(s -> s.getRegistryName().getPath().equals("terrain_void"));
+        boolean hasCaves = expandedSymbols.stream()
+                .anyMatch(s -> s.getRegistryName().getPath().equals("caves"));
+
+        if (hasVoidTerrain && hasCaves) {
+            issues.add("Caves symbol conflicts with Void Terrain");
+        }
+
+        return issues;
     }
 
     /**
@@ -123,10 +221,10 @@ public class AgeBuilder {
     public String getSummary() {
         StringBuilder sb = new StringBuilder();
         sb.append("Age Summary:\n");
-        sb.append("  Symbols: ").append(result.getSymbols().size()).append("\n");
-        sb.append("  Provided: ").append(result.getProvidedCount()).append("\n");
-        sb.append("  Generated: ").append(result.getGeneratedCount()).append("\n");
-        sb.append("  Instability: ").append(String.format("%.1f", result.getInstability())).append("\n");
+        sb.append("  Symbols: ").append(expandedSymbols.size()).append("\n");
+        sb.append("  Provided: ").append(providedCount).append("\n");
+        sb.append("  Generated: ").append(generatedCount).append("\n");
+        sb.append("  Instability: ").append(String.format("%.1f", instability)).append("\n");
 
         if (!isComplete()) {
             sb.append("  Status: INCOMPLETE (random elements added)\n");
@@ -152,7 +250,7 @@ public class AgeBuilder {
         StringBuilder sb = new StringBuilder();
         sb.append("Symbols in Age:\n");
 
-        for (IAgeSymbol symbol : result.getSymbols()) {
+        for (IAgeSymbol symbol : expandedSymbols) {
             ResourceLocation name = symbol.getRegistryName();
             sb.append("  - ").append(name.getPath())
                     .append(" (").append(symbol.getCategory().name())

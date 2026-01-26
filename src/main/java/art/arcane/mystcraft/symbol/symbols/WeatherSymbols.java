@@ -20,6 +20,10 @@ public final class WeatherSymbols {
         SymbolRegistry.register(new WeatherSnow());
         SymbolRegistry.register(new WeatherStorm());
         SymbolRegistry.register(new WeatherCloudy());
+        SymbolRegistry.register(new WeatherFast());
+        SymbolRegistry.register(new WeatherSlow());
+        SymbolRegistry.register(new WeatherThunder());
+        SymbolRegistry.register(new WeatherBlizzard());
     }
 
     public static class WeatherNormal extends SymbolBase {
@@ -122,6 +126,67 @@ public final class WeatherSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setWeatherType("cloudy");
+        }
+    }
+
+    public static class WeatherFast extends SymbolBase {
+        public WeatherFast() {
+            super(SymbolRegistry.mystcraftId("weather_fast"), SymbolCategory.WEATHER);
+            setCardRank(3);
+            setInstabilityCost(3.0f);
+            setPoem("Sustain", "Dynamic", "Spur", "Change");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setWeatherType("fast");
+            director.addInstability(getInstabilityCost());
+        }
+    }
+
+    public static class WeatherSlow extends SymbolBase {
+        public WeatherSlow() {
+            super(SymbolRegistry.mystcraftId("weather_slow"), SymbolCategory.WEATHER);
+            setCardRank(3);
+            setInstabilityCost(2.0f);
+            setPoem("Sustain", "Dynamic", "Inhibit", "Motion");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setWeatherType("slow");
+            director.addInstability(getInstabilityCost());
+        }
+    }
+
+    public static class WeatherThunder extends SymbolBase {
+        public WeatherThunder() {
+            super(SymbolRegistry.mystcraftId("weather_thunder"), SymbolCategory.WEATHER);
+            setCardRank(3);
+            setInstabilityCost(10.0f);
+            setPoem("Sustain", "Static", "Power", "Lightning");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setWeatherType("thunder");
+            director.setLightningEnabled(true);
+            director.addInstability(getInstabilityCost());
+        }
+    }
+
+    public static class WeatherBlizzard extends SymbolBase {
+        public WeatherBlizzard() {
+            super(SymbolRegistry.mystcraftId("weather_blizzard"), SymbolCategory.WEATHER);
+            setCardRank(3);
+            setInstabilityCost(12.0f);
+            setPoem("Sustain", "Static", "Ice", "Fury");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setWeatherType("blizzard");
+            director.addInstability(getInstabilityCost());
         }
     }
 }

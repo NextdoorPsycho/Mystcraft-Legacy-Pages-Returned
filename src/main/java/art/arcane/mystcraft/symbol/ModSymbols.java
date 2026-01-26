@@ -26,11 +26,17 @@ public final class ModSymbols {
         // Biome controller symbols
         BiomeControllerSymbols.register();
 
+        // Individual biome symbols (dynamic from registry)
+        BiomeSymbols.register();
+
         // Celestial symbols
         CelestialSymbols.register();
 
         // Weather symbols
         WeatherSymbols.register();
+
+        // Lighting symbols
+        LightingSymbols.register();
 
         // Feature symbols
         FeatureSymbols.register();
@@ -41,8 +47,17 @@ public final class ModSymbols {
         // Environment symbols
         EnvironmentSymbols.register();
 
-        // Modifier symbols
+        // Modifier symbols (colors, angles, phases, lengths)
         ModifierSymbols.register();
+
+        // Block symbols (terrain and sea blocks)
+        BlockSymbols.register();
+
+        // Color target symbols (apply colors to world elements)
+        ColorTargetSymbols.register();
+
+        // Special symbols (star fissure, obelisks, etc.)
+        SpecialSymbols.register();
 
         LOGGER.info("Registered {} symbols", SymbolRegistry.size());
     }

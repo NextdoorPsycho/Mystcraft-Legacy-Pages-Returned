@@ -145,8 +145,16 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
             return 0xFFFFFF; // White default
         }
 
-        // TODO: Get color from book data
-        // For now return a default mystcraft blue
+        // Get color from book's link data
+        CompoundTag tag = book.getTag();
+        if (tag != null) {
+            Integer color = LinkOptions.getLinkColor(tag);
+            if (color != null) {
+                return color;
+            }
+        }
+
+        // Default Mystcraft blue if no custom color
         return 0x4444FF;
     }
 

@@ -17,6 +17,7 @@ public final class EnvironmentSymbols {
         SymbolRegistry.register(new Meteors());
         SymbolRegistry.register(new Lightning());
         SymbolRegistry.register(new Scorched());
+        SymbolRegistry.register(new Explosions());
     }
 
     public static class Accelerated extends SymbolBase {
@@ -75,6 +76,21 @@ public final class EnvironmentSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setScorchedEnabled(true);
+            director.addInstability(getInstabilityCost());
+        }
+    }
+
+    public static class Explosions extends SymbolBase {
+        public Explosions() {
+            super(SymbolRegistry.mystcraftId("env_explosions"), SymbolCategory.ENVIRONMENT);
+            setCardRank(3);
+            setInstabilityCost(30.0f);
+            setPoem("Environment", "Sacrifice", "Power", "Entropy");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setExplosionsEnabled(true);
             director.addInstability(getInstabilityCost());
         }
     }

@@ -373,4 +373,290 @@ public interface AgeDirector {
      * @return The phase, or 0 if empty
      */
     float popPhase();
+
+    /**
+     * Clears all modifier stacks (color, angle, length, phase).
+     * Used by the Clear symbol to reset modifier state.
+     */
+    void clearModifiers();
+
+    /**
+     * Pushes a biome onto the biome modifier stack.
+     * @param biome The biome to add
+     */
+    void pushBiome(Holder<Biome> biome);
+
+    /**
+     * Pops a biome from the biome modifier stack.
+     * @return The biome, or null if empty
+     */
+    Holder<Biome> popBiome();
+
+    // ========================= Additional Features =========================
+
+    /**
+     * Enables or disables nether fortress generation.
+     * @param enabled true to enable
+     */
+    void setNetherFortEnabled(boolean enabled);
+
+    /**
+     * Enables or disables dense ore generation.
+     * @param enabled true to enable
+     */
+    void setDenseOresEnabled(boolean enabled);
+
+    /**
+     * Enables or disables huge tree generation.
+     * @param enabled true to enable
+     */
+    void setHugeTreesEnabled(boolean enabled);
+
+    /**
+     * Enables or disables deep lakes.
+     * @param enabled true to enable
+     */
+    void setDeepLakesEnabled(boolean enabled);
+
+    /**
+     * Enables or disables surface lakes.
+     * @param enabled true to enable
+     */
+    void setSurfaceLakesEnabled(boolean enabled);
+
+    /**
+     * Enables or disables spike formations.
+     * @param enabled true to enable
+     */
+    void setSpikesEnabled(boolean enabled);
+
+    /**
+     * Enables or disables sphere formations.
+     * @param enabled true to enable
+     */
+    void setSpheresEnabled(boolean enabled);
+
+    /**
+     * Enables or disables tendril formations.
+     * @param enabled true to enable
+     */
+    void setTendrilsEnabled(boolean enabled);
+
+    /**
+     * Enables or disables crystal formations.
+     * @param enabled true to enable
+     */
+    void setCrystalsEnabled(boolean enabled);
+
+    /**
+     * Enables or disables rainbow formations.
+     * @param enabled true to enable
+     */
+    void setRainbowEnabled(boolean enabled);
+
+    /**
+     * Enables or disables obelisk formations.
+     * @param enabled true to enable
+     */
+    void setObelisksEnabled(boolean enabled);
+
+    /**
+     * Enables or disables star fissure generation.
+     * @param enabled true to enable
+     */
+    void setStarFissureEnabled(boolean enabled);
+
+    /**
+     * Enables or disables random explosions.
+     * @param enabled true to enable
+     */
+    void setExplosionsEnabled(boolean enabled);
+
+    /**
+     * Enables or disables PvP in this Age.
+     * @param enabled true to enable
+     */
+    void setPvPEnabled(boolean enabled);
+
+    /**
+     * Hides or shows the horizon.
+     * @param hidden true to hide
+     */
+    void setHorizonHidden(boolean hidden);
+
+    // ========================= Additional Structures =========================
+
+    /**
+     * Enables or disables pillager outpost generation.
+     * @param enabled true to enable
+     */
+    void setPillagerOutpostsEnabled(boolean enabled);
+
+    /**
+     * Enables or disables ruined portal generation.
+     * @param enabled true to enable
+     */
+    void setRuinedPortalsEnabled(boolean enabled);
+
+    /**
+     * Enables or disables ancient city generation.
+     * @param enabled true to enable
+     */
+    void setAncientCitiesEnabled(boolean enabled);
+
+    /**
+     * Enables or disables trail ruins generation.
+     * @param enabled true to enable
+     */
+    void setTrailRuinsEnabled(boolean enabled);
+
+    /**
+     * Enables or disables ocean monument generation.
+     * @param enabled true to enable
+     */
+    void setOceanMonumentsEnabled(boolean enabled);
+
+    /**
+     * Enables or disables witch hut generation.
+     * @param enabled true to enable
+     */
+    void setWitchHutsEnabled(boolean enabled);
+
+    /**
+     * Enables or disables desert temple generation.
+     * @param enabled true to enable
+     */
+    void setDesertTemplesEnabled(boolean enabled);
+
+    /**
+     * Enables or disables jungle temple generation.
+     * @param enabled true to enable
+     */
+    void setJungleTemplesEnabled(boolean enabled);
+
+    /**
+     * Enables or disables woodland mansion generation.
+     * @param enabled true to enable
+     */
+    void setWoodlandMansionsEnabled(boolean enabled);
+
+    /**
+     * Enables or disables end city generation.
+     * @param enabled true to enable
+     */
+    void setEndCitiesEnabled(boolean enabled);
+
+    /**
+     * Enables or disables bastion remnant generation.
+     * @param enabled true to enable
+     */
+    void setBastionRemnantsEnabled(boolean enabled);
+
+    // ========================= Cave Features =========================
+
+    /**
+     * Enables or disables dripstone cave features.
+     * @param enabled true to enable
+     */
+    void setDripstoneCavesEnabled(boolean enabled);
+
+    /**
+     * Enables or disables lush cave features.
+     * @param enabled true to enable
+     */
+    void setLushCavesEnabled(boolean enabled);
+
+    /**
+     * Enables or disables deep dark/sculk features.
+     * @param enabled true to enable
+     */
+    void setDeepDarkEnabled(boolean enabled);
+
+    // ========================= Gradient Colors =========================
+
+    /**
+     * Sets the sunset/sunrise color gradient.
+     * @param color The RGB color
+     */
+    void setSunsetColor(int color);
+
+    /**
+     * Gets the sunset/sunrise color.
+     * @return The RGB color, or -1 for default
+     */
+    int getSunsetColor();
+
+    /**
+     * Pushes a gradient color onto the stack.
+     * @param color The color value
+     */
+    void pushGradient(int color);
+
+    /**
+     * Pops a gradient color from the stack.
+     * @return The color value, or -1 if empty
+     */
+    int popGradient();
+
+    // ========================= Additional Colors =========================
+
+    /**
+     * Sets the cloud color.
+     * @param color The RGB color
+     */
+    void setCloudColor(int color);
+
+    /**
+     * Gets the cloud color.
+     * @return The RGB color, or -1 for default
+     */
+    int getCloudColor();
+
+    /**
+     * Sets the night sky color.
+     * @param color The RGB color
+     */
+    void setNightSkyColor(int color);
+
+    /**
+     * Gets the night sky color.
+     * @return The RGB color, or -1 for default
+     */
+    int getNightSkyColor();
+
+    /**
+     * Marks the sky color as natural (biome-dependent).
+     * @param natural true for biome-dependent color
+     */
+    void setSkyColorNatural(boolean natural);
+
+    /**
+     * Marks the fog color as natural (biome-dependent).
+     * @param natural true for biome-dependent color
+     */
+    void setFogColorNatural(boolean natural);
+
+    /**
+     * Marks the grass color as natural (biome-dependent).
+     * @param natural true for biome-dependent color
+     */
+    void setGrassColorNatural(boolean natural);
+
+    /**
+     * Marks the foliage color as natural (biome-dependent).
+     * @param natural true for biome-dependent color
+     */
+    void setFoliageColorNatural(boolean natural);
+
+    /**
+     * Marks the water color as natural (biome-dependent).
+     * @param natural true for biome-dependent color
+     */
+    void setWaterColorNatural(boolean natural);
+
+    /**
+     * Marks the cloud color as natural (weather-dependent).
+     * @param natural true for weather-dependent color
+     */
+    void setCloudColorNatural(boolean natural);
 }

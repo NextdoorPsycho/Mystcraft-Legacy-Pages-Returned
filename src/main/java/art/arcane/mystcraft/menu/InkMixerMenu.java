@@ -4,6 +4,8 @@ import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModMenuTypes;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -25,12 +27,14 @@ public class InkMixerMenu extends AbstractContainerMenu {
     private final InkMixerBlockEntity blockEntity;
     private final ContainerLevelAccess access;
     private final DataSlot hasInkData;
+    private final Container craftResult;
 
     // Slot indices in the menu
     public static final int SLOT_INK_IN = 0;
     public static final int SLOT_PAPER = 1;
     public static final int SLOT_INK_OUT = 2;
-    public static final int BLOCK_ENTITY_SLOTS = 3;
+    public static final int SLOT_CRAFT_RESULT = 3;
+    public static final int BLOCK_ENTITY_SLOTS = 4;
 
     // Player inventory slot ranges
     private static final int PLAYER_INVENTORY_START = BLOCK_ENTITY_SLOTS;
@@ -51,33 +55,48 @@ public class InkMixerMenu extends AbstractContainerMenu {
         super(ModMenuTypes.INK_MIXER.get(), containerId);
         this.blockEntity = blockEntity;
         this.access = ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos());
+        this.craftResult = new SimpleContainer(1);
 
         IItemHandler handler = blockEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER)
                 .orElseThrow(() -> new IllegalStateException("InkMixer has no item handler"));
 
-        // Block entity slots
+        // Block entity slots (matching legacy texture positions)
         // Ink input slot (top left)
-        addSlot(new SlotItemHandler(handler, InkMixerBlockEntity.SLOT_INK_IN, 35, 17));
-        // Paper slot (middle)
-        addSlot(new SlotItemHandler(handler, InkMixerBlockEntity.SLOT_PAPER, 80, 35));
-        // Output slot (bottom left) - output only
-        addSlot(new SlotItemHandler(handler, InkMixerBlockEntity.SLOT_INK_OUT, 35, 53) {
+        addSlot(new SlotItemHandler(handler, InkMixerBlockEntity.SLOT_INK_IN, 8, 27));
+        // Paper slot (bottom left)
+        addSlot(new SlotItemHandler(handler, InkMixerBlockEntity.SLOT_PAPER, 8, 48));
+        // Output slot (top right) - output only
+        addSlot(new SlotItemHandler(handler, InkMixerBlockEntity.SLOT_INK_OUT, 152, 27) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
                 return false;
             }
         });
+        // Craft result slot (bottom right) - uses separate inventory for link panel output
+        addSlot(new Slot(craftResult, 0, 152, 48) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return false; // Cannot place items in output
+            }
 
-        // Player inventory (3 rows of 9)
+            @Override
+            public void onTake(@NotNull Player player, @NotNull ItemStack stack) {
+                // When taking the crafted item, build it
+                blockEntity.buildItem(stack, player);
+                super.onTake(player, stack);
+            }
+        });
+
+        // Player inventory (3 rows of 9) - ySize=181, so inventory starts at y=99
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 99 + row * 18));
             }
         }
 
-        // Player hotbar
+        // Player hotbar - at y=157 for ySize=181
         for (int col = 0; col < 9; col++) {
-            addSlot(new Slot(playerInventory, col, 8 + col * 18, 142));
+            addSlot(new Slot(playerInventory, col, 8 + col * 18, 157));
         }
 
         // Data slot for hasInk state
@@ -104,6 +123,9 @@ public class InkMixerMenu extends AbstractContainerMenu {
     public void broadcastChanges() {
         super.broadcastChanges();
         hasInkData.set(blockEntity.hasInk() ? 1 : 0);
+
+        // Update the craft result slot with preview of what would be crafted
+        craftResult.setItem(0, blockEntity.getCraftedItem());
     }
 
     /**
@@ -118,6 +140,14 @@ public class InkMixerMenu extends AbstractContainerMenu {
      */
     public InkMixerBlockEntity getBlockEntity() {
         return blockEntity;
+    }
+
+    /**
+     * Gets the current ink probabilities.
+     * Used client-side for rendering the color gradient.
+     */
+    public java.util.Map<String, Float> getInkProbabilities() {
+        return blockEntity.getInkProbabilities();
     }
 
     @Override

@@ -61,8 +61,8 @@ public class BookstandBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        // Use MODEL to render the OBJ model via JSON, BER renders book on top
-        return RenderShape.MODEL;
+        // Use ENTITYBLOCK_ANIMATED - the BlockEntityRenderer handles all rendering
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
@@ -85,10 +85,6 @@ public class BookstandBlock extends BaseEntityBlock {
     @Override
     @NotNull
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (level.isClientSide) {
-            return InteractionResult.SUCCESS;
-        }
-
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (!(blockEntity instanceof BookstandBlockEntity stand)) {
             return InteractionResult.PASS;
@@ -99,26 +95,30 @@ public class BookstandBlock extends BaseEntityBlock {
         if (stand.hasBook()) {
             // Book is on stand
             if (player.isShiftKeyDown() && held.isEmpty()) {
-                // Shift + empty hand = pick up book
-                player.setItemInHand(hand, stand.getBook());
-                stand.setBook(ItemStack.EMPTY);
-                return InteractionResult.CONSUME;
+                // Shift + empty hand = pick up book (server only)
+                if (!level.isClientSide) {
+                    player.setItemInHand(hand, stand.getBook());
+                    stand.setBook(ItemStack.EMPTY);
+                }
+                return InteractionResult.sidedSuccess(level.isClientSide);
             } else {
-                // Open book GUI (client-side) or perform linking (server-side)
+                // Open book GUI on client side
                 if (level.isClientSide) {
                     openBookScreen(stand.getBook());
                 }
-                return InteractionResult.SUCCESS;
+                return InteractionResult.sidedSuccess(level.isClientSide);
             }
         } else {
             // No book on stand
             if (!held.isEmpty() && BookstandBlockEntity.isValidBook(held)) {
-                // Place book on stand
-                ItemStack bookCopy = held.copy();
-                bookCopy.setCount(1);
-                held.shrink(1);
-                stand.setBook(bookCopy);
-                return InteractionResult.CONSUME;
+                // Place book on stand (server only)
+                if (!level.isClientSide) {
+                    ItemStack bookCopy = held.copy();
+                    bookCopy.setCount(1);
+                    held.shrink(1);
+                    stand.setBook(bookCopy);
+                }
+                return InteractionResult.sidedSuccess(level.isClientSide);
             }
             return InteractionResult.PASS;
         }

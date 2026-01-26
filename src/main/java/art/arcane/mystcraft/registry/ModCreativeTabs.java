@@ -1,16 +1,25 @@
 package art.arcane.mystcraft.registry;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.api.symbol.SymbolCategory;
+import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.RegistryObject;
+
+import java.util.List;
 
 /**
  * Creative mode tab registration for Mystcraft.
  */
 public final class ModCreativeTabs {
 
+    /**
+     * Main Mystcraft tab - blocks, items, tools
+     */
     public static final RegistryObject<CreativeModeTab> MYSTCRAFT_TAB =
             MystcraftRegistries.CREATIVE_TABS.register("mystcraft",
                     () -> CreativeModeTab.builder()
@@ -22,7 +31,7 @@ public final class ModCreativeTabs {
                                 output.accept(ModItems.LINKBOOK.get());
                                 output.accept(ModItems.LINKBOOK_UNLINKED.get());
 
-                                // Pages and storage
+                                // Page storage items
                                 output.accept(ModItems.PAGE.get());
                                 output.accept(ModItems.FOLDER.get());
                                 output.accept(ModItems.PORTFOLIO.get());
@@ -47,6 +56,28 @@ public final class ModCreativeTabs {
 
                                 // Special blocks
                                 output.accept(ModItems.DECAY_ITEM.get());
+                            })
+                            .build());
+
+    /**
+     * Mystcraft Pages tab - link panels and all symbol pages
+     */
+    public static final RegistryObject<CreativeModeTab> MYSTCRAFT_PAGES_TAB =
+            MystcraftRegistries.CREATIVE_TABS.register("mystcraft_pages",
+                    () -> CreativeModeTab.builder()
+                            .title(Component.translatable("itemGroup." + Mystcraft.MOD_ID + "_pages"))
+                            .icon(() -> Page.createLinkPage())
+                            .displayItems((params, output) -> {
+                                // Link panel page (required for linking books)
+                                output.accept(Page.createLinkPage());
+
+                                // Symbol pages - organized by category
+                                for (SymbolCategory category : SymbolCategory.values()) {
+                                    List<IAgeSymbol> symbols = SymbolRegistry.getByCategory(category);
+                                    for (IAgeSymbol symbol : symbols) {
+                                        output.accept(Page.createSymbolPage(symbol.getRegistryName()));
+                                    }
+                                }
                             })
                             .build());
 

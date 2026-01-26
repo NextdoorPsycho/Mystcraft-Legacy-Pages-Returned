@@ -58,6 +58,48 @@ public final class MystcraftNetwork {
                 .consumerMainThread(SymbolSyncPacket::handle)
                 .add();
 
+        // Client -> Server: Container actions
+        CHANNEL.messageBuilder(ContainerActionPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(ContainerActionPacket::encode)
+                .decoder(ContainerActionPacket::decode)
+                .consumerMainThread(ContainerActionPacket::handle)
+                .add();
+
+        // Server -> Client: Config sync
+        CHANNEL.messageBuilder(ConfigSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(ConfigSyncPacket::encode)
+                .decoder(ConfigSyncPacket::decode)
+                .consumerMainThread(ConfigSyncPacket::handle)
+                .add();
+
+        // Server -> Client: Dimension sync
+        CHANNEL.messageBuilder(DimensionSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(DimensionSyncPacket::encode)
+                .decoder(DimensionSyncPacket::decode)
+                .consumerMainThread(DimensionSyncPacket::handle)
+                .add();
+
+        // Server -> Client: Profiling state
+        CHANNEL.messageBuilder(ProfilingStatePacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(ProfilingStatePacket::encode)
+                .decoder(ProfilingStatePacket::decode)
+                .consumerMainThread(ProfilingStatePacket::handle)
+                .add();
+
+        // Server -> Client: Custom explosion
+        CHANNEL.messageBuilder(ExplosionPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(ExplosionPacket::encode)
+                .decoder(ExplosionPacket::decode)
+                .consumerMainThread(ExplosionPacket::handle)
+                .add();
+
+        // Server -> Client: Spawn colored lightning
+        CHANNEL.messageBuilder(SpawnLightningPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(SpawnLightningPacket::encode)
+                .decoder(SpawnLightningPacket::decode)
+                .consumerMainThread(SpawnLightningPacket::handle)
+                .add();
+
         Mystcraft.LOGGER.info("Registered {} network packets", packetId);
     }
 

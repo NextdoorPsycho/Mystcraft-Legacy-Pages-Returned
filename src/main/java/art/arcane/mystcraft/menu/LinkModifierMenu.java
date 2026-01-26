@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.menu;
 
 import art.arcane.mystcraft.blockentity.LinkModifierBlockEntity;
+import art.arcane.mystcraft.data.InkEffects;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModMenuTypes;
 import net.minecraft.network.FriendlyByteBuf;
@@ -17,6 +18,10 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Menu for the Link Modifier block.
  * Provides access to book slot and modifier page slots.
@@ -26,12 +31,18 @@ public class LinkModifierMenu extends AbstractContainerMenu {
     private final LinkModifierBlockEntity blockEntity;
     private final ContainerLevelAccess access;
     private final DataSlot canModifyData;
+    private final DataSlot hasItemSeedData;
+    private final DataSlot isLinkDeadData;
 
-    // Slot indices
+    // Cached data for client
+    private String cachedTitle = "";
+    private String cachedSeed = "";
+    private String cachedDimensionUID = "";
+    private final Map<String, Boolean> cachedLinkFlags = new HashMap<>();
+
+    // Slot indices - only book slot is exposed in GUI
     public static final int SLOT_BOOK = 0;
-    public static final int SLOT_MODIFIER_START = 1;
-    public static final int SLOT_MODIFIER_END = 4;
-    public static final int BLOCK_ENTITY_SLOTS = 5;
+    public static final int BLOCK_ENTITY_SLOTS = 1;
 
     // Player inventory slot ranges
     private static final int PLAYER_INVENTORY_START = BLOCK_ENTITY_SLOTS;
@@ -57,13 +68,7 @@ public class LinkModifierMenu extends AbstractContainerMenu {
                 .orElseThrow(() -> new IllegalStateException("LinkModifier has no item handler"));
 
         // Book slot (center)
-        addSlot(new SlotItemHandler(handler, LinkModifierBlockEntity.SLOT_BOOK, 80, 17));
-
-        // Modifier page slots (4 slots around the book)
-        addSlot(new SlotItemHandler(handler, LinkModifierBlockEntity.SLOT_MODIFIER_START, 35, 35));
-        addSlot(new SlotItemHandler(handler, LinkModifierBlockEntity.SLOT_MODIFIER_START + 1, 62, 35));
-        addSlot(new SlotItemHandler(handler, LinkModifierBlockEntity.SLOT_MODIFIER_START + 2, 98, 35));
-        addSlot(new SlotItemHandler(handler, LinkModifierBlockEntity.SLOT_MODIFIER_START + 3, 125, 35));
+        addSlot(new SlotItemHandler(handler, LinkModifierBlockEntity.SLOT_BOOK, 80, 35));
 
         // Player inventory (3 rows of 9)
         for (int row = 0; row < 3; row++) {
@@ -77,11 +82,17 @@ public class LinkModifierMenu extends AbstractContainerMenu {
             addSlot(new Slot(playerInventory, col, 8 + col * 18, 142));
         }
 
-        // Data slot for canModify state
+        // Data slots
         canModifyData = addDataSlot(DataSlot.standalone());
-        if (blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
-            canModifyData.set(blockEntity.canModify() ? 1 : 0);
+        hasItemSeedData = addDataSlot(DataSlot.standalone());
+        isLinkDeadData = addDataSlot(DataSlot.standalone());
+
+        // Initialize link flags cache
+        for (String prop : InkEffects.getProperties()) {
+            cachedLinkFlags.put(prop, false);
         }
+
+        updateCachedData();
     }
 
     private static LinkModifierBlockEntity getBlockEntity(Inventory playerInventory, FriendlyByteBuf extraData) {
@@ -100,7 +111,23 @@ public class LinkModifierMenu extends AbstractContainerMenu {
     @Override
     public void broadcastChanges() {
         super.broadcastChanges();
-        canModifyData.set(blockEntity.canModify() ? 1 : 0);
+        updateCachedData();
+    }
+
+    private void updateCachedData() {
+        if (blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
+            canModifyData.set(blockEntity.canModify() ? 1 : 0);
+            hasItemSeedData.set(blockEntity.hasItemSeed() ? 1 : 0);
+            isLinkDeadData.set(blockEntity.isLinkDead() ? 1 : 0);
+
+            cachedTitle = blockEntity.getBookTitle();
+            cachedSeed = blockEntity.getItemSeed();
+            cachedDimensionUID = blockEntity.getLinkDimensionUID();
+
+            for (String prop : InkEffects.getProperties()) {
+                cachedLinkFlags.put(prop, blockEntity.getLinkFlag(prop));
+            }
+        }
     }
 
     /**
@@ -111,10 +138,91 @@ public class LinkModifierMenu extends AbstractContainerMenu {
     }
 
     /**
+     * Gets whether the item has a seed field (Agebooks only).
+     */
+    public boolean hasItemSeed() {
+        return hasItemSeedData.get() != 0;
+    }
+
+    /**
+     * Gets whether the link is dead.
+     */
+    public boolean isLinkDead() {
+        return isLinkDeadData.get() != 0;
+    }
+
+    /**
+     * Gets the book title.
+     */
+    @NotNull
+    public String getBookTitle() {
+        return cachedTitle;
+    }
+
+    /**
+     * Sets the book title (client prediction).
+     */
+    public void setBookTitleClient(@NotNull String title) {
+        cachedTitle = title;
+    }
+
+    /**
+     * Gets the item seed.
+     */
+    @NotNull
+    public String getItemSeed() {
+        return cachedSeed;
+    }
+
+    /**
+     * Sets the item seed (client prediction).
+     */
+    public void setItemSeedClient(@NotNull String seed) {
+        cachedSeed = seed;
+    }
+
+    /**
+     * Gets the dimension UID.
+     */
+    @NotNull
+    public String getLinkDimensionUID() {
+        return cachedDimensionUID;
+    }
+
+    /**
+     * Gets a link flag value.
+     */
+    public boolean getLinkFlag(@NotNull String flagId) {
+        return cachedLinkFlags.getOrDefault(flagId, false);
+    }
+
+    /**
+     * Sets a link flag (client prediction).
+     */
+    public void setLinkFlagClient(@NotNull String flagId, boolean value) {
+        cachedLinkFlags.put(flagId, value);
+    }
+
+    /**
      * Gets the block entity.
      */
     public LinkModifierBlockEntity getBlockEntity() {
         return blockEntity;
+    }
+
+    /**
+     * Gets the book item in the book slot.
+     */
+    @NotNull
+    public ItemStack getBookItem() {
+        return slots.get(SLOT_BOOK).getItem();
+    }
+
+    /**
+     * Checks if the linked Age is dead (no longer exists).
+     */
+    public boolean isLinkedAgeDead() {
+        return isLinkDeadData.get() != 0;
     }
 
     @Override
@@ -137,17 +245,14 @@ public class LinkModifierMenu extends AbstractContainerMenu {
             else {
                 // Try book slot first
                 if (!moveItemStackTo(stackInSlot, SLOT_BOOK, SLOT_BOOK + 1, false)) {
-                    // Then try modifier slots
-                    if (!moveItemStackTo(stackInSlot, SLOT_MODIFIER_START, SLOT_MODIFIER_END + 1, false)) {
-                        // Move between inventory and hotbar
-                        if (index < PLAYER_INVENTORY_END) {
-                            if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
-                                return ItemStack.EMPTY;
-                            }
-                        } else {
-                            if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false)) {
-                                return ItemStack.EMPTY;
-                            }
+                    // Move between inventory and hotbar
+                    if (index < PLAYER_INVENTORY_END) {
+                        if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
+                            return ItemStack.EMPTY;
+                        }
+                    } else {
+                        if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false)) {
+                            return ItemStack.EMPTY;
                         }
                     }
                 }

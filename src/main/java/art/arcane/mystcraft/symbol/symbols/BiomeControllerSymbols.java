@@ -15,11 +15,13 @@ public final class BiomeControllerSymbols {
     public static void register() {
         SymbolRegistry.register(new BiomeSingle());
         SymbolRegistry.register(new BiomeNative());
+        SymbolRegistry.register(new BiomeTiny());
         SymbolRegistry.register(new BiomeSmall());
         SymbolRegistry.register(new BiomeMedium());
         SymbolRegistry.register(new BiomeLarge());
         SymbolRegistry.register(new BiomeHuge());
         SymbolRegistry.register(new BiomeTiled());
+        SymbolRegistry.register(new BiomeGrid());
     }
 
     public static class BiomeSingle extends SymbolBase {
@@ -117,6 +119,35 @@ public final class BiomeControllerSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.setBiomeController("tiled");
+        }
+    }
+
+    public static class BiomeTiny extends SymbolBase {
+        public BiomeTiny() {
+            super(SymbolRegistry.mystcraftId("biome_tiny"), SymbolCategory.BIOME_CONTROLLER);
+            setCardRank(2);
+            setInstabilityCost(-2.0f);
+            setPoem("Biome", "Form", "Cycle", "Chaos");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setBiomeController("tiny");
+        }
+    }
+
+    public static class BiomeGrid extends SymbolBase {
+        public BiomeGrid() {
+            super(SymbolRegistry.mystcraftId("biome_grid"), SymbolCategory.BIOME_CONTROLLER);
+            setCardRank(3);
+            setInstabilityCost(2.0f);
+            setPoem("Biome", "Form", "System", "Order");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setBiomeController("grid");
+            director.addInstability(getInstabilityCost());
         }
     }
 }

@@ -322,10 +322,9 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
         }
 
         // Write to an agebook (creates a new page and adds it)
-        if (writingItem.getItem() instanceof AgebookItem && getPaperCount() > 0) {
+        if (writingItem.getItem() instanceof AgebookItem agebookItem && getPaperCount() > 0) {
             ItemStack page = Page.createSymbolPage(symbol);
-            // TODO: Add page to agebook when that method is implemented
-            // For now, just create the page and place it in a tab if possible
+            agebookItem.addPages(writingItem, java.util.Collections.singletonList(page));
             useInk();
             consumePaper();
             markForUpdate();

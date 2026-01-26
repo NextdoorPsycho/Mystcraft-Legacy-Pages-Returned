@@ -3,6 +3,9 @@ package art.arcane.mystcraft.symbol;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
+import art.arcane.mystcraft.grammar.CFGGrammarGenerator;
+import art.arcane.mystcraft.grammar.CFGRule;
+import art.arcane.mystcraft.grammar.GrammarData;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +17,7 @@ import java.util.*;
 /**
  * Registry for Age symbols.
  * Manages symbol registration, lookup, and categorization.
+ * Also registers symbols with the CFG grammar system for age generation.
  */
 public final class SymbolRegistry {
 
@@ -67,8 +71,60 @@ public final class SymbolRegistry {
             BY_CARD_RANK.computeIfAbsent(rank, k -> new ArrayList<>()).add(symbol);
         }
 
+        // Register with CFG grammar so this symbol can be generated
+        registerWithGrammar(symbol);
+
         LOGGER.debug("Registered symbol: {}", id);
         return true;
+    }
+
+    /**
+     * Registers a symbol with the CFG grammar system.
+     * Creates a rule that maps the category's grammar token to this symbol.
+     */
+    private static void registerWithGrammar(IAgeSymbol symbol) {
+        ResourceLocation grammarToken = getCategoryGrammarToken(symbol.getCategory());
+        if (grammarToken == null) {
+            // Category doesn't have a grammar token (e.g., modifiers are handled differently)
+            return;
+        }
+
+        // Create a rule: GRAMMAR_TOKEN -> symbol_id [rank]
+        Integer rank = symbol.getCardRank();
+        CFGRule rule = new CFGRule(grammarToken, Collections.singletonList(symbol.getRegistryName()), rank);
+
+        try {
+            CFGGrammarGenerator.registerRule(rule);
+            LOGGER.debug("Registered grammar rule: {} -> {} [rank {}]",
+                    grammarToken, symbol.getRegistryName(), rank);
+        } catch (IllegalStateException e) {
+            // Grammar already finalized - this is fine, rule registration happens during init
+            LOGGER.debug("Grammar already finalized, skipping rule for {}", symbol.getRegistryName());
+        }
+    }
+
+    /**
+     * Maps a SymbolCategory to its corresponding grammar token.
+     * Returns null for categories that don't have grammar tokens.
+     */
+    private static ResourceLocation getCategoryGrammarToken(SymbolCategory category) {
+        return switch (category) {
+            case TERRAIN -> GrammarData.TERRAIN;
+            case BIOME_CONTROLLER -> GrammarData.BIOMECONTROLLER;
+            case BIOME -> GrammarData.BIOME;
+            case SUN -> GrammarData.SUN;
+            case MOON -> GrammarData.MOON;
+            case STARS -> GrammarData.STARFIELD;
+            case WEATHER -> GrammarData.WEATHER;
+            case LIGHTING -> GrammarData.LIGHTING;
+            case FEATURE -> GrammarData.FEATURE_LARGE;  // Large features by default
+            case STRUCTURE -> GrammarData.FEATURE_MEDIUM;  // Structures are medium features
+            case ENVIRONMENT -> GrammarData.EFFECT;
+            case VISUAL_EFFECT -> GrammarData.VISUAL_EFFECT;  // Color targets (sky, fog, grass)
+            // Modifiers don't generate via grammar - they're placed by players
+            case COLOR, ANGLE, PHASE, LENGTH, MODIFIER, SPECIAL -> null;
+            default -> null;
+        };
     }
 
     /**

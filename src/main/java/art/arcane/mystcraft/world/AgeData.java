@@ -41,6 +41,40 @@ public class AgeData extends SavedData {
     private static final String TAG_SPAWN_Y = "SpawnY";
     private static final String TAG_SPAWN_Z = "SpawnZ";
 
+    // Age Configuration Tags
+    private static final String TAG_CONFIG = "AgeConfig";
+    private static final String TAG_WEATHER_TYPE = "WeatherType";
+    private static final String TAG_LIGHTING_TYPE = "LightingType";
+    private static final String TAG_BIOME_CONTROLLER = "BiomeController";
+    private static final String TAG_SKY_COLOR = "SkyColor";
+    private static final String TAG_FOG_COLOR = "FogColor";
+    private static final String TAG_GRASS_COLOR = "GrassColor";
+    private static final String TAG_FOLIAGE_COLOR = "FoliageColor";
+    private static final String TAG_WATER_COLOR = "WaterColor";
+    private static final String TAG_CLOUD_COLOR = "CloudColor";
+    private static final String TAG_NIGHT_SKY_COLOR = "NightSkyColor";
+    private static final String TAG_SUN_VISIBLE = "SunVisible";
+    private static final String TAG_MOON_VISIBLE = "MoonVisible";
+    private static final String TAG_STARS_VISIBLE = "StarsVisible";
+    private static final String TAG_STAR_TYPE = "StarType";
+    private static final String TAG_PVP_ENABLED = "PvPEnabled";
+    private static final String TAG_METEORS_ENABLED = "MeteorsEnabled";
+    private static final String TAG_LIGHTNING_ENABLED = "LightningEnabled";
+    private static final String TAG_EXPLOSIONS_ENABLED = "ExplosionsEnabled";
+    private static final String TAG_ACCELERATED_ENABLED = "AcceleratedEnabled";
+    private static final String TAG_SCORCHED_ENABLED = "ScorchedEnabled";
+    private static final String TAG_HORIZON_HIDDEN = "HorizonHidden";
+    private static final String TAG_DENSE_ORES_ENABLED = "DenseOresEnabled";
+    private static final String TAG_HUGE_TREES_ENABLED = "HugeTreesEnabled";
+    private static final String TAG_OBELISKS_ENABLED = "ObelisksEnabled";
+    private static final String TAG_CRYSTALS_ENABLED = "CrystalsEnabled";
+    private static final String TAG_RAINBOW_ENABLED = "RainbowEnabled";
+    private static final String TAG_STAR_FISSURE_ENABLED = "StarFissureEnabled";
+    private static final String TAG_SPIKES_ENABLED = "SpikesEnabled";
+    private static final String TAG_SPHERES_ENABLED = "SpheresEnabled";
+    private static final String TAG_TENDRILS_ENABLED = "TendrilsEnabled";
+    private static final String TAG_DECK_ORDERS = "DeckOrders";
+
     private int ageUID;
     private UUID ageUUID;
     private String ageName = "";
@@ -50,6 +84,41 @@ public class AgeData extends SavedData {
     private long createdTime;
     private boolean spawnSet = false;
     private int spawnX, spawnY, spawnZ;
+
+    // Age Configuration (from AgeDirector)
+    private String weatherType = "normal";
+    private String lightingType = "normal";
+    private String biomeController = "native";
+    private int skyColor = -1;
+    private int fogColor = -1;
+    private int grassColor = -1;
+    private int foliageColor = -1;
+    private int waterColor = -1;
+    private int cloudColor = -1;
+    private int nightSkyColor = -1;
+    private boolean sunVisible = true;
+    private boolean moonVisible = true;
+    private boolean starsVisible = true;
+    private String starType = "normal";
+    private boolean pvpEnabled = true;
+    private boolean meteorsEnabled = false;
+    private boolean lightningEnabled = false;
+    private boolean explosionsEnabled = false;
+    private boolean acceleratedEnabled = false;
+    private boolean scorchedEnabled = false;
+    private boolean horizonHidden = false;
+    private boolean denseOresEnabled = false;
+    private boolean hugeTreesEnabled = false;
+    private boolean obelisksEnabled = false;
+    private boolean crystalsEnabled = false;
+    private boolean rainbowEnabled = false;
+    private boolean starFissureEnabled = false;
+    private boolean spikesEnabled = false;
+    private boolean spheresEnabled = false;
+    private boolean tendrilsEnabled = false;
+
+    // Instability deck order storage (for persistence across sessions)
+    private final Map<String, List<String>> deckOrders = new HashMap<>();
 
     public AgeData() {
         this.ageUUID = UUID.randomUUID();
@@ -110,6 +179,59 @@ public class AgeData extends SavedData {
             this.spawnY = tag.getInt(TAG_SPAWN_Y);
             this.spawnZ = tag.getInt(TAG_SPAWN_Z);
         }
+
+        // Load age configuration
+        if (tag.contains(TAG_CONFIG)) {
+            CompoundTag config = tag.getCompound(TAG_CONFIG);
+            this.weatherType = config.getString(TAG_WEATHER_TYPE);
+            if (this.weatherType.isEmpty()) this.weatherType = "normal";
+            this.lightingType = config.getString(TAG_LIGHTING_TYPE);
+            if (this.lightingType.isEmpty()) this.lightingType = "normal";
+            this.biomeController = config.getString(TAG_BIOME_CONTROLLER);
+            if (this.biomeController.isEmpty()) this.biomeController = "native";
+            this.skyColor = config.contains(TAG_SKY_COLOR) ? config.getInt(TAG_SKY_COLOR) : -1;
+            this.fogColor = config.contains(TAG_FOG_COLOR) ? config.getInt(TAG_FOG_COLOR) : -1;
+            this.grassColor = config.contains(TAG_GRASS_COLOR) ? config.getInt(TAG_GRASS_COLOR) : -1;
+            this.foliageColor = config.contains(TAG_FOLIAGE_COLOR) ? config.getInt(TAG_FOLIAGE_COLOR) : -1;
+            this.waterColor = config.contains(TAG_WATER_COLOR) ? config.getInt(TAG_WATER_COLOR) : -1;
+            this.cloudColor = config.contains(TAG_CLOUD_COLOR) ? config.getInt(TAG_CLOUD_COLOR) : -1;
+            this.nightSkyColor = config.contains(TAG_NIGHT_SKY_COLOR) ? config.getInt(TAG_NIGHT_SKY_COLOR) : -1;
+            this.sunVisible = !config.contains(TAG_SUN_VISIBLE) || config.getBoolean(TAG_SUN_VISIBLE);
+            this.moonVisible = !config.contains(TAG_MOON_VISIBLE) || config.getBoolean(TAG_MOON_VISIBLE);
+            this.starsVisible = !config.contains(TAG_STARS_VISIBLE) || config.getBoolean(TAG_STARS_VISIBLE);
+            this.starType = config.getString(TAG_STAR_TYPE);
+            if (this.starType.isEmpty()) this.starType = "normal";
+            this.pvpEnabled = !config.contains(TAG_PVP_ENABLED) || config.getBoolean(TAG_PVP_ENABLED);
+            this.meteorsEnabled = config.getBoolean(TAG_METEORS_ENABLED);
+            this.lightningEnabled = config.getBoolean(TAG_LIGHTNING_ENABLED);
+            this.explosionsEnabled = config.getBoolean(TAG_EXPLOSIONS_ENABLED);
+            this.acceleratedEnabled = config.getBoolean(TAG_ACCELERATED_ENABLED);
+            this.scorchedEnabled = config.getBoolean(TAG_SCORCHED_ENABLED);
+            this.horizonHidden = config.getBoolean(TAG_HORIZON_HIDDEN);
+            this.denseOresEnabled = config.getBoolean(TAG_DENSE_ORES_ENABLED);
+            this.hugeTreesEnabled = config.getBoolean(TAG_HUGE_TREES_ENABLED);
+            this.obelisksEnabled = config.getBoolean(TAG_OBELISKS_ENABLED);
+            this.crystalsEnabled = config.getBoolean(TAG_CRYSTALS_ENABLED);
+            this.rainbowEnabled = config.getBoolean(TAG_RAINBOW_ENABLED);
+            this.starFissureEnabled = config.getBoolean(TAG_STAR_FISSURE_ENABLED);
+            this.spikesEnabled = config.getBoolean(TAG_SPIKES_ENABLED);
+            this.spheresEnabled = config.getBoolean(TAG_SPHERES_ENABLED);
+            this.tendrilsEnabled = config.getBoolean(TAG_TENDRILS_ENABLED);
+        }
+
+        // Load deck orders
+        this.deckOrders.clear();
+        if (tag.contains(TAG_DECK_ORDERS)) {
+            CompoundTag decksTag = tag.getCompound(TAG_DECK_ORDERS);
+            for (String deckName : decksTag.getAllKeys()) {
+                ListTag cardsList = decksTag.getList(deckName, Tag.TAG_STRING);
+                List<String> cards = new ArrayList<>();
+                for (int i = 0; i < cardsList.size(); i++) {
+                    cards.add(cardsList.getString(i));
+                }
+                this.deckOrders.put(deckName, cards);
+            }
+        }
     }
 
     @Override
@@ -144,6 +266,51 @@ public class AgeData extends SavedData {
             tag.putInt(TAG_SPAWN_Y, spawnY);
             tag.putInt(TAG_SPAWN_Z, spawnZ);
         }
+
+        // Save age configuration
+        CompoundTag config = new CompoundTag();
+        config.putString(TAG_WEATHER_TYPE, weatherType);
+        config.putString(TAG_LIGHTING_TYPE, lightingType);
+        config.putString(TAG_BIOME_CONTROLLER, biomeController);
+        if (skyColor != -1) config.putInt(TAG_SKY_COLOR, skyColor);
+        if (fogColor != -1) config.putInt(TAG_FOG_COLOR, fogColor);
+        if (grassColor != -1) config.putInt(TAG_GRASS_COLOR, grassColor);
+        if (foliageColor != -1) config.putInt(TAG_FOLIAGE_COLOR, foliageColor);
+        if (waterColor != -1) config.putInt(TAG_WATER_COLOR, waterColor);
+        if (cloudColor != -1) config.putInt(TAG_CLOUD_COLOR, cloudColor);
+        if (nightSkyColor != -1) config.putInt(TAG_NIGHT_SKY_COLOR, nightSkyColor);
+        config.putBoolean(TAG_SUN_VISIBLE, sunVisible);
+        config.putBoolean(TAG_MOON_VISIBLE, moonVisible);
+        config.putBoolean(TAG_STARS_VISIBLE, starsVisible);
+        config.putString(TAG_STAR_TYPE, starType);
+        config.putBoolean(TAG_PVP_ENABLED, pvpEnabled);
+        config.putBoolean(TAG_METEORS_ENABLED, meteorsEnabled);
+        config.putBoolean(TAG_LIGHTNING_ENABLED, lightningEnabled);
+        config.putBoolean(TAG_EXPLOSIONS_ENABLED, explosionsEnabled);
+        config.putBoolean(TAG_ACCELERATED_ENABLED, acceleratedEnabled);
+        config.putBoolean(TAG_SCORCHED_ENABLED, scorchedEnabled);
+        config.putBoolean(TAG_HORIZON_HIDDEN, horizonHidden);
+        config.putBoolean(TAG_DENSE_ORES_ENABLED, denseOresEnabled);
+        config.putBoolean(TAG_HUGE_TREES_ENABLED, hugeTreesEnabled);
+        config.putBoolean(TAG_OBELISKS_ENABLED, obelisksEnabled);
+        config.putBoolean(TAG_CRYSTALS_ENABLED, crystalsEnabled);
+        config.putBoolean(TAG_RAINBOW_ENABLED, rainbowEnabled);
+        config.putBoolean(TAG_STAR_FISSURE_ENABLED, starFissureEnabled);
+        config.putBoolean(TAG_SPIKES_ENABLED, spikesEnabled);
+        config.putBoolean(TAG_SPHERES_ENABLED, spheresEnabled);
+        config.putBoolean(TAG_TENDRILS_ENABLED, tendrilsEnabled);
+        tag.put(TAG_CONFIG, config);
+
+        // Save deck orders
+        CompoundTag decksTag = new CompoundTag();
+        for (Map.Entry<String, List<String>> entry : deckOrders.entrySet()) {
+            ListTag cardsList = new ListTag();
+            for (String card : entry.getValue()) {
+                cardsList.add(net.minecraft.nbt.StringTag.valueOf(card));
+            }
+            decksTag.put(entry.getKey(), cardsList);
+        }
+        tag.put(TAG_DECK_ORDERS, decksTag);
 
         return tag;
     }
@@ -297,5 +464,110 @@ public class AgeData extends SavedData {
             return "Unknown";
         }
         return String.join(", ", authors);
+    }
+
+    // ========================= Age Configuration Getters =========================
+
+    public String getWeatherType() { return weatherType; }
+    public String getLightingType() { return lightingType; }
+    public String getBiomeController() { return biomeController; }
+    public int getSkyColor() { return skyColor; }
+    public int getFogColor() { return fogColor; }
+    public int getGrassColor() { return grassColor; }
+    public int getFoliageColor() { return foliageColor; }
+    public int getWaterColor() { return waterColor; }
+    public int getCloudColor() { return cloudColor; }
+    public int getNightSkyColor() { return nightSkyColor; }
+    public boolean isSunVisible() { return sunVisible; }
+    public boolean isMoonVisible() { return moonVisible; }
+    public boolean areStarsVisible() { return starsVisible; }
+    public String getStarType() { return starType; }
+    public boolean isPvPEnabled() { return pvpEnabled; }
+    public boolean areMeteorsEnabled() { return meteorsEnabled; }
+    public boolean isLightningEnabled() { return lightningEnabled; }
+    public boolean areExplosionsEnabled() { return explosionsEnabled; }
+    public boolean isAcceleratedEnabled() { return acceleratedEnabled; }
+    public boolean isScorchedEnabled() { return scorchedEnabled; }
+    public boolean isHorizonHidden() { return horizonHidden; }
+    public boolean areDenseOresEnabled() { return denseOresEnabled; }
+    public boolean areHugeTreesEnabled() { return hugeTreesEnabled; }
+    public boolean areObelisksEnabled() { return obelisksEnabled; }
+    public boolean areCrystalsEnabled() { return crystalsEnabled; }
+    public boolean isRainbowEnabled() { return rainbowEnabled; }
+    public boolean isStarFissureEnabled() { return starFissureEnabled; }
+    public boolean areSpikesEnabled() { return spikesEnabled; }
+    public boolean areSpheresEnabled() { return spheresEnabled; }
+    public boolean areTendrilsEnabled() { return tendrilsEnabled; }
+
+    /**
+     * Copies configuration from an AgeDirectorImpl.
+     * Call this after processing symbols to persist the Age configuration.
+     */
+    public void copyFromDirector(AgeDirectorImpl director) {
+        this.weatherType = director.getWeatherType();
+        this.lightingType = director.getLightingType();
+        this.biomeController = director.getBiomeController();
+        this.skyColor = director.getSkyColor();
+        this.fogColor = director.getFogColor();
+        this.grassColor = director.getGrassColor();
+        this.foliageColor = director.getFoliageColor();
+        this.waterColor = director.getWaterColor();
+        this.cloudColor = director.getCloudColor();
+        this.nightSkyColor = director.getNightSkyColor();
+        this.sunVisible = director.isSunVisible();
+        this.moonVisible = director.isMoonVisible();
+        this.starsVisible = director.areStarsVisible();
+        this.starType = director.getStarType();
+        this.pvpEnabled = director.isPvPEnabled();
+        this.meteorsEnabled = director.areMeteorsEnabled();
+        this.lightningEnabled = director.isLightningEnabled();
+        this.explosionsEnabled = director.areExplosionsEnabled();
+        this.acceleratedEnabled = director.isAcceleratedEnabled();
+        this.scorchedEnabled = director.isScorchedEnabled();
+        this.horizonHidden = director.isHorizonHidden();
+        this.denseOresEnabled = director.areDenseOresEnabled();
+        this.hugeTreesEnabled = director.areHugeTreesEnabled();
+        this.obelisksEnabled = director.areObelisksEnabled();
+        this.crystalsEnabled = director.areCrystalsEnabled();
+        this.rainbowEnabled = director.isRainbowEnabled();
+        this.starFissureEnabled = director.isStarFissureEnabled();
+        this.spikesEnabled = director.areSpikesEnabled();
+        this.spheresEnabled = director.areSpheresEnabled();
+        this.tendrilsEnabled = director.areTendrilsEnabled();
+        this.instability = director.getInstability();
+        setDirty();
+    }
+
+    // ========================= Deck Order Methods =========================
+
+    /**
+     * Gets the saved deck order for a deck.
+     *
+     * @param deckName The deck name
+     * @return The saved card order, or null if not saved
+     */
+    @Nullable
+    public List<String> getSavedDeckOrder(String deckName) {
+        List<String> order = deckOrders.get(deckName);
+        return order != null ? new ArrayList<>(order) : null;
+    }
+
+    /**
+     * Saves the deck order for persistence.
+     *
+     * @param deckName The deck name
+     * @param cards    The card order
+     */
+    public void saveDeckOrder(String deckName, java.util.Collection<String> cards) {
+        deckOrders.put(deckName, new ArrayList<>(cards));
+        setDirty();
+    }
+
+    /**
+     * Clears all saved deck orders.
+     */
+    public void clearDeckOrders() {
+        deckOrders.clear();
+        setDirty();
     }
 }

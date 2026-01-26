@@ -1,3 +1,6 @@
 {
-    "parent": "mystcraft:block/bookstand_model"
+    "parent": "minecraft:item/generated",
+    "textures": {
+        "layer0": "mystcraft:items/bookstand"
+    }
 }

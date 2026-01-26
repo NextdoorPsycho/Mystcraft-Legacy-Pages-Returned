@@ -5,6 +5,9 @@ import art.arcane.mystcraft.registry.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -21,7 +24,9 @@ import net.minecraft.world.phys.Vec3;
  */
 public class MeteorEntity extends Entity {
 
-    private int size = 1;
+    private static final EntityDataAccessor<Integer> DATA_SIZE = SynchedEntityData.defineId(
+            MeteorEntity.class, EntityDataSerializers.INT);
+
     private boolean explodeOnImpact = true;
 
     public MeteorEntity(EntityType<?> type, Level level) {
@@ -32,13 +37,13 @@ public class MeteorEntity extends Entity {
     public MeteorEntity(Level level, double x, double y, double z, int size) {
         this(ModEntities.METEOR.get(), level);
         setPos(x, y, z);
-        this.size = size;
+        setSize(size);
         setDeltaMovement(0, -0.5, 0);
     }
 
     @Override
     protected void defineSynchedData() {
-        // TODO: Add synched size for rendering
+        this.entityData.define(DATA_SIZE, 1);
     }
 
     @Override
@@ -71,6 +76,7 @@ public class MeteorEntity extends Entity {
         }
 
         BlockPos impactPos = blockPosition();
+        int size = getSize();
         float explosionRadius = 2.0f + (size * 1.5f);
 
         // Play meteor impact sound
@@ -120,7 +126,7 @@ public class MeteorEntity extends Entity {
      * Spawns fire around the impact site.
      */
     private void spawnFire(ServerLevel level, BlockPos center, int radius) {
-        int fireCount = size * 3 + random.nextInt(4);
+        int fireCount = getSize() * 3 + random.nextInt(4);
         for (int i = 0; i < fireCount; i++) {
             int dx = random.nextInt(radius * 2 + 1) - radius;
             int dz = random.nextInt(radius * 2 + 1) - radius;
@@ -143,6 +149,7 @@ public class MeteorEntity extends Entity {
      * Spawns impact particles.
      */
     private void spawnImpactParticles(ServerLevel level, BlockPos center) {
+        int size = getSize();
         int particleCount = 20 + size * 10;
         for (int i = 0; i < particleCount; i++) {
             double ox = (random.nextDouble() - 0.5) * 2.0 * size;
@@ -164,21 +171,21 @@ public class MeteorEntity extends Entity {
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
-        size = tag.getInt("Size");
+        setSize(tag.getInt("Size"));
         explodeOnImpact = tag.getBoolean("ExplodeOnImpact");
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
-        tag.putInt("Size", size);
+        tag.putInt("Size", getSize());
         tag.putBoolean("ExplodeOnImpact", explodeOnImpact);
     }
 
     public int getSize() {
-        return size;
+        return this.entityData.get(DATA_SIZE);
     }
 
     public void setSize(int size) {
-        this.size = size;
+        this.entityData.set(DATA_SIZE, size);
     }
 }

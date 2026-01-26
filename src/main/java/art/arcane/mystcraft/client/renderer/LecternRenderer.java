@@ -1,7 +1,9 @@
 package art.arcane.mystcraft.client.renderer;
 
 import art.arcane.mystcraft.blockentity.LecternBlockEntity;
+import art.arcane.mystcraft.client.model.LecternModel;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -16,53 +18,64 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Renderer for the Mystcraft Lectern block entity.
- * Displays the book item on the lectern surface.
+ * Renders the lectern model using the entity texture with proper wedge geometry,
+ * then displays the book item on the sloped surface.
  */
 public class LecternRenderer implements BlockEntityRenderer<LecternBlockEntity> {
 
+    private final LecternModel model;
     private final ItemRenderer itemRenderer;
 
     public LecternRenderer(BlockEntityRendererProvider.Context context) {
+        this.model = new LecternModel();
         this.itemRenderer = Minecraft.getInstance().getItemRenderer();
     }
 
     @Override
     public void render(@NotNull LecternBlockEntity blockEntity, float partialTick, @NotNull PoseStack poseStack,
                        @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        ItemStack book = blockEntity.getBook();
-        if (book.isEmpty()) {
-            return;
-        }
 
-        poseStack.pushPose();
-
-        // Position the book on the lectern surface
-        poseStack.translate(0.5, 1.0, 0.5);
-
-        // Rotate based on block facing
+        // Get facing direction from block state - block faces toward player when placed
         Direction facing = blockEntity.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
-        float rotation = switch (facing) {
-            case NORTH -> 0;
-            case SOUTH -> 180;
-            case WEST -> 90;
-            case EAST -> -90;
-            default -> 0;
-        };
+
+        // Calculate rotation - the sloped reading surface should face the stored direction
+        // Add 180 to make the model face toward the player instead of away
+        float rotation = facing.toYRot() + 180;
+
+        // Render the lectern model
+        poseStack.pushPose();
+        // Position at center of block, at ground level (model bottom is at Y=0)
+        poseStack.translate(0.5, 0.0, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
 
-        // Tilt to match lectern angle (roughly 45 degrees)
-        poseStack.mulPose(Axis.XP.rotationDegrees(-67.5f));
-
-        // Move forward slightly to sit on the angled surface
-        poseStack.translate(0, 0, -0.1);
-
-        // Scale down the book
-        poseStack.scale(0.5f, 0.5f, 0.5f);
-
-        // Render the book item
-        itemRenderer.renderStatic(book, ItemDisplayContext.FIXED, packedLight, packedOverlay,
-                poseStack, bufferSource, blockEntity.getLevel(), 0);
-
+        VertexConsumer vertexConsumer = bufferSource.getBuffer(model.renderType());
+        model.renderToBuffer(poseStack, vertexConsumer, packedLight, packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
         poseStack.popPose();
+
+        // Render the book on the lectern surface
+        ItemStack book = blockEntity.getBook();
+        if (!book.isEmpty()) {
+            poseStack.pushPose();
+
+            // Position the book on the sloped lectern surface
+            poseStack.translate(0.5, 0.0, 0.5);
+            poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
+
+            // The lectern slopes from height 1/16 (left) to 7/16 (right)
+            // Center height is about 4/16 = 0.25, position book there
+            poseStack.translate(0, 0.3, 0);
+
+            // Tilt to match the lectern slope (approximately 20 degrees around Z axis)
+            poseStack.mulPose(Axis.ZP.rotationDegrees(-20f));
+
+            // Scale down the book
+            poseStack.scale(0.5f, 0.5f, 0.5f);
+
+            // Render the book item
+            itemRenderer.renderStatic(book, ItemDisplayContext.FIXED, packedLight, packedOverlay,
+                    poseStack, bufferSource, blockEntity.getLevel(), 0);
+
+            poseStack.popPose();
+        }
     }
 }

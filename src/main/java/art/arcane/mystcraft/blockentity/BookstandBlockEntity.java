@@ -8,9 +8,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Containers;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -22,10 +24,26 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Block entity for the Bookstand.
  * Holds a linkbook or agebook for display and use.
+ * Supports rotation with 45-degree yaw snapping.
  */
-public class BookstandBlockEntity extends MystcraftBlockEntity {
+public class BookstandBlockEntity extends MystcraftBlockEntity implements IRotateableBlockEntity {
 
     private static final String TAG_INVENTORY = "inventory";
+    private static final String TAG_YAW = "Yaw";
+    private static final String TAG_PITCH = "Pitch";
+
+    /**
+     * The yaw snap increment for bookstands (45 degrees).
+     */
+    protected static final int YAW_SNAP = 45;
+
+    /**
+     * The pitch snap increment for bookstands (15 degrees).
+     */
+    protected static final int PITCH_SNAP = 15;
+
+    private short yaw = 0;
+    private short pitch = 0;
 
     protected final ItemStackHandler inventory = new ItemStackHandler(1) {
         @Override
@@ -59,12 +77,86 @@ public class BookstandBlockEntity extends MystcraftBlockEntity {
     protected void writeNbt(CompoundTag tag) {
         super.writeNbt(tag);
         tag.put(TAG_INVENTORY, inventory.serializeNBT());
+        tag.putShort(TAG_YAW, yaw);
+        tag.putShort(TAG_PITCH, pitch);
     }
 
     @Override
     protected void readNbt(CompoundTag tag) {
         super.readNbt(tag);
         inventory.deserializeNBT(tag.getCompound(TAG_INVENTORY));
+        // Support legacy "Rotation" key from old versions
+        if (tag.contains("Rotation")) {
+            setYaw(tag.getInt("Rotation") + 270);
+        } else if (tag.contains(TAG_YAW)) {
+            this.yaw = tag.getShort(TAG_YAW);
+        }
+        if (tag.contains(TAG_PITCH)) {
+            this.pitch = tag.getShort(TAG_PITCH);
+        }
+    }
+
+    // ========== IRotateableBlockEntity Implementation ==========
+
+    @Override
+    public short getYaw() {
+        return yaw;
+    }
+
+    @Override
+    public void setYaw(int yaw) {
+        // Snap to 45-degree increments for bookstand
+        yaw = snapYaw(yaw, getYawSnap());
+        this.yaw = (short) (yaw % 360);
+        setChanged();
+        markForUpdate();
+    }
+
+    @Override
+    public short getPitch() {
+        return pitch;
+    }
+
+    @Override
+    public void setPitch(int pitch) {
+        // Snap to 15-degree increments
+        pitch = snapPitch(pitch, getPitchSnap());
+        this.pitch = (short) (pitch % 360);
+        setChanged();
+        markForUpdate();
+    }
+
+    /**
+     * Gets the yaw snap increment. Override in subclasses for different values.
+     */
+    protected int getYawSnap() {
+        return YAW_SNAP;
+    }
+
+    /**
+     * Gets the pitch snap increment. Override in subclasses for different values.
+     */
+    protected int getPitchSnap() {
+        return PITCH_SNAP;
+    }
+
+    /**
+     * Activates the link from the book on the stand.
+     * Called when a player right-clicks the stand.
+     */
+    public void activateLink(Entity entity) {
+        ItemStack book = getBook();
+        if (book.isEmpty()) {
+            return;
+        }
+        // TODO: Implement linking when LinkbookItem/AgebookItem have activateLink methods
+        // For now, this is handled by the block's use() method opening the book GUI
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        // Extend render bounds slightly for the book model
+        return new AABB(worldPosition).inflate(0.5);
     }
 
     @Override

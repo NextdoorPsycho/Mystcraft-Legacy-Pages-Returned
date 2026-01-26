@@ -1,6 +1,8 @@
 package art.arcane.mystcraft.blockentity;
 
+import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.item.PageItem;
 import art.arcane.mystcraft.menu.LinkModifierMenu;
@@ -9,12 +11,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -188,6 +192,142 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
             }
         }
         return drops;
+    }
+
+    /**
+     * Gets the book title.
+     */
+    @NotNull
+    public String getBookTitle() {
+        ItemStack book = getBook();
+        if (book.isEmpty()) return "";
+        return book.getHoverName().getString();
+    }
+
+    /**
+     * Sets the book title.
+     */
+    public void setBookTitle(@NotNull Player player, @NotNull String title) {
+        ItemStack book = getBook();
+        if (book.isEmpty()) return;
+        book.setHoverName(Component.literal(title));
+        setChanged();
+        markForUpdate();
+    }
+
+    /**
+     * Gets a link flag value.
+     */
+    public boolean getLinkFlag(@NotNull String flagId) {
+        ItemStack book = getBook();
+        if (book.isEmpty()) return false;
+        return Page.hasLinkProperty(book, flagId);
+    }
+
+    /**
+     * Sets a link flag value.
+     */
+    public void setLinkFlag(@NotNull String flagId, boolean value) {
+        ItemStack book = getBook();
+        if (book.isEmpty()) return;
+
+        if (value) {
+            Page.addLinkProperty(book, flagId);
+        } else {
+            Page.removeLinkProperty(book, flagId);
+        }
+        setChanged();
+        markForUpdate();
+    }
+
+    /**
+     * Gets the dimension UID for the book's link destination.
+     */
+    @NotNull
+    public String getLinkDimensionUID() {
+        ItemStack book = getBook();
+        if (book.isEmpty()) return "";
+
+        LinkOptions options = LinkOptions.fromItemStack(book);
+        if (options == null) return "";
+
+        ResourceKey<Level> dimKey = options.getDimension();
+        if (dimKey == null) return "";
+
+        return dimKey.location().toString();
+    }
+
+    /**
+     * Gets the seed from an agebook.
+     */
+    @NotNull
+    public String getItemSeed() {
+        ItemStack book = getBook();
+        if (book.isEmpty() || !(book.getItem() instanceof AgebookItem)) return "";
+
+        CompoundTag tag = book.getTag();
+        if (tag == null || !tag.contains("Seed")) return "";
+
+        return String.valueOf(tag.getLong("Seed"));
+    }
+
+    /**
+     * Sets the seed on an agebook.
+     */
+    public void setItemSeed(@NotNull Player player, @NotNull String seedStr) {
+        ItemStack book = getBook();
+        if (book.isEmpty() || !(book.getItem() instanceof AgebookItem)) return;
+
+        CompoundTag tag = book.getOrCreateTag();
+        if (seedStr.isEmpty()) {
+            tag.remove("Seed");
+        } else {
+            try {
+                long seed = Long.parseLong(seedStr);
+                tag.putLong("Seed", seed);
+            } catch (NumberFormatException ignored) {
+                // Invalid seed format
+            }
+        }
+        setChanged();
+        markForUpdate();
+    }
+
+    /**
+     * Checks if the book has a seed (only Agebooks).
+     */
+    public boolean hasItemSeed() {
+        ItemStack book = getBook();
+        return !book.isEmpty() && book.getItem() instanceof AgebookItem;
+    }
+
+    /**
+     * Checks if the link is dead (dimension destroyed).
+     */
+    public boolean isLinkDead() {
+        ItemStack book = getBook();
+        if (book.isEmpty()) return false;
+
+        LinkOptions options = LinkOptions.fromItemStack(book);
+        if (options == null) return false;
+
+        return options.isDead();
+    }
+
+    /**
+     * Marks the book's link as dead (recycles the dimension).
+     */
+    public void recycleDimension() {
+        ItemStack book = getBook();
+        if (book.isEmpty()) return;
+
+        LinkOptions options = LinkOptions.fromItemStack(book);
+        if (options == null) return;
+
+        options.setDead(true);
+        options.toItemStack(book);
+        setChanged();
+        markForUpdate();
     }
 
     // MenuProvider implementation

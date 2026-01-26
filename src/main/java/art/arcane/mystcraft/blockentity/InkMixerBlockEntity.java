@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.blockentity;
 
+import art.arcane.mystcraft.data.InkEffects;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.InkMixerMenu;
 import art.arcane.mystcraft.registry.ModBlockEntities;
@@ -262,12 +263,55 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
 
     /**
      * Adds items to modify ink properties.
+     * Items with registered ink effects will modify the probabilities of properties.
+     *
+     * @param stack  The item stack to add
+     * @param amount The number of items to consume
+     * @return The remaining items that weren't consumed
      */
     @NotNull
     public ItemStack addItems(@NotNull ItemStack stack, int amount) {
-        // TODO: Implement ink effects registry for items (dyes, etc.)
-        // For now, this is a stub that accepts items but doesn't modify probabilities
-        return stack;
+        if (!hasInk || stack.isEmpty()) {
+            return stack;
+        }
+
+        Map<String, Float> effects = InkEffects.getItemEffects(stack);
+        if (effects == null || effects.isEmpty()) {
+            return stack; // Item has no ink effects
+        }
+
+        // Consume items and add effects
+        int toConsume = Math.min(amount, stack.getCount());
+        for (int i = 0; i < toConsume; i++) {
+            for (Map.Entry<String, Float> entry : effects.entrySet()) {
+                String property = entry.getKey();
+                float probability = entry.getValue();
+
+                // Add probability (capped at 1.0)
+                float current = inkProbabilities.getOrDefault(property, 0f);
+                float newProb = Math.min(1.0f, current + probability);
+                inkProbabilities.put(property, newProb);
+            }
+        }
+
+        // Consume the items
+        ItemStack remainder = stack.copy();
+        remainder.shrink(toConsume);
+
+        setChanged();
+        markForUpdate();
+
+        return remainder;
+    }
+
+    /**
+     * Checks if an item can be added to the ink to modify properties.
+     */
+    public boolean canAddItem(@NotNull ItemStack stack) {
+        if (!hasInk || stack.isEmpty()) {
+            return false;
+        }
+        return InkEffects.hasEffects(stack);
     }
 
     /**

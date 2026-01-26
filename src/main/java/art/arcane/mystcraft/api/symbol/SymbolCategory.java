@@ -30,8 +30,11 @@ public enum SymbolCategory {
     /** Lighting (bright, dark, normal) */
     LIGHTING("lighting"),
 
-    /** Color modifiers for celestial/world objects */
+    /** Color modifiers for celestial/world objects (pushed onto stack) */
     COLOR("color"),
+
+    /** Visual effects (sky color, fog color, grass color targets) */
+    VISUAL_EFFECT("visual_effect"),
 
     /** Environmental effects (accelerated, meteors, lightning, etc.) */
     ENVIRONMENT("environment"),
@@ -50,6 +53,9 @@ public enum SymbolCategory {
 
     /** Length modifiers (zero, half, full, double) */
     LENGTH("length"),
+
+    /** General modifiers (clear, no sea, etc.) */
+    MODIFIER("modifier"),
 
     /** Special symbols (star fissure, crystals, etc.) */
     SPECIAL("special");

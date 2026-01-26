@@ -3,6 +3,7 @@ package art.arcane.mystcraft.item;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.event.AgeDataSyncHandler;
 import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
@@ -161,26 +162,38 @@ public class AgebookItem extends Item {
         AgeManager ageManager = AgeManager.get(level);
         int ageUID = ageManager.allocateUID();
 
+        // Generate a UUID for this age
+        java.util.UUID ageUUID = java.util.UUID.randomUUID();
+
         // Create the dimension with director configuration
         ServerLevel ageLevel = AgeDimensionFactory.createAgeDimension(
-                level.getServer(), ageUID, java.util.UUID.randomUUID(), director);
+                level.getServer(), ageUID, ageUUID, director);
 
         if (ageLevel == null) {
             player.displayClientMessage(Component.translatable("item.mystcraft.agebook.creation_failed"), true);
             return;
         }
 
+        // Register the age with AgeManager so it can be found later
+        ResourceLocation dimLoc = new ResourceLocation("mystcraft", "mystcraft_age_" + ageUID);
+        ageManager.registerAge(ageUID, dimLoc, ageUUID);
+
         // Initialize the AgeData
         AgeData ageData = AgeData.get(ageLevel);
         ageData.setAgeUID(ageUID);
+        ageData.setAgeUUID(ageUUID);
         ageData.setAgeName(getDisplayName(stack));
         for (String author : getAuthors(stack)) {
             ageData.addAuthor(author);
         }
         ageData.setPages(pages);
 
-        // Set instability from grammar system
-        ageData.setInstability(builder.getInstability());
+        // Copy ALL configuration from director (including instability)
+        ageData.copyFromDirector(director);
+
+        // Force sync Age data to the player BEFORE they teleport
+        // This ensures colors, instability, and other visual data is available on the client
+        AgeDataSyncHandler.syncAgeDataToPlayer(player, ageLevel);
 
         // Set spawn point at the center of spawn chunk
         net.minecraft.core.BlockPos spawn = ageLevel.getSharedSpawnPos();
@@ -189,6 +202,7 @@ public class AgebookItem extends Item {
         // Update the book with the Age's dimension ID and spawn
         LinkOptions.setDimensionUID(stack.getTag(), ageUID);
         LinkOptions.setSpawn(stack.getTag(), spawn.above());
+        LinkOptions.setUUID(stack.getTag(), ageUUID);
 
         // Report creation with instability info
         if (!builder.isComplete()) {

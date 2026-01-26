@@ -36,27 +36,29 @@ public class GrammarGenerator {
                 .required()
                 .build());
 
-        // Optional rules - can enhance the Age
+        // Celestials - random ages should have these for variety
         RULES.add(new GrammarRule.Builder(SymbolCategory.SUN)
                 .priority(80)
-                .count(0, 1)
+                .count(1, 1)  // Always generate a sun
                 .build());
 
         RULES.add(new GrammarRule.Builder(SymbolCategory.MOON)
                 .priority(79)
-                .count(0, 1)
+                .count(1, 1)  // Always generate a moon
                 .build());
 
         RULES.add(new GrammarRule.Builder(SymbolCategory.STARS)
                 .priority(78)
-                .count(0, 1)
+                .count(1, 1)  // Always generate stars
                 .build());
 
+        // Weather - always have a weather type
         RULES.add(new GrammarRule.Builder(SymbolCategory.WEATHER)
                 .priority(70)
-                .count(0, 1)
+                .count(1, 1)  // Always generate weather
                 .build());
 
+        // Features - add some variety
         RULES.add(new GrammarRule.Builder(SymbolCategory.FEATURE)
                 .priority(60)
                 .count(0, 4)
@@ -132,7 +134,7 @@ public class GrammarGenerator {
                 }
 
                 for (int i = 0; i < toAdd; i++) {
-                    IAgeSymbol generated = available.get(random.nextInt(available.size()));
+                    IAgeSymbol generated = selectWeightedSymbol(available, category, random);
                     result.add(generated);
                     generatedCount++;
 
@@ -153,6 +155,38 @@ public class GrammarGenerator {
             }
         }
 
+        // Randomly add colors to make ages more vibrant (like original Mystcraft)
+        if (providedCount == 0 || !hasCategory(result, SymbolCategory.COLOR)) {
+            int colorCount = random.nextInt(4) + 1; // 1-4 random colors
+            List<IAgeSymbol> colorSymbols = SymbolRegistry.getByCategory(SymbolCategory.COLOR);
+            if (!colorSymbols.isEmpty()) {
+                for (int i = 0; i < colorCount; i++) {
+                    IAgeSymbol color = colorSymbols.get(random.nextInt(colorSymbols.size()));
+                    result.add(color);
+                    generatedCount++;
+                    instability += 2.0f; // Small instability for random colors
+                    LOGGER.debug("Added random color: {}", color.getRegistryName());
+                }
+            }
+        }
+
+        // Randomly add 0-2 features for variety
+        if (providedCount == 0) {
+            int featureCount = random.nextInt(3); // 0-2 features
+            List<IAgeSymbol> featureSymbols = SymbolRegistry.getByCategory(SymbolCategory.FEATURE);
+            if (!featureSymbols.isEmpty() && featureCount > 0) {
+                for (int i = 0; i < featureCount; i++) {
+                    IAgeSymbol feature = featureSymbols.get(random.nextInt(featureSymbols.size()));
+                    if (!containsSymbol(result, feature)) {
+                        result.add(feature);
+                        generatedCount++;
+                        instability += 3.0f + feature.getInstabilityCost();
+                        LOGGER.debug("Added random feature: {}", feature.getRegistryName());
+                    }
+                }
+            }
+        }
+
         // Calculate instability from provided symbols
         for (IAgeSymbol symbol : inputSymbols) {
             instability += symbol.getInstabilityCost();
@@ -170,6 +204,52 @@ public class GrammarGenerator {
                 providedCount, generatedCount, instability);
 
         return new GenerationResult(result, instability, providedCount, generatedCount);
+    }
+
+    /**
+     * Selects a symbol with weighting based on category.
+     * For terrain, favors normal terrain over exotic types.
+     */
+    private static IAgeSymbol selectWeightedSymbol(List<IAgeSymbol> available, SymbolCategory category, RandomSource random) {
+        if (category == SymbolCategory.TERRAIN) {
+            // Weight terrain selection to favor normal terrain
+            // Normal terrain: 60%, others: shared 40%
+            List<IAgeSymbol> normalTerrain = new ArrayList<>();
+            List<IAgeSymbol> exoticTerrain = new ArrayList<>();
+
+            for (IAgeSymbol symbol : available) {
+                String path = symbol.getRegistryName().getPath();
+                if (path.equals("terrain_normal") || path.equals("terrain_amplified")) {
+                    normalTerrain.add(symbol);
+                } else {
+                    exoticTerrain.add(symbol);
+                }
+            }
+
+            // 70% chance for normal/amplified terrain, 30% for exotic
+            if (!normalTerrain.isEmpty() && (exoticTerrain.isEmpty() || random.nextFloat() < 0.7f)) {
+                return normalTerrain.get(random.nextInt(normalTerrain.size()));
+            } else if (!exoticTerrain.isEmpty()) {
+                return exoticTerrain.get(random.nextInt(exoticTerrain.size()));
+            }
+        }
+
+        // Default: random selection
+        return available.get(random.nextInt(available.size()));
+    }
+
+    /**
+     * Checks if the list contains any symbols of the given category.
+     */
+    private static boolean hasCategory(List<IAgeSymbol> symbols, SymbolCategory category) {
+        return symbols.stream().anyMatch(s -> s.getCategory() == category);
+    }
+
+    /**
+     * Checks if the list already contains a specific symbol.
+     */
+    private static boolean containsSymbol(List<IAgeSymbol> symbols, IAgeSymbol symbol) {
+        return symbols.stream().anyMatch(s -> s.getRegistryName().equals(symbol.getRegistryName()));
     }
 
     /**

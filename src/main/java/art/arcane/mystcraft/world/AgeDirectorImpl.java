@@ -50,6 +50,14 @@ public class AgeDirectorImpl implements AgeDirector {
     private int grassColor = -1;
     private int foliageColor = -1;
     private int waterColor = -1;
+    private int cloudColor = -1;
+    private int nightSkyColor = -1;
+    private boolean skyColorNatural = true;
+    private boolean fogColorNatural = true;
+    private boolean grassColorNatural = true;
+    private boolean foliageColorNatural = true;
+    private boolean waterColorNatural = true;
+    private boolean cloudColorNatural = true;
 
     // Features
     private boolean cavesEnabled = true;
@@ -69,11 +77,51 @@ public class AgeDirectorImpl implements AgeDirector {
     private boolean lightningEnabled = false;
     private boolean scorchedEnabled = false;
 
+    // Additional features/structures
+    private boolean crystalsEnabled = false;
+    private boolean deepLakesEnabled = true;
+    private boolean denseOresEnabled = false;
+    private boolean explosionsEnabled = false;
+    private boolean horizonHidden = false;
+    private boolean hugeTreesEnabled = false;
+    private boolean netherFortEnabled = false;
+    private boolean obelisksEnabled = false;
+    private boolean pvpEnabled = true;
+    private boolean rainbowEnabled = false;
+    private boolean spheresEnabled = false;
+    private boolean spikesEnabled = false;
+    private boolean starFissureEnabled = false;
+    private boolean surfaceLakesEnabled = true;
+    private boolean tendrilsEnabled = false;
+
+    // New structures (1.20+)
+    private boolean pillagerOutpostsEnabled = false;
+    private boolean ruinedPortalsEnabled = false;
+    private boolean ancientCitiesEnabled = false;
+    private boolean trailRuinsEnabled = false;
+    private boolean oceanMonumentsEnabled = false;
+    private boolean witchHutsEnabled = false;
+    private boolean desertTemplesEnabled = false;
+    private boolean jungleTemplesEnabled = false;
+    private boolean woodlandMansionsEnabled = false;
+    private boolean endCitiesEnabled = false;
+    private boolean bastionRemnantsEnabled = false;
+
+    // Cave features
+    private boolean dripstoneCavesEnabled = false;
+    private boolean lushCavesEnabled = false;
+    private boolean deepDarkEnabled = false;
+
+    // Gradient colors
+    private int sunsetColor = -1;
+
     // Modifier stacks
     private final Deque<Integer> colorStack = new ArrayDeque<>();
     private final Deque<Float> angleStack = new ArrayDeque<>();
     private final Deque<Float> lengthStack = new ArrayDeque<>();
     private final Deque<Float> phaseStack = new ArrayDeque<>();
+    private final Deque<Holder<Biome>> biomeStack = new ArrayDeque<>();
+    private final Deque<Integer> gradientStack = new ArrayDeque<>();
 
     public AgeDirectorImpl() {
         this(0L);
@@ -303,6 +351,80 @@ public class AgeDirectorImpl implements AgeDirector {
         return waterColor;
     }
 
+    @Override
+    public void setCloudColor(int color) {
+        this.cloudColor = color;
+    }
+
+    @Override
+    public int getCloudColor() {
+        return cloudColor;
+    }
+
+    @Override
+    public void setNightSkyColor(int color) {
+        this.nightSkyColor = color;
+    }
+
+    @Override
+    public int getNightSkyColor() {
+        return nightSkyColor;
+    }
+
+    @Override
+    public void setSkyColorNatural(boolean natural) {
+        this.skyColorNatural = natural;
+    }
+
+    public boolean isSkyColorNatural() {
+        return skyColorNatural;
+    }
+
+    @Override
+    public void setFogColorNatural(boolean natural) {
+        this.fogColorNatural = natural;
+    }
+
+    public boolean isFogColorNatural() {
+        return fogColorNatural;
+    }
+
+    @Override
+    public void setGrassColorNatural(boolean natural) {
+        this.grassColorNatural = natural;
+    }
+
+    public boolean isGrassColorNatural() {
+        return grassColorNatural;
+    }
+
+    @Override
+    public void setFoliageColorNatural(boolean natural) {
+        this.foliageColorNatural = natural;
+    }
+
+    public boolean isFoliageColorNatural() {
+        return foliageColorNatural;
+    }
+
+    @Override
+    public void setWaterColorNatural(boolean natural) {
+        this.waterColorNatural = natural;
+    }
+
+    public boolean isWaterColorNatural() {
+        return waterColorNatural;
+    }
+
+    @Override
+    public void setCloudColorNatural(boolean natural) {
+        this.cloudColorNatural = natural;
+    }
+
+    public boolean isCloudColorNatural() {
+        return cloudColorNatural;
+    }
+
     // ========================= Features =========================
 
     @Override
@@ -417,6 +539,143 @@ public class AgeDirectorImpl implements AgeDirector {
         return scorchedEnabled;
     }
 
+    // ========================= Additional Features =========================
+
+    @Override
+    public void setCrystalsEnabled(boolean enabled) {
+        this.crystalsEnabled = enabled;
+    }
+
+    public boolean areCrystalsEnabled() {
+        return crystalsEnabled;
+    }
+
+    @Override
+    public void setDeepLakesEnabled(boolean enabled) {
+        this.deepLakesEnabled = enabled;
+    }
+
+    public boolean areDeepLakesEnabled() {
+        return deepLakesEnabled;
+    }
+
+    @Override
+    public void setDenseOresEnabled(boolean enabled) {
+        this.denseOresEnabled = enabled;
+    }
+
+    public boolean areDenseOresEnabled() {
+        return denseOresEnabled;
+    }
+
+    @Override
+    public void setExplosionsEnabled(boolean enabled) {
+        this.explosionsEnabled = enabled;
+    }
+
+    public boolean areExplosionsEnabled() {
+        return explosionsEnabled;
+    }
+
+    @Override
+    public void setHorizonHidden(boolean hidden) {
+        this.horizonHidden = hidden;
+    }
+
+    public boolean isHorizonHidden() {
+        return horizonHidden;
+    }
+
+    @Override
+    public void setHugeTreesEnabled(boolean enabled) {
+        this.hugeTreesEnabled = enabled;
+    }
+
+    public boolean areHugeTreesEnabled() {
+        return hugeTreesEnabled;
+    }
+
+    @Override
+    public void setNetherFortEnabled(boolean enabled) {
+        this.netherFortEnabled = enabled;
+    }
+
+    public boolean isNetherFortEnabled() {
+        return netherFortEnabled;
+    }
+
+    @Override
+    public void setObelisksEnabled(boolean enabled) {
+        this.obelisksEnabled = enabled;
+    }
+
+    public boolean areObelisksEnabled() {
+        return obelisksEnabled;
+    }
+
+    @Override
+    public void setPvPEnabled(boolean enabled) {
+        this.pvpEnabled = enabled;
+    }
+
+    public boolean isPvPEnabled() {
+        return pvpEnabled;
+    }
+
+    @Override
+    public void setRainbowEnabled(boolean enabled) {
+        this.rainbowEnabled = enabled;
+    }
+
+    public boolean isRainbowEnabled() {
+        return rainbowEnabled;
+    }
+
+    @Override
+    public void setSpheresEnabled(boolean enabled) {
+        this.spheresEnabled = enabled;
+    }
+
+    public boolean areSpheresEnabled() {
+        return spheresEnabled;
+    }
+
+    @Override
+    public void setSpikesEnabled(boolean enabled) {
+        this.spikesEnabled = enabled;
+    }
+
+    public boolean areSpikesEnabled() {
+        return spikesEnabled;
+    }
+
+    @Override
+    public void setStarFissureEnabled(boolean enabled) {
+        this.starFissureEnabled = enabled;
+    }
+
+    public boolean isStarFissureEnabled() {
+        return starFissureEnabled;
+    }
+
+    @Override
+    public void setSurfaceLakesEnabled(boolean enabled) {
+        this.surfaceLakesEnabled = enabled;
+    }
+
+    public boolean areSurfaceLakesEnabled() {
+        return surfaceLakesEnabled;
+    }
+
+    @Override
+    public void setTendrilsEnabled(boolean enabled) {
+        this.tendrilsEnabled = enabled;
+    }
+
+    public boolean areTendrilsEnabled() {
+        return tendrilsEnabled;
+    }
+
     // ========================= Modifiers =========================
 
     @Override
@@ -457,5 +716,178 @@ public class AgeDirectorImpl implements AgeDirector {
     @Override
     public float popPhase() {
         return phaseStack.isEmpty() ? 0.0f : phaseStack.pop();
+    }
+
+    @Override
+    public void clearModifiers() {
+        colorStack.clear();
+        angleStack.clear();
+        lengthStack.clear();
+        phaseStack.clear();
+        biomeStack.clear();
+    }
+
+    @Override
+    public void pushBiome(Holder<Biome> biome) {
+        if (biome != null) {
+            biomeStack.push(biome);
+        }
+    }
+
+    @Override
+    public Holder<Biome> popBiome() {
+        return biomeStack.isEmpty() ? null : biomeStack.pop();
+    }
+
+    // ========================= Additional Structures =========================
+
+    @Override
+    public void setPillagerOutpostsEnabled(boolean enabled) {
+        this.pillagerOutpostsEnabled = enabled;
+    }
+
+    public boolean arePillagerOutpostsEnabled() {
+        return pillagerOutpostsEnabled;
+    }
+
+    @Override
+    public void setRuinedPortalsEnabled(boolean enabled) {
+        this.ruinedPortalsEnabled = enabled;
+    }
+
+    public boolean areRuinedPortalsEnabled() {
+        return ruinedPortalsEnabled;
+    }
+
+    @Override
+    public void setAncientCitiesEnabled(boolean enabled) {
+        this.ancientCitiesEnabled = enabled;
+    }
+
+    public boolean areAncientCitiesEnabled() {
+        return ancientCitiesEnabled;
+    }
+
+    @Override
+    public void setTrailRuinsEnabled(boolean enabled) {
+        this.trailRuinsEnabled = enabled;
+    }
+
+    public boolean areTrailRuinsEnabled() {
+        return trailRuinsEnabled;
+    }
+
+    @Override
+    public void setOceanMonumentsEnabled(boolean enabled) {
+        this.oceanMonumentsEnabled = enabled;
+    }
+
+    public boolean areOceanMonumentsEnabled() {
+        return oceanMonumentsEnabled;
+    }
+
+    @Override
+    public void setWitchHutsEnabled(boolean enabled) {
+        this.witchHutsEnabled = enabled;
+    }
+
+    public boolean areWitchHutsEnabled() {
+        return witchHutsEnabled;
+    }
+
+    @Override
+    public void setDesertTemplesEnabled(boolean enabled) {
+        this.desertTemplesEnabled = enabled;
+    }
+
+    public boolean areDesertTemplesEnabled() {
+        return desertTemplesEnabled;
+    }
+
+    @Override
+    public void setJungleTemplesEnabled(boolean enabled) {
+        this.jungleTemplesEnabled = enabled;
+    }
+
+    public boolean areJungleTemplesEnabled() {
+        return jungleTemplesEnabled;
+    }
+
+    @Override
+    public void setWoodlandMansionsEnabled(boolean enabled) {
+        this.woodlandMansionsEnabled = enabled;
+    }
+
+    public boolean areWoodlandMansionsEnabled() {
+        return woodlandMansionsEnabled;
+    }
+
+    @Override
+    public void setEndCitiesEnabled(boolean enabled) {
+        this.endCitiesEnabled = enabled;
+    }
+
+    public boolean areEndCitiesEnabled() {
+        return endCitiesEnabled;
+    }
+
+    @Override
+    public void setBastionRemnantsEnabled(boolean enabled) {
+        this.bastionRemnantsEnabled = enabled;
+    }
+
+    public boolean areBastionRemnantsEnabled() {
+        return bastionRemnantsEnabled;
+    }
+
+    // ========================= Cave Features =========================
+
+    @Override
+    public void setDripstoneCavesEnabled(boolean enabled) {
+        this.dripstoneCavesEnabled = enabled;
+    }
+
+    public boolean areDripstoneCavesEnabled() {
+        return dripstoneCavesEnabled;
+    }
+
+    @Override
+    public void setLushCavesEnabled(boolean enabled) {
+        this.lushCavesEnabled = enabled;
+    }
+
+    public boolean areLushCavesEnabled() {
+        return lushCavesEnabled;
+    }
+
+    @Override
+    public void setDeepDarkEnabled(boolean enabled) {
+        this.deepDarkEnabled = enabled;
+    }
+
+    public boolean isDeepDarkEnabled() {
+        return deepDarkEnabled;
+    }
+
+    // ========================= Gradient Colors =========================
+
+    @Override
+    public void setSunsetColor(int color) {
+        this.sunsetColor = color;
+    }
+
+    @Override
+    public int getSunsetColor() {
+        return sunsetColor;
+    }
+
+    @Override
+    public void pushGradient(int color) {
+        gradientStack.push(color);
+    }
+
+    @Override
+    public int popGradient() {
+        return gradientStack.isEmpty() ? -1 : gradientStack.pop();
     }
 }

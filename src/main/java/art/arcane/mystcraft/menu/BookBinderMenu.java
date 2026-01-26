@@ -4,6 +4,8 @@ import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModMenuTypes;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -27,10 +29,12 @@ public class BookBinderMenu extends AbstractContainerMenu {
     private final ContainerLevelAccess access;
     private final DataSlot pageCountData;
     private final DataSlot canBuildData;
+    private final Container craftResult;
 
-    // Slot indices
+    // Slot indices (matching legacy ContainerBookBinder)
     public static final int SLOT_COVER = 0;
-    public static final int BLOCK_ENTITY_SLOTS = 1;
+    public static final int SLOT_OUTPUT = 1;
+    public static final int BLOCK_ENTITY_SLOTS = 2;
 
     // Player inventory slot ranges
     private static final int PLAYER_INVENTORY_START = BLOCK_ENTITY_SLOTS;
@@ -51,23 +55,39 @@ public class BookBinderMenu extends AbstractContainerMenu {
         super(ModMenuTypes.BOOK_BINDER.get(), containerId);
         this.blockEntity = blockEntity;
         this.access = ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos());
+        this.craftResult = new SimpleContainer(1);
 
         IItemHandler handler = blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER)
                 .orElseThrow(() -> new IllegalStateException("BookBinder has no item handler"));
 
-        // Cover slot (top left area)
-        addSlot(new SlotItemHandler(handler, 0, 17, 17));
+        // Cover/Input slot (matching legacy at 8, 27)
+        addSlot(new SlotItemHandler(handler, 0, 8, 27));
 
-        // Player inventory (3 rows of 9)
+        // Output/Craft result slot (matching legacy at 152, 27) - uses separate inventory
+        addSlot(new Slot(craftResult, 0, 152, 27) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return false; // Cannot place items in output
+            }
+
+            @Override
+            public void onTake(@NotNull Player player, @NotNull ItemStack stack) {
+                // When taking the crafted item, build it
+                blockEntity.buildItem(stack, player);
+                super.onTake(player, stack);
+            }
+        });
+
+        // Player inventory (3 rows of 9) - ySize=181, so inventory starts at y=99
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 99 + row * 18));
             }
         }
 
-        // Player hotbar
+        // Player hotbar - at y=157 for ySize=181
         for (int col = 0; col < 9; col++) {
-            addSlot(new Slot(playerInventory, col, 8 + col * 18, 142));
+            addSlot(new Slot(playerInventory, col, 8 + col * 18, 157));
         }
 
         // Data slots
@@ -98,6 +118,9 @@ public class BookBinderMenu extends AbstractContainerMenu {
         super.broadcastChanges();
         pageCountData.set(blockEntity.getPageList().size());
         canBuildData.set(blockEntity.canBuildItem() ? 1 : 0);
+
+        // Update the craft result slot with preview of what would be crafted
+        craftResult.setItem(0, blockEntity.getCraftedItem());
     }
 
     /**

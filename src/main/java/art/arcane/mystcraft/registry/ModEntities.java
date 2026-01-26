@@ -1,11 +1,14 @@
 package art.arcane.mystcraft.registry;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.entity.ColoredLightningEntity;
+import art.arcane.mystcraft.entity.DummyEntity;
 import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.entity.MystcraftFallingBlockEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -38,6 +41,25 @@ public final class ModEntities {
                             .updateInterval(10)
                             .fireImmune()
                             .build(new ResourceLocation(Mystcraft.MOD_ID, "meteor").toString()));
+
+    public static final RegistryObject<EntityType<ColoredLightningEntity>> COLORED_LIGHTNING =
+            MystcraftRegistries.ENTITIES.register("colored_lightning",
+                    () -> EntityType.Builder.<ColoredLightningEntity>of(ColoredLightningEntity::new, MobCategory.MISC)
+                            .sized(0.0F, 0.0F)
+                            .clientTrackingRange(16)
+                            .updateInterval(Integer.MAX_VALUE)
+                            .noSave()
+                            .build(new ResourceLocation(Mystcraft.MOD_ID, "colored_lightning").toString()));
+
+    public static final RegistryObject<EntityType<DummyEntity>> DUMMY =
+            MystcraftRegistries.ENTITIES.register("dummy",
+                    () -> EntityType.Builder.<DummyEntity>of(DummyEntity::new, MobCategory.MISC)
+                            .sized(0.0F, 0.0F)
+                            .clientTrackingRange(0)
+                            .updateInterval(Integer.MAX_VALUE)
+                            .noSave()
+                            .noSummon()
+                            .build(new ResourceLocation(Mystcraft.MOD_ID, "dummy").toString()));
 
     private ModEntities() {
     }

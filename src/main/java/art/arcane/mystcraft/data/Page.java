@@ -151,6 +151,36 @@ public abstract class Page {
     }
 
     /**
+     * Checks if a page has a specific link property.
+     */
+    public static boolean hasLinkProperty(@NotNull ItemStack page, String property) {
+        return getLinkProperties(page).contains(property);
+    }
+
+    /**
+     * Removes a link property from a page.
+     */
+    public static void removeLinkProperty(@NotNull ItemStack page, String property) {
+        if (page.isEmpty() || page.getTag() == null) {
+            return;
+        }
+        CompoundTag data = getData(page);
+        if (!data.contains(TAG_LINK_PANEL)) {
+            return;
+        }
+        CompoundTag linkpanel = data.getCompound(TAG_LINK_PANEL);
+        ListTag list = linkpanel.getList(TAG_PROPERTIES, Tag.TAG_STRING);
+        ListTag newList = new ListTag();
+        for (int i = 0; i < list.size(); i++) {
+            String prop = list.getString(i);
+            if (!prop.equals(property)) {
+                newList.add(StringTag.valueOf(prop));
+            }
+        }
+        linkpanel.put(TAG_PROPERTIES, newList);
+    }
+
+    /**
      * Applies link panel properties to a linking item.
      */
     public static void applyLinkPanel(@NotNull ItemStack linkpanel, @NotNull ItemStack linkingitem) {
@@ -203,8 +233,17 @@ public abstract class Page {
             Collection<String> properties = getLinkProperties(page);
             if (properties != null && !properties.isEmpty()) {
                 for (String property : properties) {
-                    // TODO: Get localized name from InkEffects when implemented
-                    list.add(Component.literal(property));
+                    // Get localized name from InkEffects
+                    String localizedName = InkEffects.getLocalizedName(property);
+                    InkEffects.PropertyColor color = InkEffects.getPropertyColor(property);
+                    if (color != null) {
+                        // Add colored text
+                        int rgb = color.toRGB();
+                        list.add(Component.literal(localizedName).withStyle(style ->
+                                style.withColor(rgb)));
+                    } else {
+                        list.add(Component.literal(localizedName));
+                    }
                 }
             }
         }

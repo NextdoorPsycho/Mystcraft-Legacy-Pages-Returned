@@ -1,126 +1,637 @@
 package art.arcane.mystcraft.client.screen;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
+import art.arcane.mystcraft.client.gui.element.*;
+import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.item.FolderItem;
+import art.arcane.mystcraft.item.PortfolioItem;
 import art.arcane.mystcraft.menu.WritingDeskMenu;
+import art.arcane.mystcraft.network.ContainerActionPacket;
+import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Screen for the Writing Desk block.
- * Shows main inventory slots, tab slots, and ink level.
+ * Complex multi-panel interface replicating the legacy Mystcraft Writing Desk.
+ *
+ * Legacy layout:
+ * - leftsize = 228 (left panel with tabs + page surface)
+ * - windowsizeX = 176 (right panel - main inventory texture)
+ * - windowsizeY = 166 (main panel height)
+ * - buttonssizeY = 18 (top button bar)
+ * - guiCenter = leftsize + 5 = 233 (offset to right panel)
+ * - mainTop = buttonssizeY + 2 = 20 (y offset for main content)
+ * - xSize = leftsize + windowsizeX + 5 = 409
+ * - ySize = windowsizeY + buttonssizeY + 1 = 185
  */
 public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> {
 
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(Mystcraft.MOD_ID, "gui/writingdesk.png");
 
-    // Ink tank rendering dimensions
-    private static final int INK_TANK_X = 62;
-    private static final int INK_TANK_Y = 17;
-    private static final int INK_TANK_WIDTH = 8;
-    private static final int INK_TANK_HEIGHT = 52;
+    // Layout constants (matching legacy GuiWritingDesk)
+    private static final int LEFT_SIZE = 228;
+    private static final int WINDOW_SIZE_X = 176;
+    private static final int WINDOW_SIZE_Y = 166;
+    private static final int BUTTONS_SIZE_Y = 18;
+    private static final int TAB_WIDTH = 58;
+    private static final int GUI_CENTER = LEFT_SIZE + 5; // 233
+    private static final int MAIN_TOP = BUTTONS_SIZE_Y + 2; // 20
+
+    // Component sizes
+    private static final int TOTAL_WIDTH = LEFT_SIZE + WINDOW_SIZE_X + 5; // 409
+    private static final int TOTAL_HEIGHT = WINDOW_SIZE_Y + BUTTONS_SIZE_Y + 1; // 185
+
+    // Panel positions
+    private int surfaceLeft;
+    private int surfaceTop;
+    private int rightPanelLeft;
+    private int rightPanelTop;
+
+    // GUI elements
+    private MystGuiPanel rootElement;
+    private MystGuiSurfaceTabs surfaceTabs;
+    private MystGuiPageSurface pageSurface;
+    private MystGuiTextField searchField;
+    private MystGuiTextField nameField;
+    private MystGuiToggleButton sortAzButton;
+    private MystGuiToggleButton showAllButton;
+    private MystGuiFluidTank inkTank;
+    private MystGuiScrollablePages bookPageList;
+
+    // State
+    private int activeTabSlot = 0;
+    private int topTabSlot = 0;
+    private boolean sortAlphabetically = false;
+    private boolean showAll = false;
+    private String searchText = "";
+
+    // Symbol cost display
+    private static final int INK_COST_PER_SYMBOL = 100; // Base ink cost
+    private IAgeSymbol hoveredSymbol = null;
 
     public WritingDeskScreen(WritingDeskMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        // Larger GUI to accommodate tab slots
-        this.imageWidth = 176;
-        this.imageHeight = 186;
-        this.inventoryLabelY = this.imageHeight - 94;
+        this.imageWidth = TOTAL_WIDTH;
+        this.imageHeight = TOTAL_HEIGHT;
     }
 
     @Override
     protected void init() {
-        super.init();
-        // Center the title
-        this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
+        // Legacy centering: guiLeft = (width / 2) - (leftsize / 2) - (windowsizeX / 2)
+        // This centers the combined GUI
+        this.leftPos = (this.width / 2) - (LEFT_SIZE / 2) - (WINDOW_SIZE_X / 2);
+        this.topPos = (this.height - TOTAL_HEIGHT) / 2;
+
+        // Calculate panel positions
+        surfaceLeft = this.leftPos;
+        surfaceTop = this.topPos + MAIN_TOP;
+        rightPanelLeft = this.leftPos + GUI_CENTER;
+        rightPanelTop = this.topPos + MAIN_TOP;
+
+        // Create root element
+        rootElement = new MystGuiPanel(0, 0, TOTAL_WIDTH, TOTAL_HEIGHT);
+
+        // Create surface tabs (left side) - Legacy: (0, mainTop, 58, ySize)
+        surfaceTabs = new MystGuiSurfaceTabs(new TabHandler(), 0, MAIN_TOP, TAB_WIDTH, TOTAL_HEIGHT);
+        rootElement.addElement(surfaceTabs);
+
+        // Create page surface (center) - Legacy: (58, mainTop, leftsize-53, windowsizeY)
+        int surfaceX = 58;
+        int surfaceWidth = LEFT_SIZE - 53; // 175
+        pageSurface = new MystGuiPageSurface(new PagesProvider(), surfaceX, MAIN_TOP, surfaceWidth, WINDOW_SIZE_Y);
+        rootElement.addElement(pageSurface);
+
+        // Create sort buttons - Legacy: (58, 0, buttonssizeY, buttonssizeY)
+        sortAzButton = new MystGuiToggleButton("AZ", () -> sortAlphabetically, btn -> {
+            sortAlphabetically = !sortAlphabetically;
+        }, 58, 0, BUTTONS_SIZE_Y, BUTTONS_SIZE_Y);
+        sortAzButton.setText("AZ");
+        sortAzButton.setTooltip(List.of(Component.literal("Sort Alphabetically")));
+        rootElement.addElement(sortAzButton);
+
+        // Legacy: (58 + buttonssizeY, 0, buttonssizeY, buttonssizeY) = (76, 0, 18, 18)
+        showAllButton = new MystGuiToggleButton("ALL", () -> showAll, btn -> {
+            showAll = !showAll;
+        }, 58 + BUTTONS_SIZE_Y, 0, BUTTONS_SIZE_Y, BUTTONS_SIZE_Y);
+        showAllButton.setText("ALL");
+        showAllButton.setTooltip(List.of(Component.literal("Show all Symbols")));
+        rootElement.addElement(showAllButton);
+
+        // Create search field - Legacy: (58 + (buttonssizeY + 2) * 2, 0, leftsize - 53 - (buttonssizeY + 2) * 2, buttonssizeY)
+        // = (58 + 40, 0, 175 - 40, 18) = (98, 0, 135, 18)
+        int searchX = 58 + (BUTTONS_SIZE_Y + 2) * 2;
+        int searchWidth = LEFT_SIZE - 53 - (BUTTONS_SIZE_Y + 2) * 2;
+        searchField = new MystGuiTextField("SearchBox", () -> searchText, text -> {
+            searchText = text;
+            pageSurface.setSearchText(text);
+        }, searchX, 0, searchWidth, BUTTONS_SIZE_Y);
+        rootElement.addElement(searchField);
+
+        // Create ink tank display - Legacy: (guiCenter + windowsizeX - 44, mainTop + 7, 16, 70)
+        // = (233 + 176 - 44, 20 + 7, 16, 70) = (365, 27, 16, 70)
+        int tankX = GUI_CENTER + WINDOW_SIZE_X - 44;
+        int tankY = MAIN_TOP + 7;
+        inkTank = new MystGuiFluidTank(
+                () -> menu.getInkAmount(),
+                () -> menu.getInkCapacity(),
+                0xFF1A1A2E,
+                "Black Ink",
+                tankX, tankY, 16, 70
+        );
+        rootElement.addElement(inkTank);
+
+        // Create name field - Legacy: (guiCenter + 28, mainTop + 61, windowsizeX - 48 - 9 - 20, 14)
+        // = (233 + 28, 20 + 61, 176 - 77, 14) = (261, 81, 99, 14)
+        int nameX = GUI_CENTER + 28;
+        int nameY = MAIN_TOP + 61;
+        int nameWidth = WINDOW_SIZE_X - 48 - 9 - 20;
+        nameField = new MystGuiTextField("ItemName",
+                () -> getWritingItemName(),
+                this::onNameChanged,
+                nameX, nameY, nameWidth, 14);
+        nameField.setMaxLength(21);
+        rootElement.addElement(nameField);
+
+        // Book page list - Legacy: (guiCenter + 27, mainTop + 6, windowsizeX - 47 - 9 - 19, 50)
+        // = (233 + 27, 20 + 6, 176 - 75, 50) = (260, 26, 101, 50)
+        int listX = GUI_CENTER + 27;
+        int listY = MAIN_TOP + 6;
+        int listWidth = WINDOW_SIZE_X - 47 - 9 - 19;
+        int listHeight = 50;
+        bookPageList = new MystGuiScrollablePages(new BookPageListHandler(), listX, listY, listWidth, listHeight);
+        rootElement.addElement(bookPageList);
+    }
+
+    private String getWritingItemName() {
+        ItemStack writing = menu.getBlockEntity().getMainInventory().getStackInSlot(WritingDeskBlockEntity.SLOT_WRITING);
+        if (writing.isEmpty()) return "";
+        return writing.getHoverName().getString();
+    }
+
+    private void onNameChanged(String text) {
+        MystcraftNetwork.sendToServer(new ContainerActionPacket(
+                ContainerActionPacket.Action.WRITING_DESK_SET_TITLE,
+                menu.containerId,
+                false,
+                text
+        ));
+    }
+
+    @Override
+    public void containerTick() {
+        super.containerTick();
+        if (rootElement != null) {
+            rootElement.tick();
+        }
     }
 
     @Override
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, TEXTURE);
 
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
+        // Draw right panel background (main inventory texture) at (guiLeft + guiCenter, guiTop + mainTop)
+        guiGraphics.blit(TEXTURE, rightPanelLeft, rightPanelTop, 0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
-        guiGraphics.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        // Render ink tank fill level
-        renderInkTank(guiGraphics, x, y);
-    }
-
-    private void renderInkTank(GuiGraphics guiGraphics, int x, int y) {
-        int inkAmount = menu.getInkAmount();
-        int inkCapacity = menu.getInkCapacity();
-
-        if (inkCapacity <= 0 || inkAmount <= 0) {
-            return;
+        // Render GUI elements
+        if (rootElement != null) {
+            rootElement.setLeft(this.leftPos);
+            rootElement.setTop(this.topPos);
+            rootElement.renderBackground(guiGraphics, partialTick, mouseX, mouseY);
         }
-
-        // Calculate fill height
-        int fillHeight = (inkAmount * INK_TANK_HEIGHT) / inkCapacity;
-        fillHeight = Math.min(fillHeight, INK_TANK_HEIGHT);
-
-        // Draw ink fill (dark blue/black color for ink)
-        int tankX = x + INK_TANK_X;
-        int tankY = y + INK_TANK_Y;
-        int fillY = tankY + (INK_TANK_HEIGHT - fillHeight);
-
-        // Ink color (dark bluish-black)
-        int inkColor = 0xFF1A1A2E;
-        guiGraphics.fill(tankX, fillY, tankX + INK_TANK_WIDTH, tankY + INK_TANK_HEIGHT, inkColor);
     }
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+
+        // Render foreground elements
+        if (rootElement != null) {
+            rootElement.renderForeground(guiGraphics, mouseX, mouseY);
+        }
+
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+
+        // Render element tooltips
+        if (rootElement != null) {
+            List<Component> tooltip = rootElement.getTooltipInfo(mouseX, mouseY);
+            if (tooltip != null && !tooltip.isEmpty()) {
+                guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+            }
+        }
+
+        // Symbol cost indicator is shown via page surface tooltips
+        // The MystGuiPageSurface already handles hover detection
+    }
+
+    /**
+     * Gets the symbol being hovered over from the PagesProvider.
+     * Note: This uses the internal provider from our local PagesProvider implementation.
+     */
+    private IAgeSymbol getHoveredSymbolFromProvider(int mouseX, int mouseY) {
+        // Check if mouse is over page surface area
+        int surfaceX = this.leftPos + 58;
+        int surfaceY = this.topPos + MAIN_TOP;
+        int surfaceWidth = LEFT_SIZE - 53;
+        int surfaceHeight = WINDOW_SIZE_Y;
+
+        if (mouseX < surfaceX || mouseX >= surfaceX + surfaceWidth ||
+            mouseY < surfaceY || mouseY >= surfaceY + surfaceHeight) {
+            return null;
+        }
+
+        // Use our own provider to get pages
+        PagesProvider provider = new PagesProvider();
+        List<MystGuiPageSurface.PositionableItem> pages = provider.getPositionedPages();
+        if (pages == null) {
+            return null;
+        }
+
+        for (MystGuiPageSurface.PositionableItem item : pages) {
+            // Calculate item bounds
+            float itemX = surfaceX + item.x;
+            float itemY = surfaceY + item.y;
+            float itemWidth = MystGuiPageSurface.PAGE_WIDTH;
+            float itemHeight = MystGuiPageSurface.PAGE_HEIGHT;
+
+            if (mouseX >= itemX && mouseX < itemX + itemWidth &&
+                mouseY >= itemY && mouseY < itemY + itemHeight) {
+                if (!item.itemstack.isEmpty()) {
+                    ResourceLocation symbolId = Page.getSymbol(item.itemstack);
+                    if (symbolId != null) {
+                        return SymbolRegistry.get(symbolId);
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Renders the symbol cost indicator showing ink cost and instability.
+     */
+    private void renderSymbolCostIndicator(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        List<Component> costTooltip = new ArrayList<>();
+
+        // Symbol name
+        costTooltip.add(Component.literal(hoveredSymbol.getLocalizedName())
+                .withStyle(ChatFormatting.AQUA));
+
+        // Category
+        SymbolCategory category = hoveredSymbol.getCategory();
+        if (category != null) {
+            costTooltip.add(Component.literal("Category: " + category.name())
+                    .withStyle(ChatFormatting.GRAY));
+        }
+
+        costTooltip.add(Component.empty());
+
+        // Ink cost
+        int inkCost = calculateInkCost(hoveredSymbol);
+        int currentInk = menu.getInkAmount();
+        ChatFormatting inkColor = currentInk >= inkCost ? ChatFormatting.GREEN : ChatFormatting.RED;
+        costTooltip.add(Component.literal("Ink Cost: ")
+                .withStyle(ChatFormatting.GRAY)
+                .append(Component.literal(inkCost + " mB")
+                        .withStyle(inkColor)));
+
+        // Instability cost
+        float instability = hoveredSymbol.getInstabilityCost();
+        ChatFormatting instabilityColor;
+        if (instability < 0) {
+            instabilityColor = ChatFormatting.GREEN;
+        } else if (instability > 10) {
+            instabilityColor = ChatFormatting.RED;
+        } else if (instability > 0) {
+            instabilityColor = ChatFormatting.YELLOW;
+        } else {
+            instabilityColor = ChatFormatting.GRAY;
+        }
+        costTooltip.add(Component.literal("Instability: ")
+                .withStyle(ChatFormatting.GRAY)
+                .append(Component.literal(String.format("%+.1f", instability))
+                        .withStyle(instabilityColor)));
+
+        // Card rank
+        Integer rank = hoveredSymbol.getCardRank();
+        if (rank != null && rank > 0) {
+            String rankStars = "\u2605".repeat(rank); // Star character
+            ChatFormatting rankColor = switch (rank) {
+                case 1 -> ChatFormatting.WHITE;
+                case 2 -> ChatFormatting.GREEN;
+                case 3 -> ChatFormatting.BLUE;
+                case 4 -> ChatFormatting.GOLD;
+                default -> ChatFormatting.LIGHT_PURPLE;
+            };
+            costTooltip.add(Component.literal("Rank: ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.literal(rankStars)
+                            .withStyle(rankColor)));
+        }
+
+        // Warning if not enough ink
+        if (currentInk < inkCost) {
+            costTooltip.add(Component.empty());
+            costTooltip.add(Component.literal("Not enough ink!")
+                    .withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
+        }
+
+        // Render offset from cursor to not obscure the page
+        guiGraphics.renderTooltip(this.font, costTooltip, java.util.Optional.empty(), mouseX + 16, mouseY);
+    }
+
+    /**
+     * Calculates the ink cost for writing a symbol.
+     */
+    private int calculateInkCost(IAgeSymbol symbol) {
+        int baseCost = INK_COST_PER_SYMBOL;
+
+        // Higher rank symbols cost more
+        Integer rank = symbol.getCardRank();
+        if (rank != null && rank > 0) {
+            baseCost *= rank;
+        }
+
+        // High instability symbols cost more
+        float instability = symbol.getInstabilityCost();
+        if (instability > 10) {
+            baseCost = (int) (baseCost * 1.5);
+        }
+
+        return baseCost;
     }
 
     @Override
     protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
+        // Note: renderLabels is called with an offset to the GUI origin (leftPos, topPos),
+        // so positions here are relative to (0, 0) of the GUI, not screen coordinates.
 
-        // Show ink amount
-        int inkAmount = menu.getInkAmount();
-        int inkCapacity = menu.getInkCapacity();
-        String inkText = inkAmount + "/" + inkCapacity + " mB";
-        guiGraphics.drawString(this.font, inkText, 8, 72, 0x404040, false);
-
-        // Show ink cost indicator
-        if (menu.hasEnoughInk()) {
-            guiGraphics.drawString(this.font, Component.translatable("gui.mystcraft.writing_desk.ready"),
-                    8, 82, 0x207020, false);
-        } else {
-            guiGraphics.drawString(this.font, Component.translatable("gui.mystcraft.writing_desk.needs_ink"),
-                    8, 82, 0x702020, false);
-        }
+        // Legacy doesn't draw title in the WritingDesk - the texture has the title built in
+        // We don't draw title or inventory label as the legacy version doesn't either
     }
 
     @Override
-    protected void renderTooltip(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        super.renderTooltip(guiGraphics, mouseX, mouseY);
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (rootElement != null && rootElement.mouseClicked(mouseX, mouseY, button)) {
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
 
-        // Ink tank tooltip
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (rootElement != null && rootElement.mouseReleased(mouseX, mouseY, button)) {
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
 
-        if (mouseX >= x + INK_TANK_X && mouseX < x + INK_TANK_X + INK_TANK_WIDTH &&
-            mouseY >= y + INK_TANK_Y && mouseY < y + INK_TANK_Y + INK_TANK_HEIGHT) {
-            int inkAmount = menu.getInkAmount();
-            int inkCapacity = menu.getInkCapacity();
-            Component tooltip = Component.literal("Black Ink: " + inkAmount + "/" + inkCapacity + " mB");
-            guiGraphics.renderTooltip(this.font, tooltip, mouseX, mouseY);
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (rootElement != null && rootElement.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (rootElement != null && rootElement.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (rootElement != null && rootElement.keyPressed(keyCode, scanCode, modifiers)) {
+            return true;
+        }
+        // Allow closing with inventory key even when text field focused
+        if (keyCode == 256) { // Escape
+            this.onClose();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (rootElement != null && rootElement.charTyped(codePoint, modifiers)) {
+            return true;
+        }
+        return super.charTyped(codePoint, modifiers);
+    }
+
+    // Handler implementations
+
+    private class TabHandler implements MystGuiSurfaceTabs.TabHandler {
+        @Override
+        public ItemStack getItemInSlot(int slot) {
+            if (slot < 0 || slot >= WritingDeskBlockEntity.TAB_SLOT_COUNT) {
+                return ItemStack.EMPTY;
+            }
+            return menu.getBlockEntity().getTabInventory().getStackInSlot(slot);
+        }
+
+        @Override
+        public void setTopTabSlot(int topSlot) {
+            topTabSlot = Math.max(0, Math.min(topSlot, getMaxTabs() - 4));
+        }
+
+        @Override
+        public void onTabClick(int button, int slot) {
+            // If holding item, try to place in tab slot
+            ItemStack carried = menu.getCarried();
+            if (!carried.isEmpty()) {
+                // TODO: Send packet to add to tab
+                return;
+            }
+
+            // Otherwise, set as active tab
+            if (activeTabSlot != slot) {
+                activeTabSlot = slot;
+                MystcraftNetwork.sendToServer(new ContainerActionPacket(
+                        ContainerActionPacket.Action.WRITING_DESK_SET_ACTIVE_TAB,
+                        menu.containerId,
+                        slot
+                ));
+            }
+        }
+
+        @Override
+        public int getTopSlot() {
+            return topTabSlot;
+        }
+
+        @Override
+        public int getActiveTab() {
+            return activeTabSlot;
+        }
+
+        @Override
+        public int getMaxTabs() {
+            return WritingDeskBlockEntity.TAB_SLOT_COUNT;
+        }
+    }
+
+    private class PagesProvider implements MystGuiPageSurface.PagesProvider {
+        @Override
+        public List<MystGuiPageSurface.PositionableItem> getPositionedPages() {
+            List<MystGuiPageSurface.PositionableItem> result = new ArrayList<>();
+
+            // Get pages from active tab
+            ItemStack tabItem = menu.getBlockEntity().getTabInventory().getStackInSlot(activeTabSlot);
+            if (tabItem.isEmpty()) {
+                return result;
+            }
+
+            List<ItemStack> pages = null;
+            if (tabItem.getItem() instanceof FolderItem) {
+                pages = FolderItem.getPages(tabItem);
+            } else if (tabItem.getItem() instanceof PortfolioItem) {
+                pages = PortfolioItem.getPages(tabItem);
+            }
+
+            if (pages == null || pages.isEmpty()) {
+                return result;
+            }
+
+            // Sort if needed
+            if (sortAlphabetically) {
+                pages = new ArrayList<>(pages);
+                pages.sort((a, b) -> {
+                    String nameA = getPageName(a);
+                    String nameB = getPageName(b);
+                    return nameA.compareToIgnoreCase(nameB);
+                });
+            }
+
+            // Position pages in a grid
+            // Surface width is LEFT_SIZE - 53 = 175
+            float x = 6;
+            float y = 6;
+            int slotId = 0;
+            int surfaceWidth = LEFT_SIZE - 53 - 16; // Account for scrollbar
+            for (ItemStack page : pages) {
+                result.add(new MystGuiPageSurface.PositionableItem(slotId++, page, x, y, 1));
+                x += MystGuiPageSurface.PAGE_WIDTH + 4;
+                if (x + MystGuiPageSurface.PAGE_WIDTH > surfaceWidth) {
+                    x = 6;
+                    y += MystGuiPageSurface.PAGE_HEIGHT + 4;
+                }
+            }
+
+            return result;
+        }
+
+        private String getPageName(ItemStack page) {
+            ResourceLocation symbol = Page.getSymbol(page);
+            if (symbol != null) {
+                IAgeSymbol s = SymbolRegistry.get(symbol);
+                if (s != null) {
+                    return s.getLocalizedName();
+                }
+                return symbol.getPath();
+            }
+            return page.getHoverName().getString();
+        }
+
+        @Override
+        public void place(int index, boolean single) {
+            MystcraftNetwork.sendToServer(new ContainerActionPacket(
+                    ContainerActionPacket.Action.WRITING_DESK_ADD_TO_SURFACE,
+                    menu.containerId,
+                    single,
+                    "",
+                    index
+            ));
+        }
+
+        @Override
+        public void pickup(MystGuiPageSurface.PositionableItem item) {
+            MystcraftNetwork.sendToServer(new ContainerActionPacket(
+                    ContainerActionPacket.Action.WRITING_DESK_REMOVE_FROM_SURFACE,
+                    menu.containerId,
+                    item.slotId
+            ));
+        }
+
+        @Override
+        public void copy(MystGuiPageSurface.PositionableItem item) {
+            ResourceLocation symbol = Page.getSymbol(item.itemstack);
+            if (symbol != null) {
+                MystcraftNetwork.sendToServer(new ContainerActionPacket(
+                        ContainerActionPacket.Action.WRITING_DESK_WRITE_SYMBOL,
+                        menu.containerId,
+                        false,
+                        symbol.toString()
+                ));
+            }
+        }
+    }
+
+    private class BookPageListHandler implements MystGuiScrollablePages.PageListHandler {
+        @Override
+        public List<ItemStack> getPageList() {
+            // Get pages from writing slot if it's a book
+            ItemStack writing = menu.getBlockEntity().getMainInventory().getStackInSlot(WritingDeskBlockEntity.SLOT_WRITING);
+            if (writing.isEmpty()) {
+                return List.of();
+            }
+            // Get pages from agebook
+            if (writing.getItem() instanceof art.arcane.mystcraft.item.AgebookItem agebook) {
+                return agebook.getPageList(writing);
+            }
+            return List.of();
+        }
+
+        @Override
+        public void onItemPlace(int index, boolean single) {
+            // Insert page into book
+            MystcraftNetwork.sendToServer(new ContainerActionPacket(
+                    ContainerActionPacket.Action.WRITING_DESK_ADD_TO_BOOK,
+                    menu.containerId,
+                    single,
+                    "",
+                    index
+            ));
+        }
+
+        @Override
+        public void onItemRemove(int index) {
+            // Remove page from book
+            MystcraftNetwork.sendToServer(new ContainerActionPacket(
+                    ContainerActionPacket.Action.WRITING_DESK_REMOVE_FROM_BOOK,
+                    menu.containerId,
+                    index
+            ));
+        }
+
+        @Override
+        public ItemStack getHeldItem() {
+            return menu.getCarried();
         }
     }
 }

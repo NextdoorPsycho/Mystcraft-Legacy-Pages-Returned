@@ -40,6 +40,23 @@ public final class ModifierSymbols {
         SymbolRegistry.register(new ColorPurple());
         SymbolRegistry.register(new ColorWhite());
         SymbolRegistry.register(new ColorBlack());
+        SymbolRegistry.register(new ColorCyan());
+        SymbolRegistry.register(new ColorMagenta());
+        SymbolRegistry.register(new ColorLime());
+        SymbolRegistry.register(new ColorPink());
+        SymbolRegistry.register(new ColorGray());
+        SymbolRegistry.register(new ColorLightGray());
+        SymbolRegistry.register(new ColorBrown());
+        SymbolRegistry.register(new ColorLightBlue());
+
+        // Special modifiers
+        SymbolRegistry.register(new ModifierClear());
+        SymbolRegistry.register(new NoSea());
+
+        // Gradient modifiers (for sunset/celestial colors)
+        SymbolRegistry.register(new GradientSunset());
+        SymbolRegistry.register(new GradientDawn());
+        SymbolRegistry.register(new GradientDusk());
     }
 
     // ========================= Angles =========================
@@ -307,6 +324,206 @@ public final class ModifierSymbols {
         @Override
         public void registerLogic(AgeDirector director, long seed) {
             director.pushColor(0x000000);
+        }
+    }
+
+    public static class ColorCyan extends SymbolBase {
+        public ColorCyan() {
+            super(SymbolRegistry.mystcraftId("color_cyan"), SymbolCategory.COLOR);
+            setCardRank(0);
+            setPoem("Image", "Color", "Water", "Harmony");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.pushColor(0x00FFFF);
+        }
+    }
+
+    public static class ColorMagenta extends SymbolBase {
+        public ColorMagenta() {
+            super(SymbolRegistry.mystcraftId("color_magenta"), SymbolCategory.COLOR);
+            setCardRank(0);
+            setPoem("Image", "Color", "Magic", "Energy");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.pushColor(0xFF00FF);
+        }
+    }
+
+    public static class ColorLime extends SymbolBase {
+        public ColorLime() {
+            super(SymbolRegistry.mystcraftId("color_lime"), SymbolCategory.COLOR);
+            setCardRank(0);
+            setPoem("Image", "Color", "Nature", "Energy");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.pushColor(0x80FF00);
+        }
+    }
+
+    public static class ColorPink extends SymbolBase {
+        public ColorPink() {
+            super(SymbolRegistry.mystcraftId("color_pink"), SymbolCategory.COLOR);
+            setCardRank(0);
+            setPoem("Image", "Color", "Light", "Nurture");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.pushColor(0xFF80C0);
+        }
+    }
+
+    public static class ColorGray extends SymbolBase {
+        public ColorGray() {
+            super(SymbolRegistry.mystcraftId("color_gray"), SymbolCategory.COLOR);
+            setCardRank(0);
+            setPoem("Image", "Color", "Balance", "Constraint");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.pushColor(0x808080);
+        }
+    }
+
+    public static class ColorLightGray extends SymbolBase {
+        public ColorLightGray() {
+            super(SymbolRegistry.mystcraftId("color_light_gray"), SymbolCategory.COLOR);
+            setCardRank(0);
+            setPoem("Image", "Color", "Light", "Constraint");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.pushColor(0xC0C0C0);
+        }
+    }
+
+    public static class ColorBrown extends SymbolBase {
+        public ColorBrown() {
+            super(SymbolRegistry.mystcraftId("color_brown"), SymbolCategory.COLOR);
+            setCardRank(0);
+            setPoem("Image", "Color", "Earth", "Tradition");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.pushColor(0x8B4513);
+        }
+    }
+
+    public static class ColorLightBlue extends SymbolBase {
+        public ColorLightBlue() {
+            super(SymbolRegistry.mystcraftId("color_light_blue"), SymbolCategory.COLOR);
+            setCardRank(0);
+            setPoem("Image", "Color", "Sky", "Flow");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.pushColor(0x87CEEB);
+        }
+    }
+
+    // ========================= Special Modifiers =========================
+
+    public static class ModifierClear extends SymbolBase {
+        public ModifierClear() {
+            super(SymbolRegistry.mystcraftId("mod_clear"), SymbolCategory.MODIFIER);
+            setCardRank(0);
+            setInstabilityCost(0.0f);
+            setPoem("Modifier", "Void", "System", "Clear");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.clearModifiers();
+        }
+    }
+
+    public static class NoSea extends SymbolBase {
+        public NoSea() {
+            super(SymbolRegistry.mystcraftId("no_sea"), SymbolCategory.MODIFIER);
+            setCardRank(2);
+            setInstabilityCost(5.0f);
+            setPoem("Terrain", "Water", "Inhibit", "Void");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setHasSea(false);
+            director.addInstability(getInstabilityCost());
+        }
+    }
+
+    // ========================= Gradient Modifiers =========================
+
+    public static class GradientSunset extends SymbolBase {
+        public GradientSunset() {
+            super(SymbolRegistry.mystcraftId("gradient_sunset"), SymbolCategory.MODIFIER);
+            setCardRank(2);
+            setInstabilityCost(0.0f);
+            setPoem("Image", "Gradient", "Sun", "Setting");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            // Orange-red sunset gradient
+            int color = director.popColor();
+            if (color != -1) {
+                director.setSunsetColor(color);
+            } else {
+                // Default sunset color (orange-red)
+                director.setSunsetColor(0xFF6B35);
+            }
+        }
+    }
+
+    public static class GradientDawn extends SymbolBase {
+        public GradientDawn() {
+            super(SymbolRegistry.mystcraftId("gradient_dawn"), SymbolCategory.MODIFIER);
+            setCardRank(2);
+            setInstabilityCost(0.0f);
+            setPoem("Image", "Gradient", "Sun", "Rising");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            // Pink-yellow dawn gradient
+            int color = director.popColor();
+            if (color != -1) {
+                director.setSunsetColor(color);
+            } else {
+                // Default dawn color (pink-gold)
+                director.setSunsetColor(0xFFB366);
+            }
+        }
+    }
+
+    public static class GradientDusk extends SymbolBase {
+        public GradientDusk() {
+            super(SymbolRegistry.mystcraftId("gradient_dusk"), SymbolCategory.MODIFIER);
+            setCardRank(2);
+            setInstabilityCost(0.0f);
+            setPoem("Image", "Gradient", "Sun", "Fading");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            // Purple-blue dusk gradient
+            int color = director.popColor();
+            if (color != -1) {
+                director.setSunsetColor(color);
+            } else {
+                // Default dusk color (purple-blue)
+                director.setSunsetColor(0x8B5A8B);
+            }
         }
     }
 }

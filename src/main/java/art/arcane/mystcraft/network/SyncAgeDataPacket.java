@@ -32,7 +32,31 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
             // Store the age data in client-side cache
             ClientAgeDataCache.setAgeData(packet.ageUID, packet.data);
 
-            Mystcraft.LOGGER.debug("Received Age data for UID {}", packet.ageUID);
+            // Debug logging to track sync flow
+            CompoundTag config = packet.data.contains("AgeConfig") ? packet.data.getCompound("AgeConfig") : null;
+            int configKeys = config != null ? config.getAllKeys().size() : 0;
+            float instability = packet.data.contains("Instability") ? packet.data.getFloat("Instability") : 0;
+            Mystcraft.LOGGER.info("Received Age data for UID {} - {} config keys, instability: {}",
+                    packet.ageUID, configKeys, instability);
+
+            // Log specific color values for debugging
+            if (config != null) {
+                if (config.contains("GrassColor")) {
+                    Mystcraft.LOGGER.debug("  GrassColor: 0x{}", Integer.toHexString(config.getInt("GrassColor")));
+                }
+                if (config.contains("FoliageColor")) {
+                    Mystcraft.LOGGER.debug("  FoliageColor: 0x{}", Integer.toHexString(config.getInt("FoliageColor")));
+                }
+                if (config.contains("WaterColor")) {
+                    Mystcraft.LOGGER.debug("  WaterColor: 0x{}", Integer.toHexString(config.getInt("WaterColor")));
+                }
+                if (config.contains("SkyColor")) {
+                    Mystcraft.LOGGER.debug("  SkyColor: 0x{}", Integer.toHexString(config.getInt("SkyColor")));
+                }
+                if (config.contains("FogColor")) {
+                    Mystcraft.LOGGER.debug("  FogColor: 0x{}", Integer.toHexString(config.getInt("FogColor")));
+                }
+            }
         });
         ctx.setPacketHandled(true);
     }
@@ -74,6 +98,109 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
                 return data.getFloat("Instability");
             }
             return 0.0f;
+        }
+
+        // ========================= Rendering Configuration Getters =========================
+
+        private static CompoundTag getConfig(int ageUID) {
+            CompoundTag data = CACHE.get(ageUID);
+            if (data != null && data.contains("AgeConfig")) {
+                return data.getCompound("AgeConfig");
+            }
+            return null;
+        }
+
+        public static int getSkyColor(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.contains("SkyColor") ? config.getInt("SkyColor") : -1;
+        }
+
+        public static int getFogColor(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.contains("FogColor") ? config.getInt("FogColor") : -1;
+        }
+
+        public static int getGrassColor(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.contains("GrassColor") ? config.getInt("GrassColor") : -1;
+        }
+
+        public static int getFoliageColor(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.contains("FoliageColor") ? config.getInt("FoliageColor") : -1;
+        }
+
+        public static int getWaterColor(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.contains("WaterColor") ? config.getInt("WaterColor") : -1;
+        }
+
+        public static int getCloudColor(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.contains("CloudColor") ? config.getInt("CloudColor") : -1;
+        }
+
+        public static int getNightSkyColor(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.contains("NightSkyColor") ? config.getInt("NightSkyColor") : -1;
+        }
+
+        public static boolean isSunVisible(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config == null || !config.contains("SunVisible") || config.getBoolean("SunVisible");
+        }
+
+        public static boolean isMoonVisible(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config == null || !config.contains("MoonVisible") || config.getBoolean("MoonVisible");
+        }
+
+        public static boolean areStarsVisible(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config == null || !config.contains("StarsVisible") || config.getBoolean("StarsVisible");
+        }
+
+        public static String getStarType(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            if (config != null && config.contains("StarType")) {
+                String type = config.getString("StarType");
+                return type.isEmpty() ? "normal" : type;
+            }
+            return "normal";
+        }
+
+        public static String getLightingType(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            if (config != null && config.contains("LightingType")) {
+                String type = config.getString("LightingType");
+                return type.isEmpty() ? "normal" : type;
+            }
+            return "normal";
+        }
+
+        public static boolean isHorizonHidden(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.getBoolean("HorizonHidden");
+        }
+
+        public static boolean isRainbowEnabled(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.getBoolean("RainbowEnabled");
+        }
+
+        public static boolean areMeteorsEnabled(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.getBoolean("MeteorsEnabled");
+        }
+
+        public static boolean isLightningEnabled(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.getBoolean("LightningEnabled");
+        }
+
+        public static boolean areExplosionsEnabled(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.getBoolean("ExplosionsEnabled");
         }
     }
 }

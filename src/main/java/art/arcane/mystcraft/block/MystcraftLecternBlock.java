@@ -62,8 +62,8 @@ public class MystcraftLecternBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        // Use MODEL to render the OBJ model via JSON, BER renders book on top
-        return RenderShape.MODEL;
+        // Use ENTITYBLOCK_ANIMATED - the BlockEntityRenderer handles all rendering
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
@@ -80,16 +80,17 @@ public class MystcraftLecternBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return null;
+        // Only tick on server side for map updates
+        if (level.isClientSide) {
+            return null;
+        }
+        return createTickerHelper(type, art.arcane.mystcraft.registry.ModBlockEntities.LECTERN.get(),
+                LecternBlockEntity::serverTick);
     }
 
     @Override
     @NotNull
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (level.isClientSide) {
-            return InteractionResult.SUCCESS;
-        }
-
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (!(blockEntity instanceof LecternBlockEntity lectern)) {
             return InteractionResult.PASS;
@@ -100,26 +101,30 @@ public class MystcraftLecternBlock extends BaseEntityBlock {
         if (lectern.hasBook()) {
             // Book is on lectern
             if (player.isShiftKeyDown() && held.isEmpty()) {
-                // Shift + empty hand = pick up book
-                player.setItemInHand(hand, lectern.getBook());
-                lectern.setBook(ItemStack.EMPTY);
-                return InteractionResult.CONSUME;
+                // Shift + empty hand = pick up book (server only)
+                if (!level.isClientSide) {
+                    player.setItemInHand(hand, lectern.getBook());
+                    lectern.setBook(ItemStack.EMPTY);
+                }
+                return InteractionResult.sidedSuccess(level.isClientSide);
             } else {
-                // Open book GUI (client-side) or perform linking (server-side)
+                // Open book GUI on client side
                 if (level.isClientSide) {
                     openBookScreen(lectern.getBook());
                 }
-                return InteractionResult.SUCCESS;
+                return InteractionResult.sidedSuccess(level.isClientSide);
             }
         } else {
             // No book on lectern
             if (!held.isEmpty() && BookstandBlockEntity.isValidBook(held)) {
-                // Place book on lectern
-                ItemStack bookCopy = held.copy();
-                bookCopy.setCount(1);
-                held.shrink(1);
-                lectern.setBook(bookCopy);
-                return InteractionResult.CONSUME;
+                // Place book on lectern (server only)
+                if (!level.isClientSide) {
+                    ItemStack bookCopy = held.copy();
+                    bookCopy.setCount(1);
+                    held.shrink(1);
+                    lectern.setBook(bookCopy);
+                }
+                return InteractionResult.sidedSuccess(level.isClientSide);
             }
             return InteractionResult.PASS;
         }

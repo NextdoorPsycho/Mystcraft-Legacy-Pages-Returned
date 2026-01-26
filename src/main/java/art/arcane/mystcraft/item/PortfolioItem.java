@@ -1,11 +1,15 @@
 package art.arcane.mystcraft.item;
 
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.PortfolioMenu;
 import art.arcane.mystcraft.registry.ModMenuTypes;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -21,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -145,11 +150,35 @@ public class PortfolioItem extends Item {
     }
 
     /**
-     * Sorts pages alphabetically by symbol name.
+     * Sorts pages by symbol category first, then by symbol name.
+     * Link panels are sorted to the front.
      */
     public static void sortPages(ItemStack portfolio) {
         List<ItemStack> pages = getPages(portfolio);
-        // TODO: Implement sorting by symbol type/name when SymbolManager is implemented
+
+        pages.sort(Comparator.comparing((ItemStack page) -> {
+            // Link panels come first
+            if (Page.isLinkPanel(page)) {
+                return "000_linkpanel";
+            }
+            // Blank pages come second
+            if (Page.isBlank(page)) {
+                return "001_blank";
+            }
+            // Sort by category then name
+            ResourceLocation symbolId = Page.getSymbol(page);
+            if (symbolId != null) {
+                IAgeSymbol symbol = SymbolRegistry.get(symbolId);
+                if (symbol != null) {
+                    String category = symbol.getCategory().getName().toLowerCase();
+                    String name = symbol.getLocalizedName().toLowerCase();
+                    return category + "_" + name;
+                }
+                return "zzz_" + symbolId.toString();
+            }
+            return "zzz_unknown";
+        }));
+
         setPages(portfolio, pages);
     }
 

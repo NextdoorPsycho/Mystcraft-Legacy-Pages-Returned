@@ -14,6 +14,9 @@ import art.arcane.mystcraft.registry.ModVillagers;
 import art.arcane.mystcraft.registry.ModWorldGen;
 import art.arcane.mystcraft.registry.MystcraftRegistries;
 import art.arcane.mystcraft.world.structure.ModStructures;
+import art.arcane.mystcraft.data.InkEffects;
+import art.arcane.mystcraft.grammar.GrammarRules;
+import art.arcane.mystcraft.instability.InstabilityData;
 import art.arcane.mystcraft.symbol.ModSymbols;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.logging.LogUtils;
@@ -77,14 +80,20 @@ public class Mystcraft {
             // Initialize networking
             MystcraftNetwork.register();
 
+            // Initialize ink effects registry
+            InkEffects.init();
+
             // Register all symbols
             ModSymbols.registerAll();
 
             // Freeze symbol registry to prevent late registration
             SymbolRegistry.freeze();
 
-            // TODO: Register capabilities
-            // TODO: Setup grammar system
+            // Initialize grammar rules for CFG-based Age generation
+            GrammarRules.initialize();
+
+            // Initialize instability providers and decks
+            InstabilityData.initialize();
         });
     }
 
@@ -126,6 +135,18 @@ public class Mystcraft {
         }
 
         @SubscribeEvent
+        public static void onRegisterLayerDefinitions(net.minecraftforge.client.event.EntityRenderersEvent.RegisterLayerDefinitions event) {
+            LOGGER.info("Registering Mystcraft model layers");
+
+            // Block entity model layers
+            event.registerLayerDefinition(art.arcane.mystcraft.client.model.BookstandModel.LAYER_LOCATION,
+                    art.arcane.mystcraft.client.model.BookstandModel::createBodyLayer);
+            // LecternModel uses custom vertex rendering, no layer registration needed
+            event.registerLayerDefinition(art.arcane.mystcraft.client.model.WritingDeskModel.LAYER_LOCATION,
+                    art.arcane.mystcraft.client.model.WritingDeskModel::createBodyLayer);
+        }
+
+        @SubscribeEvent
         public static void onRegisterRenderers(net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
             LOGGER.info("Registering Mystcraft renderers");
 
@@ -144,6 +165,12 @@ public class Mystcraft {
                     art.arcane.mystcraft.client.renderer.LinkbookEntityRenderer::new);
             event.registerEntityRenderer(ModEntities.METEOR.get(),
                     art.arcane.mystcraft.client.renderer.MeteorEntityRenderer::new);
+            event.registerEntityRenderer(ModEntities.FALLING_BLOCK.get(),
+                    art.arcane.mystcraft.client.renderer.MystcraftFallingBlockRenderer::new);
+            event.registerEntityRenderer(ModEntities.COLORED_LIGHTNING.get(),
+                    art.arcane.mystcraft.client.renderer.ColoredLightningRenderer::new);
+            event.registerEntityRenderer(ModEntities.DUMMY.get(),
+                    art.arcane.mystcraft.client.renderer.NoopEntityRenderer::new);
         }
     }
 }

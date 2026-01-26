@@ -1,7 +1,12 @@
 package art.arcane.mystcraft.data;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -223,6 +228,41 @@ public class LinkOptions {
         return 180;
     }
 
+    /**
+     * Sets the portal/link color.
+     */
+    public static CompoundTag setLinkColor(CompoundTag nbttagcompound, int color) {
+        if (nbttagcompound == null) {
+            nbttagcompound = new CompoundTag();
+        }
+        nbttagcompound.putInt("LinkColor", color);
+        return nbttagcompound;
+    }
+
+    /**
+     * Gets the portal/link color.
+     *
+     * @return The color as RGB, or null if not set
+     */
+    @Nullable
+    public static Integer getLinkColor(CompoundTag nbttagcompound) {
+        if (nbttagcompound != null && nbttagcompound.contains("LinkColor")) {
+            return nbttagcompound.getInt("LinkColor");
+        }
+        return null;
+    }
+
+    /**
+     * Gets the portal/link color with a default fallback.
+     *
+     * @param defaultColor The color to return if not set
+     * @return The color as RGB
+     */
+    public static int getLinkColor(CompoundTag nbttagcompound, int defaultColor) {
+        Integer color = getLinkColor(nbttagcompound);
+        return color != null ? color : defaultColor;
+    }
+
     @NotNull
     private static CompoundTag getFlagCompound(CompoundTag nbttagcompound) {
         if (!nbttagcompound.contains("Flags")) {
@@ -237,5 +277,120 @@ public class LinkOptions {
             nbttagcompound.put("Props", new CompoundTag());
         }
         return nbttagcompound.getCompound("Props");
+    }
+
+    // Dimension key methods
+
+    /**
+     * Gets the dimension ResourceKey from the data.
+     */
+    @Nullable
+    public ResourceKey<Level> getDimension() {
+        return getDimension(data);
+    }
+
+    /**
+     * Sets the dimension ResourceKey.
+     */
+    public void setDimension(@Nullable ResourceKey<Level> dimension) {
+        data = setDimension(data, dimension);
+    }
+
+    public static CompoundTag setDimension(CompoundTag nbttagcompound, @Nullable ResourceKey<Level> dimension) {
+        if (nbttagcompound == null) {
+            nbttagcompound = new CompoundTag();
+        }
+        if (dimension != null) {
+            nbttagcompound.putString("DimensionKey", dimension.location().toString());
+        } else {
+            nbttagcompound.remove("DimensionKey");
+        }
+        return nbttagcompound;
+    }
+
+    @Nullable
+    public static ResourceKey<Level> getDimension(CompoundTag nbttagcompound) {
+        if (nbttagcompound != null && nbttagcompound.contains("DimensionKey")) {
+            String key = nbttagcompound.getString("DimensionKey");
+            return ResourceKey.create(Registries.DIMENSION, new ResourceLocation(key));
+        }
+        return null;
+    }
+
+    // Dead link methods
+
+    /**
+     * Checks if the link is marked as dead.
+     */
+    public boolean isDead() {
+        return isDead(data);
+    }
+
+    /**
+     * Sets the link dead status.
+     */
+    public void setDead(boolean dead) {
+        data = setDead(data, dead);
+    }
+
+    public static CompoundTag setDead(CompoundTag nbttagcompound, boolean dead) {
+        if (nbttagcompound == null) {
+            nbttagcompound = new CompoundTag();
+        }
+        if (dead) {
+            nbttagcompound.putBoolean("LinkDead", true);
+        } else {
+            nbttagcompound.remove("LinkDead");
+        }
+        return nbttagcompound;
+    }
+
+    public static boolean isDead(CompoundTag nbttagcompound) {
+        if (nbttagcompound != null && nbttagcompound.contains("LinkDead")) {
+            return nbttagcompound.getBoolean("LinkDead");
+        }
+        return false;
+    }
+
+    // ItemStack methods
+
+    private static final String TAG_LINK_OPTIONS = "LinkOptions";
+
+    /**
+     * Creates LinkOptions from an ItemStack.
+     *
+     * @param stack The item stack
+     * @return LinkOptions, or null if the stack has no link data
+     */
+    @Nullable
+    public static LinkOptions fromItemStack(ItemStack stack) {
+        if (stack.isEmpty()) return null;
+        CompoundTag tag = stack.getTag();
+        if (tag == null || !tag.contains(TAG_LINK_OPTIONS)) return null;
+        return new LinkOptions(tag.getCompound(TAG_LINK_OPTIONS));
+    }
+
+    /**
+     * Saves LinkOptions to an ItemStack.
+     *
+     * @param stack The item stack to save to
+     */
+    public void toItemStack(ItemStack stack) {
+        if (stack.isEmpty()) return;
+        CompoundTag tag = stack.getOrCreateTag();
+        tag.put(TAG_LINK_OPTIONS, this.data.copy());
+    }
+
+    /**
+     * Removes LinkOptions from an ItemStack.
+     *
+     * @param stack The item stack
+     */
+    public static void removeFromItemStack(ItemStack stack) {
+        if (stack.isEmpty()) return;
+        CompoundTag tag = stack.getTag();
+        if (tag != null) {
+            tag.remove(TAG_LINK_OPTIONS);
+        }
     }
 }

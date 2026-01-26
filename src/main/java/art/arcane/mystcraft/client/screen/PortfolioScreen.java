@@ -18,9 +18,9 @@ import org.jetbrains.annotations.NotNull;
  */
 public class PortfolioScreen extends AbstractContainerScreen<PortfolioMenu> {
 
-    // Use vanilla generic 54 slot texture as placeholder until custom texture is created
+    // Use Mystcraft portfolio texture
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation("textures/gui/container/generic_54.png");
+            new ResourceLocation(Mystcraft.MOD_ID, "gui/portfolio.png");
 
     public PortfolioScreen(PortfolioMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

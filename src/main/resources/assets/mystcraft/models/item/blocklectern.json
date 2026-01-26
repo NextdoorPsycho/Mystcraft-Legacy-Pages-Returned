@@ -1,3 +1,6 @@
 {
-    "parent": "mystcraft:block/blockmodel_nothing"
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "mystcraft:models/lectern_texture"
+    }
 }

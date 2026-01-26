@@ -1,0 +1,19 @@
+{
+  "type": "mystcraft:underground_archive",
+  "biomes": "#mystcraft:has_structure/underground_archive",
+  "spawn_overrides": {},
+  "step": "underground_structures",
+  "terrain_adaptation": "bury",
+  "start_pool": "mystcraft:underground_archive/base",
+  "size": 4,
+  "start_height": {
+    "type": "minecraft:uniform",
+    "min_inclusive": {
+      "absolute": -40
+    },
+    "max_inclusive": {
+      "absolute": 0
+    }
+  },
+  "max_distance_from_center": 116
+}

@@ -18,9 +18,9 @@ import org.jetbrains.annotations.NotNull;
  */
 public class FolderScreen extends AbstractContainerScreen<FolderMenu> {
 
-    // Use vanilla shulker box texture as placeholder until custom texture is created
+    // Use Mystcraft notebook texture for folder GUI
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation("textures/gui/container/shulker_box.png");
+            new ResourceLocation(Mystcraft.MOD_ID, "gui/notebook.png");
 
     public FolderScreen(FolderMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

@@ -16,9 +16,9 @@ import org.jetbrains.annotations.NotNull;
  */
 public class LinkModifierScreen extends AbstractContainerScreen<LinkModifierMenu> {
 
-    // Use vanilla dispenser texture as placeholder until custom texture is created
+    // Use Mystcraft link modifier texture
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation("textures/gui/container/dispenser.png");
+            new ResourceLocation(Mystcraft.MOD_ID, "gui/linkmodifier.png");
 
     public LinkModifierScreen(LinkModifierMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

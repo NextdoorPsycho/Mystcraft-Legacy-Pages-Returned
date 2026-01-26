@@ -12,6 +12,7 @@ import art.arcane.mystcraft.registry.ModMenuTypes;
 import art.arcane.mystcraft.registry.ModSounds;
 import art.arcane.mystcraft.registry.ModWorldGen;
 import art.arcane.mystcraft.registry.MystcraftRegistries;
+import art.arcane.mystcraft.world.structure.ModStructures;
 import art.arcane.mystcraft.symbol.ModSymbols;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.logging.LogUtils;
@@ -56,6 +57,7 @@ public class Mystcraft {
         ModMenuTypes.register();
         ModLootModifiers.register();
         ModWorldGen.register(modEventBus);
+        ModStructures.register(modEventBus);
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);

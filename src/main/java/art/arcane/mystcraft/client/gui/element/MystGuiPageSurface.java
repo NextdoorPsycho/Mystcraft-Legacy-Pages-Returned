@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.client.gui.element;
 
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.client.render.PageRenderHelper;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -162,14 +163,8 @@ public class MystGuiPageSurface extends MystGuiElement {
     }
 
     private void renderPage(GuiGraphics guiGraphics, ItemStack stack, int x, int y, int width, int height) {
-        // Draw page background
-        guiGraphics.fill(x, y, x + width, y + height, 0xFFE8E0D0);
-        guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, 0xFFF8F0E0);
-
-        // Draw item icon centered
-        int iconX = x + (width - 16) / 2;
-        int iconY = y + (height - 16) / 2;
-        guiGraphics.renderItem(stack, iconX, iconY);
+        // Use PageRenderHelper to draw the page with D'ni symbols
+        PageRenderHelper.drawPage(guiGraphics, stack, x, y, width, height, 0);
     }
 
     @Nullable

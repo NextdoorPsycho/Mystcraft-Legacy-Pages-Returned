@@ -22,6 +22,7 @@ import java.util.Random;
 public class AgeBuilder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AgeBuilder.class);
+    private static final float MISSING_SYMBOL_INSTABILITY = 15.0f;
 
     private final List<IAgeSymbol> inputSymbols;
     private final long seed;
@@ -30,6 +31,8 @@ public class AgeBuilder {
     private float instability;
     private int providedCount;
     private int generatedCount;
+    private int missingSymbolCount;
+    private final List<ResourceLocation> missingSymbols = new ArrayList<>();
 
     /**
      * Creates an AgeBuilder with the given symbols and seed.
@@ -77,13 +80,25 @@ public class AgeBuilder {
 
         // Convert expanded names back to IAgeSymbol objects
         expandedSymbols = new ArrayList<>();
+        missingSymbols.clear();
+        missingSymbolCount = 0;
+
         for (ResourceLocation name : expandedNames) {
             IAgeSymbol symbol = SymbolRegistry.get(name);
             if (symbol != null) {
                 expandedSymbols.add(symbol);
             } else {
-                LOGGER.debug("No symbol registered for grammar token: {}", name);
+                // Track missing symbols and log warning
+                missingSymbols.add(name);
+                missingSymbolCount++;
+                LOGGER.warn("Missing symbol in Age generation: {} - this will add instability", name);
             }
+        }
+
+        // Log summary of missing symbols
+        if (missingSymbolCount > 0) {
+            LOGGER.warn("Age generation has {} missing symbols - instability penalty: {}",
+                    missingSymbolCount, missingSymbolCount * MISSING_SYMBOL_INSTABILITY);
         }
 
         // Calculate counts and instability
@@ -103,13 +118,16 @@ public class AgeBuilder {
         // Generated symbols add base instability
         total += generatedCount * 5.0f;
 
+        // Missing symbols add significant instability penalty
+        total += missingSymbolCount * MISSING_SYMBOL_INSTABILITY;
+
         // Each symbol contributes its own instability cost
         for (IAgeSymbol symbol : expandedSymbols) {
             total += symbol.getInstabilityCost();
         }
 
         // Bonus for well-written Ages (low generated count)
-        if (generatedCount == 0 && providedCount >= 5) {
+        if (generatedCount == 0 && providedCount >= 5 && missingSymbolCount == 0) {
             total *= 0.8f; // 20% reduction for complete Ages
         }
 
@@ -197,6 +215,27 @@ public class AgeBuilder {
     }
 
     /**
+     * Gets the number of missing (unregistered) symbols.
+     */
+    public int getMissingSymbolCount() {
+        return missingSymbolCount;
+    }
+
+    /**
+     * Gets the list of missing symbol identifiers.
+     */
+    public List<ResourceLocation> getMissingSymbols() {
+        return new ArrayList<>(missingSymbols);
+    }
+
+    /**
+     * Checks if there are any missing symbols.
+     */
+    public boolean hasMissingSymbols() {
+        return missingSymbolCount > 0;
+    }
+
+    /**
      * Gets validation issues with the symbol set.
      */
     public List<String> getValidationIssues() {
@@ -230,6 +269,15 @@ public class AgeBuilder {
             sb.append("  Status: INCOMPLETE (random elements added)\n");
         } else {
             sb.append("  Status: COMPLETE\n");
+        }
+
+        // Show missing symbols warning
+        if (missingSymbolCount > 0) {
+            sb.append("  WARNING: ").append(missingSymbolCount).append(" missing symbol(s):\n");
+            for (ResourceLocation missing : missingSymbols) {
+                sb.append("    - ").append(missing).append("\n");
+            }
+            sb.append("  (Instability penalty: +").append(String.format("%.1f", missingSymbolCount * MISSING_SYMBOL_INSTABILITY)).append(")\n");
         }
 
         List<String> issues = getValidationIssues();

@@ -3,9 +3,12 @@ package art.arcane.mystcraft.world.gen.terrain;
 import art.arcane.mystcraft.api.world.AgeDirector;
 import art.arcane.mystcraft.world.gen.noise.NoiseGeneratorOctaves;
 import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeSource;
+import net.minecraft.world.level.biome.Climate;
 
 /**
  * Normal terrain generator that creates Minecraft-like terrain with biome height variation.
@@ -14,6 +17,9 @@ import net.minecraft.world.level.biome.Biome;
 public class TerrainGeneratorNormal extends TerrainGeneratorBase {
 
     private final boolean amplified;
+
+    // Biome source for height queries
+    private BiomeSource biomeSource;
 
     // Noise generators
     protected NoiseGeneratorOctaves noiseGen1;
@@ -94,7 +100,8 @@ public class TerrainGeneratorNormal extends TerrainGeneratorBase {
                 // Apply surface variation from noise5
                 minHeight += noiseData5[gridX + gridZ * xSize] * 0.2D;
                 minHeight = (minHeight * ySize) / 16.0D;
-                double baseHeight = ySize / 2.0D + minHeight * 4.0D;
+                // Ground level at Y=64 = gridY 16 (since minY=-64, gridY=16 -> Y=-64+16*8=64)
+                double baseHeight = 16.0D + minHeight * 4.0D;
 
                 for (int gridY = 0; gridY < ySize; gridY++) {
                     // Calculate density gradient based on distance from terrain surface
@@ -138,11 +145,11 @@ public class TerrainGeneratorNormal extends TerrainGeneratorBase {
      * Calculate biome-weighted height values using parabolic falloff.
      */
     protected void calculateBiomeHeights(int gridX, int gridZ, int xSize, int zSize) {
-        // Use default biome heights (approximating plains biome)
-        float defaultBaseHeight = 0.125F;  // Plains base height
-        float defaultVariation = 0.05F;    // Plains variation
+        // Default biome heights (plains) used when no biome source available
+        float defaultBaseHeight = 0.125F;
+        float defaultVariation = 0.05F;
 
-        if (amplified) {
+        if (amplified && biomeSource == null) {
             if (defaultBaseHeight > 0.0F) {
                 defaultBaseHeight = 1.0F + defaultBaseHeight * 2.0F;
                 defaultVariation = 1.0F + defaultVariation * 4.0F;
@@ -152,9 +159,6 @@ public class TerrainGeneratorNormal extends TerrainGeneratorBase {
         int surfaceIndex = 0;
         for (int x = 0; x < xSize; x++) {
             for (int z = 0; z < zSize; z++) {
-                // Simplified: use constant biome heights
-                // In full implementation, would query actual biomes here
-
                 float totalWeight = 0.0F;
                 float avgMinHeight = 0.0F;
                 float avgMaxHeight = 0.0F;
@@ -162,8 +166,31 @@ public class TerrainGeneratorNormal extends TerrainGeneratorBase {
                 // Apply parabolic blending with surrounding area
                 for (int ox = -2; ox <= 2; ox++) {
                     for (int oz = -2; oz <= 2; oz++) {
-                        float height = defaultBaseHeight;
-                        float variation = defaultVariation;
+                        float height;
+                        float variation;
+
+                        if (biomeSource != null) {
+                            // Query actual biome from biome source
+                            // Convert grid coordinates to world coordinates (grid * XZ_STEP * 4)
+                            int worldX = (gridX + x + ox) * XZ_STEP * 4;
+                            int worldZ = (gridZ + z + oz) * XZ_STEP * 4;
+
+                            // Get biome at this position (use Y=64 for surface biome)
+                            Holder<Biome> biome = biomeSource.getNoiseBiome(
+                                    QuartPos.fromBlock(worldX),
+                                    QuartPos.fromBlock(64),
+                                    QuartPos.fromBlock(worldZ),
+                                    Climate.empty()
+                            );
+
+                            float[] heightData = getBiomeHeightData(biome);
+                            height = heightData[0];
+                            variation = heightData[1];
+                        } else {
+                            // Fallback to defaults
+                            height = defaultBaseHeight;
+                            variation = defaultVariation;
+                        }
 
                         float weight = PARABOLIC_FIELD[(ox + 2) + (oz + 2) * 5] / (height + 2.0F);
 
@@ -181,6 +208,68 @@ public class TerrainGeneratorNormal extends TerrainGeneratorBase {
                 surfaceIndex++;
             }
         }
+    }
+
+    /**
+     * Sets the biome source for height queries.
+     */
+    public void setBiomeSource(BiomeSource biomeSource) {
+        this.biomeSource = biomeSource;
+    }
+
+    /**
+     * Gets approximate height data for a biome based on its characteristics.
+     * Returns [baseHeight, heightVariation].
+     */
+    private float[] getBiomeHeightData(Holder<Biome> biomeHolder) {
+        if (biomeHolder == null) {
+            return new float[]{0.125f, 0.05f}; // Default plains
+        }
+
+        Biome biome = biomeHolder.value();
+
+        // Get biome depth (temperature) as a proxy for terrain type
+        // Different biome categories have different height characteristics
+        float baseDepth = biome.getModifiedClimateSettings().temperature();
+
+        // Use biome downfall as variation proxy
+        float downfall = biome.getModifiedClimateSettings().downfall();
+
+        // Approximate height values based on biome characteristics
+        // Ocean biomes (low temp, high downfall): negative depth
+        // Mountain biomes (low temp, low downfall): high positive depth
+        // Plains (medium): near zero depth
+
+        float baseHeight;
+        float variation;
+
+        // Check for frozen/cold biomes (often mountainous or tundra)
+        if (baseDepth < 0.2f) {
+            // Cold biomes - higher terrain
+            baseHeight = 0.3f + (1.0f - downfall) * 0.5f;
+            variation = 0.2f + (1.0f - downfall) * 0.3f;
+        } else if (baseDepth > 0.9f) {
+            // Hot biomes - deserts, badlands - moderate hills
+            baseHeight = 0.125f + (1.0f - downfall) * 0.2f;
+            variation = 0.05f + (1.0f - downfall) * 0.15f;
+        } else if (downfall > 0.8f) {
+            // Wet biomes - swamps, jungles - lower terrain
+            baseHeight = -0.1f + downfall * 0.1f;
+            variation = 0.1f;
+        } else {
+            // Standard biomes - plains, forests
+            baseHeight = 0.125f;
+            variation = 0.05f + downfall * 0.1f;
+        }
+
+        if (amplified) {
+            if (baseHeight > 0.0f) {
+                baseHeight = 1.0f + baseHeight * 2.0f;
+                variation = 1.0f + variation * 4.0f;
+            }
+        }
+
+        return new float[]{baseHeight, variation};
     }
 
     @Override

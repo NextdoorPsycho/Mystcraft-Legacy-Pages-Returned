@@ -137,11 +137,29 @@ public class WritingDeskRenderer implements BlockEntityRenderer<WritingDeskBlock
     }
 
     public net.minecraft.world.phys.AABB getRenderBoundingBox(@NotNull WritingDeskBlockEntity blockEntity) {
-        // Expand the render bounding box to cover the full 2x2x1 desk structure
+        // Expand the render bounding box to cover the full 2x2 multi-block structure
+        // Must account for facing direction since the foot extends in different directions
         BlockPos pos = blockEntity.getBlockPos();
+        BlockState state = blockEntity.getBlockState();
+        Direction facing = state.getValue(WritingDeskBlock.FACING);
+
+        // Calculate bounds based on facing direction
+        // The foot extends to the "left" of the facing direction
+        int minX = pos.getX();
+        int maxX = pos.getX() + 1;
+        int minZ = pos.getZ();
+        int maxZ = pos.getZ() + 1;
+
+        switch (facing) {
+            case SOUTH -> maxX = pos.getX() + 2; // foot to EAST
+            case WEST -> maxZ = pos.getZ() + 2;  // foot to SOUTH
+            case NORTH -> minX = pos.getX() - 1; // foot to WEST
+            case EAST -> minZ = pos.getZ() - 1;  // foot to NORTH
+        }
+
         return new net.minecraft.world.phys.AABB(
-                pos.getX() - 1, pos.getY(), pos.getZ() - 1,
-                pos.getX() + 2, pos.getY() + 2, pos.getZ() + 2
+                minX, pos.getY(), minZ,
+                maxX, pos.getY() + 2, maxZ
         );
     }
 }

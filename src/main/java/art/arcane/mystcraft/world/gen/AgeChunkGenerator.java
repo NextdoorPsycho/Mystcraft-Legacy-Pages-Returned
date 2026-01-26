@@ -1,10 +1,15 @@
 package art.arcane.mystcraft.world.gen;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.world.logic.IChunkProviderFinalization;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import art.arcane.mystcraft.api.world.logic.ITerrainAlteration;
 import art.arcane.mystcraft.api.world.logic.ITerrainGenerator;
+import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.grammar.AgeBuilder;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
 import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorFlat;
 import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorNormal;
@@ -28,7 +33,9 @@ import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.blending.Blender;
+import net.minecraft.world.item.ItemStack;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -47,7 +54,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
                     Codec.STRING.fieldOf("terrain_type").forGetter(gen -> gen.terrainType),
                     Codec.INT.fieldOf("ground_level").forGetter(gen -> gen.groundLevel),
                     Codec.INT.fieldOf("sea_level").forGetter(gen -> gen.seaLevelValue),
-                    Codec.BOOL.fieldOf("has_sea").forGetter(gen -> gen.hasSea)
+                    Codec.BOOL.fieldOf("has_sea").forGetter(gen -> gen.hasSea),
+                    Codec.LONG.fieldOf("seed").forGetter(gen -> gen.seed),
+                    Codec.INT.fieldOf("age_uid").forGetter(gen -> gen.ageUID)
             ).apply(instance, AgeChunkGenerator::new)
     );
 
@@ -57,6 +66,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
     private final int seaLevelValue;
     private final boolean hasSea;
     private final long seed;
+    private final int ageUID;
 
     // Director with registered interfaces
     private AgeDirectorImpl director;
@@ -70,20 +80,22 @@ public class AgeChunkGenerator extends ChunkGenerator {
     /**
      * Creates a chunk generator from codec deserialization.
      */
-    public AgeChunkGenerator(BiomeSource biomeSource, String terrainType, int groundLevel, int seaLevel, boolean hasSea) {
+    public AgeChunkGenerator(BiomeSource biomeSource, String terrainType, int groundLevel, int seaLevel, boolean hasSea, long seed, int ageUID) {
         super(biomeSource);
         this.terrainType = terrainType;
         this.groundLevel = groundLevel;
         this.seaLevelValue = seaLevel;
         this.hasSea = hasSea;
-        this.seed = 0L;
+        this.seed = seed;
+        this.ageUID = ageUID;
+        // Director will be reconstructed on first terrain generation if needed
     }
 
     /**
      * Creates a chunk generator from an AgeDirector configuration.
      * This is the preferred constructor that uses registered interfaces.
      */
-    public AgeChunkGenerator(AgeDirectorImpl director, BiomeSource biomeSource, long seed) {
+    public AgeChunkGenerator(AgeDirectorImpl director, BiomeSource biomeSource, long seed, int ageUID) {
         super(biomeSource);
         this.director = director;
         this.terrainType = director.getTerrainType();
@@ -91,13 +103,14 @@ public class AgeChunkGenerator extends ChunkGenerator {
         this.seaLevelValue = director.getSeaLevel();
         this.hasSea = director.hasSea();
         this.seed = seed;
+        this.ageUID = ageUID;
     }
 
     /**
      * Creates a chunk generator from an AgeDirector configuration (legacy method).
      */
-    public static AgeChunkGenerator fromDirector(AgeDirectorImpl director, BiomeSource biomeSource) {
-        return new AgeChunkGenerator(director, biomeSource, director.getSeed());
+    public static AgeChunkGenerator fromDirector(AgeDirectorImpl director, BiomeSource biomeSource, int ageUID) {
+        return new AgeChunkGenerator(director, biomeSource, director.getSeed(), ageUID);
     }
 
     /**
@@ -106,6 +119,53 @@ public class AgeChunkGenerator extends ChunkGenerator {
      */
     public void setDirector(AgeDirectorImpl director) {
         this.director = director;
+    }
+
+    /**
+     * Reconstructs the director from saved AgeData.
+     * Called when the generator is deserialized and needs its director rebuilt.
+     */
+    public void reconstructDirectorFromAgeData(ServerLevel level) {
+        if (director != null) {
+            return; // Already have a director
+        }
+
+        if (ageUID <= 0) {
+            Mystcraft.LOGGER.warn("Cannot reconstruct director: no valid ageUID");
+            return;
+        }
+
+        AgeData ageData = AgeData.getIfPresent(level);
+        if (ageData == null) {
+            Mystcraft.LOGGER.warn("Cannot reconstruct director for age {}: no AgeData found", ageUID);
+            return;
+        }
+
+        // Get pages from AgeData and extract symbols
+        List<ItemStack> pages = ageData.getPages();
+        List<IAgeSymbol> symbols = new ArrayList<>();
+
+        for (ItemStack page : pages) {
+            net.minecraft.resources.ResourceLocation symbolId = Page.getSymbol(page);
+            if (symbolId != null) {
+                IAgeSymbol symbol = SymbolRegistry.get(symbolId);
+                if (symbol != null) {
+                    symbols.add(symbol);
+                }
+            }
+        }
+
+        Mystcraft.LOGGER.info("Reconstructing director for age {} from {} pages ({} symbols)",
+                ageUID, pages.size(), symbols.size());
+
+        // Rebuild director using AgeBuilder
+        AgeBuilder builder = new AgeBuilder(symbols, seed);
+        this.director = builder.build();
+
+        // Copy back any settings that might have been modified
+        this.director.setInstability(ageData.getInstability());
+
+        Mystcraft.LOGGER.info("Director reconstructed successfully for age {}", ageUID);
     }
 
     @Override
@@ -215,6 +275,10 @@ public class AgeChunkGenerator extends ChunkGenerator {
         if (director != null) {
             ITerrainGenerator generator = director.getTerrainGenerator();
             if (generator != null) {
+                // Pass BiomeSource to terrain generator if it supports it
+                if (generator instanceof TerrainGeneratorNormal normalGen) {
+                    normalGen.setBiomeSource(biomeSource);
+                }
                 // Use the registered terrain generator
                 generator.generateTerrain(chunkX, chunkZ, chunk, random);
                 return;
@@ -246,7 +310,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
                 return;
             default:
                 // Normal terrain
-                fallbackGen = new TerrainGeneratorNormal(tempDirector, seed, "amplified".equals(terrainType));
+                TerrainGeneratorNormal normalGen = new TerrainGeneratorNormal(tempDirector, seed, "amplified".equals(terrainType));
+                normalGen.setBiomeSource(biomeSource);
+                fallbackGen = normalGen;
                 break;
         }
 
@@ -366,5 +432,19 @@ public class AgeChunkGenerator extends ChunkGenerator {
      */
     public AgeDirectorImpl getDirector() {
         return director;
+    }
+
+    /**
+     * Gets the age UID for this generator.
+     */
+    public int getAgeUID() {
+        return ageUID;
+    }
+
+    /**
+     * Checks if this generator needs its director reconstructed.
+     */
+    public boolean needsDirectorReconstruction() {
+        return director == null && ageUID > 0;
     }
 }

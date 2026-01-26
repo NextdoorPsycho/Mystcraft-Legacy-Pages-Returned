@@ -1,17 +1,22 @@
 package art.arcane.mystcraft.client.renderer;
 
+import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.blockentity.LecternBlockEntity;
 import art.arcane.mystcraft.client.model.LecternModel;
+import art.arcane.mystcraft.item.AgebookItem;
+import art.arcane.mystcraft.item.LinkbookItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.BookModel;
+import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
-import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.NotNull;
@@ -19,16 +24,21 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Renderer for the Mystcraft Lectern block entity.
  * Renders the lectern model using the entity texture with proper wedge geometry,
- * then displays the book item on the sloped surface.
+ * then displays an open book on the sloped surface.
  */
 public class LecternRenderer implements BlockEntityRenderer<LecternBlockEntity> {
 
+    private static final ResourceLocation LINKBOOK_TEXTURE =
+            new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/linkbook.png");
+    private static final ResourceLocation AGEBOOK_TEXTURE =
+            new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/agebook.png");
+
     private final LecternModel model;
-    private final ItemRenderer itemRenderer;
+    private final BookModel bookModel;
 
     public LecternRenderer(BlockEntityRendererProvider.Context context) {
         this.model = new LecternModel();
-        this.itemRenderer = Minecraft.getInstance().getItemRenderer();
+        this.bookModel = new BookModel(context.bakeLayer(ModelLayers.BOOK));
     }
 
     @Override
@@ -52,28 +62,36 @@ public class LecternRenderer implements BlockEntityRenderer<LecternBlockEntity> 
         model.renderToBuffer(poseStack, vertexConsumer, packedLight, packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
         poseStack.popPose();
 
-        // Render the book on the lectern surface
+        // Render the open book on the lectern surface
         ItemStack book = blockEntity.getBook();
-        if (!book.isEmpty()) {
+        if (!book.isEmpty() && (book.getItem() instanceof LinkbookItem || book.getItem() instanceof AgebookItem)) {
             poseStack.pushPose();
 
             // Position the book on the sloped lectern surface
             poseStack.translate(0.5, 0.0, 0.5);
             poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
 
-            // The lectern slopes from height 1/16 (left) to 7/16 (right)
-            // Center height is about 4/16 = 0.25, position book there
-            poseStack.translate(0, 0.3, 0);
+            // Position book on the lectern's sloped surface
+            poseStack.translate(0, 0.255, 0);
 
-            // Tilt to match the lectern slope (approximately 20 degrees around Z axis)
-            poseStack.mulPose(Axis.ZP.rotationDegrees(-20f));
+            // Tilt to match the lectern slope (110 degrees like legacy)
+            poseStack.mulPose(Axis.ZP.rotationDegrees(110));
 
-            // Scale down the book
-            poseStack.scale(0.5f, 0.5f, 0.5f);
+            // Scale to match legacy (0.8x)
+            poseStack.scale(0.8f, 0.8f, 0.8f);
 
-            // Render the book item
-            itemRenderer.renderStatic(book, ItemDisplayContext.FIXED, packedLight, packedOverlay,
-                    poseStack, bufferSource, blockEntity.getLevel(), 0);
+            // Set the book to open state (1.22f like legacy lectern)
+            bookModel.setupAnim(0, 0, 0, 1.22f);
+
+            // Choose texture based on book type
+            ResourceLocation bookTexture = (book.getItem() instanceof AgebookItem)
+                    ? AGEBOOK_TEXTURE
+                    : LINKBOOK_TEXTURE;
+
+            // Render the open book model
+            VertexConsumer bookConsumer = bufferSource.getBuffer(RenderType.entitySolid(bookTexture));
+            bookModel.render(poseStack, bookConsumer, packedLight, OverlayTexture.NO_OVERLAY,
+                    1.0f, 1.0f, 1.0f, 1.0f);
 
             poseStack.popPose();
         }

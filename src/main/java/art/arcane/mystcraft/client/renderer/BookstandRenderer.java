@@ -3,36 +3,43 @@ package art.arcane.mystcraft.client.renderer;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.blockentity.BookstandBlockEntity;
 import art.arcane.mystcraft.client.model.BookstandModel;
+import art.arcane.mystcraft.item.AgebookItem;
+import art.arcane.mystcraft.item.LinkbookItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.BookModel;
+import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Renderer for the Bookstand block entity.
- * Renders the stand model using the entity texture, then displays the book item on top.
+ * Renders the stand model using the entity texture, then displays an open book on top.
  */
 public class BookstandRenderer implements BlockEntityRenderer<BookstandBlockEntity> {
 
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/bookstand.png");
+    private static final ResourceLocation LINKBOOK_TEXTURE =
+            new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/linkbook.png");
+    private static final ResourceLocation AGEBOOK_TEXTURE =
+            new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/agebook.png");
 
     private final BookstandModel model;
-    private final ItemRenderer itemRenderer;
+    private final BookModel bookModel;
 
     public BookstandRenderer(BlockEntityRendererProvider.Context context) {
         this.model = new BookstandModel(context.bakeLayer(BookstandModel.LAYER_LOCATION));
-        this.itemRenderer = Minecraft.getInstance().getItemRenderer();
+        this.bookModel = new BookModel(context.bakeLayer(ModelLayers.BOOK));
     }
 
     @Override
@@ -55,9 +62,9 @@ public class BookstandRenderer implements BlockEntityRenderer<BookstandBlockEnti
         model.renderToBuffer(poseStack, vertexConsumer, packedLight, packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
         poseStack.popPose();
 
-        // Render the book on top
+        // Render the open book on top
         ItemStack book = blockEntity.getBook();
-        if (!book.isEmpty()) {
+        if (!book.isEmpty() && (book.getItem() instanceof LinkbookItem || book.getItem() instanceof AgebookItem)) {
             poseStack.pushPose();
 
             // Position the book on top of the stand
@@ -68,12 +75,21 @@ public class BookstandRenderer implements BlockEntityRenderer<BookstandBlockEnti
             poseStack.mulPose(Axis.YN.rotationDegrees(90 + rotation));
             poseStack.mulPose(Axis.ZP.rotationDegrees(120));
 
-            // Scale down the book
-            poseStack.scale(0.5f, 0.5f, 0.5f);
+            // Scale to match legacy (0.8x)
+            poseStack.scale(0.8f, 0.8f, 0.8f);
 
-            // Render the book item
-            itemRenderer.renderStatic(book, ItemDisplayContext.FIXED, packedLight, packedOverlay,
-                    poseStack, bufferSource, blockEntity.getLevel(), 0);
+            // Set the book to open state (1.05f like legacy bookstand)
+            bookModel.setupAnim(0, 0, 0, 1.05f);
+
+            // Choose texture based on book type
+            ResourceLocation bookTexture = (book.getItem() instanceof AgebookItem)
+                    ? AGEBOOK_TEXTURE
+                    : LINKBOOK_TEXTURE;
+
+            // Render the open book model
+            VertexConsumer bookConsumer = bufferSource.getBuffer(RenderType.entitySolid(bookTexture));
+            bookModel.render(poseStack, bookConsumer, packedLight, OverlayTexture.NO_OVERLAY,
+                    1.0f, 1.0f, 1.0f, 1.0f);
 
             poseStack.popPose();
         }

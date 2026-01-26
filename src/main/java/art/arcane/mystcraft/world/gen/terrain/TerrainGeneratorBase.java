@@ -25,11 +25,11 @@ public abstract class TerrainGeneratorBase implements ITerrainGenerator {
     protected static final int XZ_STEP = 4;    // Blocks per noise grid point in X/Z
     protected static final int Y_STEP = 8;     // Blocks per noise grid point in Y
     protected static final int GRID_WIDTH = 4; // 16 / XZ_STEP
-    protected static final int GRID_HEIGHT = 32; // 256 / Y_STEP
+    protected static final int GRID_HEIGHT = 48; // 384 / Y_STEP (full 1.20+ world height)
 
     // Noise field dimensions (one extra for interpolation)
     protected static final int NOISE_WIDTH = GRID_WIDTH + 1;  // 5
-    protected static final int NOISE_HEIGHT = GRID_HEIGHT + 1; // 33
+    protected static final int NOISE_HEIGHT = GRID_HEIGHT + 1; // 49
 
     // Interpolation factors
     protected static final double Y_STEP_FACTOR = 1.0D / Y_STEP;      // 0.125
@@ -76,6 +76,7 @@ public abstract class TerrainGeneratorBase implements ITerrainGenerator {
      */
     protected void interpolateAndPlace(ChunkAccess chunk, int chunkX, int chunkZ, int seaLevel, boolean hasSea) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
 
         // Iterate over large grid cells (4x4x8)
         for (int gridX = 0; gridX < GRID_WIDTH; gridX++) {
@@ -109,7 +110,7 @@ public abstract class TerrainGeneratorBase implements ITerrainGenerator {
                     double cy11 = v110;
 
                     for (int subY = 0; subY < Y_STEP; subY++) {
-                        int worldY = gridY * Y_STEP + subY;
+                        int worldY = minY + gridY * Y_STEP + subY;
 
                         // Calculate Z derivatives at this Y level
                         double dz0 = (cy01 - cy00) * XZ_STEP_FACTOR;
@@ -138,8 +139,8 @@ public abstract class TerrainGeneratorBase implements ITerrainGenerator {
                                     block = Blocks.AIR.defaultBlockState();
                                 }
 
-                                // Place bedrock at y=0
-                                if (worldY == 0) {
+                                // Place bedrock at world bottom
+                                if (worldY == minY) {
                                     block = Blocks.BEDROCK.defaultBlockState();
                                 }
 

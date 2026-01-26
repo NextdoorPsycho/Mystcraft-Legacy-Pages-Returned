@@ -121,8 +121,7 @@ public class BookScreen extends Screen {
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-
+        // Don't render dark background overlay - book has its own backing
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(leftPos, topPos, 0);
         guiGraphics.pose().scale(xScale, yScale, 1);
@@ -191,14 +190,8 @@ public class BookScreen extends Screen {
         // Draw gradient rectangle
         guiGraphics.fillGradient(x, y, x + width, y + height, topColor, bottomColor);
 
-        // Draw "Link" text centered on the panel if we can link
-        if (canLink()) {
-            Component linkText = Component.translatable("gui.mystcraft.book.link");
-            int textWidth = this.font.width(linkText);
-            int textX = x + (width - textWidth) / 2;
-            int textY = y + (height - 8) / 2;
-            guiGraphics.drawString(this.font, linkText, textX, textY, 0xFFFFFF, false);
-        } else if (!hasValidDestination()) {
+        // Show "unwritten" text only if no valid destination
+        if (!hasValidDestination()) {
             Component unwrittenText = Component.translatable("gui.mystcraft.book.unwritten");
             int textWidth = this.font.width(unwrittenText);
             int textX = x + (width - textWidth) / 2;

@@ -21,7 +21,12 @@ import art.arcane.mystcraft.instability.InstabilityData;
 import art.arcane.mystcraft.symbol.ModSymbols;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.logging.LogUtils;
+import art.arcane.mystcraft.world.AgeDimensionFactory;
+import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -108,6 +113,25 @@ public class Mystcraft {
         // Dimension data is loaded via AgeManager.get() on demand
     }
 
+    @SubscribeEvent
+    public void onLevelLoad(LevelEvent.Load event) {
+        if (!(event.getLevel() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        // Check if this is a Mystcraft Age
+        if (!AgeDimensionFactory.isMystcraftAge(serverLevel.dimension())) {
+            return;
+        }
+
+        // Check if the chunk generator needs director reconstruction
+        ChunkGenerator generator = serverLevel.getChunkSource().getGenerator();
+        if (generator instanceof AgeChunkGenerator ageGen && ageGen.needsDirectorReconstruction()) {
+            LOGGER.info("Reconstructing director for Mystcraft Age: {}", serverLevel.dimension().location());
+            ageGen.reconstructDirectorFromAgeData(serverLevel);
+        }
+    }
+
     // Client-side setup is handled separately via Mod.EventBusSubscriber
     @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = net.minecraftforge.api.distmarker.Dist.CLIENT)
     public static class ClientModEvents {
@@ -116,6 +140,9 @@ public class Mystcraft {
             LOGGER.info("Mystcraft client setup");
 
             event.enqueueWork(() -> {
+                // Initialize D'ni word rendering system
+                art.arcane.mystcraft.client.render.DrawableWordManager.initialize();
+
                 // Register menu screens
                 net.minecraft.client.gui.screens.MenuScreens.register(
                         ModMenuTypes.INK_MIXER.get(),
@@ -181,6 +208,9 @@ public class Mystcraft {
         public static void onRegisterItemColors(net.minecraftforge.client.event.RegisterColorHandlersEvent.Item event) {
             // Tint the guidebook dark gray/black
             event.register((stack, tintIndex) -> 0xFF303030, ModItems.GUIDEBOOK.get());
+
+            // Tint the ink bucket fluid layer black
+            event.register((stack, tintIndex) -> tintIndex == 1 ? 0xFF1A1A1A : 0xFFFFFFFF, ModItems.INK_BUCKET.get());
         }
     }
 }

@@ -236,10 +236,19 @@ public class AgeDimensionFactory {
                     null // randomSequences
             );
 
-            // Add world border listener to sync with overworld
-            overworld.getWorldBorder().addListener(new BorderChangeListener.DelegateBorderChangeListener(
-                    newLevel.getWorldBorder()
-            ));
+            // Initialize world border to match overworld's current state
+            // This prevents red warning lines from appearing due to uninitialized border
+            var overworldBorder = overworld.getWorldBorder();
+            var newBorder = newLevel.getWorldBorder();
+            newBorder.setCenter(overworldBorder.getCenterX(), overworldBorder.getCenterZ());
+            newBorder.setSize(overworldBorder.getSize());
+            newBorder.setDamagePerBlock(overworldBorder.getDamagePerBlock());
+            newBorder.setDamageSafeZone(overworldBorder.getDamageSafeZone());
+            newBorder.setWarningBlocks(overworldBorder.getWarningBlocks());
+            newBorder.setWarningTime(overworldBorder.getWarningTime());
+
+            // Add world border listener to sync future changes from overworld
+            overworldBorder.addListener(new BorderChangeListener.DelegateBorderChangeListener(newBorder));
 
             // Register the level with the server
             levels.put(dimensionKey, newLevel);
@@ -297,7 +306,7 @@ public class AgeDimensionFactory {
             ChunkGenerator generator;
             if (director != null) {
                 // Use custom Age chunk generator with director settings
-                generator = AgeChunkGenerator.fromDirector(director, biomeSource);
+                generator = AgeChunkGenerator.fromDirector(director, biomeSource, ageUID);
                 Mystcraft.LOGGER.info("Created Age {} with terrain type: {}", ageUID, director.getTerrainType());
             } else {
                 // Use overworld generator as fallback
@@ -437,6 +446,7 @@ public class AgeDimensionFactory {
 
     /**
      * Gets the spawn position for an Age.
+     * Uses intelligent search to find safe ground if no spawn is set.
      */
     @NotNull
     public static BlockPos getAgeSpawn(@NotNull ServerLevel level) {
@@ -444,7 +454,159 @@ public class AgeDimensionFactory {
         if (ageData != null && ageData.isSpawnSet()) {
             return new BlockPos(ageData.getSpawnX(), ageData.getSpawnY(), ageData.getSpawnZ());
         }
-        // Default spawn at world spawn or 0,64,0
-        return level.getSharedSpawnPos();
+
+        // Try to find a safe spawn near world origin
+        BlockPos safeSpawn = findSafeSpawnNear(level, BlockPos.ZERO, 64);
+        if (safeSpawn != null) {
+            // Cache the found spawn location
+            if (ageData != null) {
+                ageData.setSpawn(safeSpawn.getX(), safeSpawn.getY(), safeSpawn.getZ());
+            }
+            return safeSpawn;
+        }
+
+        // Fallback to world spawn
+        BlockPos worldSpawn = level.getSharedSpawnPos();
+
+        // Try to find safe spawn near world spawn
+        safeSpawn = findSafeSpawnNear(level, worldSpawn, 32);
+        if (safeSpawn != null) {
+            if (ageData != null) {
+                ageData.setSpawn(safeSpawn.getX(), safeSpawn.getY(), safeSpawn.getZ());
+            }
+            return safeSpawn;
+        }
+
+        // Last resort: return world spawn
+        return worldSpawn;
+    }
+
+    /**
+     * Checks if a position is safe for spawning.
+     * Safe means: solid non-bedrock ground with at least 2 air blocks above.
+     */
+    public static boolean isSafeSpawn(@NotNull ServerLevel level, @NotNull BlockPos pos) {
+        int minY = level.getMinBuildHeight();
+        int maxY = level.getMaxBuildHeight();
+
+        // Check Y bounds
+        if (pos.getY() < minY + 1 || pos.getY() >= maxY - 2) {
+            return false;
+        }
+
+        // Check block below (must be solid and not bedrock)
+        BlockPos below = pos.below();
+        var groundState = level.getBlockState(below);
+
+        // Must have solid ground
+        if (!groundState.isSolidRender(level, below)) {
+            return false;
+        }
+
+        // Must not be bedrock (player would be stuck at world bottom)
+        if (groundState.is(net.minecraft.world.level.block.Blocks.BEDROCK)) {
+            return false;
+        }
+
+        // Check position and above (must be air or passable)
+        var feetState = level.getBlockState(pos);
+        var headState = level.getBlockState(pos.above());
+
+        // Both feet and head positions must be passable
+        if (!feetState.isAir() && !feetState.getCollisionShape(level, pos).isEmpty()) {
+            return false;
+        }
+        if (!headState.isAir() && !headState.getCollisionShape(level, pos.above()).isEmpty()) {
+            return false;
+        }
+
+        // Check for dangerous blocks (lava, fire)
+        if (groundState.is(net.minecraft.world.level.block.Blocks.LAVA) ||
+            feetState.is(net.minecraft.world.level.block.Blocks.LAVA) ||
+            feetState.is(net.minecraft.world.level.block.Blocks.FIRE)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Finds a safe spawn position near the given center using a spiral search pattern.
+     *
+     * @param level The server level
+     * @param center The center position to search from
+     * @param maxRadius Maximum radius to search
+     * @return A safe spawn position, or null if none found
+     */
+    @Nullable
+    public static BlockPos findSafeSpawnNear(@NotNull ServerLevel level, @NotNull BlockPos center, int maxRadius) {
+        int minY = level.getMinBuildHeight();
+        int maxY = level.getMaxBuildHeight();
+
+        // Search in spiral pattern from center
+        for (int radius = 0; radius <= maxRadius; radius += 4) {
+            for (int dx = -radius; dx <= radius; dx += 4) {
+                for (int dz = -radius; dz <= radius; dz += 4) {
+                    // Only check perimeter at this radius (except for r=0)
+                    if (radius > 0 && Math.abs(dx) != radius && Math.abs(dz) != radius) {
+                        continue;
+                    }
+
+                    int x = center.getX() + dx;
+                    int z = center.getZ() + dz;
+
+                    // Find the surface Y at this X/Z
+                    BlockPos surfacePos = findSurfaceY(level, x, z, minY, maxY);
+                    if (surfacePos != null && isSafeSpawn(level, surfacePos)) {
+                        Mystcraft.LOGGER.debug("Found safe spawn at {} (radius {} from center)", surfacePos, radius);
+                        return surfacePos;
+                    }
+                }
+            }
+        }
+
+        Mystcraft.LOGGER.warn("Could not find safe spawn near {} within radius {}", center, maxRadius);
+        return null;
+    }
+
+    /**
+     * Finds the surface Y coordinate at a given X/Z position.
+     * Returns the position of the first air block above solid ground.
+     */
+    @Nullable
+    private static BlockPos findSurfaceY(@NotNull ServerLevel level, int x, int z, int minY, int maxY) {
+        // Start from a reasonable height and search down
+        int startY = Math.min(maxY - 1, 128);
+
+        // First pass: search downward from reasonable height
+        for (int y = startY; y > minY; y--) {
+            BlockPos pos = new BlockPos(x, y, z);
+            BlockPos below = pos.below();
+
+            var state = level.getBlockState(pos);
+            var belowState = level.getBlockState(below);
+
+            // Found air/passable above solid ground
+            if ((state.isAir() || state.getCollisionShape(level, pos).isEmpty()) &&
+                belowState.isSolidRender(level, below)) {
+                return pos;
+            }
+        }
+
+        // Second pass: search upward from bottom (for underground ages or unusual terrain)
+        for (int y = minY + 1; y < startY; y++) {
+            BlockPos pos = new BlockPos(x, y, z);
+            BlockPos below = pos.below();
+
+            var state = level.getBlockState(pos);
+            var belowState = level.getBlockState(below);
+
+            if ((state.isAir() || state.getCollisionShape(level, pos).isEmpty()) &&
+                belowState.isSolidRender(level, below)) {
+                return pos;
+            }
+        }
+
+        return null;
     }
 }

@@ -20,7 +20,8 @@ public class GlassesItem extends Item implements Equipable {
         return EquipmentSlot.HEAD;
     }
 
-    // TODO: Add client-side rendering overlay effect
+    // Client-side rendering implemented in:
+    // - GlassesOverlay.java - Shows age info and instability when in Mystcraft ages
+    // - InstabilityEffects.java - Visual effects based on instability level
     // TODO: Add symbol visibility logic when looking at pages/books
-    // TODO: Add instability visualization in Ages
 }

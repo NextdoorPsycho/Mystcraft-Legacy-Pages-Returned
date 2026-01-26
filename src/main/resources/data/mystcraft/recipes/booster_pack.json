@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mystcraft:page"
+    },
+    {
+      "item": "mystcraft:page"
+    },
+    {
+      "item": "mystcraft:page"
+    },
+    {
+      "item": "mystcraft:page"
+    },
+    {
+      "item": "minecraft:paper"
+    }
+  ],
+  "result": {
+    "item": "mystcraft:booster",
+    "count": 1
+  }
+}

@@ -4,6 +4,8 @@ import art.arcane.mystcraft.Mystcraft;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.village.poi.PoiType;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -53,6 +55,12 @@ public final class MystcraftRegistries {
     public static final DeferredRegister<Codec<? extends IGlobalLootModifier>> LOOT_MODIFIERS =
             DeferredRegister.create(ForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, Mystcraft.MOD_ID);
 
+    public static final DeferredRegister<PoiType> POI_TYPES =
+            DeferredRegister.create(ForgeRegistries.POI_TYPES, Mystcraft.MOD_ID);
+
+    public static final DeferredRegister<VillagerProfession> VILLAGER_PROFESSIONS =
+            DeferredRegister.create(ForgeRegistries.VILLAGER_PROFESSIONS, Mystcraft.MOD_ID);
+
     private MystcraftRegistries() {
     }
 
@@ -71,5 +79,7 @@ public final class MystcraftRegistries {
         CREATIVE_TABS.register(modEventBus);
         MENUS.register(modEventBus);
         LOOT_MODIFIERS.register(modEventBus);
+        POI_TYPES.register(modEventBus);
+        VILLAGER_PROFESSIONS.register(modEventBus);
     }
 }

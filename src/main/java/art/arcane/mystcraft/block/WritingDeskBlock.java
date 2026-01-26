@@ -101,7 +101,8 @@ public class WritingDeskBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        // Use ENTITYBLOCK_ANIMATED for BER rendering
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.block;
 
+import art.arcane.mystcraft.portal.PortalUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -72,7 +73,8 @@ public class CrystalBlock extends Block {
         // If the receptacle is gone or doesn't have a book, deactivate
         if (!(receptacleState.getBlock() instanceof BookReceptacleBlock)) {
             setInactive(level, pos);
-            // TODO: Call PortalUtils.shutdownPortal when implemented
+            // Validate and potentially remove connected portal blocks
+            PortalUtils.validatePortal(level, pos);
         }
     }
 

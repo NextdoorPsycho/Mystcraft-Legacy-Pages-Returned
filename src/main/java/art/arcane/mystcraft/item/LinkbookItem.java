@@ -182,4 +182,13 @@ public class LinkbookItem extends Item {
     public void setDestination(ItemStack stack, BlockPos pos) {
         LinkOptions.setSpawn(stack.getOrCreateTag(), pos);
     }
+
+    /**
+     * Linked books have a foil effect to show they're active.
+     */
+    @Override
+    public boolean isFoil(@NotNull ItemStack stack) {
+        // Only show foil if the book has a valid destination
+        return stack.getTag() != null && LinkOptions.getSpawn(stack.getTag()) != null;
+    }
 }

@@ -4,6 +4,7 @@ import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.link.LinkingManager;
+import art.arcane.mystcraft.portal.PortalUtils;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModSounds;
 import net.minecraft.core.BlockPos;
@@ -191,8 +192,8 @@ public class LinkPortalBlock extends Block {
     @Override
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
         // Validate portal when neighbors change
-        if (!level.isClientSide()) {
-            // TODO: Call PortalUtils.validatePortal when implemented
+        if (!level.isClientSide() && level instanceof Level realLevel) {
+            PortalUtils.validatePortal(realLevel, pos);
         }
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }

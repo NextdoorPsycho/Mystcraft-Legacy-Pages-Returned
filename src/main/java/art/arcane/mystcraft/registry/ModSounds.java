@@ -37,6 +37,9 @@ public final class ModSounds {
     public static final RegistryObject<SoundEvent> METEOR_ROAR =
             registerSound("entity.meteor.roar");
 
+    public static final RegistryObject<SoundEvent> METEOR_IMPACT =
+            registerSound("entity.meteor.impact");
+
     private ModSounds() {
     }
 

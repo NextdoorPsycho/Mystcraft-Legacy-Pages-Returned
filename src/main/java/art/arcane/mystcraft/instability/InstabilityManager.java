@@ -34,6 +34,7 @@ public final class InstabilityManager {
 
     // Effect thresholds (instability level required to trigger)
     private static final float THRESHOLD_DECAY = 20.0f;
+    private static final float THRESHOLD_TRANSMUTE = 30.0f;
     private static final float THRESHOLD_LIGHTNING = 40.0f;
     private static final float THRESHOLD_METEOR = 60.0f;
     private static final float THRESHOLD_POISON = 80.0f;
@@ -41,6 +42,7 @@ public final class InstabilityManager {
 
     // Base chances per tick (at maximum instability for each tier)
     private static final float CHANCE_DECAY = 0.001f;        // ~0.1% per tick
+    private static final float CHANCE_TRANSMUTE = 0.002f;    // ~0.2% per tick
     private static final float CHANCE_LIGHTNING = 0.0005f;   // ~0.05% per tick
     private static final float CHANCE_METEOR = 0.0002f;      // ~0.02% per tick
     private static final float CHANCE_PLAYER_EFFECT = 0.0001f; // ~0.01% per tick
@@ -93,6 +95,11 @@ public final class InstabilityManager {
             spawnDecay(level, players, random);
         }
 
+        // Block transmutation
+        if (instability >= THRESHOLD_TRANSMUTE && random.nextFloat() < calculateChance(instability, THRESHOLD_TRANSMUTE, CHANCE_TRANSMUTE)) {
+            transmuteBlock(level, players, random);
+        }
+
         // Lightning strikes
         if (instability >= THRESHOLD_LIGHTNING && random.nextFloat() < calculateChance(instability, THRESHOLD_LIGHTNING, CHANCE_LIGHTNING)) {
             spawnLightning(level, players, random);
@@ -142,6 +149,100 @@ public final class InstabilityManager {
         level.setBlock(pos, decayState, 3);
 
         Mystcraft.LOGGER.debug("Spawned decay at {}", pos);
+    }
+
+    /**
+     * Transmutes a random block near a player into another block type.
+     * Creates unexpected terrain changes in unstable ages.
+     */
+    private static void transmuteBlock(ServerLevel level, List<ServerPlayer> players, RandomSource random) {
+        ServerPlayer target = players.get(random.nextInt(players.size()));
+        int range = 24;
+
+        int x = target.getBlockX() + random.nextIntBetweenInclusive(-range, range);
+        int z = target.getBlockZ() + random.nextIntBetweenInclusive(-range, range);
+        int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z) - 1;
+
+        // Try a few times to find a valid block
+        for (int attempt = 0; attempt < 5; attempt++) {
+            BlockPos pos = new BlockPos(x, y - attempt, z);
+            BlockState currentState = level.getBlockState(pos);
+
+            // Skip air, bedrock, and other special blocks
+            if (currentState.isAir() || currentState.is(Blocks.BEDROCK) ||
+                currentState.is(Blocks.WATER) || currentState.is(Blocks.LAVA) ||
+                currentState.getBlock() instanceof net.minecraft.world.level.block.BaseEntityBlock) {
+                continue;
+            }
+
+            // Choose a transmutation result
+            BlockState newState = chooseTransmutation(currentState, random);
+            if (newState != null && !newState.equals(currentState)) {
+                level.setBlock(pos, newState, 3);
+                Mystcraft.LOGGER.debug("Transmuted {} to {} at {}", currentState.getBlock(), newState.getBlock(), pos);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Chooses what to transmute a block into.
+     */
+    private static BlockState chooseTransmutation(BlockState original, RandomSource random) {
+        // Stone -> Cobblestone, Gravel, Sand, or Obsidian
+        if (original.is(Blocks.STONE)) {
+            return switch (random.nextInt(4)) {
+                case 0 -> Blocks.COBBLESTONE.defaultBlockState();
+                case 1 -> Blocks.GRAVEL.defaultBlockState();
+                case 2 -> Blocks.SAND.defaultBlockState();
+                default -> Blocks.OBSIDIAN.defaultBlockState();
+            };
+        }
+        // Dirt -> Sand, Clay, Soul Sand, or Gravel
+        if (original.is(Blocks.DIRT) || original.is(Blocks.GRASS_BLOCK)) {
+            return switch (random.nextInt(4)) {
+                case 0 -> Blocks.SAND.defaultBlockState();
+                case 1 -> Blocks.CLAY.defaultBlockState();
+                case 2 -> Blocks.SOUL_SAND.defaultBlockState();
+                default -> Blocks.GRAVEL.defaultBlockState();
+            };
+        }
+        // Sand -> Glass, Sandstone, or Soul Sand
+        if (original.is(Blocks.SAND)) {
+            return switch (random.nextInt(3)) {
+                case 0 -> Blocks.GLASS.defaultBlockState();
+                case 1 -> Blocks.SANDSTONE.defaultBlockState();
+                default -> Blocks.SOUL_SAND.defaultBlockState();
+            };
+        }
+        // Wood -> Coal block, Air (burned), or Fire
+        if (original.getBlock() instanceof net.minecraft.world.level.block.RotatedPillarBlock &&
+            original.is(net.minecraft.tags.BlockTags.LOGS)) {
+            return switch (random.nextInt(3)) {
+                case 0 -> Blocks.COAL_BLOCK.defaultBlockState();
+                case 1 -> Blocks.AIR.defaultBlockState();
+                default -> Blocks.FIRE.defaultBlockState();
+            };
+        }
+        // Leaves -> Air (decay)
+        if (original.is(net.minecraft.tags.BlockTags.LEAVES)) {
+            return Blocks.AIR.defaultBlockState();
+        }
+        // Ores -> Stone (loss of ore) or different ore
+        if (original.is(Blocks.IRON_ORE) || original.is(Blocks.COPPER_ORE) ||
+            original.is(Blocks.COAL_ORE) || original.is(Blocks.GOLD_ORE)) {
+            return random.nextBoolean() ? Blocks.STONE.defaultBlockState() : Blocks.GRAVEL.defaultBlockState();
+        }
+        // Cobblestone -> Mossy Cobblestone or Stone
+        if (original.is(Blocks.COBBLESTONE)) {
+            return random.nextBoolean() ? Blocks.MOSSY_COBBLESTONE.defaultBlockState() : Blocks.STONE.defaultBlockState();
+        }
+        // Water -> Ice or nothing
+        if (original.is(Blocks.WATER)) {
+            return Blocks.ICE.defaultBlockState();
+        }
+        // Default: no transmutation
+        return null;
     }
 
     /**

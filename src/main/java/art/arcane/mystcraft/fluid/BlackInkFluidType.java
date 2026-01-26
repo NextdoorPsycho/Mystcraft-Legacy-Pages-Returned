@@ -14,11 +14,11 @@ import java.util.function.Consumer;
 public class BlackInkFluidType extends FluidType {
 
     private static final ResourceLocation STILL_TEXTURE =
-            new ResourceLocation(Mystcraft.MOD_ID, "block/fluid/ink_still");
+            new ResourceLocation(Mystcraft.MOD_ID, "blocks/fluid");
     private static final ResourceLocation FLOWING_TEXTURE =
-            new ResourceLocation(Mystcraft.MOD_ID, "block/fluid/ink_flow");
+            new ResourceLocation(Mystcraft.MOD_ID, "blocks/fluid_flow");
     private static final ResourceLocation OVERLAY_TEXTURE =
-            new ResourceLocation(Mystcraft.MOD_ID, "block/fluid/ink_overlay");
+            new ResourceLocation(Mystcraft.MOD_ID, "blocks/fluid");
 
     public BlackInkFluidType() {
         super(Properties.create()

@@ -52,6 +52,12 @@ public final class MystcraftNetwork {
                 .consumerMainThread(LinkEffectPacket::handle)
                 .add();
 
+        CHANNEL.messageBuilder(SymbolSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(SymbolSyncPacket::encode)
+                .decoder(SymbolSyncPacket::decode)
+                .consumerMainThread(SymbolSyncPacket::handle)
+                .add();
+
         Mystcraft.LOGGER.info("Registered {} network packets", packetId);
     }
 

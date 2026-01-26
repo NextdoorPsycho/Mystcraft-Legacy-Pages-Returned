@@ -3,6 +3,7 @@ package art.arcane.mystcraft.blockentity;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
+import art.arcane.mystcraft.portal.PortalUtils;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -127,11 +128,11 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
 
         ItemStack book = getBook();
         if (!book.isEmpty() && isValidPortalActivator(book)) {
-            // TODO: Activate portal via PortalUtils
-            // PortalUtils.firePortal(level, worldPosition);
+            // Activate portal
+            PortalUtils.firePortal(level, worldPosition);
         } else {
-            // TODO: Deactivate portal via PortalUtils
-            // PortalUtils.shutdownPortal(level, worldPosition);
+            // Deactivate portal
+            PortalUtils.shutdownPortal(level, worldPosition);
         }
     }
 

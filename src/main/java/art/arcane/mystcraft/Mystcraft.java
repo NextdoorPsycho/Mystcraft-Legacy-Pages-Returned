@@ -10,6 +10,7 @@ import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.registry.ModLootModifiers;
 import art.arcane.mystcraft.registry.ModMenuTypes;
 import art.arcane.mystcraft.registry.ModSounds;
+import art.arcane.mystcraft.registry.ModVillagers;
 import art.arcane.mystcraft.registry.ModWorldGen;
 import art.arcane.mystcraft.registry.MystcraftRegistries;
 import art.arcane.mystcraft.world.structure.ModStructures;
@@ -58,6 +59,7 @@ public class Mystcraft {
         ModLootModifiers.register();
         ModWorldGen.register(modEventBus);
         ModStructures.register(modEventBus);
+        ModVillagers.register();
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
@@ -89,9 +91,8 @@ public class Mystcraft {
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         LOGGER.info("Mystcraft server starting");
-
-        // TODO: Register commands
-        // TODO: Load dimension data
+        // Commands are auto-registered via MystcraftCommands @EventBusSubscriber
+        // Dimension data is loaded via AgeManager.get() on demand
     }
 
     // Client-side setup is handled separately via Mod.EventBusSubscriber
@@ -135,6 +136,8 @@ public class Mystcraft {
                     art.arcane.mystcraft.client.renderer.LecternRenderer::new);
             event.registerBlockEntityRenderer(ModBlockEntities.STAR_FISSURE.get(),
                     art.arcane.mystcraft.client.renderer.StarFissureRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.WRITING_DESK.get(),
+                    art.arcane.mystcraft.client.renderer.WritingDeskRenderer::new);
 
             // Entity renderers
             event.registerEntityRenderer(ModEntities.LINKBOOK.get(),

@@ -1,8 +1,8 @@
 {
   "variants": {
-    "facing=north": { "model": "mystcraft:block/blockmodel_nothing" },
-    "facing=south": { "model": "mystcraft:block/blockmodel_nothing", "y": 180 },
-    "facing=east": { "model": "mystcraft:block/blockmodel_nothing", "y": 90 },
-    "facing=west": { "model": "mystcraft:block/blockmodel_nothing", "y": 270 }
+    "facing=north": { "model": "mystcraft:block/bookstand_model" },
+    "facing=south": { "model": "mystcraft:block/bookstand_model", "y": 180 },
+    "facing=east": { "model": "mystcraft:block/bookstand_model", "y": 90 },
+    "facing=west": { "model": "mystcraft:block/bookstand_model", "y": 270 }
   }
 }

@@ -382,4 +382,13 @@ public class AgebookItem extends Item {
     public String getDisplayName(ItemStack stack) {
         return LinkOptions.getDisplayName(stack.getTag());
     }
+
+    /**
+     * Agebooks with a linked Age have a foil effect to show they're active.
+     */
+    @Override
+    public boolean isFoil(@NotNull ItemStack stack) {
+        // Show foil if the book has an Age (dimension) linked
+        return stack.getTag() != null && LinkOptions.getDimensionUID(stack.getTag()) != null;
+    }
 }

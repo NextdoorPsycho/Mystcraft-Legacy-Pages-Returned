@@ -24,6 +24,8 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,6 +62,7 @@ public class MystcraftLecternBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
+        // Use MODEL to render the OBJ model via JSON, BER renders book on top
         return RenderShape.MODEL;
     }
 
@@ -102,7 +105,10 @@ public class MystcraftLecternBlock extends BaseEntityBlock {
                 lectern.setBook(ItemStack.EMPTY);
                 return InteractionResult.CONSUME;
             } else {
-                // TODO: Open book GUI / activate linking
+                // Open book GUI (client-side) or perform linking (server-side)
+                if (level.isClientSide) {
+                    openBookScreen(lectern.getBook());
+                }
                 return InteractionResult.SUCCESS;
             }
         } else {
@@ -114,10 +120,8 @@ public class MystcraftLecternBlock extends BaseEntityBlock {
                 held.shrink(1);
                 lectern.setBook(bookCopy);
                 return InteractionResult.CONSUME;
-            } else {
-                // TODO: Open empty lectern GUI
-                return InteractionResult.SUCCESS;
             }
+            return InteractionResult.PASS;
         }
     }
 
@@ -145,5 +149,13 @@ public class MystcraftLecternBlock extends BaseEntityBlock {
             return lectern.getAnalogOutputSignal();
         }
         return 0;
+    }
+
+    /**
+     * Opens the book screen on the client side.
+     */
+    private void openBookScreen(ItemStack book) {
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
+            art.arcane.mystcraft.client.screen.BookScreen.open(book));
     }
 }

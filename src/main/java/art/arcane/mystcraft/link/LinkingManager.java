@@ -123,8 +123,8 @@ public final class LinkingManager {
             generateSpawnPlatform(targetLevel, targetPos);
         }
 
-        // Calculate final position
-        Vec3 targetVec = calculateTargetPosition(targetPos, linkData);
+        // Calculate final position (with relative offset if applicable)
+        Vec3 targetVec = calculateTargetPosition(targetPos, linkData, entity.position(), entity.blockPosition());
 
         // Store momentum if maintaining
         Vec3 momentum = entity.getDeltaMovement();
@@ -303,14 +303,34 @@ public final class LinkingManager {
 
     /**
      * Calculates the final target position, applying any modifiers.
+     *
+     * @param targetPos Base destination position
+     * @param linkData Link NBT data containing flags
+     * @param entityPos Current entity position
+     * @param sourcePos Position where the link was initiated (book/portal location)
+     * @return The final target position
      */
-    private static Vec3 calculateTargetPosition(BlockPos targetPos, CompoundTag linkData) {
+    private static Vec3 calculateTargetPosition(BlockPos targetPos, CompoundTag linkData, Vec3 entityPos, BlockPos sourcePos) {
         // Center on the block
         double x = targetPos.getX() + 0.5;
         double y = targetPos.getY();
         double z = targetPos.getZ() + 0.5;
 
-        // TODO: Apply relative positioning if that flag is set
+        // Apply relative positioning if that flag is set
+        // Relative linking preserves the entity's offset from the link source
+        if (LinkOptions.getFlag(linkData, LinkFlags.RELATIVE)) {
+            // Calculate offset from source (where the book/portal is)
+            double offsetX = entityPos.x - (sourcePos.getX() + 0.5);
+            double offsetY = entityPos.y - sourcePos.getY();
+            double offsetZ = entityPos.z - (sourcePos.getZ() + 0.5);
+
+            // Apply offset to destination
+            x += offsetX;
+            y += offsetY;
+            z += offsetZ;
+
+            Mystcraft.LOGGER.debug("Applied relative offset: ({}, {}, {})", offsetX, offsetY, offsetZ);
+        }
 
         return new Vec3(x, y, z);
     }

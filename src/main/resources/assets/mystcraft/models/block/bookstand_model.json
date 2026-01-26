@@ -1,0 +1,8 @@
+{
+    "loader": "forge:obj",
+    "model": "mystcraft:models/item/obj/bookstand.obj",
+    "textures": {
+        "matbookstand": "mystcraft:blocks/bookstand",
+        "particle": "mystcraft:blocks/bookstand"
+    }
+}

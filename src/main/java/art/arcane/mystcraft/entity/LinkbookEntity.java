@@ -1,15 +1,22 @@
 package art.arcane.mystcraft.entity;
 
+import art.arcane.mystcraft.item.AgebookItem;
+import art.arcane.mystcraft.item.LinkbookItem;
+import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.registry.ModEntities;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 
 /**
  * The Linkbook entity.
@@ -57,7 +64,71 @@ public class LinkbookEntity extends Entity {
         entityData.set(BOOK_ITEM, stack.copy());
     }
 
-    // TODO: Add interaction to use the book for linking
-    // TODO: Add interaction to pick up the book
-    // TODO: Add custom renderer
+    @Override
+    public InteractionResult interact(Player player, InteractionHand hand) {
+        if (level().isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+
+        ItemStack book = getBookItem();
+        if (book.isEmpty()) {
+            return InteractionResult.PASS;
+        }
+
+        if (player.isShiftKeyDown()) {
+            // Shift-click: Pick up the book
+            if (!player.getInventory().add(book.copy())) {
+                player.drop(book.copy(), false);
+            }
+            discard();
+            return InteractionResult.CONSUME;
+        } else {
+            // Normal click: Open book screen or perform linking
+            if (isValidLinkBook(book)) {
+                if (level().isClientSide) {
+                    openBookScreen(book);
+                } else {
+                    // On server, perform the link
+                    CompoundTag linkData = book.getTag();
+                    if (linkData != null) {
+                        LinkingManager.performLink(player, linkData);
+                    }
+                }
+            }
+            return InteractionResult.SUCCESS;
+        }
+    }
+
+    /**
+     * Checks if the book is a valid linking book.
+     */
+    private boolean isValidLinkBook(ItemStack book) {
+        return book.getItem() instanceof LinkbookItem ||
+               book.getItem() instanceof AgebookItem;
+    }
+
+    /**
+     * Opens the book screen on the client.
+     */
+    private void openBookScreen(ItemStack book) {
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
+            art.arcane.mystcraft.client.screen.BookScreen.open(book));
+    }
+
+    @Override
+    public boolean isPickable() {
+        return true;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+
+        // Apply gravity if not on ground
+        if (!onGround()) {
+            setDeltaMovement(getDeltaMovement().add(0, -0.04, 0));
+            move(net.minecraft.world.entity.MoverType.SELF, getDeltaMovement());
+            setDeltaMovement(getDeltaMovement().scale(0.98));
+        }
+    }
 }

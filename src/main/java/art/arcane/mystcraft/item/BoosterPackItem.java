@@ -1,9 +1,12 @@
 package art.arcane.mystcraft.item;
 
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.registry.ModItems;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -60,17 +63,22 @@ public class BoosterPackItem extends Item {
      */
     private List<ItemStack> generatePages(Level level, Player player) {
         List<ItemStack> pages = new ArrayList<>();
-
-        // TODO: Implement proper random symbol generation from SymbolManager
-        // For now, just generate blank pages and link panels
+        RandomSource random = level.random;
 
         for (int i = 0; i < PAGES_PER_PACK; i++) {
-            if (level.random.nextFloat() < 0.3f) {
-                // 30% chance of link panel
+            float roll = random.nextFloat();
+            if (roll < 0.2f) {
+                // 20% chance of link panel
                 pages.add(Page.createLinkPage());
             } else {
-                // 70% chance of blank page (will be symbol page when SymbolManager implemented)
-                pages.add(Page.createPage());
+                // 80% chance of symbol page
+                IAgeSymbol symbol = SymbolRegistry.getRandomWeighted(random);
+                if (symbol != null) {
+                    pages.add(Page.createSymbolPage(symbol.getRegistryName()));
+                } else {
+                    // Fallback to blank page if no symbols registered
+                    pages.add(Page.createPage());
+                }
             }
         }
 

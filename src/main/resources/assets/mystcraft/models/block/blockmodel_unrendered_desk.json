@@ -1,7 +1,5 @@
 {
-    "parent": "block/cube_all",
     "textures": {
-        "particle": "mystcraft:items/writingdesk",
-        "all": "mystcraft:blocks/crystal"
+        "particle": "mystcraft:items/writingdesk"
     }
 }

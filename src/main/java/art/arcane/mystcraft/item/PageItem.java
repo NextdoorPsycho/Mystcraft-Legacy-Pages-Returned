@@ -1,6 +1,8 @@
 package art.arcane.mystcraft.item;
 
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -35,8 +37,13 @@ public class PageItem extends Item {
             }
             ResourceLocation symbolId = Page.getSymbol(stack);
             if (symbolId != null) {
-                // TODO: Get symbol name from SymbolManager when implemented
-                return Component.translatable("item.mystcraft.page.symbol", symbolId.toString());
+                // Get the actual symbol name from registry
+                IAgeSymbol symbol = SymbolRegistry.get(symbolId);
+                if (symbol != null) {
+                    return Component.translatable("item.mystcraft.page.symbol", symbol.getLocalizedName());
+                }
+                // Fallback to ID if symbol not found
+                return Component.translatable("item.mystcraft.page.symbol", symbolId.getPath());
             }
         }
         return Component.translatable("item.mystcraft.page.blank");
@@ -47,6 +54,14 @@ public class PageItem extends Item {
         if (stack.getTag() != null) {
             Page.getTooltip(stack, tooltip);
         }
+    }
+
+    /**
+     * Link panels have an enchantment glint effect to make them visually distinct.
+     */
+    @Override
+    public boolean isFoil(@NotNull ItemStack stack) {
+        return Page.isLinkPanel(stack);
     }
 
     /**

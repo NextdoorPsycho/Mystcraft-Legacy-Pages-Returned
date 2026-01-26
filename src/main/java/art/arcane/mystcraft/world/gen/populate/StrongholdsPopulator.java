@@ -3,7 +3,7 @@ package art.arcane.mystcraft.world.gen.populate;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -12,10 +12,18 @@ import net.minecraft.world.level.block.state.BlockState;
  * Stronghold populator that generates underground stone brick structures.
  * Strongholds consist of libraries with bookshelves, prison cells with iron bars,
  * corridors, and very rarely an end portal room.
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
+ * This is critical because strongholds can extend 12 rooms with 8-16 blocks each,
+ * potentially 192+ blocks beyond the chunk!
  */
 public class StrongholdsPopulator implements IPopulate {
 
     private final long seed;
+
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     private static final int STRONGHOLD_RARITY = 128;
     private static final int MIN_Y = -20;
@@ -34,7 +42,15 @@ public class StrongholdsPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        // Set chunk boundaries for this population run
+        int chunkX = chunkPos.getX() >> 4;
+        int chunkZ = chunkPos.getZ() >> 4;
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
+
         if (random.nextInt(STRONGHOLD_RARITY) != 0) {
             return;
         }
@@ -52,7 +68,25 @@ public class StrongholdsPopulator implements IPopulate {
         generateStronghold(world, random, startPos);
     }
 
-    private void generateStronghold(ServerLevel world, RandomSource random, BlockPos startPos) {
+    /**
+     * Checks if a position is within the current chunk boundaries.
+     * This prevents cascade chunk loading when structures extend beyond chunk edges.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
+    private void generateStronghold(WorldGenLevel world, RandomSource random, BlockPos startPos) {
         int roomCount = 6 + random.nextInt(MAX_ROOMS - 6);
         boolean hasEndPortal = random.nextInt(10) == 0;
 
@@ -87,7 +121,7 @@ public class StrongholdsPopulator implements IPopulate {
         }
     }
 
-    private void generateRoom(ServerLevel world, RandomSource random, BlockPos pos, RoomType type) {
+    private void generateRoom(WorldGenLevel world, RandomSource random, BlockPos pos, RoomType type) {
         switch (type) {
             case CORRIDOR -> generateCorridor(world, random, pos);
             case LIBRARY -> generateLibrary(world, random, pos);
@@ -96,7 +130,7 @@ public class StrongholdsPopulator implements IPopulate {
         }
     }
 
-    private void generateCorridor(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateCorridor(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int length = 5 + random.nextInt(5);
         int width = 3;
         int height = 4;
@@ -111,9 +145,9 @@ public class StrongholdsPopulator implements IPopulate {
                     boolean isCeiling = y == height - 1;
 
                     if (isWall || isFloor || isCeiling) {
-                        world.setBlock(blockPos, getStrongholdBlock(random), 2);
+                        safeSetBlock(world, blockPos, getStrongholdBlock(random));
                     } else {
-                        world.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
+                        safeSetBlock(world, blockPos, Blocks.AIR.defaultBlockState());
                     }
                 }
             }
@@ -121,11 +155,11 @@ public class StrongholdsPopulator implements IPopulate {
 
         if (random.nextInt(3) == 0) {
             BlockPos torchPos = pos.offset(1, 2, length / 2);
-            world.setBlock(torchPos, Blocks.WALL_TORCH.defaultBlockState(), 2);
+            safeSetBlock(world, torchPos, Blocks.WALL_TORCH.defaultBlockState());
         }
     }
 
-    private void generateLibrary(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateLibrary(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int size = 7;
         int height = 5;
 
@@ -139,9 +173,9 @@ public class StrongholdsPopulator implements IPopulate {
                     boolean isCeiling = y == height - 1;
 
                     if (isWall || isFloor || isCeiling) {
-                        world.setBlock(blockPos, getStrongholdBlock(random), 2);
+                        safeSetBlock(world, blockPos, getStrongholdBlock(random));
                     } else {
-                        world.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
+                        safeSetBlock(world, blockPos, Blocks.AIR.defaultBlockState());
                     }
                 }
             }
@@ -151,16 +185,16 @@ public class StrongholdsPopulator implements IPopulate {
             for (int z = 1; z < size - 1; z++) {
                 if ((x == 1 || x == size - 2 || z == 1 || z == size - 2) && random.nextInt(3) != 0) {
                     BlockPos shelfPos = pos.offset(x, 1, z);
-                    world.setBlock(shelfPos, Blocks.BOOKSHELF.defaultBlockState(), 2);
+                    safeSetBlock(world, shelfPos, Blocks.BOOKSHELF.defaultBlockState());
                     if (random.nextBoolean()) {
-                        world.setBlock(shelfPos.above(), Blocks.BOOKSHELF.defaultBlockState(), 2);
+                        safeSetBlock(world, shelfPos.above(), Blocks.BOOKSHELF.defaultBlockState());
                     }
                 }
             }
         }
 
         BlockPos centerPos = pos.offset(size / 2, 1, size / 2);
-        world.setBlock(centerPos, Blocks.CHEST.defaultBlockState(), 2);
+        safeSetBlock(world, centerPos, Blocks.CHEST.defaultBlockState());
 
         for (int i = 0; i < 4; i++) {
             BlockPos torchPos = pos.offset(
@@ -168,11 +202,11 @@ public class StrongholdsPopulator implements IPopulate {
                     3,
                     i % 2 == 0 ? 1 : size - 2
             );
-            world.setBlock(torchPos, Blocks.TORCH.defaultBlockState(), 2);
+            safeSetBlock(world, torchPos, Blocks.TORCH.defaultBlockState());
         }
     }
 
-    private void generatePrison(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generatePrison(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int width = 8;
         int depth = 6;
         int height = 4;
@@ -187,9 +221,9 @@ public class StrongholdsPopulator implements IPopulate {
                     boolean isCeiling = y == height - 1;
 
                     if (isWall || isFloor || isCeiling) {
-                        world.setBlock(blockPos, getStrongholdBlock(random), 2);
+                        safeSetBlock(world, blockPos, getStrongholdBlock(random));
                     } else {
-                        world.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
+                        safeSetBlock(world, blockPos, Blocks.AIR.defaultBlockState());
                     }
                 }
             }
@@ -201,15 +235,15 @@ public class StrongholdsPopulator implements IPopulate {
             if (cellX >= width - 2) break;
 
             for (int y = 1; y < height - 1; y++) {
-                world.setBlock(pos.offset(cellX, y, 1), Blocks.IRON_BARS.defaultBlockState(), 2);
-                world.setBlock(pos.offset(cellX + 1, y, 1), Blocks.IRON_BARS.defaultBlockState(), 2);
+                safeSetBlock(world, pos.offset(cellX, y, 1), Blocks.IRON_BARS.defaultBlockState());
+                safeSetBlock(world, pos.offset(cellX + 1, y, 1), Blocks.IRON_BARS.defaultBlockState());
             }
 
-            world.setBlock(pos.offset(cellX, 1, 1), Blocks.IRON_DOOR.defaultBlockState(), 2);
+            safeSetBlock(world, pos.offset(cellX, 1, 1), Blocks.IRON_DOOR.defaultBlockState());
         }
     }
 
-    private void generateEndPortalRoom(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateEndPortalRoom(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int size = 11;
         int height = 6;
 
@@ -223,9 +257,9 @@ public class StrongholdsPopulator implements IPopulate {
                     boolean isCeiling = y == height - 1;
 
                     if (isWall || isFloor || isCeiling) {
-                        world.setBlock(blockPos, Blocks.STONE_BRICKS.defaultBlockState(), 2);
+                        safeSetBlock(world, blockPos, Blocks.STONE_BRICKS.defaultBlockState());
                     } else {
-                        world.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
+                        safeSetBlock(world, blockPos, Blocks.AIR.defaultBlockState());
                     }
                 }
             }
@@ -237,15 +271,15 @@ public class StrongholdsPopulator implements IPopulate {
             for (int z = -1; z <= 1; z++) {
                 BlockPos framePos = portalCenter.offset(x, 0, z);
                 if (x == 0 || z == 0) {
-                    world.setBlock(framePos, Blocks.END_PORTAL_FRAME.defaultBlockState(), 2);
+                    safeSetBlock(world, framePos, Blocks.END_PORTAL_FRAME.defaultBlockState());
                 } else {
-                    world.setBlock(framePos, Blocks.LAVA.defaultBlockState(), 2);
+                    safeSetBlock(world, framePos, Blocks.LAVA.defaultBlockState());
                 }
             }
         }
 
         BlockPos silverfish = portalCenter.offset(2, 0, 2);
-        world.setBlock(silverfish, Blocks.INFESTED_STONE_BRICKS.defaultBlockState(), 2);
+        safeSetBlock(world, silverfish, Blocks.INFESTED_STONE_BRICKS.defaultBlockState());
 
         for (int i = 0; i < 4; i++) {
             BlockPos torchPos = pos.offset(
@@ -253,7 +287,7 @@ public class StrongholdsPopulator implements IPopulate {
                     2,
                     i % 2 == 0 ? 2 : size - 3
             );
-            world.setBlock(torchPos, Blocks.TORCH.defaultBlockState(), 2);
+            safeSetBlock(world, torchPos, Blocks.TORCH.defaultBlockState());
         }
     }
 
@@ -268,10 +302,12 @@ public class StrongholdsPopulator implements IPopulate {
         }
     }
 
-    private boolean isUnderground(ServerLevel world, BlockPos pos) {
+    private boolean isUnderground(WorldGenLevel world, BlockPos pos) {
         int solidBlocksAbove = 0;
         for (int y = pos.getY() + 1; y < pos.getY() + 30; y++) {
-            if (world.getBlockState(new BlockPos(pos.getX(), y, pos.getZ())).isSolid()) {
+            BlockPos checkPos = new BlockPos(pos.getX(), y, pos.getZ());
+            // Only check blocks within chunk boundaries to prevent cascade loading
+            if (isInChunk(checkPos) && world.getBlockState(checkPos).isSolid()) {
                 solidBlocksAbove++;
             }
         }

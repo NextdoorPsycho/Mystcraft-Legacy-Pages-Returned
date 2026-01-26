@@ -34,7 +34,8 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     private static final int PAGE_LIST_WIDTH = 162; // 176 - 14
     private static final int PAGE_LIST_HEIGHT = 40;
     private static final int PAGE_SIZE = 16; // Size of each page icon
-    private static final int PAGES_PER_ROW = PAGE_LIST_WIDTH / PAGE_SIZE;
+    private static final int PAGE_SLOT_SIZE = PAGE_SIZE + 2; // Including spacing
+    private static final int PAGES_PER_ROW = PAGE_LIST_WIDTH / PAGE_SLOT_SIZE; // 162/18 = 9
 
     // Text field area (from legacy: 7, 9, xSize - 60, 14)
     private static final int TEXT_FIELD_X = 7;
@@ -128,20 +129,48 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
     private void renderPageList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         List<ItemStack> pages = menu.getBlockEntity().getPageList();
-        if (pages.isEmpty()) {
-            return;
-        }
 
         int listLeft = this.leftPos + PAGE_LIST_X;
         int listTop = this.topPos + PAGE_LIST_Y;
 
-        // Draw each page as a small icon
-        for (int i = 0; i < pages.size() && i < PAGES_PER_ROW * 2; i++) {
+        // Slot rendering colors (standard Minecraft slot style)
+        int slotBgDark = 0xFF373737;   // Dark inner background
+        int slotBorderDark = 0xFF373737;  // Top/left border (shadow)
+        int slotBorderLight = 0xFFFFFFFF; // Bottom/right border (highlight)
+        int slotBg = 0xFF8B8B8B;       // Main slot background
+
+        // Calculate max visible slots (2 rows)
+        int maxVisibleSlots = PAGES_PER_ROW * 2;
+
+        // First pass: Draw slot backgrounds for ALL visible positions
+        for (int i = 0; i < maxVisibleSlots; i++) {
             int col = i % PAGES_PER_ROW;
             int row = i / PAGES_PER_ROW;
 
-            int x = listLeft + col * PAGE_SIZE;
-            int y = listTop + row * PAGE_SIZE;
+            int x = listLeft + col * (PAGE_SIZE + 2); // +2 for spacing
+            int y = listTop + row * (PAGE_SIZE + 2);
+
+            // Draw 3D slot border (Minecraft style)
+            // Top edge (dark)
+            guiGraphics.fill(x, y, x + PAGE_SIZE + 2, y + 1, slotBorderDark);
+            // Left edge (dark)
+            guiGraphics.fill(x, y, x + 1, y + PAGE_SIZE + 2, slotBorderDark);
+            // Bottom edge (light)
+            guiGraphics.fill(x, y + PAGE_SIZE + 1, x + PAGE_SIZE + 2, y + PAGE_SIZE + 2, slotBorderLight);
+            // Right edge (light)
+            guiGraphics.fill(x + PAGE_SIZE + 1, y, x + PAGE_SIZE + 2, y + PAGE_SIZE + 2, slotBorderLight);
+            // Inner background
+            guiGraphics.fill(x + 1, y + 1, x + PAGE_SIZE + 1, y + PAGE_SIZE + 1, slotBg);
+        }
+
+        // Second pass: Draw page items on top of slots
+        for (int i = scrollOffset; i < pages.size() && i < scrollOffset + maxVisibleSlots; i++) {
+            int displayIndex = i - scrollOffset;
+            int col = displayIndex % PAGES_PER_ROW;
+            int row = displayIndex / PAGES_PER_ROW;
+
+            int x = listLeft + col * (PAGE_SIZE + 2) + 1; // +1 to center in slot
+            int y = listTop + row * (PAGE_SIZE + 2) + 1;
 
             ItemStack page = pages.get(i);
             if (!page.isEmpty()) {
@@ -150,11 +179,13 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
                 // Highlight first position if it's not a link panel
                 if (i == 0 && !Page.isLinkPanel(page)) {
-                    // Draw red border
-                    guiGraphics.fill(x - 1, y - 1, x + PAGE_SIZE + 1, y, 0xFFFF0000);
-                    guiGraphics.fill(x - 1, y + PAGE_SIZE, x + PAGE_SIZE + 1, y + PAGE_SIZE + 1, 0xFFFF0000);
-                    guiGraphics.fill(x - 1, y, x, y + PAGE_SIZE, 0xFFFF0000);
-                    guiGraphics.fill(x + PAGE_SIZE, y, x + PAGE_SIZE + 1, y + PAGE_SIZE, 0xFFFF0000);
+                    // Draw red border around first slot
+                    int bx = x - 1;
+                    int by = y - 1;
+                    guiGraphics.fill(bx - 1, by - 1, bx + PAGE_SIZE + 2, by, 0xFFFF0000);
+                    guiGraphics.fill(bx - 1, by + PAGE_SIZE + 1, bx + PAGE_SIZE + 2, by + PAGE_SIZE + 2, 0xFFFF0000);
+                    guiGraphics.fill(bx - 1, by, bx, by + PAGE_SIZE + 1, 0xFFFF0000);
+                    guiGraphics.fill(bx + PAGE_SIZE + 1, by, bx + PAGE_SIZE + 2, by + PAGE_SIZE + 1, 0xFFFF0000);
                 }
             }
         }
@@ -228,15 +259,16 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
         // Check if clicking on page list area
         int listLeft = this.leftPos + PAGE_LIST_X;
         int listTop = this.topPos + PAGE_LIST_Y;
-        int listRight = listLeft + PAGE_LIST_WIDTH;
-        int listBottom = listTop + PAGE_LIST_HEIGHT;
+        int slotSize = PAGE_SIZE + 2; // Same spacing as rendering
+        int listRight = listLeft + PAGES_PER_ROW * slotSize;
+        int listBottom = listTop + 2 * slotSize;
 
         if (mouseX >= listLeft && mouseX < listRight && mouseY >= listTop && mouseY < listBottom) {
             int relX = (int) mouseX - listLeft;
             int relY = (int) mouseY - listTop;
 
-            int col = relX / PAGE_SIZE;
-            int row = relY / PAGE_SIZE;
+            int col = relX / slotSize;
+            int row = relY / slotSize;
             int pageIndex = row * PAGES_PER_ROW + col + scrollOffset;
 
             List<ItemStack> pages = menu.getBlockEntity().getPageList();
@@ -272,8 +304,9 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
         // Scroll the page list
         int listLeft = this.leftPos + PAGE_LIST_X;
         int listTop = this.topPos + PAGE_LIST_Y;
-        int listRight = listLeft + PAGE_LIST_WIDTH;
-        int listBottom = listTop + PAGE_LIST_HEIGHT;
+        int slotSize = PAGE_SIZE + 2;
+        int listRight = listLeft + PAGES_PER_ROW * slotSize;
+        int listBottom = listTop + 2 * slotSize;
 
         if (mouseX >= listLeft && mouseX < listRight && mouseY >= listTop && mouseY < listBottom) {
             List<ItemStack> pages = menu.getBlockEntity().getPageList();

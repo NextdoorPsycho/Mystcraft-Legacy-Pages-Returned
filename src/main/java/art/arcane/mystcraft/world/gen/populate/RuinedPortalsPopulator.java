@@ -2,7 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -26,7 +26,7 @@ public class RuinedPortalsPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         // Only attempt generation in specific chunks based on grid
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;
@@ -51,7 +51,7 @@ public class RuinedPortalsPopulator implements IPopulate {
         generateRuinedPortal(world, random, pos);
     }
 
-    private void generateRuinedPortal(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateRuinedPortal(WorldGenLevel world, RandomSource random, BlockPos pos) {
         // Standard nether portal is 4 wide, 5 tall
         // We'll make it partially broken
 

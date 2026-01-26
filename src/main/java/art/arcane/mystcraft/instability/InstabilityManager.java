@@ -2,6 +2,7 @@ package art.arcane.mystcraft.instability;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.grammar.GrammarGenerator;
 import art.arcane.mystcraft.registry.ModBlocks;
@@ -28,26 +29,71 @@ import java.util.List;
 /**
  * Manages instability effects in Mystcraft Ages.
  * Higher instability leads to more frequent and severe negative effects.
+ *
+ * This system mirrors the original Mystcraft approach:
+ * - Instability accumulates from missing/conflicting symbols
+ * - Effects only trigger once instability exceeds configurable thresholds
+ * - Effect frequency scales with how far instability exceeds the threshold
+ * - A global multiplier allows server admins to tune difficulty
  */
 @Mod.EventBusSubscriber(modid = Mystcraft.MOD_ID)
 public final class InstabilityManager {
 
-    // Effect thresholds (instability level required to trigger)
-    private static final float THRESHOLD_DECAY = 20.0f;
-    private static final float THRESHOLD_TRANSMUTE = 30.0f;
-    private static final float THRESHOLD_LIGHTNING = 40.0f;
-    private static final float THRESHOLD_METEOR = 60.0f;
-    private static final float THRESHOLD_POISON = 80.0f;
-    private static final float THRESHOLD_WITHER = 100.0f;
-
-    // Base chances per tick (at maximum instability for each tier)
-    private static final float CHANCE_DECAY = 0.001f;        // ~0.1% per tick
-    private static final float CHANCE_TRANSMUTE = 0.002f;    // ~0.2% per tick
-    private static final float CHANCE_LIGHTNING = 0.0005f;   // ~0.05% per tick
-    private static final float CHANCE_METEOR = 0.0002f;      // ~0.02% per tick
-    private static final float CHANCE_PLAYER_EFFECT = 0.0001f; // ~0.01% per tick
-
     private InstabilityManager() {
+    }
+
+    // ===== Config accessors (read from ForgeConfigSpec) =====
+
+    private static float getThresholdDecay() {
+        return MystcraftConfig.thresholdDecay.get().floatValue();
+    }
+
+    private static float getThresholdTransmute() {
+        return MystcraftConfig.thresholdTransmute.get().floatValue();
+    }
+
+    private static float getThresholdLightning() {
+        return MystcraftConfig.thresholdLightning.get().floatValue();
+    }
+
+    private static float getThresholdMeteor() {
+        return MystcraftConfig.thresholdMeteor.get().floatValue();
+    }
+
+    private static float getThresholdPoison() {
+        return MystcraftConfig.thresholdPoison.get().floatValue();
+    }
+
+    private static float getThresholdWither() {
+        return MystcraftConfig.thresholdWither.get().floatValue();
+    }
+
+    private static float getChanceDecay() {
+        return MystcraftConfig.chanceDecay.get().floatValue();
+    }
+
+    private static float getChanceTransmute() {
+        return MystcraftConfig.chanceTransmute.get().floatValue();
+    }
+
+    private static float getChanceLightning() {
+        return MystcraftConfig.chanceLightning.get().floatValue();
+    }
+
+    private static float getChanceMeteor() {
+        return MystcraftConfig.chanceMeteor.get().floatValue();
+    }
+
+    private static float getChancePlayerEffect() {
+        return MystcraftConfig.chancePlayerEffect.get().floatValue();
+    }
+
+    private static float getEffectMultiplier() {
+        return MystcraftConfig.instabilityMultiplier.get().floatValue();
+    }
+
+    private static boolean isInstabilityEnabled() {
+        return MystcraftConfig.instabilityEnabled.get();
     }
 
     @SubscribeEvent
@@ -56,6 +102,11 @@ public final class InstabilityManager {
             return;
         }
         if (!(event.level instanceof ServerLevel level)) {
+            return;
+        }
+
+        // Check if instability system is enabled
+        if (!isInstabilityEnabled()) {
             return;
         }
 
@@ -81,6 +132,7 @@ public final class InstabilityManager {
 
     /**
      * Processes all instability effects for a level.
+     * Uses configurable thresholds, chances, and global multiplier.
      */
     private static void processInstabilityEffects(ServerLevel level, float instability) {
         RandomSource random = level.random;
@@ -90,39 +142,60 @@ public final class InstabilityManager {
             return; // No players, no effects
         }
 
+        // Get the global effect multiplier from config
+        float multiplier = getEffectMultiplier();
+        if (multiplier <= 0) {
+            return; // Effects disabled via multiplier
+        }
+
         // Decay spreading
-        if (instability >= THRESHOLD_DECAY && random.nextFloat() < calculateChance(instability, THRESHOLD_DECAY, CHANCE_DECAY)) {
+        float thresholdDecay = getThresholdDecay();
+        if (instability >= thresholdDecay && random.nextFloat() < calculateChance(instability, thresholdDecay, getChanceDecay(), multiplier)) {
             spawnDecay(level, players, random);
         }
 
         // Block transmutation
-        if (instability >= THRESHOLD_TRANSMUTE && random.nextFloat() < calculateChance(instability, THRESHOLD_TRANSMUTE, CHANCE_TRANSMUTE)) {
+        float thresholdTransmute = getThresholdTransmute();
+        if (instability >= thresholdTransmute && random.nextFloat() < calculateChance(instability, thresholdTransmute, getChanceTransmute(), multiplier)) {
             transmuteBlock(level, players, random);
         }
 
         // Lightning strikes
-        if (instability >= THRESHOLD_LIGHTNING && random.nextFloat() < calculateChance(instability, THRESHOLD_LIGHTNING, CHANCE_LIGHTNING)) {
+        float thresholdLightning = getThresholdLightning();
+        if (instability >= thresholdLightning && random.nextFloat() < calculateChance(instability, thresholdLightning, getChanceLightning(), multiplier)) {
             spawnLightning(level, players, random);
         }
 
         // Meteor falls
-        if (instability >= THRESHOLD_METEOR && random.nextFloat() < calculateChance(instability, THRESHOLD_METEOR, CHANCE_METEOR)) {
+        float thresholdMeteor = getThresholdMeteor();
+        if (instability >= thresholdMeteor && random.nextFloat() < calculateChance(instability, thresholdMeteor, getChanceMeteor(), multiplier)) {
             spawnMeteor(level, players, random);
         }
 
-        // Player effects
-        if (instability >= THRESHOLD_POISON && random.nextFloat() < calculateChance(instability, THRESHOLD_POISON, CHANCE_PLAYER_EFFECT)) {
+        // Player effects (poison, hunger, wither)
+        float thresholdPoison = getThresholdPoison();
+        if (instability >= thresholdPoison && random.nextFloat() < calculateChance(instability, thresholdPoison, getChancePlayerEffect(), multiplier)) {
             applyPlayerEffects(level, players, instability, random);
         }
     }
 
     /**
      * Calculates the actual chance based on instability level above threshold.
+     * Formula matches original Mystcraft behavior:
+     * - Base chance when at threshold
+     * - Scales up to 3x base chance as instability increases
+     * - Global multiplier from config applied on top
+     *
+     * @param instability Current instability level
+     * @param threshold   Threshold for this effect type
+     * @param baseChance  Base probability per tick
+     * @param multiplier  Global effect multiplier from config
+     * @return Final chance to roll against
      */
-    private static float calculateChance(float instability, float threshold, float baseChance) {
+    private static float calculateChance(float instability, float threshold, float baseChance, float multiplier) {
         float excess = instability - threshold;
-        float factor = Math.min(excess / 50.0f, 2.0f); // Cap at 2x base chance
-        return baseChance * (1.0f + factor);
+        float factor = Math.min(excess / 50.0f, 2.0f); // Scale up to 3x base (1 + 2)
+        return baseChance * (1.0f + factor) * multiplier;
     }
 
     /**
@@ -287,19 +360,22 @@ public final class InstabilityManager {
 
     /**
      * Applies negative effects to players.
+     * Effect severity scales with instability level.
      */
     private static void applyPlayerEffects(ServerLevel level, List<ServerPlayer> players, float instability, RandomSource random) {
         ServerPlayer target = players.get(random.nextInt(players.size()));
 
         MobEffectInstance effect;
-        if (instability >= THRESHOLD_WITHER && random.nextFloat() < 0.3f) {
-            // Wither effect at very high instability
+        float thresholdWither = getThresholdWither();
+
+        if (instability >= thresholdWither && random.nextFloat() < 0.3f) {
+            // Wither effect at very high instability (most severe)
             effect = new MobEffectInstance(MobEffects.WITHER, 100, 0); // 5 seconds, level 1
         } else if (random.nextFloat() < 0.5f) {
-            // Poison
+            // Poison (moderate)
             effect = new MobEffectInstance(MobEffects.POISON, 100, 0);
         } else {
-            // Hunger
+            // Hunger (mild)
             effect = new MobEffectInstance(MobEffects.HUNGER, 200, 1);
         }
 
@@ -363,5 +439,77 @@ public final class InstabilityManager {
         ageData.addInstability(amount);
 
         Mystcraft.LOGGER.debug("Added {} instability to age, total: {}", amount, ageData.getInstability());
+    }
+
+    /**
+     * Checks if an Age with the given instability level is allowed to be created/linked.
+     * Based on the 'allowUnstableAges' and 'maxAllowedInstability' config options.
+     *
+     * @param instability The instability level of the Age
+     * @return true if the Age is allowed, false if it should be blocked
+     */
+    public static boolean isAgeAllowed(float instability) {
+        // If unstable ages are allowed, always permit
+        if (MystcraftConfig.allowUnstableAges.get()) {
+            return true;
+        }
+
+        // Otherwise check against the max threshold
+        float maxAllowed = MystcraftConfig.maxAllowedInstability.get().floatValue();
+        return instability <= maxAllowed;
+    }
+
+    /**
+     * Gets the maximum allowed instability from config.
+     * Ages above this level will be blocked if 'allowUnstableAges' is false.
+     *
+     * @return Maximum allowed instability value
+     */
+    public static float getMaxAllowedInstability() {
+        return MystcraftConfig.maxAllowedInstability.get().floatValue();
+    }
+
+    /**
+     * Checks if the instability system is enabled.
+     *
+     * @return true if instability effects are active
+     */
+    public static boolean isEnabled() {
+        return isInstabilityEnabled();
+    }
+
+    /**
+     * Gets the current effect multiplier from config.
+     *
+     * @return The multiplier applied to all effect chances
+     */
+    public static float getMultiplier() {
+        return getEffectMultiplier();
+    }
+
+    /**
+     * Gets a human-readable instability rating for display purposes.
+     *
+     * @param instability The instability value
+     * @return A string rating (Stable, Unstable, Dangerous, etc.)
+     */
+    public static String getInstabilityRating(float instability) {
+        if (instability <= 0) {
+            return "Perfectly Stable";
+        } else if (instability <= 10) {
+            return "Stable";
+        } else if (instability <= 30) {
+            return "Slightly Unstable";
+        } else if (instability <= 50) {
+            return "Unstable";
+        } else if (instability <= 80) {
+            return "Very Unstable";
+        } else if (instability <= 100) {
+            return "Dangerous";
+        } else if (instability <= 150) {
+            return "Extremely Dangerous";
+        } else {
+            return "Catastrophic";
+        }
     }
 }

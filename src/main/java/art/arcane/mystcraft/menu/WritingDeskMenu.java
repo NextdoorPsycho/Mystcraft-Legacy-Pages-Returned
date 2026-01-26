@@ -104,6 +104,11 @@ public class WritingDeskMenu extends AbstractContainerMenu {
             public boolean mayPlace(@NotNull ItemStack stack) {
                 return false;
             }
+
+            @Override
+            public boolean mayPickup(@NotNull Player player) {
+                return true; // Always allow picking up from output slot
+            }
         });
 
         // Player inventory (3 rows of 9) at (8+xShift, 84+yShift) = (241, 104)

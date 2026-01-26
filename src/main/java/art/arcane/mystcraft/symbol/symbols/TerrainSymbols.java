@@ -11,6 +11,8 @@ import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorFlat;
 import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorNether;
 import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorNormal;
 import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorVoid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Terrain generation symbols.
@@ -18,6 +20,8 @@ import art.arcane.mystcraft.world.gen.terrain.TerrainGeneratorVoid;
  * rather than just setting configuration strings.
  */
 public final class TerrainSymbols {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TerrainSymbols.class);
 
     private TerrainSymbols() {}
 
@@ -40,6 +44,7 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            LOGGER.info("[TerrainSymbol] Applying NORMAL terrain to age (seed: {})", seed);
             director.setAverageGroundLevel(64);
             director.setSeaLevel(63);
 
@@ -71,6 +76,7 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            LOGGER.info("[TerrainSymbol] Applying AMPLIFIED terrain to age (seed: {})", seed);
             director.setAverageGroundLevel(96);
             director.setSeaLevel(63);
 
@@ -96,6 +102,7 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            LOGGER.info("[TerrainSymbol] Applying FLAT terrain to age (seed: {})", seed);
             director.setAverageGroundLevel(4);
             director.setSeaLevel(-64); // Below world, effectively no sea
             director.setHasSea(false);
@@ -119,6 +126,7 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            LOGGER.info("[TerrainSymbol] Applying VOID terrain to age (seed: {})", seed);
             director.setAverageGroundLevel(0);
             director.setSeaLevel(-64);
             director.setHasSea(false);
@@ -141,6 +149,7 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            LOGGER.info("[TerrainSymbol] Applying END terrain to age (seed: {})", seed);
             director.setAverageGroundLevel(64);
             director.setSeaLevel(-64);
             director.setHasSea(false);
@@ -167,6 +176,7 @@ public final class TerrainSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            LOGGER.info("[TerrainSymbol] Applying NETHER terrain to age (seed: {})", seed);
             director.setAverageGroundLevel(64);
             director.setSeaLevel(-64);
             director.setHasSea(false);

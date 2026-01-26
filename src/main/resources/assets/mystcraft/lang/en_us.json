@@ -103,8 +103,9 @@
   "gui.mystcraft.book.dimension": "Dimension: %d",
   "gui.mystcraft.book.destination": "Destination: %d, %d, %d",
   "gui.mystcraft.book.authors": "Authors:",
+  "gui.mystcraft.book.by": "by",
   "gui.mystcraft.book.pages": "Pages: %d",
-  "gui.mystcraft.book.unwritten": "This book is unwritten",
+  "gui.mystcraft.book.unwritten": "Unwritten",
 
   "myst.symbol.mystcraft.biome_single": "Single Biome",
   "myst.symbol.mystcraft.biome_native": "Native Biomes",

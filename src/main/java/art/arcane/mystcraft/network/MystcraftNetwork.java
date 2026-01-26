@@ -100,11 +100,18 @@ public final class MystcraftNetwork {
                 .consumerMainThread(SpawnLightningPacket::handle)
                 .add();
 
-        // Client -> Server: Activate linking book from GUI
+        // Client -> Server: Activate linking book from GUI (hand-based)
         CHANNEL.messageBuilder(LinkBookActivatePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(LinkBookActivatePacket::encode)
                 .decoder(LinkBookActivatePacket::decode)
                 .consumerMainThread(LinkBookActivatePacket::handle)
+                .add();
+
+        // Client -> Server: Activate linking book from GUI (entity-based)
+        CHANNEL.messageBuilder(EntityBookActivatePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(EntityBookActivatePacket::encode)
+                .decoder(EntityBookActivatePacket::decode)
+                .consumerMainThread(EntityBookActivatePacket::handle)
                 .add();
 
         Mystcraft.LOGGER.info("Registered {} network packets", packetId);

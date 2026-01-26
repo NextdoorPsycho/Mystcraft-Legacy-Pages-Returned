@@ -2,7 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
@@ -12,10 +12,16 @@ import net.minecraft.world.level.levelgen.Heightmap;
 /**
  * Standard ore populator that provides baseline ore generation for all ages.
  * Generates ores at approximately vanilla rates (slightly reduced).
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
  */
 public class StandardOresPopulator implements IPopulate {
 
     private final long seed;
+
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     // Ore configurations: blockState, veinSize, veinsPerChunk, minY, maxY
     private static final OreConfig[] ORE_CONFIGS = {
@@ -42,13 +48,40 @@ public class StandardOresPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        int chunkX = chunkPos.getX() >> 4;
+        int chunkZ = chunkPos.getZ() >> 4;
+
+        // Set chunk boundaries for this population run
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
+
         for (OreConfig config : ORE_CONFIGS) {
             generateOre(world, random, chunkPos, config);
         }
     }
 
-    private void generateOre(ServerLevel world, RandomSource random, BlockPos chunkPos, OreConfig config) {
+    /**
+     * Checks if a position is within the current chunk boundaries.
+     * This prevents cascade chunk loading when ore veins extend beyond chunk edges.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
+    private void generateOre(WorldGenLevel world, RandomSource random, BlockPos chunkPos, OreConfig config) {
         int chunkX = chunkPos.getX();
         int chunkZ = chunkPos.getZ();
 
@@ -61,7 +94,7 @@ public class StandardOresPopulator implements IPopulate {
         }
     }
 
-    private void generateVein(ServerLevel world, RandomSource random, BlockPos center, OreConfig config) {
+    private void generateVein(WorldGenLevel world, RandomSource random, BlockPos center, OreConfig config) {
         int numberOfBlocks = config.veinSize;
 
         float angle = random.nextFloat() * (float) Math.PI;
@@ -113,20 +146,25 @@ public class StandardOresPopulator implements IPopulate {
         }
     }
 
-    private void tryPlaceOre(ServerLevel world, BlockPos pos, OreConfig config) {
+    private void tryPlaceOre(WorldGenLevel world, BlockPos pos, OreConfig config) {
+        // Skip positions outside current chunk to prevent cascade loading
+        if (!isInChunk(pos)) {
+            return;
+        }
+
         BlockState existing = world.getBlockState(pos);
 
         // Replace stone, deepslate, netherrack, or end stone with appropriate ore
         if (existing.is(Blocks.STONE)) {
-            world.setBlock(pos, config.oreBlock, 2);
+            safeSetBlock(world, pos, config.oreBlock);
         } else if (existing.is(Blocks.DEEPSLATE)) {
-            world.setBlock(pos, config.deepslateOreBlock, 2);
+            safeSetBlock(world, pos, config.deepslateOreBlock);
         } else if (existing.is(Blocks.NETHERRACK)) {
             // Use regular ore in netherrack (for Mystcraft nether terrain)
-            world.setBlock(pos, config.oreBlock, 2);
+            safeSetBlock(world, pos, config.oreBlock);
         } else if (existing.is(Blocks.END_STONE)) {
             // Use regular ore in end stone (for Mystcraft end terrain)
-            world.setBlock(pos, config.oreBlock, 2);
+            safeSetBlock(world, pos, config.oreBlock);
         }
     }
 

@@ -3,6 +3,7 @@ package art.arcane.mystcraft.blockentity;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.FolderItem;
+import art.arcane.mystcraft.item.InkVialItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.item.PageItem;
 import art.arcane.mystcraft.item.PortfolioItem;
@@ -212,10 +213,15 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     }
 
     /**
-     * Checks if an item is an ink container (bucket with ink).
+     * Checks if an item is an ink container (bucket with ink or ink vial).
      */
     public static boolean isInkContainer(ItemStack stack) {
         if (stack.isEmpty()) return false;
+        // Accept Mystcraft ink vials with ink
+        if (stack.getItem() instanceof InkVialItem vial) {
+            return vial.getInkAmount(stack) > 0;
+        }
+        // Accept fluid containers with ink
         FluidStack fluid = FluidUtil.getFluidContained(stack).orElse(FluidStack.EMPTY);
         return !fluid.isEmpty() && isValidInk(fluid.getFluid());
     }
@@ -344,6 +350,35 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
         ItemStack containerOut = mainInventory.getStackInSlot(SLOT_CONTAINER_OUT);
 
         if (containerIn.isEmpty()) return;
+
+        // Handle ink vials separately (they don't use fluid capabilities)
+        if (containerIn.getItem() instanceof InkVialItem vial) {
+            int vialInk = vial.getInkAmount(containerIn);
+            int spaceInTank = INK_CAPACITY - getInkAmount();
+            if (vialInk > 0 && spaceInTank > 0) {
+                // Each vial unit = 10 mB of fluid (100 vial units = 1000 mB = 1 bucket)
+                int inkToTransfer = Math.min(vialInk * 10, spaceInTank);
+                int vialUnitsUsed = (inkToTransfer + 9) / 10; // Round up
+                inkToTransfer = vialUnitsUsed * 10; // Actual amount transferred
+
+                inkTank.fill(new FluidStack(ModFluids.BLACK_INK_SOURCE.get(), inkToTransfer), IFluidHandler.FluidAction.EXECUTE);
+                vial.setInkAmount(containerIn, vialInk - vialUnitsUsed);
+
+                // If vial is empty, output empty glass bottle
+                if (vial.getInkAmount(containerIn) <= 0) {
+                    ItemStack emptyBottle = new ItemStack(Items.GLASS_BOTTLE);
+                    if (containerOut.isEmpty()) {
+                        mainInventory.setStackInSlot(SLOT_CONTAINER_OUT, emptyBottle);
+                        containerIn.shrink(1);
+                    } else if (containerOut.is(Items.GLASS_BOTTLE) && containerOut.getCount() < containerOut.getMaxStackSize()) {
+                        containerOut.grow(1);
+                        containerIn.shrink(1);
+                    }
+                    // If output is full, don't consume the vial
+                }
+            }
+            return;
+        }
 
         // Try to drain fluid from container into tank
         FluidUtil.getFluidHandler(containerIn).ifPresent(handler -> {

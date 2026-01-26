@@ -5,6 +5,7 @@ import art.arcane.mystcraft.guidebook.GuidebookContent;
 import art.arcane.mystcraft.guidebook.GuidebookPage;
 import art.arcane.mystcraft.guidebook.GuidebookChapter;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -48,23 +49,42 @@ public class GuidebookScreen extends Screen {
     private static final int TITLE_COLOR = 0x000000;
     private static final int LINK_COLOR = 0x0040A0;
     private static final int LINK_HOVER_COLOR = 0x0060D0;
-    private static final int PAGE_NUM_COLOR = 0x505050;
+    private static final int PAGE_NUM_COLOR = 0x606060;
     private static final int STABILITY_POSITIVE = 0x107010;
     private static final int STABILITY_NEGATIVE = 0xA01010;
+
+    // Persisted reading position (survives screen close/reopen)
+    private static int savedChapterIndex = 0;
+    private static int savedPageIndex = 0;
+    private static boolean savedShowingToc = true;
 
     private final GuidebookContent content;
 
     private int leftPos;
     private int topPos;
 
-    private int currentChapterIndex = 0;
-    private int currentPageIndex = 0;
-    private boolean showingTableOfContents = true;
+    private int currentChapterIndex;
+    private int currentPageIndex;
+    private boolean showingTableOfContents;
     private int tocScrollOffset = 0;
 
     public GuidebookScreen() {
         super(Component.translatable("item.mystcraft.guidebook"));
         this.content = GuidebookContent.getInstance();
+
+        // Restore saved reading position
+        this.currentChapterIndex = savedChapterIndex;
+        this.currentPageIndex = savedPageIndex;
+        this.showingTableOfContents = savedShowingToc;
+    }
+
+    @Override
+    public void onClose() {
+        // Save reading position for next time
+        savedChapterIndex = this.currentChapterIndex;
+        savedPageIndex = this.currentPageIndex;
+        savedShowingToc = this.showingTableOfContents;
+        super.onClose();
     }
 
     @Override
@@ -95,37 +115,41 @@ public class GuidebookScreen extends Screen {
     }
 
     private void renderTableOfContents(GuiGraphics graphics, int mouseX, int mouseY) {
-        // Left page - Title and description
+        // Left page - Title and description (positioned higher)
         int leftX = leftPos + LEFT_PAGE_X;
-        int y = topPos + TEXT_TOP + 4;
+        int y = topPos + 10;
 
-        // Book title
-        String title = "The Art of Writing";
-        graphics.drawString(this.font, title, leftX + (LEFT_PAGE_WIDTH - font.width(title)) / 2, y, TITLE_COLOR, false);
+        // Book title - bold
+        Component title = Component.literal("Rehevkor").withStyle(ChatFormatting.BOLD);
+        int titleWidth = font.width(title);
+        graphics.drawString(this.font, title, leftX + (LEFT_PAGE_WIDTH - titleWidth) / 2, y, TITLE_COLOR, false);
+        y += LINE_HEIGHT + 2;
+
+        // Subtitle - italic
+        Component subtitle = Component.literal("The Art of Writing").withStyle(ChatFormatting.ITALIC);
+        int subtitleWidth = font.width(subtitle);
+        graphics.drawString(this.font, subtitle, leftX + (LEFT_PAGE_WIDTH - subtitleWidth) / 2, y, TEXT_COLOR, false);
         y += LINE_HEIGHT + 6;
 
         // Decorative line
-        int lineStart = leftX + 15;
-        int lineEnd = leftX + LEFT_PAGE_WIDTH - 15;
+        int lineStart = leftX + 12;
+        int lineEnd = leftX + LEFT_PAGE_WIDTH - 12;
         graphics.fill(lineStart, y, lineEnd, y + 1, 0xFF000000 | TITLE_COLOR);
-        y += LINE_HEIGHT;
+        y += 10;
 
-        // Subtitle
-        String subtitle = "A Guide to Ages";
-        graphics.drawString(this.font, subtitle, leftX + (LEFT_PAGE_WIDTH - font.width(subtitle)) / 2, y, TEXT_COLOR, false);
-        y += LINE_HEIGHT + 8;
-
-        // Description text
+        // Description text - styled as ancient wisdom, centered
         String[] desc = {
-                "Within these pages",
-                "lies the knowledge",
-                "of the D'ni, masters",
-                "of linking worlds.",
+                "If you are reading",
+                "these words, then you",
+                "have found what",
+                "remains of our",
+                "knowledge.",
                 "",
-                "Study well, and you",
-                "may learn to write",
-                "passages to realms",
-                "of your own design."
+                "Guard it well.",
+                "",
+                "The Art demands",
+                "patience and",
+                "precision both."
         };
 
         for (String line : desc) {
@@ -137,22 +161,26 @@ public class GuidebookScreen extends Screen {
 
         // Right page - Chapter list (single column, scrollable)
         int rightX = leftPos + RIGHT_PAGE_X;
-        y = topPos + TEXT_TOP + 4;
+        y = topPos + 10;
 
-        graphics.drawString(this.font, "Contents", rightX + (RIGHT_PAGE_WIDTH - font.width("Contents")) / 2, y, TITLE_COLOR, false);
+        // Chapters title - bold
+        Component tocTitle = Component.literal("Chapters").withStyle(ChatFormatting.BOLD);
+        int tocWidth = font.width(tocTitle);
+        graphics.drawString(this.font, tocTitle, rightX + (RIGHT_PAGE_WIDTH - tocWidth) / 2, y, TITLE_COLOR, false);
         y += LINE_HEIGHT + 8;
 
-        // Chapter list
+        // Chapter list - bold entries
         List<GuidebookChapter> chapters = content.getChapters();
         int itemHeight = LINE_HEIGHT;
-        int maxVisible = 11;
+        int maxVisible = 10;
 
-        for (int i = 0; i < Math.min(chapters.size(), maxVisible); i++) {
+        int visibleCount = Math.min(chapters.size() - tocScrollOffset, maxVisible);
+        for (int i = 0; i < visibleCount; i++) {
             int displayIndex = i + tocScrollOffset;
             if (displayIndex >= chapters.size()) break;
 
             GuidebookChapter chapter = chapters.get(displayIndex);
-            String entry = (displayIndex + 1) + ". " + truncate(chapter.getTitle(), 14);
+            String entryText = (displayIndex + 1) + ". " + truncate(chapter.getTitle(), 13);
 
             int itemX = rightX + 2;
             int itemY = y + (i * itemHeight);
@@ -160,13 +188,16 @@ public class GuidebookScreen extends Screen {
             boolean hovered = isInBounds(mouseX, mouseY, itemX, itemY, RIGHT_PAGE_WIDTH - 4, itemHeight);
             int color = hovered ? LINK_HOVER_COLOR : LINK_COLOR;
 
+            // Bold chapter entries
+            Component entry = Component.literal(entryText).withStyle(ChatFormatting.BOLD);
             graphics.drawString(this.font, entry, itemX, itemY, color, false);
         }
 
-        // Scroll hint if needed
+        // Scroll hint positioned after the chapter list
         if (chapters.size() > maxVisible) {
+            int scrollY = y + (visibleCount * itemHeight) + 4;
             String scrollHint = "(scroll for more)";
-            graphics.drawString(this.font, scrollHint, rightX + (RIGHT_PAGE_WIDTH - font.width(scrollHint)) / 2, topPos + TEXT_BOTTOM - 8, PAGE_NUM_COLOR, false);
+            graphics.drawString(this.font, scrollHint, rightX + (RIGHT_PAGE_WIDTH - font.width(scrollHint)) / 2, scrollY, PAGE_NUM_COLOR, false);
         }
     }
 
@@ -176,6 +207,16 @@ public class GuidebookScreen extends Screen {
 
         GuidebookChapter chapter = chapters.get(currentChapterIndex);
         List<GuidebookPage> pages = chapter.getPages();
+
+        // Calculate continuous page numbers across all chapters
+        int pagesBeforeThisChapter = 0;
+        for (int i = 0; i < currentChapterIndex; i++) {
+            pagesBeforeThisChapter += chapters.get(i).getPages().size();
+        }
+
+        // Chapter title - bold, left aligned on left page
+        Component chapterTitle = Component.literal(chapter.getTitle()).withStyle(ChatFormatting.BOLD);
+        graphics.drawString(this.font, chapterTitle, leftPos + LEFT_PAGE_X, topPos + 6, TITLE_COLOR, false);
 
         // Render left page
         if (currentPageIndex < pages.size()) {
@@ -187,22 +228,18 @@ public class GuidebookScreen extends Screen {
             renderPage(graphics, pages.get(currentPageIndex + 1), leftPos + RIGHT_PAGE_X, topPos + TEXT_TOP, RIGHT_PAGE_WIDTH);
         }
 
-        // Chapter title centered at top
-        String chapterTitle = chapter.getTitle();
-        int titleX = leftPos + BOOK_WIDTH / 2 - font.width(chapterTitle) / 2;
-        graphics.drawString(this.font, chapterTitle, titleX, topPos + 4, TITLE_COLOR, false);
+        // Page numbers at bottom - centered on each page
+        int leftPageNum = pagesBeforeThisChapter + currentPageIndex + 1;
+        int rightPageNum = pagesBeforeThisChapter + currentPageIndex + 2;
 
-        // Page numbers at bottom
-        int leftPageNum = currentPageIndex + 1;
-        int rightPageNum = currentPageIndex + 2;
-        int totalPages = pages.size();
+        String leftNum = "- " + leftPageNum + " -";
+        int leftNumX = leftPos + LEFT_PAGE_X + (LEFT_PAGE_WIDTH - font.width(leftNum)) / 2;
+        graphics.drawString(this.font, leftNum, leftNumX, topPos + TEXT_BOTTOM + 2, PAGE_NUM_COLOR, false);
 
-        String leftNum = String.valueOf(leftPageNum);
-        String rightNum = rightPageNum <= totalPages ? String.valueOf(rightPageNum) : "";
-
-        graphics.drawString(this.font, leftNum, leftPos + LEFT_PAGE_X + LEFT_PAGE_WIDTH / 2 - font.width(leftNum) / 2, topPos + TEXT_BOTTOM, PAGE_NUM_COLOR, false);
-        if (!rightNum.isEmpty()) {
-            graphics.drawString(this.font, rightNum, leftPos + RIGHT_PAGE_X + RIGHT_PAGE_WIDTH / 2 - font.width(rightNum) / 2, topPos + TEXT_BOTTOM, PAGE_NUM_COLOR, false);
+        if (currentPageIndex + 1 < pages.size()) {
+            String rightNum = "- " + rightPageNum + " -";
+            int rightNumX = leftPos + RIGHT_PAGE_X + (RIGHT_PAGE_WIDTH - font.width(rightNum)) / 2;
+            graphics.drawString(this.font, rightNum, rightNumX, topPos + TEXT_BOTTOM + 2, PAGE_NUM_COLOR, false);
         }
 
         // Navigation arrows
@@ -210,14 +247,14 @@ public class GuidebookScreen extends Screen {
         boolean hasNext = currentPageIndex + 2 < pages.size() || currentChapterIndex < chapters.size() - 1;
 
         if (hasPrev) {
-            boolean hovered = isInBounds(mouseX, mouseY, leftPos + PREV_ARROW_X, topPos + ARROW_Y, 18, 10);
+            boolean hovered = isInBounds(mouseX, mouseY, leftPos + PREV_ARROW_X, topPos + ARROW_Y, 40, 12);
             int color = hovered ? LINK_HOVER_COLOR : LINK_COLOR;
             graphics.drawString(this.font, "<< Prev", leftPos + PREV_ARROW_X, topPos + ARROW_Y, color, false);
         }
 
         if (hasNext) {
             String nextText = "Next >>";
-            boolean hovered = isInBounds(mouseX, mouseY, leftPos + NEXT_ARROW_X - font.width(nextText), topPos + ARROW_Y, font.width(nextText), 10);
+            boolean hovered = isInBounds(mouseX, mouseY, leftPos + NEXT_ARROW_X - font.width(nextText), topPos + ARROW_Y, font.width(nextText), 12);
             int color = hovered ? LINK_HOVER_COLOR : LINK_COLOR;
             graphics.drawString(this.font, nextText, leftPos + NEXT_ARROW_X - font.width(nextText), topPos + ARROW_Y, color, false);
         }
@@ -225,7 +262,7 @@ public class GuidebookScreen extends Screen {
         // Contents link
         String contentsText = "[Contents]";
         int contentsX = leftPos + BOOK_WIDTH / 2 - font.width(contentsText) / 2;
-        boolean contentsHovered = isInBounds(mouseX, mouseY, contentsX, topPos + ARROW_Y, font.width(contentsText), 10);
+        boolean contentsHovered = isInBounds(mouseX, mouseY, contentsX, topPos + ARROW_Y, font.width(contentsText), 12);
         graphics.drawString(this.font, contentsText, contentsX, topPos + ARROW_Y, contentsHovered ? LINK_HOVER_COLOR : LINK_COLOR, false);
     }
 
@@ -234,14 +271,14 @@ public class GuidebookScreen extends Screen {
         int maxLines = availableHeight / LINE_HEIGHT;
         int contentY = y;
 
-        // Page title
+        // Page title - bold
         String title = page.getTitle();
         if (title != null && !title.isEmpty()) {
-            // Draw title (bold effect via shadow)
-            graphics.drawString(this.font, title, x, contentY, TITLE_COLOR, false);
+            Component titleComponent = Component.literal(title).withStyle(ChatFormatting.BOLD);
+            graphics.drawString(this.font, titleComponent, x, contentY, TITLE_COLOR, false);
             contentY += LINE_HEIGHT + 2;
             // Subtle underline
-            graphics.fill(x, contentY - 1, x + Math.min(font.width(title), width), contentY, 0xFF000000 | TITLE_COLOR);
+            graphics.fill(x, contentY - 1, x + Math.min(font.width(titleComponent), width), contentY, 0xFF000000 | TITLE_COLOR);
             contentY += 6; // Extra space after title
             maxLines -= 2;
         }
@@ -290,12 +327,12 @@ public class GuidebookScreen extends Screen {
         if (showingTableOfContents) {
             // Check chapter clicks (single column layout)
             int rightX = leftPos + RIGHT_PAGE_X;
-            int y = topPos + TEXT_TOP + 4 + LINE_HEIGHT + 8;
+            int y = topPos + 10 + LINE_HEIGHT + 8; // Match renderTableOfContents positioning
             int itemHeight = LINE_HEIGHT;
-            int maxVisible = 11;
+            int maxVisible = 10;
 
             List<GuidebookChapter> chapters = content.getChapters();
-            for (int i = 0; i < Math.min(chapters.size(), maxVisible); i++) {
+            for (int i = 0; i < Math.min(chapters.size() - tocScrollOffset, maxVisible); i++) {
                 int displayIndex = i + tocScrollOffset;
                 if (displayIndex >= chapters.size()) break;
 
@@ -342,7 +379,7 @@ public class GuidebookScreen extends Screen {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (showingTableOfContents) {
-            int maxScroll = Math.max(0, content.getChapters().size() - 11);
+            int maxScroll = Math.max(0, content.getChapters().size() - 10);
             if (deltaY > 0) {
                 tocScrollOffset = Math.max(0, tocScrollOffset - 1);
             } else {

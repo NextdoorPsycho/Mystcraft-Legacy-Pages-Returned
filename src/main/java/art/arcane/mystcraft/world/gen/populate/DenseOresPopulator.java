@@ -2,7 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
@@ -52,13 +52,13 @@ public class DenseOresPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         for (OreConfig config : ORE_CONFIGS) {
             generateOre(world, random, chunkPos, config);
         }
     }
 
-    private void generateOre(ServerLevel world, RandomSource random, BlockPos chunkPos, OreConfig config) {
+    private void generateOre(WorldGenLevel world, RandomSource random, BlockPos chunkPos, OreConfig config) {
         int chunkX = chunkPos.getX();
         int chunkZ = chunkPos.getZ();
 
@@ -71,7 +71,7 @@ public class DenseOresPopulator implements IPopulate {
         }
     }
 
-    private void generateVein(ServerLevel world, RandomSource random, BlockPos center, OreConfig config) {
+    private void generateVein(WorldGenLevel world, RandomSource random, BlockPos center, OreConfig config) {
         int numberOfBlocks = config.veinSize;
 
         float angle = random.nextFloat() * (float) Math.PI;
@@ -123,7 +123,7 @@ public class DenseOresPopulator implements IPopulate {
         }
     }
 
-    private void tryPlaceOre(ServerLevel world, BlockPos pos, OreConfig config) {
+    private void tryPlaceOre(WorldGenLevel world, BlockPos pos, OreConfig config) {
         BlockState existing = world.getBlockState(pos);
 
         // Replace stone, deepslate, netherrack, or end stone with appropriate ore

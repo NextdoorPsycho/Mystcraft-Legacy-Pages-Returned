@@ -3,7 +3,7 @@ package art.arcane.mystcraft.world.gen.populate;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.biome.Biome;
@@ -30,7 +30,7 @@ public class SpikesPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         int chunkX = chunkPos.getX();
         int chunkZ = chunkPos.getZ();
 
@@ -54,12 +54,12 @@ public class SpikesPopulator implements IPopulate {
         }
     }
 
-    private boolean canSupportSpike(ServerLevel world, BlockPos pos) {
+    private boolean canSupportSpike(WorldGenLevel world, BlockPos pos) {
         BlockState ground = world.getBlockState(pos.below());
         return ground.isSolid() && !ground.is(BlockTags.LEAVES);
     }
 
-    private void generateSpike(ServerLevel world, RandomSource random, BlockPos basePos, float temperature) {
+    private void generateSpike(WorldGenLevel world, RandomSource random, BlockPos basePos, float temperature) {
         // Choose spike material based on biome temperature
         BlockState spikeBlock = temperature < COLD_TEMPERATURE
                 ? Blocks.PACKED_ICE.defaultBlockState()

@@ -2,7 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -11,6 +11,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * Trail ruins populator that generates buried archaeological structures.
  * Ruins consist of mostly buried terracotta and gravel structures with suspicious gravel blocks.
  * Approximately 1 per 16 chunks.
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
  */
 public class TrailRuinsPopulator implements IPopulate {
 
@@ -30,16 +33,24 @@ public class TrailRuinsPopulator implements IPopulate {
             Blocks.YELLOW_TERRACOTTA.defaultBlockState()
     };
 
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
+
     public TrailRuinsPopulator(long seed) {
         this.seed = seed;
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
-        // Only attempt generation in specific chunks based on grid
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        // Set chunk boundaries for this population run
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
 
+        // Only attempt generation in specific chunks based on grid
         if (chunkX % CHUNKS_BETWEEN != 0 || chunkZ % CHUNKS_BETWEEN != 0) {
             return;
         }
@@ -57,6 +68,9 @@ public class TrailRuinsPopulator implements IPopulate {
 
         // Don't generate in water
         BlockPos surfacePos = new BlockPos(x, y, z);
+        if (!isInChunk(surfacePos)) {
+            return;
+        }
         if (world.getBlockState(surfacePos).is(Blocks.WATER)) {
             return;
         }
@@ -66,7 +80,34 @@ public class TrailRuinsPopulator implements IPopulate {
         generateRuins(world, random, pos);
     }
 
-    private void generateRuins(ServerLevel world, RandomSource random, BlockPos pos) {
+    /**
+     * Checks if a position is within the current chunk boundaries.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
+    /**
+     * Safe getBlockState that returns air for positions outside chunk boundaries.
+     */
+    private BlockState safeGetBlockState(WorldGenLevel world, BlockPos pos) {
+        if (isInChunk(pos)) {
+            return world.getBlockState(pos);
+        }
+        return Blocks.AIR.defaultBlockState();
+    }
+
+    private void generateRuins(WorldGenLevel world, RandomSource random, BlockPos pos) {
         // Generate scattered buried structure
         int radius = 6 + random.nextInt(4);
 
@@ -103,15 +144,15 @@ public class TrailRuinsPopulator implements IPopulate {
                     ruinBlock = Blocks.SUSPICIOUS_GRAVEL.defaultBlockState();
                 }
 
-                world.setBlock(ruinPos, ruinBlock, 2);
+                safeSetBlock(world, ruinPos, ruinBlock);
 
                 // Sometimes add a layer above for variety
                 if (random.nextFloat() < 0.3f) {
                     BlockPos abovePos = ruinPos.above();
                     if (random.nextFloat() < 0.7f) {
-                        world.setBlock(abovePos, Blocks.GRAVEL.defaultBlockState(), 2);
+                        safeSetBlock(world, abovePos, Blocks.GRAVEL.defaultBlockState());
                     } else {
-                        world.setBlock(abovePos, Blocks.SUSPICIOUS_GRAVEL.defaultBlockState(), 2);
+                        safeSetBlock(world, abovePos, Blocks.SUSPICIOUS_GRAVEL.defaultBlockState());
                     }
                 }
             }
@@ -122,6 +163,11 @@ public class TrailRuinsPopulator implements IPopulate {
             int dx = random.nextInt(radius * 2) - radius;
             int dz = random.nextInt(radius * 2) - radius;
 
+            BlockPos checkPos = new BlockPos(pos.getX() + dx, 0, pos.getZ() + dz);
+            if (!isInChunk(checkPos)) {
+                continue;
+            }
+
             int surfaceY = world.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,
                     pos.getX() + dx, pos.getZ() + dz);
 
@@ -129,7 +175,7 @@ public class TrailRuinsPopulator implements IPopulate {
 
             // Only place if on solid ground
             if (world.getBlockState(potPos).isAir() && world.getBlockState(potPos.below()).isSolid()) {
-                world.setBlock(potPos, Blocks.DECORATED_POT.defaultBlockState(), 2);
+                safeSetBlock(world, potPos, Blocks.DECORATED_POT.defaultBlockState());
             }
         }
 
@@ -149,7 +195,7 @@ public class TrailRuinsPopulator implements IPopulate {
                         Blocks.MOSSY_COBBLESTONE.defaultBlockState() :
                         Blocks.COBBLESTONE.defaultBlockState();
 
-                world.setBlock(pathPos, pathBlock, 2);
+                safeSetBlock(world, pathPos, pathBlock);
             }
         }
 
@@ -158,13 +204,18 @@ public class TrailRuinsPopulator implements IPopulate {
             int dx = random.nextInt(radius * 2) - radius;
             int dz = random.nextInt(radius * 2) - radius;
 
+            BlockPos checkPos = new BlockPos(pos.getX() + dx, 0, pos.getZ() + dz);
+            if (!isInChunk(checkPos)) {
+                continue;
+            }
+
             int surfaceY = world.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,
                     pos.getX() + dx, pos.getZ() + dz);
 
             BlockPos cropPos = new BlockPos(pos.getX() + dx, surfaceY, pos.getZ() + dz);
 
             if (world.getBlockState(cropPos).isAir() && world.getBlockState(cropPos.below()).is(Blocks.GRASS_BLOCK)) {
-                world.setBlock(cropPos, Blocks.WHEAT.defaultBlockState(), 2);
+                safeSetBlock(world, cropPos, Blocks.WHEAT.defaultBlockState());
             }
         }
     }

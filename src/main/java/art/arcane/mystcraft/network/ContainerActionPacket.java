@@ -4,9 +4,13 @@ import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
 import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
 import art.arcane.mystcraft.blockentity.LinkModifierBlockEntity;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
+import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.item.AgebookItem;
+import art.arcane.mystcraft.item.FolderItem;
+import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.item.PortfolioItem;
 import art.arcane.mystcraft.menu.BookBinderMenu;
+import art.arcane.mystcraft.menu.FolderMenu;
 import art.arcane.mystcraft.menu.InkMixerMenu;
 import art.arcane.mystcraft.menu.LinkModifierMenu;
 import art.arcane.mystcraft.menu.PortfolioMenu;
@@ -14,6 +18,7 @@ import art.arcane.mystcraft.menu.WritingDeskMenu;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -104,12 +109,19 @@ public class ContainerActionPacket {
                 case BOOK_BINDER_SET_TITLE -> handleBookBinderSetTitle(player, packet.stringData);
                 case BOOK_BINDER_INSERT_PAGE -> handleBookBinderInsertPage(player, packet.intData, packet.rightClick);
                 case BOOK_BINDER_REMOVE_PAGE -> handleBookBinderRemovePage(player, packet.intData);
+                case WRITING_DESK_SET_ACTIVE_TAB -> handleWritingDeskSetActiveTab(player, packet.intData);
+                case WRITING_DESK_ADD_TO_SURFACE -> handleWritingDeskAddToSurface(player, packet.intData, packet.rightClick);
+                case WRITING_DESK_REMOVE_FROM_SURFACE -> handleWritingDeskRemoveFromSurface(player, packet.intData, packet.rightClick);
+                case WRITING_DESK_WRITE_SYMBOL -> handleWritingDeskWriteSymbol(player, packet.stringData);
+                case WRITING_DESK_SET_TITLE -> handleWritingDeskSetTitle(player, packet.stringData);
                 case WRITING_DESK_ADD_TO_BOOK -> handleWritingDeskAddToBook(player, packet.intData, packet.rightClick);
                 case WRITING_DESK_REMOVE_FROM_BOOK -> handleWritingDeskRemoveFromBook(player, packet.intData);
                 case LINK_MODIFIER_SET_FLAG -> handleLinkModifierSetFlag(player, packet.stringData, packet.rightClick);
                 case LINK_MODIFIER_SET_TITLE -> handleLinkModifierSetTitle(player, packet.stringData);
                 case LINK_MODIFIER_SET_SEED -> handleLinkModifierSetSeed(player, packet.stringData);
                 case LINK_MODIFIER_RECYCLE -> handleLinkModifierRecycle(player);
+                case FOLDER_ADD_PAGE -> handleFolderAddPage(player, packet.intData, packet.rightClick);
+                case FOLDER_REMOVE_PAGE -> handleFolderRemovePage(player, packet.intData);
                 case PORTFOLIO_SORT -> handlePortfolioSort(player);
             }
         });
@@ -311,6 +323,211 @@ public class ContainerActionPacket {
         // Update book pages
         agebook.setPageList(writingItem, pages);
         blockEntity.setChanged();
+
+        if (!removed.isEmpty()) {
+            player.containerMenu.setCarried(removed);
+            player.containerMenu.broadcastChanges();
+        }
+    }
+
+    /**
+     * Handles Writing Desk set active tab action.
+     * The active tab determines which page collection is displayed on the surface.
+     */
+    private static void handleWritingDeskSetActiveTab(ServerPlayer player, int tabIndex) {
+        if (!(player.containerMenu instanceof WritingDeskMenu menu)) {
+            return;
+        }
+        // Tab state is primarily client-side for display, but we acknowledge it here
+        // The tab index is used in subsequent add/remove surface operations
+        player.containerMenu.broadcastChanges();
+    }
+
+    /**
+     * Handles Writing Desk add to surface action.
+     * Adds a page from carried to the active tab's page collection.
+     * intData encodes: (tabIndex << 16) | pageIndex
+     */
+    private static void handleWritingDeskAddToSurface(ServerPlayer player, int encodedData, boolean singleItem) {
+        if (!(player.containerMenu instanceof WritingDeskMenu menu)) {
+            return;
+        }
+
+        ItemStack carried = player.containerMenu.getCarried();
+        if (carried.isEmpty()) {
+            return;
+        }
+
+        int tabIndex = (encodedData >> 16) & 0xFFFF;
+        WritingDeskBlockEntity blockEntity = menu.getBlockEntity();
+
+        if (singleItem) {
+            ItemStack single = carried.split(1);
+            ItemStack remainder = blockEntity.addPageToTab(player, tabIndex, single);
+            if (!remainder.isEmpty()) {
+                carried.grow(remainder.getCount());
+            }
+        } else {
+            while (!carried.isEmpty()) {
+                ItemStack single = carried.split(1);
+                ItemStack remainder = blockEntity.addPageToTab(player, tabIndex, single);
+                if (!remainder.isEmpty()) {
+                    carried.grow(remainder.getCount());
+                    break; // Tab is full
+                }
+            }
+        }
+
+        player.containerMenu.setCarried(carried.isEmpty() ? ItemStack.EMPTY : carried);
+        player.containerMenu.broadcastChanges();
+    }
+
+    /**
+     * Handles Writing Desk remove from surface action.
+     * Removes a page from the active tab's page collection.
+     * intData encodes: (tabIndex << 16) | pageIndex
+     */
+    private static void handleWritingDeskRemoveFromSurface(ServerPlayer player, int encodedData, boolean unused) {
+        if (!(player.containerMenu instanceof WritingDeskMenu menu)) {
+            return;
+        }
+
+        // Only allow remove if not holding anything
+        if (!player.containerMenu.getCarried().isEmpty()) {
+            return;
+        }
+
+        int tabIndex = (encodedData >> 16) & 0xFFFF;
+        int pageIndex = encodedData & 0xFFFF;
+
+        WritingDeskBlockEntity blockEntity = menu.getBlockEntity();
+        ItemStack removed = blockEntity.removePageFromTab(player, tabIndex, pageIndex);
+
+        if (!removed.isEmpty()) {
+            player.containerMenu.setCarried(removed);
+            player.containerMenu.broadcastChanges();
+        }
+    }
+
+    /**
+     * Handles Writing Desk write symbol action.
+     * Writes a symbol to the current writing item using ink.
+     */
+    private static void handleWritingDeskWriteSymbol(ServerPlayer player, String symbolId) {
+        if (!(player.containerMenu instanceof WritingDeskMenu menu)) {
+            return;
+        }
+
+        if (symbolId == null || symbolId.isEmpty()) {
+            return;
+        }
+
+        ResourceLocation symbol = ResourceLocation.tryParse(symbolId);
+        if (symbol == null) {
+            return;
+        }
+
+        WritingDeskBlockEntity blockEntity = menu.getBlockEntity();
+        blockEntity.writeSymbol(player, symbol);
+        player.containerMenu.broadcastChanges();
+    }
+
+    /**
+     * Handles Writing Desk set title action.
+     * Sets the display name of the writing item (agebook or linkbook).
+     */
+    private static void handleWritingDeskSetTitle(ServerPlayer player, String title) {
+        if (!(player.containerMenu instanceof WritingDeskMenu menu)) {
+            return;
+        }
+
+        WritingDeskBlockEntity blockEntity = menu.getBlockEntity();
+        ItemStack writingItem = blockEntity.getMainInventory().getStackInSlot(WritingDeskBlockEntity.SLOT_WRITING);
+
+        if (writingItem.isEmpty()) {
+            return;
+        }
+
+        // Set title on agebook
+        if (writingItem.getItem() instanceof AgebookItem) {
+            LinkOptions.setDisplayName(writingItem.getOrCreateTag(), title);
+            blockEntity.setChanged();
+        }
+        // Set title on linkbook
+        else if (writingItem.getItem() instanceof LinkbookItem linkbook) {
+            linkbook.setDisplayName(writingItem, title);
+            blockEntity.setChanged();
+        }
+
+        player.containerMenu.broadcastChanges();
+    }
+
+    /**
+     * Handles Folder add page action.
+     */
+    private static void handleFolderAddPage(ServerPlayer player, int index, boolean singleItem) {
+        if (!(player.containerMenu instanceof FolderMenu menu)) {
+            return;
+        }
+
+        ItemStack carried = player.containerMenu.getCarried();
+        if (carried.isEmpty()) {
+            return;
+        }
+
+        ItemStack folder = menu.getFolderStack();
+        if (folder.isEmpty()) {
+            return;
+        }
+
+        List<ItemStack> pages = new ArrayList<>(FolderItem.getPages(folder));
+
+        if (singleItem) {
+            ItemStack single = carried.split(1);
+            if (pages.size() < FolderItem.MAX_PAGES) {
+                pages.add(Math.min(index, pages.size()), single);
+            } else {
+                carried.grow(1); // Can't add, return it
+            }
+        } else {
+            int insertIndex = Math.min(index, pages.size());
+            while (!carried.isEmpty() && pages.size() < FolderItem.MAX_PAGES) {
+                ItemStack single = carried.split(1);
+                pages.add(insertIndex++, single);
+            }
+        }
+
+        FolderItem.setPages(folder, pages);
+        player.containerMenu.setCarried(carried.isEmpty() ? ItemStack.EMPTY : carried);
+        player.containerMenu.broadcastChanges();
+    }
+
+    /**
+     * Handles Folder remove page action.
+     */
+    private static void handleFolderRemovePage(ServerPlayer player, int index) {
+        if (!(player.containerMenu instanceof FolderMenu menu)) {
+            return;
+        }
+
+        // Only allow remove if not holding anything
+        if (!player.containerMenu.getCarried().isEmpty()) {
+            return;
+        }
+
+        ItemStack folder = menu.getFolderStack();
+        if (folder.isEmpty()) {
+            return;
+        }
+
+        List<ItemStack> pages = new ArrayList<>(FolderItem.getPages(folder));
+
+        if (index < 0 || index >= pages.size()) {
+            return;
+        }
+
+        ItemStack removed = pages.remove(index);
+        FolderItem.setPages(folder, pages);
 
         if (!removed.isEmpty()) {
             player.containerMenu.setCarried(removed);

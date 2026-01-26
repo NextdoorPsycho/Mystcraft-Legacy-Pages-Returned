@@ -2,7 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
@@ -28,7 +28,7 @@ public class TendrilsPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         int chunkX = chunkPos.getX();
         int chunkZ = chunkPos.getZ();
 
@@ -63,7 +63,7 @@ public class TendrilsPopulator implements IPopulate {
         }
     }
 
-    private int findCeilingPosition(ServerLevel world, int x, int z, RandomSource random) {
+    private int findCeilingPosition(WorldGenLevel world, int x, int z, RandomSource random) {
         // Look for a suitable ceiling between y=80 and y=200
         for (int attempt = 0; attempt < 10; attempt++) {
             int y = 80 + random.nextInt(120);
@@ -78,7 +78,7 @@ public class TendrilsPopulator implements IPopulate {
         return -1; // No suitable position found
     }
 
-    private boolean canStartTendril(ServerLevel world, BlockPos pos, boolean fromCeiling) {
+    private boolean canStartTendril(WorldGenLevel world, BlockPos pos, boolean fromCeiling) {
         if (fromCeiling) {
             // Need solid block above and air below
             return world.getBlockState(pos).isSolid() &&
@@ -90,7 +90,7 @@ public class TendrilsPopulator implements IPopulate {
         }
     }
 
-    private void generateTendril(ServerLevel world, RandomSource random, BlockPos startPos, boolean fromCeiling) {
+    private void generateTendril(WorldGenLevel world, RandomSource random, BlockPos startPos, boolean fromCeiling) {
         // Choose tendril material
         BlockState tendrilBlock = getTendrilMaterial(random);
         BlockState decorationBlock = getDecorationBlock(tendrilBlock, random);
@@ -184,7 +184,7 @@ public class TendrilsPopulator implements IPopulate {
         }
     }
 
-    private boolean shouldPlaceTendrilBlock(ServerLevel world, BlockPos pos) {
+    private boolean shouldPlaceTendrilBlock(WorldGenLevel world, BlockPos pos) {
         BlockState existing = world.getBlockState(pos);
         return existing.isAir() ||
                existing.is(BlockTags.LEAVES) ||
@@ -222,7 +222,7 @@ public class TendrilsPopulator implements IPopulate {
         return baseBlock;
     }
 
-    private void addTendrilDecoration(ServerLevel world, RandomSource random, BlockPos pos,
+    private void addTendrilDecoration(WorldGenLevel world, RandomSource random, BlockPos pos,
                                       BlockState decorationBlock, boolean fromCeiling) {
         // Add small protrusions or light sources
         int[] directions = {0, 1, 2, 3}; // N, S, E, W

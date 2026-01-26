@@ -3,6 +3,7 @@ package art.arcane.mystcraft.item;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.event.AgeDataSyncHandler;
 import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.link.LinkingManager;
@@ -20,6 +21,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -89,21 +91,18 @@ public class AgebookItem extends Item {
         }
     }
 
+    /**
+     * Right-click always opens the book GUI, matching LinkbookItem behavior.
+     * Actual linking happens via packet from the GUI's Link button.
+     */
     @Override
     @NotNull
     public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (player.isShiftKeyDown()) {
-            // Open book viewing screen on client
-            if (level.isClientSide) {
-                art.arcane.mystcraft.client.screen.BookScreen.open(stack);
-            }
-        } else {
-            // Perform linking on server
-            if (!level.isClientSide) {
-                activate(stack, level, player);
-            }
+        // Always open GUI on client (linking happens via packet from Link button)
+        if (level.isClientSide) {
+            art.arcane.mystcraft.client.screen.BookScreen.open(stack);
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
@@ -111,8 +110,12 @@ public class AgebookItem extends Item {
 
     /**
      * Activates the book, potentially creating a new Age.
+     * Called from packet handler when player clicks Link button in GUI.
      */
-    private void activate(ItemStack stack, Level level, Player player) {
+    public void activate(ItemStack stack, Level level, Entity entity) {
+        if (!(entity instanceof Player player)) {
+            return;
+        }
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
@@ -318,10 +321,7 @@ public class AgebookItem extends Item {
      * Adds pages to this book.
      */
     public void addPages(ItemStack stack, Collection<ItemStack> pages) {
-        if (stack.getTag() == null) {
-            return;
-        }
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = stack.getOrCreateTag();
         ListTag listTag = tag.getList(TAG_PAGES, Tag.TAG_COMPOUND);
         for (ItemStack page : pages) {
             listTag.add(page.save(new CompoundTag()));
@@ -333,10 +333,7 @@ public class AgebookItem extends Item {
      * Sets the page list.
      */
     public void setPageList(ItemStack stack, List<ItemStack> pages) {
-        if (stack.getTag() == null) {
-            return;
-        }
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = stack.getOrCreateTag();
         ListTag listTag = new ListTag();
         for (ItemStack page : pages) {
             listTag.add(page.save(new CompoundTag()));
@@ -348,10 +345,7 @@ public class AgebookItem extends Item {
      * Adds an author to this book.
      */
     public void addAuthor(ItemStack stack, Player player) {
-        if (stack.getTag() == null) {
-            return;
-        }
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = stack.getOrCreateTag();
         ListTag listTag = tag.getList(TAG_AUTHORS, Tag.TAG_STRING);
         String playerName = player.getGameProfile().getName();
         boolean found = false;
@@ -404,5 +398,28 @@ public class AgebookItem extends Item {
     public boolean isFoil(@NotNull ItemStack stack) {
         // Show foil if the book has an Age (dimension) linked
         return stack.getTag() != null && LinkOptions.getDimensionUID(stack.getTag()) != null;
+    }
+
+    // ========================= Custom Entity on Q-Drop =========================
+
+    /**
+     * Tell Forge that Q-dropped agebooks should spawn as LinkbookEntity, not ItemEntity.
+     */
+    @Override
+    public boolean hasCustomEntity(@NotNull ItemStack stack) {
+        return true;
+    }
+
+    /**
+     * Creates a LinkbookEntity when the item is Q-dropped instead of a regular ItemEntity.
+     * This matches legacy behavior where dropped books appear as open books on the ground.
+     */
+    @Override
+    @Nullable
+    public Entity createEntity(Level level, Entity location, @NotNull ItemStack stack) {
+        LinkbookEntity entity = new LinkbookEntity(level, location.getX(), location.getY(), location.getZ());
+        entity.setBookItem(stack.copy());
+        entity.setDeltaMovement(location.getDeltaMovement());
+        return entity;
     }
 }

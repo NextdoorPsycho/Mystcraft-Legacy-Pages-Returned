@@ -3,7 +3,7 @@ package art.arcane.mystcraft.world.gen.populate;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
@@ -30,7 +30,7 @@ public class HugeTreePopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         int chunkX = chunkPos.getX();
         int chunkZ = chunkPos.getZ();
 
@@ -60,7 +60,7 @@ public class HugeTreePopulator implements IPopulate {
         }
     }
 
-    private boolean canSupportHugeTree(ServerLevel world, BlockPos pos) {
+    private boolean canSupportHugeTree(WorldGenLevel world, BlockPos pos) {
         // Check 2x2 area for valid ground
         for (int dx = 0; dx <= 1; dx++) {
             for (int dz = 0; dz <= 1; dz++) {
@@ -75,7 +75,7 @@ public class HugeTreePopulator implements IPopulate {
         return true;
     }
 
-    private boolean hasSpaceForHugeTree(ServerLevel world, BlockPos pos) {
+    private boolean hasSpaceForHugeTree(WorldGenLevel world, BlockPos pos) {
         // Check vertical clearance for huge tree
         for (int dy = 0; dy < 16; dy++) {
             for (int dx = -1; dx <= 2; dx++) {
@@ -90,7 +90,7 @@ public class HugeTreePopulator implements IPopulate {
         return true;
     }
 
-    private void generateHugeTree(ServerLevel world, RandomSource random, BlockPos pos, Holder<Biome> biomeHolder) {
+    private void generateHugeTree(WorldGenLevel world, RandomSource random, BlockPos pos, Holder<Biome> biomeHolder) {
         // Determine tree type based on biome
         HugeTreeType treeType = getHugeTreeType(biomeHolder, random);
 
@@ -115,7 +115,7 @@ public class HugeTreePopulator implements IPopulate {
         return random.nextBoolean() ? HugeTreeType.MEGA_SPRUCE : HugeTreeType.GIANT_OAK;
     }
 
-    private void generateMegaSpruce(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateMegaSpruce(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int height = 13 + random.nextInt(8);
         BlockState log = Blocks.SPRUCE_LOG.defaultBlockState();
         BlockState leaves = Blocks.SPRUCE_LEAVES.defaultBlockState();
@@ -147,7 +147,7 @@ public class HugeTreePopulator implements IPopulate {
         }
     }
 
-    private void generateMegaPine(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateMegaPine(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int height = 15 + random.nextInt(8);
         BlockState log = Blocks.SPRUCE_LOG.defaultBlockState();
         BlockState leaves = Blocks.SPRUCE_LEAVES.defaultBlockState();
@@ -179,7 +179,7 @@ public class HugeTreePopulator implements IPopulate {
         }
     }
 
-    private void generateMegaJungle(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateMegaJungle(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int height = 20 + random.nextInt(15);
         BlockState log = Blocks.JUNGLE_LOG.defaultBlockState();
         BlockState leaves = Blocks.JUNGLE_LEAVES.defaultBlockState();
@@ -241,7 +241,7 @@ public class HugeTreePopulator implements IPopulate {
         }
     }
 
-    private void generateLargeDarkOak(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateLargeDarkOak(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int height = 7 + random.nextInt(4);
         BlockState log = Blocks.DARK_OAK_LOG.defaultBlockState();
         BlockState leaves = Blocks.DARK_OAK_LEAVES.defaultBlockState();
@@ -275,7 +275,7 @@ public class HugeTreePopulator implements IPopulate {
         }
     }
 
-    private void generateDarkOakBranches(ServerLevel world, RandomSource random, BlockPos pos, int height, BlockState log) {
+    private void generateDarkOakBranches(WorldGenLevel world, RandomSource random, BlockPos pos, int height, BlockState log) {
         int branchHeight = height - 2;
 
         // Generate 2-4 branches
@@ -295,7 +295,7 @@ public class HugeTreePopulator implements IPopulate {
         }
     }
 
-    private void generateGiantOak(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateGiantOak(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int height = 12 + random.nextInt(6);
         BlockState log = Blocks.OAK_LOG.defaultBlockState();
         BlockState leaves = Blocks.OAK_LEAVES.defaultBlockState();
@@ -330,14 +330,14 @@ public class HugeTreePopulator implements IPopulate {
         }
     }
 
-    private void setBlockIfAir(ServerLevel world, BlockPos pos, BlockState state) {
+    private void setBlockIfAir(WorldGenLevel world, BlockPos pos, BlockState state) {
         BlockState existing = world.getBlockState(pos);
         if (existing.isAir() || existing.is(BlockTags.LEAVES)) {
             world.setBlock(pos, state, 2);
         }
     }
 
-    private void setLeafIfAir(ServerLevel world, BlockPos pos, BlockState leaves) {
+    private void setLeafIfAir(WorldGenLevel world, BlockPos pos, BlockState leaves) {
         if (world.getBlockState(pos).isAir()) {
             world.setBlock(pos, leaves, 2);
         }

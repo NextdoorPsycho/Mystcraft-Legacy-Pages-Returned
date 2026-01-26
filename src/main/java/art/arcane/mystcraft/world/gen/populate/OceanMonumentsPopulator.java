@@ -2,7 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
@@ -13,6 +13,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * Ocean monument populator that generates simplified guardian temples.
  * Monuments consist of prismarine structures with elder guardian spawners and treasure.
  * Approximately 1 per 64 chunks, only generates in water.
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
  */
 public class OceanMonumentsPopulator implements IPopulate {
 
@@ -20,15 +23,24 @@ public class OceanMonumentsPopulator implements IPopulate {
 
     private static final int CHUNKS_BETWEEN = 64;
 
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
+
     public OceanMonumentsPopulator(long seed) {
         this.seed = seed;
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         // Only attempt generation in specific chunks based on grid
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;
+
+        // Set chunk boundaries for this population run
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
 
         if (chunkX % CHUNKS_BETWEEN != 0 || chunkZ % CHUNKS_BETWEEN != 0) {
             return;
@@ -78,7 +90,25 @@ public class OceanMonumentsPopulator implements IPopulate {
         generateMonument(world, random, pos);
     }
 
-    private void generateMonument(ServerLevel world, RandomSource random, BlockPos pos) {
+    /**
+     * Checks if a position is within the current chunk boundaries.
+     * This prevents cascade chunk loading when structures extend beyond chunk edges.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
+    private void generateMonument(WorldGenLevel world, RandomSource random, BlockPos pos) {
         // Build simplified monument structure (11x11 base, 8 blocks tall)
         int radius = 5;
         int height = 8;
@@ -87,7 +117,7 @@ public class OceanMonumentsPopulator implements IPopulate {
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
                 BlockPos foundationPos = pos.offset(dx, 0, dz);
-                world.setBlock(foundationPos, Blocks.PRISMARINE.defaultBlockState(), 2);
+                safeSetBlock(world, foundationPos, Blocks.PRISMARINE.defaultBlockState());
             }
         }
 
@@ -102,11 +132,11 @@ public class OceanMonumentsPopulator implements IPopulate {
                         BlockState wallBlock = random.nextFloat() < 0.3f ?
                                 Blocks.DARK_PRISMARINE.defaultBlockState() :
                                 Blocks.PRISMARINE_BRICKS.defaultBlockState();
-                        world.setBlock(buildPos, wallBlock, 2);
+                        safeSetBlock(world, buildPos, wallBlock);
                     }
                     // Interior - mostly water
                     else {
-                        world.setBlock(buildPos, Blocks.WATER.defaultBlockState(), 2);
+                        safeSetBlock(world, buildPos, Blocks.WATER.defaultBlockState());
                     }
                 }
             }
@@ -116,7 +146,7 @@ public class OceanMonumentsPopulator implements IPopulate {
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
                 BlockPos roofPos = pos.offset(dx, height, dz);
-                world.setBlock(roofPos, Blocks.PRISMARINE.defaultBlockState(), 2);
+                safeSetBlock(world, roofPos, Blocks.PRISMARINE.defaultBlockState());
             }
         }
 
@@ -128,7 +158,7 @@ public class OceanMonumentsPopulator implements IPopulate {
 
             BlockPos lanternPos = pos.offset(dx, dy, dz);
             if (Math.abs(dx) == radius || Math.abs(dz) == radius) {
-                world.setBlock(lanternPos, Blocks.SEA_LANTERN.defaultBlockState(), 2);
+                safeSetBlock(world, lanternPos, Blocks.SEA_LANTERN.defaultBlockState());
             }
         }
 
@@ -142,43 +172,48 @@ public class OceanMonumentsPopulator implements IPopulate {
 
                     // Walls of sponge room
                     if (Math.abs(dx) == spongeRadius || Math.abs(dz) == spongeRadius || dy == spongeY - 1 || dy == spongeY + 1) {
-                        world.setBlock(spongePos, Blocks.PRISMARINE_BRICKS.defaultBlockState(), 2);
+                        safeSetBlock(world, spongePos, Blocks.PRISMARINE_BRICKS.defaultBlockState());
                     } else {
                         // Air inside sponge room
-                        world.setBlock(spongePos, Blocks.AIR.defaultBlockState(), 2);
+                        safeSetBlock(world, spongePos, Blocks.AIR.defaultBlockState());
                     }
                 }
             }
         }
 
-        // Add sponges
+        // Add sponges (only if in chunk)
         for (int i = 0; i < 30; i++) {
             int dx = random.nextInt(spongeRadius * 2) - spongeRadius;
             int dz = random.nextInt(spongeRadius * 2) - spongeRadius;
 
             BlockPos wetSpongePos = pos.offset(dx, spongeY, dz);
-            if (world.getBlockState(wetSpongePos).isAir()) {
+            if (isInChunk(wetSpongePos) && world.getBlockState(wetSpongePos).isAir()) {
                 world.setBlock(wetSpongePos, Blocks.WET_SPONGE.defaultBlockState(), 2);
             }
         }
 
         // Add gold block core (treasure)
         BlockPos goldPos = pos.offset(0, spongeY, 0);
-        world.setBlock(goldPos, Blocks.GOLD_BLOCK.defaultBlockState(), 2);
+        safeSetBlock(world, goldPos, Blocks.GOLD_BLOCK.defaultBlockState());
 
-        // Spawn elder guardian
+        // Get ServerLevel for entity spawning
+        net.minecraft.server.level.ServerLevel serverLevel = world.getLevel();
+
+        // Spawn elder guardian (only if in chunk)
         BlockPos guardianPos = pos.offset(0, spongeY + 2, 0);
-        EntityType.ELDER_GUARDIAN.spawn(world, guardianPos, MobSpawnType.STRUCTURE);
+        if (isInChunk(guardianPos)) {
+            EntityType.ELDER_GUARDIAN.spawn(serverLevel, guardianPos, MobSpawnType.STRUCTURE);
+        }
 
-        // Spawn regular guardians
+        // Spawn regular guardians (only if in chunk)
         for (int i = 0; i < 3; i++) {
             int dx = random.nextInt(8) - 4;
             int dy = random.nextInt(height - 2) + 1;
             int dz = random.nextInt(8) - 4;
 
             BlockPos spawnPos = pos.offset(dx, dy, dz);
-            if (world.getBlockState(spawnPos).is(Blocks.WATER)) {
-                EntityType.GUARDIAN.spawn(world, spawnPos, MobSpawnType.STRUCTURE);
+            if (isInChunk(spawnPos) && world.getBlockState(spawnPos).is(Blocks.WATER)) {
+                EntityType.GUARDIAN.spawn(serverLevel, spawnPos, MobSpawnType.STRUCTURE);
             }
         }
     }

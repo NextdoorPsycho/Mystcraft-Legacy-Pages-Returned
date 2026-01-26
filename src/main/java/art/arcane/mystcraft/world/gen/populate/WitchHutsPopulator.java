@@ -3,7 +3,7 @@ package art.arcane.mystcraft.world.gen.populate;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
@@ -24,20 +24,31 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
  * Witch hut populator that generates swamp huts on stilts.
  * Witch huts consist of a small spruce wood structure on oak wood supports
  * with a cauldron, crafting table, and flower pot inside.
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
  */
 public class WitchHutsPopulator implements IPopulate {
 
     private final long seed;
     private static final int RARITY = 32;
 
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
+
     public WitchHutsPopulator(long seed) {
         this.seed = seed;
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        // Set chunk boundaries for this population run
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
 
         if ((chunkX + chunkZ * 31L + seed) % RARITY != 0) {
             return;
@@ -52,6 +63,10 @@ public class WitchHutsPopulator implements IPopulate {
             return;
         }
 
+        if (!isInChunk(surfacePos)) {
+            return;
+        }
+
         if (!world.getBiome(surfacePos).is(Biomes.SWAMP) && !world.getBiome(surfacePos).is(Biomes.MANGROVE_SWAMP)) {
             return;
         }
@@ -59,7 +74,24 @@ public class WitchHutsPopulator implements IPopulate {
         generateWitchHut(world, random, surfacePos.below());
     }
 
-    private void generateWitchHut(ServerLevel world, RandomSource random, BlockPos groundPos) {
+    /**
+     * Checks if a position is within the current chunk boundaries.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
+    private void generateWitchHut(WorldGenLevel world, RandomSource random, BlockPos groundPos) {
         int waterLevel = groundPos.getY();
 
         BlockState sprucePlanks = Blocks.SPRUCE_PLANKS.defaultBlockState();
@@ -73,7 +105,7 @@ public class WitchHutsPopulator implements IPopulate {
 
                 int height = 3 + random.nextInt(2);
                 for (int y = 0; y < height; y++) {
-                    world.setBlock(pillarBase.above(y), oakFence, 2);
+                    safeSetBlock(world, pillarBase.above(y), oakFence);
                 }
             }
         }
@@ -83,7 +115,7 @@ public class WitchHutsPopulator implements IPopulate {
 
         for (int x = -2; x <= 2; x++) {
             for (int z = -2; z <= 2; z++) {
-                world.setBlock(floorPos.offset(x, 0, z), sprucePlanks, 2);
+                safeSetBlock(world, floorPos.offset(x, 0, z), sprucePlanks);
             }
         }
 
@@ -94,7 +126,7 @@ public class WitchHutsPopulator implements IPopulate {
 
                 if (isEdge && !isCorner) {
                     for (int y = 1; y <= 3; y++) {
-                        world.setBlock(floorPos.offset(x, y, z), oakFence, 2);
+                        safeSetBlock(world, floorPos.offset(x, y, z), oakFence);
                     }
                 }
             }
@@ -105,34 +137,40 @@ public class WitchHutsPopulator implements IPopulate {
                 int dist = Math.max(Math.abs(x), Math.abs(z));
                 if (dist == 3) {
                     BlockPos roofPos = floorPos.offset(x, 4, z);
-                    world.setBlock(roofPos, spruceStairs.setValue(StairBlock.HALF, Half.TOP), 2);
+                    safeSetBlock(world, roofPos, spruceStairs.setValue(StairBlock.HALF, Half.TOP));
                 } else if (dist == 2) {
-                    world.setBlock(floorPos.offset(x, 5, z), sprucePlanks, 2);
+                    safeSetBlock(world, floorPos.offset(x, 5, z), sprucePlanks);
                 }
             }
         }
 
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
-                world.setBlock(floorPos.offset(x, 6, z), spruceSlab.setValue(SlabBlock.TYPE, SlabType.BOTTOM), 2);
+                safeSetBlock(world, floorPos.offset(x, 6, z), spruceSlab.setValue(SlabBlock.TYPE, SlabType.BOTTOM));
             }
         }
 
-        world.setBlock(floorPos.offset(-1, 1, -1), Blocks.CRAFTING_TABLE.defaultBlockState(), 2);
-        world.setBlock(floorPos.offset(1, 1, 1), Blocks.CAULDRON.defaultBlockState(), 2);
-        world.setBlock(floorPos.offset(-1, 2, 1), Blocks.FLOWER_POT.defaultBlockState(), 2);
+        safeSetBlock(world, floorPos.offset(-1, 1, -1), Blocks.CRAFTING_TABLE.defaultBlockState());
+        safeSetBlock(world, floorPos.offset(1, 1, 1), Blocks.CAULDRON.defaultBlockState());
+        safeSetBlock(world, floorPos.offset(-1, 2, 1), Blocks.FLOWER_POT.defaultBlockState());
 
         BlockPos chestPos = floorPos.offset(1, 1, -1);
-        world.setBlock(chestPos, Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.WEST), 2);
-        BlockEntity be = world.getBlockEntity(chestPos);
-        if (be instanceof ChestBlockEntity chest) {
-            chest.setLootTable(BuiltInLootTables.SIMPLE_DUNGEON, random.nextLong());
+        if (isInChunk(chestPos)) {
+            world.setBlock(chestPos, Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.WEST), 2);
+            BlockEntity be = world.getBlockEntity(chestPos);
+            if (be instanceof ChestBlockEntity chest) {
+                chest.setLootTable(BuiltInLootTables.SIMPLE_DUNGEON, random.nextLong());
+            }
         }
 
-        Witch witch = new Witch(EntityType.WITCH, world);
-        witch.moveTo(floorPos.getX() + 0.5, floorPos.getY() + 1, floorPos.getZ() + 0.5, 0.0F, 0.0F);
-        witch.setPersistenceRequired();
-        world.addFreshEntity(witch);
+        // Only spawn witch if the floor position is in chunk
+        if (isInChunk(floorPos)) {
+            net.minecraft.server.level.ServerLevel serverLevel = world.getLevel();
+            Witch witch = new Witch(EntityType.WITCH, serverLevel);
+            witch.moveTo(floorPos.getX() + 0.5, floorPos.getY() + 1, floorPos.getZ() + 0.5, 0.0F, 0.0F);
+            witch.setPersistenceRequired();
+            world.addFreshEntity(witch);
+        }
     }
 
     @Override

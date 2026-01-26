@@ -41,11 +41,9 @@ public class LinkBookActivatePacket {
             if (heldItem.getItem() instanceof LinkbookItem linkbook) {
                 linkbook.activate(heldItem, player.level(), player);
             }
-            // Handle agebook activation
+            // Handle agebook activation - call activate() directly
             else if (heldItem.getItem() instanceof AgebookItem agebook) {
-                // Agebooks handle their own activation in their use method
-                // but we can trigger it here too for consistency
-                agebook.use(player.level(), player, packet.hand);
+                agebook.activate(heldItem, player.level(), player);
             }
         });
         ctx.setPacketHandled(true);

@@ -7,7 +7,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
@@ -23,19 +23,33 @@ import net.minecraft.world.level.levelgen.feature.configurations.TreeConfigurati
 /**
  * Biome decoration populator that adds trees, grass, and flowers.
  * Uses biome information to determine appropriate vegetation.
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
  */
 public class BiomeDecorationPopulator implements IPopulate {
 
     private final long seed;
+
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     public BiomeDecorationPopulator(long seed) {
         this.seed = seed;
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         int chunkX = chunkPos.getX();
         int chunkZ = chunkPos.getZ();
+
+        // Set chunk boundaries for this population run
+        int chunkCoordX = chunkX >> 4;
+        int chunkCoordZ = chunkZ >> 4;
+        chunkMinX = chunkCoordX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkCoordZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
 
         // Sample biome at chunk center
         BlockPos centerPos = new BlockPos(chunkX + 8, 64, chunkZ + 8);
@@ -47,7 +61,7 @@ public class BiomeDecorationPopulator implements IPopulate {
         generateFlowers(world, random, chunkPos, biomeHolder);
     }
 
-    private void generateTrees(ServerLevel world, RandomSource random, BlockPos chunkPos, Holder<Biome> biomeHolder) {
+    private void generateTrees(WorldGenLevel world, RandomSource random, BlockPos chunkPos, Holder<Biome> biomeHolder) {
         int treesPerChunk = getTreesPerChunk(biomeHolder);
 
         for (int i = 0; i < treesPerChunk; i++) {
@@ -56,8 +70,17 @@ public class BiomeDecorationPopulator implements IPopulate {
             int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
             BlockPos treePos = new BlockPos(x, y, z);
 
+            // Skip if tree base is outside chunk boundaries
+            if (!isInChunk(treePos)) {
+                continue;
+            }
+
             // Check if valid location for tree
-            BlockState ground = world.getBlockState(treePos.below());
+            BlockPos belowPos = treePos.below();
+            if (!isInChunk(belowPos)) {
+                continue;
+            }
+            BlockState ground = world.getBlockState(belowPos);
             if (!canSupportTree(ground)) {
                 continue;
             }
@@ -93,16 +116,39 @@ public class BiomeDecorationPopulator implements IPopulate {
         return 3;
     }
 
+    /**
+     * Checks if a position is within the current chunk boundaries.
+     * This prevents cascade chunk loading when decorations extend beyond chunk edges.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
     private boolean canSupportTree(BlockState ground) {
         return ground.is(BlockTags.DIRT) || ground.is(Blocks.GRASS_BLOCK) ||
                 ground.is(Blocks.PODZOL) || ground.is(Blocks.MYCELIUM) ||
                 ground.is(Blocks.MUD) || ground.is(Blocks.MUDDY_MANGROVE_ROOTS);
     }
 
-    private boolean hasSpaceForTree(ServerLevel world, BlockPos pos) {
+    private boolean hasSpaceForTree(WorldGenLevel world, BlockPos pos) {
         // Check 5x5 area above for clearance
         for (int dy = 0; dy < 6; dy++) {
-            BlockState state = world.getBlockState(pos.above(dy));
+            BlockPos checkPos = pos.above(dy);
+            // Skip positions outside chunk to avoid cascade loading
+            if (!isInChunk(checkPos)) {
+                continue;
+            }
+            BlockState state = world.getBlockState(checkPos);
             if (state.isSolid() && !state.is(BlockTags.LEAVES) && !state.is(BlockTags.LOGS)) {
                 return false;
             }
@@ -110,7 +156,7 @@ public class BiomeDecorationPopulator implements IPopulate {
         return true;
     }
 
-    private void generateTree(ServerLevel world, RandomSource random, BlockPos pos, Holder<Biome> biomeHolder) {
+    private void generateTree(WorldGenLevel world, RandomSource random, BlockPos pos, Holder<Biome> biomeHolder) {
         // Determine tree type based on biome
         TreeType treeType = getTreeType(biomeHolder, random);
 
@@ -143,54 +189,58 @@ public class BiomeDecorationPopulator implements IPopulate {
         return random.nextInt(10) == 0 ? TreeType.BIRCH : TreeType.OAK;
     }
 
-    private void generateOakTree(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateOakTree(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int height = 4 + random.nextInt(3);
         BlockState log = Blocks.OAK_LOG.defaultBlockState();
         BlockState leaves = Blocks.OAK_LEAVES.defaultBlockState();
         generateSimpleTree(world, pos, height, log, leaves);
     }
 
-    private void generateBirchTree(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateBirchTree(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int height = 5 + random.nextInt(3);
         BlockState log = Blocks.BIRCH_LOG.defaultBlockState();
         BlockState leaves = Blocks.BIRCH_LEAVES.defaultBlockState();
         generateSimpleTree(world, pos, height, log, leaves);
     }
 
-    private void generateSpruceTree(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateSpruceTree(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int height = 6 + random.nextInt(4);
         BlockState log = Blocks.SPRUCE_LOG.defaultBlockState();
         BlockState leaves = Blocks.SPRUCE_LEAVES.defaultBlockState();
         generateConiferTree(world, pos, height, log, leaves);
     }
 
-    private void generateJungleTree(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateJungleTree(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int height = 4 + random.nextInt(8);
         BlockState log = Blocks.JUNGLE_LOG.defaultBlockState();
         BlockState leaves = Blocks.JUNGLE_LEAVES.defaultBlockState();
         generateSimpleTree(world, pos, height, log, leaves);
     }
 
-    private void generateAcaciaTree(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateAcaciaTree(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int height = 5 + random.nextInt(3);
         BlockState log = Blocks.ACACIA_LOG.defaultBlockState();
         BlockState leaves = Blocks.ACACIA_LEAVES.defaultBlockState();
         generateSimpleTree(world, pos, height, log, leaves);
     }
 
-    private void generateDarkOakTree(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateDarkOakTree(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int height = 6 + random.nextInt(3);
         BlockState log = Blocks.DARK_OAK_LOG.defaultBlockState();
         BlockState leaves = Blocks.DARK_OAK_LEAVES.defaultBlockState();
         generateSimpleTree(world, pos, height, log, leaves);
     }
 
-    private void generateSimpleTree(ServerLevel world, BlockPos pos, int height, BlockState log, BlockState leaves) {
+    private void generateSimpleTree(WorldGenLevel world, BlockPos pos, int height, BlockState log, BlockState leaves) {
         // Trunk
         for (int y = 0; y < height; y++) {
             BlockPos logPos = pos.above(y);
+            // Skip positions outside chunk to avoid cascade loading
+            if (!isInChunk(logPos)) {
+                continue;
+            }
             if (world.getBlockState(logPos).isAir() || world.getBlockState(logPos).is(BlockTags.LEAVES)) {
-                world.setBlock(logPos, log, 2);
+                safeSetBlock(world, logPos, log);
             }
         }
 
@@ -214,20 +264,28 @@ public class BiomeDecorationPopulator implements IPopulate {
                     }
 
                     BlockPos leafPos = pos.offset(x, y, z);
+                    // Skip positions outside chunk to avoid cascade loading
+                    if (!isInChunk(leafPos)) {
+                        continue;
+                    }
                     if (world.getBlockState(leafPos).isAir()) {
-                        world.setBlock(leafPos, leaves, 2);
+                        safeSetBlock(world, leafPos, leaves);
                     }
                 }
             }
         }
     }
 
-    private void generateConiferTree(ServerLevel world, BlockPos pos, int height, BlockState log, BlockState leaves) {
+    private void generateConiferTree(WorldGenLevel world, BlockPos pos, int height, BlockState log, BlockState leaves) {
         // Trunk
         for (int y = 0; y < height; y++) {
             BlockPos logPos = pos.above(y);
+            // Skip positions outside chunk to avoid cascade loading
+            if (!isInChunk(logPos)) {
+                continue;
+            }
             if (world.getBlockState(logPos).isAir() || world.getBlockState(logPos).is(BlockTags.LEAVES)) {
-                world.setBlock(logPos, log, 2);
+                safeSetBlock(world, logPos, log);
             }
         }
 
@@ -251,18 +309,22 @@ public class BiomeDecorationPopulator implements IPopulate {
                     }
 
                     BlockPos leafPos = pos.offset(x, y, z);
+                    // Skip positions outside chunk to avoid cascade loading
+                    if (!isInChunk(leafPos)) {
+                        continue;
+                    }
                     if (world.getBlockState(leafPos).isAir()) {
-                        world.setBlock(leafPos, leaves, 2);
+                        safeSetBlock(world, leafPos, leaves);
                     }
                 }
             }
         }
 
         // Top leaf
-        world.setBlock(pos.above(height), leaves, 2);
+        safeSetBlock(world, pos.above(height), leaves);
     }
 
-    private void generateGrass(ServerLevel world, RandomSource random, BlockPos chunkPos, Holder<Biome> biomeHolder) {
+    private void generateGrass(WorldGenLevel world, RandomSource random, BlockPos chunkPos, Holder<Biome> biomeHolder) {
         // Skip grass in inappropriate biomes
         if (biomeHolder.is(BiomeTags.IS_BADLANDS) || biomeHolder.is(BiomeTags.IS_BEACH) ||
                 biomeHolder.is(BiomeTags.IS_OCEAN) || biomeHolder.is(BiomeTags.IS_RIVER)) {
@@ -277,7 +339,16 @@ public class BiomeDecorationPopulator implements IPopulate {
             int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
             BlockPos grassPos = new BlockPos(x, y, z);
 
-            BlockState ground = world.getBlockState(grassPos.below());
+            // Skip positions outside chunk to avoid cascade loading
+            if (!isInChunk(grassPos)) {
+                continue;
+            }
+
+            BlockPos belowPos = grassPos.below();
+            if (!isInChunk(belowPos)) {
+                continue;
+            }
+            BlockState ground = world.getBlockState(belowPos);
             if (ground.is(Blocks.GRASS_BLOCK) || ground.is(BlockTags.DIRT)) {
                 if (world.getBlockState(grassPos).isAir()) {
                     // Choose grass type
@@ -287,13 +358,14 @@ public class BiomeDecorationPopulator implements IPopulate {
 
                     if (grass.is(Blocks.TALL_GRASS)) {
                         // Only place tall grass if there's room
-                        if (world.getBlockState(grassPos.above()).isAir()) {
-                            world.setBlock(grassPos, Blocks.TALL_GRASS.defaultBlockState(), 2);
+                        BlockPos abovePos = grassPos.above();
+                        if (isInChunk(abovePos) && world.getBlockState(abovePos).isAir()) {
+                            safeSetBlock(world, grassPos, Blocks.TALL_GRASS.defaultBlockState());
                         } else {
-                            world.setBlock(grassPos, Blocks.GRASS.defaultBlockState(), 2);
+                            safeSetBlock(world, grassPos, Blocks.GRASS.defaultBlockState());
                         }
                     } else {
-                        world.setBlock(grassPos, grass, 2);
+                        safeSetBlock(world, grassPos, grass);
                     }
                 }
             }
@@ -313,7 +385,7 @@ public class BiomeDecorationPopulator implements IPopulate {
         return 20;
     }
 
-    private void generateFlowers(ServerLevel world, RandomSource random, BlockPos chunkPos, Holder<Biome> biomeHolder) {
+    private void generateFlowers(WorldGenLevel world, RandomSource random, BlockPos chunkPos, Holder<Biome> biomeHolder) {
         // Skip flowers in inappropriate biomes
         if (biomeHolder.is(BiomeTags.IS_BADLANDS) || biomeHolder.is(BiomeTags.IS_BEACH) ||
                 biomeHolder.is(BiomeTags.IS_OCEAN) || biomeHolder.is(BiomeTags.IS_RIVER) ||
@@ -329,11 +401,20 @@ public class BiomeDecorationPopulator implements IPopulate {
             int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
             BlockPos flowerPos = new BlockPos(x, y, z);
 
-            BlockState ground = world.getBlockState(flowerPos.below());
+            // Skip positions outside chunk to avoid cascade loading
+            if (!isInChunk(flowerPos)) {
+                continue;
+            }
+
+            BlockPos belowPos = flowerPos.below();
+            if (!isInChunk(belowPos)) {
+                continue;
+            }
+            BlockState ground = world.getBlockState(belowPos);
             if (ground.is(Blocks.GRASS_BLOCK) || ground.is(BlockTags.DIRT)) {
                 if (world.getBlockState(flowerPos).isAir()) {
                     BlockState flower = getRandomFlower(random, biomeHolder);
-                    world.setBlock(flowerPos, flower, 2);
+                    safeSetBlock(world, flowerPos, flower);
                 }
             }
         }

@@ -3,7 +3,7 @@ package art.arcane.mystcraft.world.gen.populate;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.MultifaceBlock;
@@ -26,7 +26,7 @@ public class DeepDarkPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         int chunkX = chunkPos.getX();
         int chunkZ = chunkPos.getZ();
 
@@ -63,7 +63,7 @@ public class DeepDarkPopulator implements IPopulate {
     /**
      * Attempts to place a patch of sculk blocks.
      */
-    private void tryPlaceSculkPatch(ServerLevel world, RandomSource random, BlockPos center) {
+    private void tryPlaceSculkPatch(WorldGenLevel world, RandomSource random, BlockPos center) {
         BlockPos below = center.below();
         BlockState belowState = world.getBlockState(below);
 
@@ -95,7 +95,7 @@ public class DeepDarkPopulator implements IPopulate {
     /**
      * Attempts to place sculk veins on surfaces.
      */
-    private void tryPlaceSculkVeins(ServerLevel world, RandomSource random, BlockPos center) {
+    private void tryPlaceSculkVeins(WorldGenLevel world, RandomSource random, BlockPos center) {
         // Try each direction to place veins
         for (Direction direction : Direction.values()) {
             if (random.nextFloat() > 0.4f) {
@@ -124,7 +124,7 @@ public class DeepDarkPopulator implements IPopulate {
     /**
      * Attempts to place a sculk sensor.
      */
-    private void tryPlaceSculkSensor(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void tryPlaceSculkSensor(WorldGenLevel world, RandomSource random, BlockPos pos) {
         BlockPos below = pos.below();
         BlockState belowState = world.getBlockState(below);
 
@@ -139,7 +139,7 @@ public class DeepDarkPopulator implements IPopulate {
     /**
      * Attempts to place a sculk shrieker.
      */
-    private void tryPlaceSculkShrieker(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void tryPlaceSculkShrieker(WorldGenLevel world, RandomSource random, BlockPos pos) {
         BlockPos below = pos.below();
         BlockState belowState = world.getBlockState(below);
 
@@ -155,7 +155,7 @@ public class DeepDarkPopulator implements IPopulate {
     /**
      * Checks if the position is in a cave (air with stone nearby).
      */
-    private boolean isInCave(ServerLevel world, BlockPos pos) {
+    private boolean isInCave(WorldGenLevel world, BlockPos pos) {
         int stoneCount = 0;
         int airCount = 0;
 

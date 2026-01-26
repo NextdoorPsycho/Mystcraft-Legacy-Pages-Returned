@@ -2,7 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
@@ -30,7 +30,7 @@ public class SurfaceLakesPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         // Generate water lakes
         for (int i = 0; i < WATER_ATTEMPTS_PER_CHUNK; i++) {
             int x = chunkPos.getX() + random.nextInt(16);
@@ -55,7 +55,7 @@ public class SurfaceLakesPopulator implements IPopulate {
         }
     }
 
-    private boolean generateSurfaceLake(ServerLevel world, RandomSource random, BlockPos center, BlockState liquidState, boolean isWater) {
+    private boolean generateSurfaceLake(WorldGenLevel world, RandomSource random, BlockPos center, BlockState liquidState, boolean isWater) {
         // Move center down to just below surface
         center = center.below(4);
 

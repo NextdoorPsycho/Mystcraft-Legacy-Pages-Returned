@@ -3,8 +3,7 @@ package art.arcane.mystcraft.world.gen.populate;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.PointedDripstoneBlock;
@@ -15,6 +14,9 @@ import net.minecraft.world.level.block.state.properties.DripstoneThickness;
  * Populates caves with dripstone features (stalactites and stalagmites).
  * Generates pointed dripstone hanging from ceilings and rising from floors,
  * as well as clusters of dripstone blocks.
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
  */
 public class DripstoneCavesPopulator implements IPopulate {
 
@@ -22,19 +24,30 @@ public class DripstoneCavesPopulator implements IPopulate {
     private static final int ATTEMPTS_PER_CHUNK = 15;
     private static final int MAX_Y = 60;
 
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
+
     public DripstoneCavesPopulator(long seed) {
         this.seed = seed;
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
-        int chunkX = chunkPos.getX();
-        int chunkZ = chunkPos.getZ();
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        // Set chunk boundaries for this population run
+        int chunkX = chunkPos.getX() >> 4;
+        int chunkZ = chunkPos.getZ() >> 4;
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
+
+        int baseX = chunkPos.getX();
+        int baseZ = chunkPos.getZ();
 
         for (int attempt = 0; attempt < ATTEMPTS_PER_CHUNK; attempt++) {
-            int x = chunkX + random.nextInt(16);
+            int x = baseX + random.nextInt(16);
             int y = world.getMinBuildHeight() + random.nextInt(MAX_Y - world.getMinBuildHeight());
-            int z = chunkZ + random.nextInt(16);
+            int z = baseZ + random.nextInt(16);
 
             BlockPos pos = new BlockPos(x, y, z);
 
@@ -47,9 +60,40 @@ public class DripstoneCavesPopulator implements IPopulate {
     }
 
     /**
+     * Checks if a position is within the current chunk boundaries.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
+    /**
+     * Safe getBlockState that returns stone for positions outside chunk boundaries.
+     */
+    private BlockState safeGetBlockState(WorldGenLevel world, BlockPos pos) {
+        if (isInChunk(pos)) {
+            return world.getBlockState(pos);
+        }
+        return Blocks.STONE.defaultBlockState();
+    }
+
+    /**
      * Attempts to place a cluster of dripstone blocks.
      */
-    private void tryPlaceDripstoneCluster(ServerLevel world, RandomSource random, BlockPos center) {
+    private void tryPlaceDripstoneCluster(WorldGenLevel world, RandomSource random, BlockPos center) {
+        if (!isInChunk(center)) {
+            return;
+        }
+
         if (!world.getBlockState(center).isAir()) {
             return;
         }
@@ -68,8 +112,8 @@ public class DripstoneCavesPopulator implements IPopulate {
 
             BlockPos pos = center.offset(offsetX, offsetY, offsetZ);
 
-            if (world.getBlockState(pos).isAir() && hasStoneAdjacent(world, pos)) {
-                world.setBlock(pos, Blocks.DRIPSTONE_BLOCK.defaultBlockState(), 2);
+            if (safeGetBlockState(world, pos).isAir() && hasStoneAdjacent(world, pos)) {
+                safeSetBlock(world, pos, Blocks.DRIPSTONE_BLOCK.defaultBlockState());
             }
         }
     }
@@ -77,14 +121,18 @@ public class DripstoneCavesPopulator implements IPopulate {
     /**
      * Attempts to place pointed dripstone (stalactite or stalagmite).
      */
-    private void tryPlacePointedDripstone(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void tryPlacePointedDripstone(WorldGenLevel world, RandomSource random, BlockPos pos) {
+        if (!isInChunk(pos)) {
+            return;
+        }
+
         if (!world.getBlockState(pos).isAir()) {
             return;
         }
 
         // Try to place stalactite (hanging from ceiling)
         BlockPos above = pos.above();
-        BlockState aboveState = world.getBlockState(above);
+        BlockState aboveState = safeGetBlockState(world, above);
         if (canSupportDripstone(aboveState)) {
             placeStalactite(world, random, pos);
             return;
@@ -92,7 +140,7 @@ public class DripstoneCavesPopulator implements IPopulate {
 
         // Try to place stalagmite (rising from floor)
         BlockPos below = pos.below();
-        BlockState belowState = world.getBlockState(below);
+        BlockState belowState = safeGetBlockState(world, below);
         if (canSupportDripstone(belowState)) {
             placeStalagmite(world, random, pos);
         }
@@ -101,13 +149,13 @@ public class DripstoneCavesPopulator implements IPopulate {
     /**
      * Places a stalactite hanging from the ceiling.
      */
-    private void placeStalactite(ServerLevel world, RandomSource random, BlockPos startPos) {
+    private void placeStalactite(WorldGenLevel world, RandomSource random, BlockPos startPos) {
         int length = 1 + random.nextInt(4);
 
         for (int i = 0; i < length; i++) {
             BlockPos pos = startPos.below(i);
 
-            if (!world.getBlockState(pos).isAir()) {
+            if (!safeGetBlockState(world, pos).isAir()) {
                 break;
             }
 
@@ -116,20 +164,20 @@ public class DripstoneCavesPopulator implements IPopulate {
                     .setValue(PointedDripstoneBlock.TIP_DIRECTION, Direction.DOWN)
                     .setValue(PointedDripstoneBlock.THICKNESS, thickness);
 
-            world.setBlock(pos, state, 2);
+            safeSetBlock(world, pos, state);
         }
     }
 
     /**
      * Places a stalagmite rising from the floor.
      */
-    private void placeStalagmite(ServerLevel world, RandomSource random, BlockPos startPos) {
+    private void placeStalagmite(WorldGenLevel world, RandomSource random, BlockPos startPos) {
         int length = 1 + random.nextInt(4);
 
         for (int i = 0; i < length; i++) {
             BlockPos pos = startPos.above(i);
 
-            if (!world.getBlockState(pos).isAir()) {
+            if (!safeGetBlockState(world, pos).isAir()) {
                 break;
             }
 
@@ -138,7 +186,7 @@ public class DripstoneCavesPopulator implements IPopulate {
                     .setValue(PointedDripstoneBlock.TIP_DIRECTION, Direction.UP)
                     .setValue(PointedDripstoneBlock.THICKNESS, thickness);
 
-            world.setBlock(pos, state, 2);
+            safeSetBlock(world, pos, state);
         }
     }
 
@@ -173,13 +221,14 @@ public class DripstoneCavesPopulator implements IPopulate {
 
     /**
      * Checks if the position is in a cave (air with stone nearby).
+     * Uses safe block state access to avoid triggering chunk loads.
      */
-    private boolean isInCave(ServerLevel world, BlockPos pos) {
+    private boolean isInCave(WorldGenLevel world, BlockPos pos) {
         int stoneCount = 0;
         int airCount = 0;
 
         for (Direction direction : Direction.values()) {
-            BlockState state = world.getBlockState(pos.relative(direction));
+            BlockState state = safeGetBlockState(world, pos.relative(direction));
             if (state.isAir()) {
                 airCount++;
             } else if (state.isSolid()) {
@@ -192,10 +241,11 @@ public class DripstoneCavesPopulator implements IPopulate {
 
     /**
      * Checks if there is stone adjacent to the position.
+     * Uses safe block state access to avoid triggering chunk loads.
      */
-    private boolean hasStoneAdjacent(ServerLevel world, BlockPos pos) {
+    private boolean hasStoneAdjacent(WorldGenLevel world, BlockPos pos) {
         for (Direction direction : Direction.values()) {
-            BlockState state = world.getBlockState(pos.relative(direction));
+            BlockState state = safeGetBlockState(world, pos.relative(direction));
             if (state.isSolid()) {
                 return true;
             }

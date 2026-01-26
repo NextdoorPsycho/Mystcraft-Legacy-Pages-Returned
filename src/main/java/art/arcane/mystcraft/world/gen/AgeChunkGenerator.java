@@ -1,6 +1,8 @@
 package art.arcane.mystcraft.world.gen;
 
+import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.world.logic.IChunkProviderFinalization;
+import art.arcane.mystcraft.api.world.logic.IPopulate;
 import art.arcane.mystcraft.api.world.logic.ITerrainAlteration;
 import art.arcane.mystcraft.api.world.logic.ITerrainGenerator;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
@@ -15,6 +17,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.StructureManager;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.block.Blocks;
@@ -128,6 +131,54 @@ public class AgeChunkGenerator extends ChunkGenerator {
     @Override
     public void spawnOriginalMobs(WorldGenRegion level) {
         // Default mob spawning
+    }
+
+    /**
+     * Applies biome decoration including Mystcraft populators.
+     * This is the correct place to add ores, trees, dungeons, and other features
+     * in 1.20.2+ - during the FEATURES chunk status, NOT after chunk loading.
+     *
+     * WorldGenLevel provides a limited view of the world that is safe for
+     * generation - setBlock() calls here don't trigger lighting updates or
+     * cascade chunk loads like they would on a fully-loaded chunk.
+     */
+    @Override
+    public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager) {
+        // Let vanilla handle biome decoration first (trees, flowers, etc. from biomes)
+        // We skip this for now to avoid conflicts - Mystcraft controls all decoration
+        // super.applyBiomeDecoration(level, chunk, structureManager);
+
+        // Now apply Mystcraft populators
+        if (director == null) {
+            return;
+        }
+
+        List<IPopulate> populators = director.getPopulateFunctions();
+        if (populators.isEmpty()) {
+            return;
+        }
+
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+        BlockPos chunkPos = new BlockPos(chunkX * 16, 0, chunkZ * 16);
+
+        // Create random source for this chunk (matching legacy behavior)
+        long chunkSeed = (long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + seed;
+        RandomSource random = RandomSource.create(chunkSeed);
+
+        Mystcraft.LOGGER.debug("[Population] Applying {} populators to chunk [{}, {}]",
+                populators.size(), chunkX, chunkZ);
+
+        // Call all registered population functions
+        for (IPopulate populator : populators) {
+            String id = populator.getIdentifier();
+            try {
+                populator.populate(level, random, chunkPos);
+            } catch (Exception e) {
+                Mystcraft.LOGGER.error("[Population] Error in populator {} on chunk [{}, {}]: {}",
+                        id, chunkX, chunkZ, e.getMessage(), e);
+            }
+        }
     }
 
     @Override

@@ -955,6 +955,15 @@ public class AgeDirectorImpl implements AgeDirector {
     @Override
     public void registerInterface(IPopulate populate) {
         if (populate != null) {
+            // Check if a populator with the same identifier already exists
+            String newId = populate.getIdentifier();
+            boolean isDuplicate = populateFunctions.stream()
+                    .anyMatch(existing -> existing.getIdentifier().equals(newId));
+
+            if (isDuplicate) {
+                // Already have this populator type, skip registration
+                return;
+            }
             populateFunctions.add(populate);
         }
     }

@@ -13,12 +13,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.common.extensions.IForgeItem;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -164,8 +166,19 @@ public class LinkbookItem extends Item {
      */
     protected void onLink(@NotNull ItemStack stack, Level level, Entity entity) {
         if (entity instanceof Player player) {
-            // Check if currently held
-            if (player.getInventory().getSelected() != stack) {
+            // Find which slot has this book (main hand or off hand)
+            // Legacy used reference comparison with a server container, but we use content comparison
+            // since our BookScreen is client-only
+            ItemStack mainHand = player.getInventory().getSelected();
+            ItemStack offHand = player.getOffhandItem();
+
+            int slotToEmpty = -1;
+            if (ItemStack.isSameItemSameTags(mainHand, stack)) {
+                slotToEmpty = player.getInventory().selected;
+            } else if (ItemStack.isSameItemSameTags(offHand, stack)) {
+                slotToEmpty = 40; // Offhand slot index
+            } else {
+                // Book not found in either hand
                 return;
             }
 
@@ -176,8 +189,8 @@ public class LinkbookItem extends Item {
                 bookEntity.setBookItem(stack.copy());
                 level.addFreshEntity(bookEntity);
 
-                // Remove from inventory
-                player.getInventory().setItem(player.getInventory().selected, ItemStack.EMPTY);
+                // Remove from inventory (use tracked slot, not just selected)
+                player.getInventory().setItem(slotToEmpty, ItemStack.EMPTY);
             }
         }
     }
@@ -319,5 +332,28 @@ public class LinkbookItem extends Item {
     @Override
     public boolean isFoil(@NotNull ItemStack stack) {
         return LinkOptions.getFlag(stack.getTag(), LinkFlags.FOLLOWING);
+    }
+
+    // ========================= Custom Entity on Q-Drop =========================
+
+    /**
+     * Tell Forge that Q-dropped linkbooks should spawn as LinkbookEntity, not ItemEntity.
+     */
+    @Override
+    public boolean hasCustomEntity(@NotNull ItemStack stack) {
+        return true;
+    }
+
+    /**
+     * Creates a LinkbookEntity when the item is Q-dropped instead of a regular ItemEntity.
+     * This matches legacy behavior where dropped linkbooks appear as open books on the ground.
+     */
+    @Override
+    @Nullable
+    public Entity createEntity(Level level, Entity location, @NotNull ItemStack stack) {
+        LinkbookEntity entity = new LinkbookEntity(level, location.getX(), location.getY(), location.getZ());
+        entity.setBookItem(stack.copy());
+        entity.setDeltaMovement(location.getDeltaMovement());
+        return entity;
     }
 }

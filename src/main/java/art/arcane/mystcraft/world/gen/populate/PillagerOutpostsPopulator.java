@@ -2,7 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
@@ -25,7 +25,7 @@ public class PillagerOutpostsPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         // Only attempt generation in specific chunks based on grid
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;
@@ -61,7 +61,7 @@ public class PillagerOutpostsPopulator implements IPopulate {
         generateOutpost(world, random, pos);
     }
 
-    private void generateOutpost(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateOutpost(WorldGenLevel world, RandomSource random, BlockPos pos) {
         // Build main tower (5x5 base, 12 blocks tall)
         int height = 12;
         int radius = 2;
@@ -120,7 +120,7 @@ public class PillagerOutpostsPopulator implements IPopulate {
         spawnPillagers(world, pos, random);
     }
 
-    private void generateCage(ServerLevel world, BlockPos pos) {
+    private void generateCage(WorldGenLevel world, BlockPos pos) {
         // 3x3x3 cage made of dark oak fence
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = 0; dy <= 2; dy++) {
@@ -138,9 +138,12 @@ public class PillagerOutpostsPopulator implements IPopulate {
         }
     }
 
-    private void spawnPillagers(ServerLevel world, BlockPos pos, RandomSource random) {
+    private void spawnPillagers(WorldGenLevel world, BlockPos pos, RandomSource random) {
         // Spawn 3-5 pillagers around the outpost
         int count = 3 + random.nextInt(3);
+
+        // Get ServerLevel for entity spawning
+        net.minecraft.server.level.ServerLevel serverLevel = world.getLevel();
 
         for (int i = 0; i < count; i++) {
             int dx = random.nextInt(10) - 5;
@@ -149,7 +152,7 @@ public class PillagerOutpostsPopulator implements IPopulate {
 
             // Make sure spawn position is valid
             if (world.getBlockState(spawnPos).isAir() && world.getBlockState(spawnPos.below()).isSolid()) {
-                EntityType.PILLAGER.spawn(world, spawnPos, MobSpawnType.STRUCTURE);
+                EntityType.PILLAGER.spawn(serverLevel, spawnPos, MobSpawnType.STRUCTURE);
             }
         }
     }

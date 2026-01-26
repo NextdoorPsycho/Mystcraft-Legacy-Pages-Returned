@@ -3,8 +3,7 @@ package art.arcane.mystcraft.world.gen.populate;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
@@ -17,6 +16,9 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 /**
  * Dungeon populator that generates mob spawner dungeons.
  * Dungeons consist of a cobblestone/mossy cobblestone room with a spawner and chests.
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
  */
 public class DungeonPopulator implements IPopulate {
 
@@ -32,12 +34,23 @@ public class DungeonPopulator implements IPopulate {
             EntityType.SPIDER
     };
 
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
+
     public DungeonPopulator(long seed) {
         this.seed = seed;
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        // Set chunk boundaries for this population run
+        int chunkX = chunkPos.getX() >> 4;
+        int chunkZ = chunkPos.getZ() >> 4;
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
+
         for (int i = 0; i < ATTEMPTS_PER_CHUNK; i++) {
             int x = chunkPos.getX() + random.nextInt(16) + 8;
             int y = random.nextInt(world.getHeight() - 16) + 8;
@@ -50,7 +63,37 @@ public class DungeonPopulator implements IPopulate {
         }
     }
 
-    private boolean generateDungeon(ServerLevel world, RandomSource random, BlockPos pos) {
+    /**
+     * Checks if a position is within the current chunk boundaries.
+     * This prevents cascade chunk loading when dungeons extend beyond chunk edges.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
+    /**
+     * Safe getBlockState that returns stone for positions outside chunk boundaries.
+     * This allows validation logic to work without triggering chunk loads.
+     */
+    private BlockState safeGetBlockState(WorldGenLevel world, BlockPos pos) {
+        if (isInChunk(pos)) {
+            return world.getBlockState(pos);
+        }
+        // Return stone as a "safe" default for out-of-chunk positions
+        return Blocks.STONE.defaultBlockState();
+    }
+
+    private boolean generateDungeon(WorldGenLevel world, RandomSource random, BlockPos pos) {
         // Random dungeon dimensions
         int sizeX = random.nextInt(2) + 2;
         int sizeY = 3;
@@ -64,7 +107,7 @@ public class DungeonPopulator implements IPopulate {
             for (int y = pos.getY() - 1; y <= pos.getY() + sizeY + 1; y++) {
                 for (int z = pos.getZ() - sizeZ - 1; z <= pos.getZ() + sizeZ + 1; z++) {
                     BlockPos checkPos = new BlockPos(x, y, z);
-                    BlockState state = world.getBlockState(checkPos);
+                    BlockState state = safeGetBlockState(world, checkPos);
 
                     if (y == pos.getY() - 1) {
                         // Floor must be solid
@@ -108,14 +151,14 @@ public class DungeonPopulator implements IPopulate {
             for (int z = pos.getZ() - sizeZ - 1; z <= pos.getZ() + sizeZ + 1; z++) {
                 // Floor
                 BlockPos floorPos = new BlockPos(x, pos.getY() - 1, z);
-                if (world.getBlockState(floorPos).isSolid()) {
-                    world.setBlock(floorPos, getFloorBlock(random), 2);
+                if (safeGetBlockState(world, floorPos).isSolid()) {
+                    safeSetBlock(world, floorPos, getFloorBlock(random));
                 }
 
                 // Ceiling
                 BlockPos ceilingPos = new BlockPos(x, pos.getY() + sizeY, z);
-                if (world.getBlockState(ceilingPos).isSolid()) {
-                    world.setBlock(ceilingPos, getWallBlock(random), 2);
+                if (safeGetBlockState(world, ceilingPos).isSolid()) {
+                    safeSetBlock(world, ceilingPos, getWallBlock(random));
                 }
             }
         }
@@ -132,12 +175,12 @@ public class DungeonPopulator implements IPopulate {
 
                     if (isWall) {
                         // Only replace solid blocks for walls
-                        if (world.getBlockState(blockPos).isSolid()) {
-                            world.setBlock(blockPos, getWallBlock(random), 2);
+                        if (safeGetBlockState(world, blockPos).isSolid()) {
+                            safeSetBlock(world, blockPos, getWallBlock(random));
                         }
                     } else {
                         // Clear interior
-                        world.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
+                        safeSetBlock(world, blockPos, Blocks.AIR.defaultBlockState());
                     }
                 }
             }
@@ -152,11 +195,17 @@ public class DungeonPopulator implements IPopulate {
 
             BlockPos chestPos = new BlockPos(cx, cy, cz);
 
+            // Skip if outside chunk
+            if (!isInChunk(chestPos)) {
+                continue;
+            }
+
             // Check if position is valid for chest (air with solid wall adjacent)
             if (world.getBlockState(chestPos).isAir()) {
                 int adjacentWalls = 0;
                 for (Direction dir : Direction.Plane.HORIZONTAL) {
-                    if (world.getBlockState(chestPos.relative(dir)).isSolid()) {
+                    BlockPos adjPos = chestPos.relative(dir);
+                    if (isInChunk(adjPos) && world.getBlockState(adjPos).isSolid()) {
                         adjacentWalls++;
                     }
                 }
@@ -172,13 +221,15 @@ public class DungeonPopulator implements IPopulate {
             }
         }
 
-        // Place spawner in center
+        // Place spawner in center (only if in chunk)
         BlockPos spawnerPos = pos;
-        world.setBlock(spawnerPos, Blocks.SPAWNER.defaultBlockState(), 2);
-        BlockEntity be = world.getBlockEntity(spawnerPos);
-        if (be instanceof SpawnerBlockEntity spawner) {
-            EntityType<?> mobType = DUNGEON_MOBS[random.nextInt(DUNGEON_MOBS.length)];
-            spawner.setEntityId(mobType, random);
+        if (isInChunk(spawnerPos)) {
+            world.setBlock(spawnerPos, Blocks.SPAWNER.defaultBlockState(), 2);
+            BlockEntity be = world.getBlockEntity(spawnerPos);
+            if (be instanceof SpawnerBlockEntity spawner) {
+                EntityType<?> mobType = DUNGEON_MOBS[random.nextInt(DUNGEON_MOBS.length)];
+                spawner.setEntityId(mobType, random);
+            }
         }
 
         return true;

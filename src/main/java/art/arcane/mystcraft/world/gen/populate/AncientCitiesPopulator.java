@@ -2,7 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
@@ -13,6 +13,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * Ancient cities populator that generates deep dark city structures.
  * Cities consist of deepslate brick structures with sculk, soul lanterns, and warden spawns.
  * Very rare: approximately 1 per 64 chunks, only generates at Y < -20.
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
  */
 public class AncientCitiesPopulator implements IPopulate {
 
@@ -22,15 +25,24 @@ public class AncientCitiesPopulator implements IPopulate {
     private static final int MAX_Y = -20;
     private static final int MIN_Y = -50;
 
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
+
     public AncientCitiesPopulator(long seed) {
         this.seed = seed;
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         // Only attempt generation in specific chunks based on grid
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;
+
+        // Set chunk boundaries for this population run
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
 
         if (chunkX % CHUNKS_BETWEEN != 0 || chunkZ % CHUNKS_BETWEEN != 0) {
             return;
@@ -52,7 +64,25 @@ public class AncientCitiesPopulator implements IPopulate {
         generateAncientCity(world, random, pos);
     }
 
-    private void generateAncientCity(ServerLevel world, RandomSource random, BlockPos pos) {
+    /**
+     * Checks if a position is within the current chunk boundaries.
+     * This prevents cascade chunk loading when structures extend beyond chunk edges.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
+    private void generateAncientCity(WorldGenLevel world, RandomSource random, BlockPos pos) {
         // Build simplified city structure (21x21 base, 12 blocks tall)
         int radius = 10;
         int height = 12;
@@ -74,13 +104,13 @@ public class AncientCitiesPopulator implements IPopulate {
                         floorBlock = Blocks.DEEPSLATE.defaultBlockState();
                     }
 
-                    world.setBlock(floorPos, floorBlock, 2);
+                    safeSetBlock(world, floorPos, floorBlock);
                 }
 
                 // Clear interior
                 for (int dy = 1; dy < height; dy++) {
                     BlockPos clearPos = pos.offset(dx, dy, dz);
-                    world.setBlock(clearPos, Blocks.AIR.defaultBlockState(), 2);
+                    safeSetBlock(world, clearPos, Blocks.AIR.defaultBlockState());
                 }
             }
         }
@@ -100,11 +130,11 @@ public class AncientCitiesPopulator implements IPopulate {
                         } else {
                             wallBlock = Blocks.DEEPSLATE_BRICKS.defaultBlockState();
                         }
-                        world.setBlock(buildPos, wallBlock, 2);
+                        safeSetBlock(world, buildPos, wallBlock);
                     }
                     // Corner pillars
                     else if (Math.abs(dx) == structureRadius - 1 && Math.abs(dz) == structureRadius - 1) {
-                        world.setBlock(buildPos, Blocks.POLISHED_DEEPSLATE.defaultBlockState(), 2);
+                        safeSetBlock(world, buildPos, Blocks.POLISHED_DEEPSLATE.defaultBlockState());
                     }
                 }
             }
@@ -114,7 +144,7 @@ public class AncientCitiesPopulator implements IPopulate {
         for (int dx = -structureRadius; dx <= structureRadius; dx++) {
             for (int dz = -structureRadius; dz <= structureRadius; dz++) {
                 BlockPos ceilingPos = pos.offset(dx, height, dz);
-                world.setBlock(ceilingPos, Blocks.DEEPSLATE_BRICKS.defaultBlockState(), 2);
+                safeSetBlock(world, ceilingPos, Blocks.DEEPSLATE_BRICKS.defaultBlockState());
             }
         }
 
@@ -128,13 +158,13 @@ public class AncientCitiesPopulator implements IPopulate {
 
             float sculkType = random.nextFloat();
             if (sculkType < 0.6f) {
-                world.setBlock(sculkPos, Blocks.SCULK.defaultBlockState(), 2);
+                safeSetBlock(world, sculkPos, Blocks.SCULK.defaultBlockState());
             } else if (sculkType < 0.8f) {
-                world.setBlock(sculkPos, Blocks.SCULK_VEIN.defaultBlockState(), 2);
+                safeSetBlock(world, sculkPos, Blocks.SCULK_VEIN.defaultBlockState());
             } else if (sculkType < 0.95f) {
-                world.setBlock(sculkPos, Blocks.SCULK_CATALYST.defaultBlockState(), 2);
+                safeSetBlock(world, sculkPos, Blocks.SCULK_CATALYST.defaultBlockState());
             } else {
-                world.setBlock(sculkPos, Blocks.SCULK_SENSOR.defaultBlockState(), 2);
+                safeSetBlock(world, sculkPos, Blocks.SCULK_SENSOR.defaultBlockState());
             }
         }
 
@@ -148,7 +178,7 @@ public class AncientCitiesPopulator implements IPopulate {
 
             // Place on walls
             if (Math.abs(dx) == structureRadius || Math.abs(dz) == structureRadius) {
-                world.setBlock(lanternPos, Blocks.SOUL_LANTERN.defaultBlockState(), 2);
+                safeSetBlock(world, lanternPos, Blocks.SOUL_LANTERN.defaultBlockState());
             }
         }
 
@@ -160,7 +190,7 @@ public class AncientCitiesPopulator implements IPopulate {
             BlockPos candlePos = pos.offset(dx, 1, dz);
 
             if (world.getBlockState(candlePos).isAir() && world.getBlockState(candlePos.below()).isSolid()) {
-                world.setBlock(candlePos, Blocks.CANDLE.defaultBlockState(), 2);
+                safeSetBlock(world, candlePos, Blocks.CANDLE.defaultBlockState());
             }
         }
 
@@ -171,7 +201,7 @@ public class AncientCitiesPopulator implements IPopulate {
             int dz = random.nextInt(structureRadius * 2) - structureRadius;
 
             BlockPos reinforcedPos = pos.offset(dx, dy, dz);
-            world.setBlock(reinforcedPos, Blocks.REINFORCED_DEEPSLATE.defaultBlockState(), 2);
+            safeSetBlock(world, reinforcedPos, Blocks.REINFORCED_DEEPSLATE.defaultBlockState());
         }
 
         // Create central sculk shrieker area (warden spawn point)
@@ -180,7 +210,7 @@ public class AncientCitiesPopulator implements IPopulate {
                 BlockPos shriekerAreaPos = pos.offset(dx, 1, dz);
 
                 if (Math.abs(dx) <= 1 && Math.abs(dz) <= 1) {
-                    world.setBlock(shriekerAreaPos, Blocks.SCULK_SHRIEKER.defaultBlockState(), 2);
+                    safeSetBlock(world, shriekerAreaPos, Blocks.SCULK_SHRIEKER.defaultBlockState());
                 }
             }
         }
@@ -188,7 +218,8 @@ public class AncientCitiesPopulator implements IPopulate {
         // Small chance to spawn warden
         if (random.nextFloat() < 0.1f) {
             BlockPos wardenPos = pos.offset(0, 2, 0);
-            EntityType.WARDEN.spawn(world, wardenPos, MobSpawnType.STRUCTURE);
+            net.minecraft.server.level.ServerLevel serverLevel = world.getLevel();
+            EntityType.WARDEN.spawn(serverLevel, wardenPos, MobSpawnType.STRUCTURE);
         }
     }
 

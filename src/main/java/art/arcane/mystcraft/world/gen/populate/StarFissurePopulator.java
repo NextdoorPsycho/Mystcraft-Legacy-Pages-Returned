@@ -3,9 +3,8 @@ package art.arcane.mystcraft.world.gen.populate;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import art.arcane.mystcraft.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -16,23 +15,39 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * A star fissure is a deep crack in the terrain with a starry void at the bottom.
  * Falling into it teleports entities back to the overworld spawn.
  * Very rare - only generates in approximately 1 out of 16 chunks.
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
  */
 public class StarFissurePopulator implements IPopulate {
 
     private final long seed;
 
+    // Rarity: 1 in 16 chunks
     private static final int RARITY = 16;
+    // Fissure dimensions
     private static final int MIN_WIDTH = 3;
     private static final int MAX_WIDTH = 5;
     private static final int MIN_LENGTH = 10;
     private static final int MAX_LENGTH = 20;
+
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     public StarFissurePopulator(long seed) {
         this.seed = seed;
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        // Set chunk boundaries for this population run
+        int chunkX = chunkPos.getX() >> 4;
+        int chunkZ = chunkPos.getZ() >> 4;
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
+
         if (random.nextInt(RARITY) != 0) {
             return;
         }
@@ -54,7 +69,7 @@ public class StarFissurePopulator implements IPopulate {
         generateStarFissure(world, random, centerPos);
     }
 
-    private boolean canGenerateFissure(ServerLevel world, BlockPos pos) {
+    private boolean canGenerateFissure(WorldGenLevel world, BlockPos pos) {
         BlockState surface = world.getBlockState(pos.below());
         return surface.is(BlockTags.DIRT) ||
                surface.is(Blocks.GRASS_BLOCK) ||
@@ -64,7 +79,25 @@ public class StarFissurePopulator implements IPopulate {
                surface.is(Blocks.SANDSTONE);
     }
 
-    private void generateStarFissure(ServerLevel world, RandomSource random, BlockPos centerPos) {
+    /**
+     * Checks if a position is within the current chunk boundaries.
+     * This prevents cascade chunk loading when fissures extend beyond chunk edges.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
+    private void generateStarFissure(WorldGenLevel world, RandomSource random, BlockPos centerPos) {
         int width = MIN_WIDTH + random.nextInt(MAX_WIDTH - MIN_WIDTH + 1);
         int length = MIN_LENGTH + random.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
 
@@ -73,6 +106,7 @@ public class StarFissurePopulator implements IPopulate {
         double sinAngle = Math.sin(angle);
 
         int surfaceY = centerPos.getY();
+        // Carve to near bedrock (leave 1 block above min build height for the star fissure block)
         int bottomY = world.getMinBuildHeight() + 1;
 
         for (int lPos = 0; lPos < length; lPos++) {
@@ -103,15 +137,21 @@ public class StarFissurePopulator implements IPopulate {
 
                 for (int y = fissureTop; y >= fissureBottom; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
+
+                    // Skip blocks outside chunk boundaries to prevent cascade loading
+                    if (!isInChunk(pos)) {
+                        continue;
+                    }
+
                     BlockState existing = world.getBlockState(pos);
 
                     if (!existing.is(Blocks.BEDROCK)) {
                         if (y == fissureBottom) {
-                            world.setBlock(pos, ModBlocks.STAR_FISSURE.get().defaultBlockState(), 2);
+                            safeSetBlock(world, pos, ModBlocks.STAR_FISSURE.get().defaultBlockState());
                         } else if (y == fissureBottom + 1) {
-                            world.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                            safeSetBlock(world, pos, Blocks.AIR.defaultBlockState());
                         } else {
-                            world.setBlock(pos, Blocks.CAVE_AIR.defaultBlockState(), 2);
+                            safeSetBlock(world, pos, Blocks.CAVE_AIR.defaultBlockState());
                         }
                     }
                 }
@@ -125,19 +165,22 @@ public class StarFissurePopulator implements IPopulate {
         addStarFissureBlocks(world, random, centerPos, length, angle, bottomY);
     }
 
-    private void addJaggedEdge(ServerLevel world, RandomSource random, BlockPos edgePos, int top, int bottom) {
+    private void addJaggedEdge(WorldGenLevel world, RandomSource random, BlockPos edgePos, int top, int bottom) {
         int edgeDepth = 1 + random.nextInt(3);
         int edgeHeight = top - random.nextInt((top - bottom) / 3);
 
         for (int y = edgeHeight; y >= bottom && y >= edgeHeight - edgeDepth; y--) {
             BlockPos pos = new BlockPos(edgePos.getX(), y, edgePos.getZ());
+            if (!isInChunk(pos)) {
+                continue;
+            }
             if (!world.getBlockState(pos).is(Blocks.BEDROCK)) {
-                world.setBlock(pos, Blocks.CAVE_AIR.defaultBlockState(), 2);
+                safeSetBlock(world, pos, Blocks.CAVE_AIR.defaultBlockState());
             }
         }
     }
 
-    private void addStarFissureBlocks(ServerLevel world, RandomSource random, BlockPos centerPos,
+    private void addStarFissureBlocks(WorldGenLevel world, RandomSource random, BlockPos centerPos,
                                      int length, double angle, int bottomY) {
         double cosAngle = Math.cos(angle);
         double sinAngle = Math.sin(angle);
@@ -151,9 +194,13 @@ public class StarFissurePopulator implements IPopulate {
 
             BlockPos fissurePos = new BlockPos(x, bottomY, z);
 
+            if (!isInChunk(fissurePos)) {
+                continue;
+            }
+
             if (world.getBlockState(fissurePos).is(Blocks.CAVE_AIR) ||
                 world.getBlockState(fissurePos).isAir()) {
-                world.setBlock(fissurePos, ModBlocks.STAR_FISSURE.get().defaultBlockState(), 2);
+                safeSetBlock(world, fissurePos, ModBlocks.STAR_FISSURE.get().defaultBlockState());
             }
         }
     }

@@ -2,9 +2,11 @@ package art.arcane.mystcraft.link;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.data.LinkOptions;
+import art.arcane.mystcraft.instability.InstabilityManager;
 import art.arcane.mystcraft.network.LinkEffectPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.registry.ModSounds;
+import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import net.minecraft.core.BlockPos;
@@ -64,7 +66,8 @@ public final class LinkingManager {
         CANCELLED,
         BLOCKED,
         PERMISSION_DENIED,
-        START_CANCELLED
+        START_CANCELLED,
+        TOO_UNSTABLE
     }
 
     /**
@@ -105,6 +108,25 @@ public final class LinkingManager {
             fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
                     LinkEvent.Failed.FailureReason.DIMENSION_NOT_FOUND, "Target dimension not found");
             return LinkResult.DIMENSION_NOT_FOUND;
+        }
+
+        // === CHECK INSTABILITY (for Mystcraft Ages) ===
+        if (AgeDimensionFactory.isMystcraftAge(targetLevel.dimension())) {
+            AgeData ageData = AgeData.getIfPresent(targetLevel);
+            if (ageData != null) {
+                float instability = ageData.getInstability();
+                if (!InstabilityManager.isAgeAllowed(instability)) {
+                    String rating = InstabilityManager.getInstabilityRating(instability);
+                    String message = "This Age is too unstable to enter safely. (" + rating + ")";
+                    fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
+                            LinkEvent.Failed.FailureReason.CANCELLED, message);
+                    if (entity instanceof ServerPlayer player) {
+                        player.sendSystemMessage(Component.literal(message));
+                    }
+                    Mystcraft.LOGGER.info("Link blocked due to instability: {} ({})", instability, rating);
+                    return LinkResult.TOO_UNSTABLE;
+                }
+            }
         }
 
         // === FIRE ALLOW EVENT ===

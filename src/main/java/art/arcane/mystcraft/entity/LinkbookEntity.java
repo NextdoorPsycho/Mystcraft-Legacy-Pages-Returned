@@ -55,6 +55,9 @@ public class LinkbookEntity extends Entity {
     private int ticksExisted = 0;
     private int lastStarvationTick = 0;
 
+    /** Visual hurt time for rendering red tint when damaged (legacy behavior) */
+    public int hurtTime = 0;
+
     // Item handler for hopper/minecart interaction
     private final ItemStackHandler itemHandler = new ItemStackHandler(1) {
         @Override
@@ -154,20 +157,33 @@ public class LinkbookEntity extends Entity {
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
         } else {
-            // Normal click: Open book screen (client) or perform linking (server)
+            // Normal click: Open book screen (client only)
+            // Server waits for EntityBookActivatePacket from GUI
             if (isValidLinkBook(book)) {
                 if (level().isClientSide) {
-                    // On client, open the book viewing screen
+                    // On client, open the book viewing screen with entity ID
                     openBookScreen(book);
-                } else {
-                    // On server, perform the link
-                    CompoundTag linkData = book.getTag();
-                    if (linkData != null) {
-                        LinkingManager.performLink(player, linkData);
-                    }
                 }
+                // Server does nothing here - waits for packet from GUI
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
+        }
+    }
+
+    /**
+     * Activates the book for the given entity (called from EntityBookActivatePacket).
+     * Performs the actual linking based on book type.
+     */
+    public void activateBook(Entity entity) {
+        ItemStack book = getBookItem();
+        if (book.isEmpty()) {
+            return;
+        }
+
+        if (book.getItem() instanceof LinkbookItem linkbook) {
+            linkbook.activate(book, level(), entity);
+        } else if (book.getItem() instanceof AgebookItem agebook) {
+            agebook.activate(book, level(), entity);
         }
     }
 
@@ -180,11 +196,12 @@ public class LinkbookEntity extends Entity {
     }
 
     /**
-     * Opens the book screen on the client.
+     * Opens the book screen on the client with entity ID for proper activation.
      */
     private void openBookScreen(ItemStack book) {
+        int entityId = this.getId();
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
-            art.arcane.mystcraft.client.screen.BookScreen.open(book));
+            art.arcane.mystcraft.client.screen.BookScreen.openForEntity(book, entityId));
     }
 
     @Override
@@ -196,6 +213,11 @@ public class LinkbookEntity extends Entity {
     public void tick() {
         super.tick();
         ticksExisted++;
+
+        // Decrement hurt time for visual effect
+        if (hurtTime > 0) {
+            hurtTime--;
+        }
 
         // Apply gravity if not on ground
         if (!onGround()) {
@@ -310,6 +332,9 @@ public class LinkbookEntity extends Entity {
         if (level().isClientSide) {
             return false;
         }
+
+        // Set hurt time for visual red tint (10 ticks like legacy)
+        hurtTime = 10;
 
         // Check for fire damage using tags
         if (source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE)) {

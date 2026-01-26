@@ -14,6 +14,7 @@ import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -212,12 +213,81 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         // Draw right panel background (main inventory texture) at (guiLeft + guiCenter, guiTop + mainTop)
         guiGraphics.blit(TEXTURE, rightPanelLeft, rightPanelTop, 0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
+        // Draw slot backgrounds for better visibility
+        renderSlotBackgrounds(guiGraphics);
+
+        // Draw border around book page list area
+        renderBookPageListBorder(guiGraphics);
+
         // Render GUI elements
         if (rootElement != null) {
             rootElement.setLeft(this.leftPos);
             rootElement.setTop(this.topPos);
             rootElement.renderBackground(guiGraphics, partialTick, mouseX, mouseY);
         }
+    }
+
+    /**
+     * Draws 3D slot backgrounds for the main inventory slots.
+     */
+    private void renderSlotBackgrounds(GuiGraphics guiGraphics) {
+        // Slot background colors (Minecraft style)
+        int borderDark = 0xFF373737;
+        int borderLight = 0xFFFFFFFF;
+        int slotBg = 0xFF8B8B8B;
+
+        // Writing slot at (8+xShift, 60+yShift) relative to rightPanelLeft/rightPanelTop
+        drawSlotBackground(guiGraphics, this.leftPos + 8 + GUI_CENTER, this.topPos + 60 + MAIN_TOP, borderDark, borderLight, slotBg);
+
+        // Paper slot at (8+xShift, 8+yShift)
+        drawSlotBackground(guiGraphics, this.leftPos + 8 + GUI_CENTER, this.topPos + 8 + MAIN_TOP, borderDark, borderLight, slotBg);
+
+        // Container in slot at (152+xShift, 8+yShift)
+        drawSlotBackground(guiGraphics, this.leftPos + 152 + GUI_CENTER, this.topPos + 8 + MAIN_TOP, borderDark, borderLight, slotBg);
+
+        // Container out slot at (152+xShift, 60+yShift)
+        drawSlotBackground(guiGraphics, this.leftPos + 152 + GUI_CENTER, this.topPos + 60 + MAIN_TOP, borderDark, borderLight, slotBg);
+    }
+
+    /**
+     * Draws a single 3D slot background at the given position.
+     */
+    private void drawSlotBackground(GuiGraphics guiGraphics, int x, int y, int borderDark, int borderLight, int slotBg) {
+        int size = 18; // Standard slot size
+        // Top edge (dark)
+        guiGraphics.fill(x - 1, y - 1, x + size - 1, y, borderDark);
+        // Left edge (dark)
+        guiGraphics.fill(x - 1, y - 1, x, y + size - 1, borderDark);
+        // Bottom edge (light)
+        guiGraphics.fill(x - 1, y + size - 2, x + size - 1, y + size - 1, borderLight);
+        // Right edge (light)
+        guiGraphics.fill(x + size - 2, y - 1, x + size - 1, y + size - 1, borderLight);
+        // Inner background
+        guiGraphics.fill(x, y, x + size - 2, y + size - 2, slotBg);
+    }
+
+    /**
+     * Draws a border around the book page list area for better visibility.
+     */
+    private void renderBookPageListBorder(GuiGraphics guiGraphics) {
+        // Book page list is at (guiCenter + 27, mainTop + 6) with size (101, 50)
+        int listX = this.leftPos + GUI_CENTER + 27;
+        int listY = this.topPos + MAIN_TOP + 6;
+        int listWidth = WINDOW_SIZE_X - 47 - 9 - 19; // 101
+        int listHeight = 50;
+
+        int borderDark = 0xFF373737;
+        int borderLight = 0xFFAAAAAA;
+
+        // Draw inset border
+        // Top edge (dark)
+        guiGraphics.fill(listX - 1, listY - 1, listX + listWidth + 1, listY, borderDark);
+        // Left edge (dark)
+        guiGraphics.fill(listX - 1, listY - 1, listX, listY + listHeight + 1, borderDark);
+        // Bottom edge (light)
+        guiGraphics.fill(listX - 1, listY + listHeight, listX + listWidth + 1, listY + listHeight + 1, borderLight);
+        // Right edge (light)
+        guiGraphics.fill(listX + listWidth, listY - 1, listX + listWidth + 1, listY + listHeight + 1, borderLight);
     }
 
     @Override
@@ -595,14 +665,18 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     private class BookPageListHandler implements MystGuiScrollablePages.PageListHandler {
         @Override
         public List<ItemStack> getPageList() {
-            // Get pages from writing slot if it's a book
-            ItemStack writing = menu.getBlockEntity().getMainInventory().getStackInSlot(WritingDeskBlockEntity.SLOT_WRITING);
+            // Get pages from writing slot using synchronized menu slot (includes NBT data)
+            ItemStack writing = menu.slots.get(WritingDeskMenu.SLOT_WRITING).getItem();
             if (writing.isEmpty()) {
                 return List.of();
             }
             // Get pages from agebook
             if (writing.getItem() instanceof art.arcane.mystcraft.item.AgebookItem agebook) {
                 return agebook.getPageList(writing);
+            }
+            // Get pages from linkbook (requires player)
+            if (writing.getItem() instanceof art.arcane.mystcraft.item.LinkbookItem linkbook) {
+                return linkbook.getPageList(Minecraft.getInstance().player, writing);
             }
             return List.of();
         }

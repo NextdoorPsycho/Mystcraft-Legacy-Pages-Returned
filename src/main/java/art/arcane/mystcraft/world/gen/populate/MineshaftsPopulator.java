@@ -3,7 +3,7 @@ package art.arcane.mystcraft.world.gen.populate;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
@@ -32,7 +32,7 @@ public class MineshaftsPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         if (random.nextInt(MINESHAFT_RARITY) != 0) {
             return;
         }
@@ -50,7 +50,7 @@ public class MineshaftsPopulator implements IPopulate {
         generateMineshaft(world, random, startPos, Direction.NORTH, 0);
     }
 
-    private void generateMineshaft(ServerLevel world, RandomSource random, BlockPos pos, Direction direction, int depth) {
+    private void generateMineshaft(WorldGenLevel world, RandomSource random, BlockPos pos, Direction direction, int depth) {
         if (depth > MAX_BRANCHES) {
             return;
         }
@@ -83,7 +83,7 @@ public class MineshaftsPopulator implements IPopulate {
         }
     }
 
-    private void generateTunnelSection(ServerLevel world, RandomSource random, BlockPos pos, Direction direction) {
+    private void generateTunnelSection(WorldGenLevel world, RandomSource random, BlockPos pos, Direction direction) {
         boolean isNorthSouth = direction == Direction.NORTH || direction == Direction.SOUTH;
 
         for (int dx = -1; dx <= 1; dx++) {
@@ -127,7 +127,7 @@ public class MineshaftsPopulator implements IPopulate {
         }
     }
 
-    private void generateSupport(ServerLevel world, BlockPos pos) {
+    private void generateSupport(WorldGenLevel world, BlockPos pos) {
         BlockPos floorPos = pos;
         BlockPos ceilingPos = pos.above(2);
 
@@ -147,7 +147,7 @@ public class MineshaftsPopulator implements IPopulate {
         world.setBlock(floorPos.west(), Blocks.OAK_PLANKS.defaultBlockState(), 2);
     }
 
-    private void generateSpawnerRoom(ServerLevel world, RandomSource random, BlockPos pos) {
+    private void generateSpawnerRoom(WorldGenLevel world, RandomSource random, BlockPos pos) {
         int radius = 2;
 
         for (int x = -radius; x <= radius; x++) {
@@ -185,7 +185,7 @@ public class MineshaftsPopulator implements IPopulate {
         }
     }
 
-    private boolean isUnderground(ServerLevel world, BlockPos pos) {
+    private boolean isUnderground(WorldGenLevel world, BlockPos pos) {
         int solidBlocksAbove = 0;
         for (int y = pos.getY() + 1; y < pos.getY() + 20; y++) {
             if (world.getBlockState(new BlockPos(pos.getX(), y, pos.getZ())).isSolid()) {
@@ -195,7 +195,7 @@ public class MineshaftsPopulator implements IPopulate {
         return solidBlocksAbove > 15;
     }
 
-    private boolean isValidMineshaftPosition(ServerLevel world, BlockPos pos) {
+    private boolean isValidMineshaftPosition(WorldGenLevel world, BlockPos pos) {
         if (pos.getY() < world.getMinBuildHeight() + 5 || pos.getY() > world.getMaxBuildHeight() - 5) {
             return false;
         }

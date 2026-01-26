@@ -2,7 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
@@ -13,10 +13,16 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * Spheres populator that generates floating or embedded spherical formations.
  * Used when the Spheres symbol is applied to an age.
  * Generates spherical formations of terrain blocks that can be floating in air or embedded in ground.
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
  */
 public class SpheresPopulator implements IPopulate {
 
     private final long seed;
+
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     private static final int SPHERES_PER_CHUNK = 2;
     private static final int MIN_RADIUS = 5;
@@ -28,13 +34,19 @@ public class SpheresPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
-        int chunkX = chunkPos.getX();
-        int chunkZ = chunkPos.getZ();
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        int chunkX = chunkPos.getX() >> 4;
+        int chunkZ = chunkPos.getZ() >> 4;
+
+        // Set chunk boundaries for this population run
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
 
         for (int i = 0; i < SPHERES_PER_CHUNK; i++) {
-            int x = chunkX + random.nextInt(16);
-            int z = chunkZ + random.nextInt(16);
+            int x = chunkMinX + random.nextInt(16);
+            int z = chunkMinZ + random.nextInt(16);
 
             // Determine if sphere is floating or embedded
             boolean floating = random.nextFloat() < FLOATING_CHANCE;
@@ -58,7 +70,25 @@ public class SpheresPopulator implements IPopulate {
         }
     }
 
-    private void generateSphere(ServerLevel world, RandomSource random, BlockPos center, int radius, boolean floating) {
+    /**
+     * Checks if a position is within the current chunk boundaries.
+     * This prevents cascade chunk loading when structures extend beyond chunk edges.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
+    private void generateSphere(WorldGenLevel world, RandomSource random, BlockPos center, int radius, boolean floating) {
         // Choose sphere material
         BlockState sphereBlock = getSphereMaterial(world, random, center, floating);
         BlockState coreBlock = getCoreBlock(sphereBlock, random);
@@ -88,7 +118,7 @@ public class SpheresPopulator implements IPopulate {
 
                         // Place block if appropriate
                         if (shouldPlaceSphereBlock(world, spherePos, floating)) {
-                            world.setBlock(spherePos, blockToPlace, 2);
+                            safeSetBlock(world, spherePos, blockToPlace);
                         }
                     }
                 }
@@ -101,7 +131,12 @@ public class SpheresPopulator implements IPopulate {
         }
     }
 
-    private boolean shouldPlaceSphereBlock(ServerLevel world, BlockPos pos, boolean floating) {
+    private boolean shouldPlaceSphereBlock(WorldGenLevel world, BlockPos pos, boolean floating) {
+        // Don't access block state outside chunk boundaries to prevent cascade loading
+        if (!isInChunk(pos)) {
+            return false;
+        }
+
         BlockState existing = world.getBlockState(pos);
 
         if (floating) {
@@ -116,7 +151,7 @@ public class SpheresPopulator implements IPopulate {
         }
     }
 
-    private BlockState getSphereMaterial(ServerLevel world, RandomSource random, BlockPos center, boolean floating) {
+    private BlockState getSphereMaterial(WorldGenLevel world, RandomSource random, BlockPos center, boolean floating) {
         if (floating) {
             // Floating spheres use lighter materials
             int choice = random.nextInt(5);
@@ -161,7 +196,7 @@ public class SpheresPopulator implements IPopulate {
         return outerBlock;
     }
 
-    private void addFloatingSphereDecorations(ServerLevel world, RandomSource random, BlockPos center, int radius) {
+    private void addFloatingSphereDecorations(WorldGenLevel world, RandomSource random, BlockPos center, int radius) {
         // Add occasional glowstone or lanterns on the surface
         for (int attempt = 0; attempt < radius / 2; attempt++) {
             double angle = random.nextDouble() * Math.PI * 2;
@@ -172,11 +207,11 @@ public class SpheresPopulator implements IPopulate {
             int dz = (int) (Math.sin(angle) * Math.cos(elevation) * (radius + 1));
 
             BlockPos decorPos = center.offset(dx, dy, dz);
-            if (world.getBlockState(decorPos).isAir() && random.nextInt(4) == 0) {
+            if (isInChunk(decorPos) && world.getBlockState(decorPos).isAir() && random.nextInt(4) == 0) {
                 BlockState decoration = random.nextBoolean()
                         ? Blocks.GLOWSTONE.defaultBlockState()
                         : Blocks.SEA_LANTERN.defaultBlockState();
-                world.setBlock(decorPos, decoration, 2);
+                safeSetBlock(world, decorPos, decoration);
             }
         }
     }

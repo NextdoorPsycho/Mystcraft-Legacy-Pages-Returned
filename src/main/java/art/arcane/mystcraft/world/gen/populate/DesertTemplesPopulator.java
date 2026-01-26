@@ -3,7 +3,7 @@ package art.arcane.mystcraft.world.gen.populate;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
@@ -33,7 +33,7 @@ public class DesertTemplesPopulator implements IPopulate {
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;
 
@@ -57,7 +57,7 @@ public class DesertTemplesPopulator implements IPopulate {
         generateDesertTemple(world, random, surfacePos);
     }
 
-    private void generateDesertTemple(ServerLevel world, RandomSource random, BlockPos basePos) {
+    private void generateDesertTemple(WorldGenLevel world, RandomSource random, BlockPos basePos) {
         BlockState sandstone = Blocks.SANDSTONE.defaultBlockState();
         BlockState smoothSandstone = Blocks.SMOOTH_SANDSTONE.defaultBlockState();
         BlockState cutSandstone = Blocks.CUT_SANDSTONE.defaultBlockState();

@@ -1,31 +1,39 @@
 package art.arcane.mystcraft.client.renderer;
 
 import art.arcane.mystcraft.entity.LinkbookEntity;
+import art.arcane.mystcraft.item.AgebookItem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.BookModel;
+import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Renderer for the Linkbook entity (dropped book in world).
- * Renders the book item with a slight spin animation.
+ * Uses the vanilla BookModel to render an open book on the ground,
+ * matching the legacy 1.12.2 appearance.
  */
 public class LinkbookEntityRenderer extends EntityRenderer<LinkbookEntity> {
 
-    private final ItemRenderer itemRenderer;
+    private static final ResourceLocation LINKBOOK_TEXTURE =
+            new ResourceLocation("mystcraft", "textures/entity/linkbook.png");
+    private static final ResourceLocation AGEBOOK_TEXTURE =
+            new ResourceLocation("mystcraft", "textures/entity/agebook.png");
+
+    private final BookModel bookModel;
 
     public LinkbookEntityRenderer(EntityRendererProvider.Context context) {
         super(context);
-        this.itemRenderer = Minecraft.getInstance().getItemRenderer();
-        this.shadowRadius = 0.15f;
+        this.bookModel = new BookModel(context.bakeLayer(ModelLayers.BOOK));
+        this.shadowRadius = 0.3f;
     }
 
     @Override
@@ -38,23 +46,37 @@ public class LinkbookEntityRenderer extends EntityRenderer<LinkbookEntity> {
 
         poseStack.pushPose();
 
-        // Bob up and down
-        float bobOffset = (float) Math.sin((entity.tickCount + partialTick) * 0.1) * 0.05f;
-        poseStack.translate(0, 0.25 + bobOffset, 0);
+        // Position slightly above ground (legacy: y + 0.0625)
+        poseStack.translate(0, 0.0625, 0);
 
-        // Slow spin
-        float spin = (entity.tickCount + partialTick) * 2.0f;
-        poseStack.mulPose(Axis.YP.rotationDegrees(spin));
+        // Rotate to match legacy: rotate(entityYaw + 90, 0, -1, 0) then rotate(90, 0, 0, 1)
+        // This makes the book lie flat on the ground, facing the direction
+        poseStack.mulPose(Axis.YN.rotationDegrees(entityYaw + 90));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(90));
 
-        // Tilt slightly
-        poseStack.mulPose(Axis.XP.rotationDegrees(-15f));
+        // Scale to 0.8x like legacy
+        poseStack.scale(0.8f, 0.8f, 0.8f);
 
-        // Scale
-        poseStack.scale(0.5f, 0.5f, 0.5f);
+        // Set the book to fully open state (1.2f like legacy)
+        // BookModel.setupAnim takes time values - we use static 1.2 for open state
+        bookModel.setupAnim(0, 0, 0, 1.2f);
 
-        // Render the book
-        itemRenderer.renderStatic(book, ItemDisplayContext.GROUND, packedLight, OverlayTexture.NO_OVERLAY,
-                poseStack, bufferSource, entity.level(), entity.getId());
+        // Choose texture based on book type
+        ResourceLocation texture = (book.getItem() instanceof AgebookItem)
+                ? AGEBOOK_TEXTURE
+                : LINKBOOK_TEXTURE;
+
+        // Render the book model
+        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entitySolid(texture));
+        bookModel.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY,
+                1.0f, 1.0f, 1.0f, 1.0f);
+
+        // Render hurt overlay if entity is damaged (red tint)
+        if (entity.hurtTime > 0) {
+            VertexConsumer hurtConsumer = bufferSource.getBuffer(RenderType.entityTranslucent(texture));
+            bookModel.render(poseStack, hurtConsumer, packedLight, OverlayTexture.pack(0, true),
+                    0.7f, 0.0f, 0.0f, 0.4f);
+        }
 
         poseStack.popPose();
 
@@ -64,7 +86,10 @@ public class LinkbookEntityRenderer extends EntityRenderer<LinkbookEntity> {
     @Override
     @NotNull
     public ResourceLocation getTextureLocation(@NotNull LinkbookEntity entity) {
-        // Not used since we render an item
-        return new ResourceLocation("textures/misc/unknown_pack.png");
+        ItemStack book = entity.getBookItem();
+        if (book.getItem() instanceof AgebookItem) {
+            return AGEBOOK_TEXTURE;
+        }
+        return LINKBOOK_TEXTURE;
     }
 }

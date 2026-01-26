@@ -2,9 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.util.Mth;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -13,6 +11,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * Deep lakes populator that generates underground water and lava pools.
  * These pools appear in caves and underground spaces, similar to vanilla underground lakes.
  * Water pools generate more frequently at higher Y levels, while lava pools are more common deep underground.
+ *
+ * Uses chunk boundary checking to prevent cascade loading - blocks outside the
+ * current chunk are simply skipped rather than triggering neighbor chunk loads.
  */
 public class DeepLakesPopulator implements IPopulate {
 
@@ -27,12 +28,23 @@ public class DeepLakesPopulator implements IPopulate {
     private static final int MIN_Y = -60;
     private static final int LAVA_PREFERRED_Y = -20;
 
+    // Chunk boundaries for current population
+    private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
+
     public DeepLakesPopulator(long seed) {
         this.seed = seed;
     }
 
     @Override
-    public void populate(ServerLevel world, RandomSource random, BlockPos chunkPos) {
+    public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        // Set chunk boundaries for this population run
+        int chunkX = chunkPos.getX() >> 4;
+        int chunkZ = chunkPos.getZ() >> 4;
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
+
         // Generate water pools
         for (int i = 0; i < WATER_ATTEMPTS_PER_CHUNK; i++) {
             int x = chunkPos.getX() + random.nextInt(16);
@@ -52,7 +64,34 @@ public class DeepLakesPopulator implements IPopulate {
         }
     }
 
-    private boolean generateLake(ServerLevel world, RandomSource random, BlockPos center, BlockState liquidState, boolean isWater) {
+    /**
+     * Checks if a position is within the current chunk boundaries.
+     */
+    private boolean isInChunk(BlockPos pos) {
+        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
+               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    }
+
+    /**
+     * Safe setBlock that only places blocks within current chunk boundaries.
+     */
+    private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (isInChunk(pos)) {
+            world.setBlock(pos, state, 2);
+        }
+    }
+
+    /**
+     * Safe getBlockState that returns stone for positions outside chunk boundaries.
+     */
+    private BlockState safeGetBlockState(WorldGenLevel world, BlockPos pos) {
+        if (isInChunk(pos)) {
+            return world.getBlockState(pos);
+        }
+        return Blocks.STONE.defaultBlockState();
+    }
+
+    private boolean generateLake(WorldGenLevel world, RandomSource random, BlockPos center, BlockState liquidState, boolean isWater) {
         // Adjust center position down slightly
         center = center.below(4);
 
@@ -93,7 +132,7 @@ public class DeepLakesPopulator implements IPopulate {
                     boolean insideSphere = sphereShape[(x * 16 + z) * 8 + y];
                     if (insideSphere) {
                         BlockPos checkPos = center.offset(x, y, z);
-                        BlockState state = world.getBlockState(checkPos);
+                        BlockState state = safeGetBlockState(world, checkPos);
 
                         // Lake must be surrounded by solid blocks
                         if (y >= 4 && state.isAir()) {
@@ -116,20 +155,20 @@ public class DeepLakesPopulator implements IPopulate {
                     boolean insideSphere = sphereShape[(x * 16 + z) * 8 + y];
                     if (insideSphere) {
                         BlockPos lakePos = center.offset(x, y, z);
-                        BlockState existing = world.getBlockState(lakePos);
+                        BlockState existing = safeGetBlockState(world, lakePos);
 
                         // Only replace solid blocks with liquid
                         if (existing.isSolid()) {
                             if (y >= 4) {
                                 // Place air above liquid
-                                world.setBlock(lakePos, Blocks.AIR.defaultBlockState(), 2);
+                                safeSetBlock(world, lakePos, Blocks.AIR.defaultBlockState());
                             } else {
                                 // Place liquid
-                                world.setBlock(lakePos, liquidState, 2);
+                                safeSetBlock(world, lakePos, liquidState);
 
                                 // For lava lakes, occasionally place magma blocks at the bottom
                                 if (!isWater && y < 2 && random.nextInt(3) == 0) {
-                                    world.setBlock(lakePos, Blocks.MAGMA_BLOCK.defaultBlockState(), 2);
+                                    safeSetBlock(world, lakePos, Blocks.MAGMA_BLOCK.defaultBlockState());
                                 }
                             }
                         }
@@ -147,14 +186,14 @@ public class DeepLakesPopulator implements IPopulate {
                     boolean insideSphere = sphereShape[(x * 16 + z) * 8 + y];
                     if (insideSphere) {
                         BlockPos surroundPos = center.offset(x, y, z);
-                        BlockState existing = world.getBlockState(surroundPos);
+                        BlockState existing = safeGetBlockState(world, surroundPos);
 
                         // Check if this block is adjacent to liquid
                         boolean adjacentToLiquid = false;
                         for (int dx = -1; dx <= 1; dx++) {
                             for (int dz = -1; dz <= 1; dz++) {
                                 BlockPos checkPos = surroundPos.offset(dx, 0, dz);
-                                if (world.getBlockState(checkPos).is(liquidState.getBlock())) {
+                                if (safeGetBlockState(world, checkPos).is(liquidState.getBlock())) {
                                     adjacentToLiquid = true;
                                     break;
                                 }
@@ -163,8 +202,8 @@ public class DeepLakesPopulator implements IPopulate {
                         }
 
                         // Place surrounding blocks on the floor adjacent to liquid
-                        if (adjacentToLiquid && existing.isSolid() && world.getBlockState(surroundPos.below()).is(liquidState.getBlock())) {
-                            world.setBlock(surroundPos, surroundingBlock, 2);
+                        if (adjacentToLiquid && existing.isSolid() && safeGetBlockState(world, surroundPos.below()).is(liquidState.getBlock())) {
+                            safeSetBlock(world, surroundPos, surroundingBlock);
                         }
                     }
                 }

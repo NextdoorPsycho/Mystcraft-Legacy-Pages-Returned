@@ -71,6 +71,11 @@ public class BookBinderMenu extends AbstractContainerMenu {
             }
 
             @Override
+            public boolean mayPickup(@NotNull Player player) {
+                return true; // Always allow picking up the output
+            }
+
+            @Override
             public void onTake(@NotNull Player player, @NotNull ItemStack stack) {
                 // When taking the crafted item, build it
                 blockEntity.buildItem(stack, player);

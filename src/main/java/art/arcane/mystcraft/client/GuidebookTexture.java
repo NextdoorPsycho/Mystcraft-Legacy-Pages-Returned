@@ -91,16 +91,18 @@ public class GuidebookTexture {
             }
         }
 
-        // Draw corner decorations (simple triangular corners)
-        drawCorner(image, leftPageX + 2, pageY + 2, border);
-        drawCorner(image, leftPageX + pageWidth - 8, pageY + 2, border);
-        drawCorner(image, leftPageX + 2, pageY + pageHeight - 8, border);
-        drawCorner(image, leftPageX + pageWidth - 8, pageY + pageHeight - 8, border);
+        // Draw corner decorations - each corner points outward
+        // Left page corners
+        drawCornerTopLeft(image, leftPageX + 2, pageY + 2, border);
+        drawCornerTopRight(image, leftPageX + pageWidth - 7, pageY + 2, border);
+        drawCornerBottomLeft(image, leftPageX + 2, pageY + pageHeight - 7, border);
+        drawCornerBottomRight(image, leftPageX + pageWidth - 7, pageY + pageHeight - 7, border);
 
-        drawCorner(image, rightPageX + 2, pageY + 2, border);
-        drawCorner(image, rightPageX + pageWidth - 8, pageY + 2, border);
-        drawCorner(image, rightPageX + 2, pageY + pageHeight - 8, border);
-        drawCorner(image, rightPageX + pageWidth - 8, pageY + pageHeight - 8, border);
+        // Right page corners
+        drawCornerTopLeft(image, rightPageX + 2, pageY + 2, border);
+        drawCornerTopRight(image, rightPageX + pageWidth - 7, pageY + 2, border);
+        drawCornerBottomLeft(image, rightPageX + 2, pageY + pageHeight - 7, border);
+        drawCornerBottomRight(image, rightPageX + pageWidth - 7, pageY + pageHeight - 7, border);
 
         // Create dynamic texture and register it
         DynamicTexture dynamicTexture = new DynamicTexture(image);
@@ -120,15 +122,41 @@ public class GuidebookTexture {
         }
     }
 
-    private static void drawCorner(NativeImage image, int x, int y, int color) {
-        // Draw a small decorative corner mark
+    private static void drawCornerTopLeft(NativeImage image, int x, int y, int color) {
+        // L shape pointing top-left: horizontal goes right, vertical goes down
         for (int i = 0; i < 5; i++) {
-            if (x + i < image.getWidth() && y < image.getHeight()) {
-                image.setPixelRGBA(x + i, y, color);
-            }
-            if (x < image.getWidth() && y + i < image.getHeight()) {
-                image.setPixelRGBA(x, y + i, color);
-            }
+            safeSetPixel(image, x + i, y, color);      // horizontal right
+            safeSetPixel(image, x, y + i, color);      // vertical down
+        }
+    }
+
+    private static void drawCornerTopRight(NativeImage image, int x, int y, int color) {
+        // L shape pointing top-right: horizontal goes left, vertical goes down
+        for (int i = 0; i < 5; i++) {
+            safeSetPixel(image, x + 4 - i, y, color);  // horizontal left
+            safeSetPixel(image, x + 4, y + i, color);  // vertical down
+        }
+    }
+
+    private static void drawCornerBottomLeft(NativeImage image, int x, int y, int color) {
+        // L shape pointing bottom-left: horizontal goes right, vertical goes up
+        for (int i = 0; i < 5; i++) {
+            safeSetPixel(image, x + i, y + 4, color);  // horizontal right
+            safeSetPixel(image, x, y + 4 - i, color);  // vertical up
+        }
+    }
+
+    private static void drawCornerBottomRight(NativeImage image, int x, int y, int color) {
+        // L shape pointing bottom-right: horizontal goes left, vertical goes up
+        for (int i = 0; i < 5; i++) {
+            safeSetPixel(image, x + 4 - i, y + 4, color);  // horizontal left
+            safeSetPixel(image, x + 4, y + 4 - i, color);  // vertical up
+        }
+    }
+
+    private static void safeSetPixel(NativeImage image, int x, int y, int color) {
+        if (x >= 0 && x < image.getWidth() && y >= 0 && y < image.getHeight()) {
+            image.setPixelRGBA(x, y, color);
         }
     }
 

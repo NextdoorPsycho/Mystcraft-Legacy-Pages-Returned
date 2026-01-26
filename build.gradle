@@ -58,6 +58,11 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+// Exclude legacy 1.12 code kept for reference during migration
+sourceSets.main.java {
+    exclude 'com/xcompwiz/**'
+}
+
 repositories {
     mavenLocal()
     mavenCentral()

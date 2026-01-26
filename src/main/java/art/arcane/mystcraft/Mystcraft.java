@@ -1,5 +1,13 @@
 package art.arcane.mystcraft;
 
+import art.arcane.mystcraft.registry.ModBlockEntities;
+import art.arcane.mystcraft.registry.ModBlocks;
+import art.arcane.mystcraft.registry.ModCreativeTabs;
+import art.arcane.mystcraft.registry.ModEntities;
+import art.arcane.mystcraft.registry.ModFluids;
+import art.arcane.mystcraft.registry.ModItems;
+import art.arcane.mystcraft.registry.ModSounds;
+import art.arcane.mystcraft.registry.MystcraftRegistries;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -26,22 +34,30 @@ public class Mystcraft {
     public Mystcraft() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
+        LOGGER.info("Mystcraft initializing...");
+
+        // Register all deferred registers to the mod event bus
+        MystcraftRegistries.register(modEventBus);
+
+        // Force static initialization of all registry classes
+        ModFluids.register();
+        ModBlocks.register();
+        ModItems.register();
+        ModBlockEntities.register();
+        ModEntities.register();
+        ModSounds.register();
+        ModCreativeTabs.register();
+
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
 
-        LOGGER.info("Mystcraft initializing...");
-
-        // TODO: Register deferred registries here
-        // ModBlocks.BLOCKS.register(modEventBus);
-        // ModItems.ITEMS.register(modEventBus);
-        // ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
-        // ModSymbols.SYMBOLS.register(modEventBus);
+        LOGGER.info("Mystcraft registration complete");
     }
 
-    private void commonSetup(final FMLCommonSetupEvent event) {
+    private void commonSetup(FMLCommonSetupEvent event) {
         LOGGER.info("Mystcraft common setup");
 
         // TODO: Common setup tasks

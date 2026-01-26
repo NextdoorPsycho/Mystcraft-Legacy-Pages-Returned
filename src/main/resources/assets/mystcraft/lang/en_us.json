@@ -1,0 +1,74 @@
+{
+  "itemGroup.mystcraft": "Mystcraft",
+
+  "block.mystcraft.blockinkmixer": "Ink Mixer",
+  "block.mystcraft.blockbookbinder": "Book Binder",
+  "block.mystcraft.blockbookreceptacle": "Book Receptacle",
+  "block.mystcraft.blockbookstand": "Bookstand",
+  "block.mystcraft.blocklectern": "Lectern",
+  "block.mystcraft.blockdecay": "Decay",
+  "block.mystcraft.blocklinkmodifier": "Link Modifier",
+  "block.mystcraft.blockcrystal": "Crystal",
+  "block.mystcraft.linkportal": "Link Portal",
+  "block.mystcraft.writingdesk": "Writing Desk",
+  "block.mystcraft.blockstarfissure": "Star Fissure",
+  "block.mystcraft.fluidblockblackink": "Black Ink",
+
+  "item.mystcraft.page": "Page",
+  "item.mystcraft.page.blank": "Blank Page",
+  "item.mystcraft.page.panel": "Link Panel",
+  "item.mystcraft.page.symbol": "Page (%s)",
+
+  "item.mystcraft.agebook": "Descriptive Book",
+  "item.mystcraft.agebook.age": "Age: %d",
+  "item.mystcraft.agebook.unwritten": "Unwritten Age",
+  "item.mystcraft.agebook.authors": "Authors: %s",
+  "item.mystcraft.agebook.pages": "Pages: %d",
+  "item.mystcraft.agebook.creating": "Creating new Age...",
+  "item.mystcraft.agebook.linking": "Linking to Age...",
+  "item.mystcraft.agebook.no_panel": "Book requires a Link Panel as first page",
+
+  "item.mystcraft.linkbook": "Linking Book",
+  "item.mystcraft.linkbook.destination": "Destination: %d, %d, %d",
+  "item.mystcraft.linkbook.dimension": "Dimension: %d",
+  "item.mystcraft.linkbook.invalid": "Invalid link destination",
+  "item.mystcraft.linkbook.linking": "Linking...",
+
+  "item.mystcraft.linkbook_unlinked": "Unlinked Link Book",
+
+  "item.mystcraft.booster": "Sealed Notebook",
+  "item.mystcraft.booster.opened": "Received %d pages!",
+
+  "item.mystcraft.folder": "Collation Folder",
+  "item.mystcraft.folder.pages": "Pages: %d/%d",
+  "item.mystcraft.folder.empty": "Empty",
+  "item.mystcraft.folder.open": "Opening folder...",
+
+  "item.mystcraft.portfolio": "Symbol Portfolio",
+  "item.mystcraft.portfolio.pages": "Pages: %d/%d",
+  "item.mystcraft.portfolio.empty": "Empty",
+  "item.mystcraft.portfolio.open": "Opening portfolio...",
+
+  "item.mystcraft.inkvial": "Ink Vial",
+  "item.mystcraft.inkvial.amount": "Ink: %d/%d",
+  "item.mystcraft.inkvial.color": "Color: %s",
+  "item.mystcraft.inkvial.empty": "Empty",
+
+  "item.mystcraft.glasses": "Glasses",
+  "item.mystcraft.ink_bucket": "Black Ink Bucket",
+
+  "fluid_type.mystcraft.black_ink": "Black Ink",
+
+  "entity.mystcraft.linkbook": "Book",
+  "entity.mystcraft.falling_block": "Falling Block",
+  "entity.mystcraft.meteor": "Meteor",
+
+  "subtitles.mystcraft.linking.pop": "Linking Pop",
+  "subtitles.mystcraft.linking.link": "Linking",
+  "subtitles.mystcraft.linking.link-disarm": "Link Disarm",
+  "subtitles.mystcraft.linking.link-following": "Following Link",
+  "subtitles.mystcraft.linking.link-intra": "Intra-dimensional Link",
+  "subtitles.mystcraft.linking.link-fissure": "Star Fissure",
+  "subtitles.mystcraft.linking.link-portal": "Link Portal",
+  "subtitles.mystcraft.entity.meteor.roar": "Meteor Roar"
+}

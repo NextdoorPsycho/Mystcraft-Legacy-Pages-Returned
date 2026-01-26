@@ -1,34 +1,168 @@
+# Build outputs
+/build/
+/out/
+/bin/
+/libs/
+
+# Gradle
+/.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Run directories
+/run/
+/run-data/
+/runs/
+
+# IDE - IntelliJ IDEA
+.idea/*
+!.idea/runConfigurations/
+*.iml
+*.ipr
+*.iws
+
+# IDE - Eclipse
+/.settings/
+/.classpath
+/.project
+eclipse/.metadata/.plugins/
+
+# IDE - VSCode
+.vscode/
+
+# Generated resources
+/src/generated/
+
+# Local files
 __*
 *.bak
 *.xlsx
-
-/releases
-/test
-
-/.gradle
-/.settings
-/bin
-/build
-/gradle
-/libs
-/media
-/run
-
-/.classpath
-/.project
-/gradlew
-/gradlew.bat
-/forge*.zip
-
 /todo.txt
 /changes.txt
 /changelog.txt
 passwords.gradle
 post.txt
+locations.gradle
 
-# IntelliJ
-*.iml
-*.ipr
-*.iws
-.idea/
-eclipse/.metadata/.plugins/
+# Mod releases
+/releases/
+/test/
+/media/
+
+# Forge files
+/forge*.zip
+
+# macOS
+.DS_Store
+
+# JetBrains IDEs
+**/.idea/
+
+# AI Crap
+**/.claude/
+**/.claude_context/
+**/claude.md
+**/CLAUDE.md
+**/.claudeignore
+**/.openai/
+**/.chatgpt/
+**/.codex/
+**/.gemini/
+**/.bard/
+**/.cursor/
+**/.cursorignore
+**/.cursorrules
+**/.aider*
+**/.aiderignore
+**/.continue/
+**/.continuerc*
+**/.copilot/
+**/.github/copilot/
+**/.codeium/
+**/.tabnine/
+**/.tabnine_root
+**/.kite/
+**/.sourcegraph/
+**/.cody/
+**/.windsurf/
+**/.warp/
+**/.codestory/
+**/.supermaven/
+**/.devpilot/
+**/.amazonq/
+**/.codewhisperer/
+**/.aws/amazonq/
+**/.devin/
+**/.bolt/
+**/.v0/
+**/.replit/
+**/.replitai/
+**/.pieces/
+**/.phind/
+**/.ai/
+**/.agents/
+**/AGENTS.md
+**/.llm/
+**/.aiconfig
+**/.airc
+**/.zed/
+**/.cline/
+**/.clinerules
+**/.roo/
+**/.roorules
+**/.augment/
+**/.sourcery.yaml
+**/.refact/
+**/.mentat/
+**/.gpteng/
+**/.sweep/
+**/sweep.yaml
+**/.qodo/
+**/.trae/
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor backups
+*~
+*.bak
+*.orig
+*.rej
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+credentials.json
+
+# Logs & debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+debug.log
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+.cache/
+.pubspec.yaml.local
+
+# Node (in case of tooling)
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.run/

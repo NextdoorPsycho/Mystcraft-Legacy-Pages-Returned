@@ -1,22 +1,8 @@
 {
-    "forge_marker": 0,
-    "multipart": [
-        {
-            "when": {"OR": [{"facing": "north"}, {"facing": "south"}]},
-            "apply": [
-                {
-                    "model": "mystcraft:bookbinder_model"
-                }
-            ]
-        },
-        {
-            "when": {"OR": [{"facing": "east"}, {"facing": "west"}]},
-            "apply": [
-                {
-                    "model": "mystcraft:bookbinder_model",
-                    "y": 90
-                }
-            ]
-        }
-    ]
+  "variants": {
+    "facing=north": { "model": "mystcraft:block/bookbinder_model" },
+    "facing=south": { "model": "mystcraft:block/bookbinder_model", "y": 180 },
+    "facing=east": { "model": "mystcraft:block/bookbinder_model", "y": 90 },
+    "facing=west": { "model": "mystcraft:block/bookbinder_model", "y": 270 }
+  }
 }

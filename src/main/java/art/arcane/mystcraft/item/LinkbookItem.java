@@ -79,10 +79,16 @@ public class LinkbookItem extends Item {
     public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (!level.isClientSide) {
-            // TODO: Open link book GUI showing destination
-            // TODO: Handle linking on use (teleportation)
-            performLink(stack, level, player);
+        if (player.isShiftKeyDown()) {
+            // Open book viewing screen on client
+            if (level.isClientSide) {
+                art.arcane.mystcraft.client.screen.BookScreen.open(stack);
+            }
+        } else {
+            // Perform linking on server
+            if (!level.isClientSide) {
+                performLink(stack, level, player);
+            }
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());

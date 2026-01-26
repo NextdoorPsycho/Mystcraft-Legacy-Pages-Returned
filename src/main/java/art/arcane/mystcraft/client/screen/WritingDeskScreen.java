@@ -18,9 +18,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> {
 
-    // Use vanilla generic 54 slot texture as placeholder until custom texture is created
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation("textures/gui/container/generic_54.png");
+            new ResourceLocation(Mystcraft.MOD_ID, "gui/writingdesk.png");
 
     // Ink tank rendering dimensions
     private static final int INK_TANK_X = 62;

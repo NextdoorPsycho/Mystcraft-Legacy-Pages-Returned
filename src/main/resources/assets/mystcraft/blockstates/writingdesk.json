@@ -1,12 +1,20 @@
 {
-    "forge_marker": 0,
-    "multipart": [
-        {
-            "apply": [
-                {
-                    "model": "mystcraft:blockmodel_unrendered_desk"
-                }
-            ]
-        }
-    ]
+  "variants": {
+    "facing=north,is_foot=false,is_top=false": { "model": "mystcraft:block/blockmodel_unrendered_desk" },
+    "facing=north,is_foot=false,is_top=true": { "model": "mystcraft:block/blockmodel_unrendered_desk" },
+    "facing=north,is_foot=true,is_top=false": { "model": "mystcraft:block/blockmodel_unrendered_desk" },
+    "facing=north,is_foot=true,is_top=true": { "model": "mystcraft:block/blockmodel_unrendered_desk" },
+    "facing=south,is_foot=false,is_top=false": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 180 },
+    "facing=south,is_foot=false,is_top=true": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 180 },
+    "facing=south,is_foot=true,is_top=false": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 180 },
+    "facing=south,is_foot=true,is_top=true": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 180 },
+    "facing=east,is_foot=false,is_top=false": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 90 },
+    "facing=east,is_foot=false,is_top=true": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 90 },
+    "facing=east,is_foot=true,is_top=false": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 90 },
+    "facing=east,is_foot=true,is_top=true": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 90 },
+    "facing=west,is_foot=false,is_top=false": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 270 },
+    "facing=west,is_foot=false,is_top=true": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 270 },
+    "facing=west,is_foot=true,is_top=false": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 270 },
+    "facing=west,is_foot=true,is_top=true": { "model": "mystcraft:block/blockmodel_unrendered_desk", "y": 270 }
+  }
 }

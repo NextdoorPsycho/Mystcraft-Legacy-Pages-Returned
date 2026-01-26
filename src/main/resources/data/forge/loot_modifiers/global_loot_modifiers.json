@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "entries": [
+    "mystcraft:dungeon_pages",
+    "mystcraft:mineshaft_pages",
+    "mystcraft:stronghold_pages"
+  ]
+}

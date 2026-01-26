@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import com.mojang.serialization.Lifecycle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.MappedRegistry;
@@ -13,7 +14,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.BiomeManager;
+import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.border.BorderChangeListener;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldOptions;
@@ -149,6 +152,21 @@ public class AgeDimensionFactory {
             int ageUID,
             @NotNull UUID ageUUID
     ) {
+        return createAndRegisterWorld(server, dimensionKey, ageUID, ageUUID, null);
+    }
+
+    /**
+     * Creates and registers a new world with optional AgeDirector configuration.
+     */
+    @Nullable
+    @SuppressWarnings("unchecked")
+    private static ServerLevel createAndRegisterWorld(
+            @NotNull MinecraftServer server,
+            @NotNull ResourceKey<Level> dimensionKey,
+            int ageUID,
+            @NotNull UUID ageUUID,
+            @Nullable AgeDirectorImpl director
+    ) {
         if (executorField == null || levelsField == null || storageSourceField == null) {
             Mystcraft.LOGGER.error("Reflection fields not initialized");
             return null;
@@ -165,10 +183,8 @@ public class AgeDimensionFactory {
             ServerLevel overworld = server.overworld();
             ServerLevelData overworldData = (ServerLevelData) overworld.getLevelData();
 
-            // Create level stem for the new dimension
-            // For now, use the overworld's dimension type and generator
-            // TODO: Create custom chunk generator based on Age pages
-            LevelStem levelStem = createLevelStem(server, ageUID);
+            // Create level stem for the new dimension with director configuration
+            LevelStem levelStem = createLevelStem(server, ageUID, director);
             if (levelStem == null) {
                 Mystcraft.LOGGER.error("Failed to create LevelStem for Age {}", ageUID);
                 return null;
@@ -252,11 +268,18 @@ public class AgeDimensionFactory {
     }
 
     /**
-     * Creates a LevelStem for a new Age.
-     * TODO: This should eventually use page-based generation.
+     * Creates a LevelStem for a new Age using the default overworld template.
      */
     @Nullable
     private static LevelStem createLevelStem(@NotNull MinecraftServer server, int ageUID) {
+        return createLevelStem(server, ageUID, null);
+    }
+
+    /**
+     * Creates a LevelStem for a new Age with optional AgeDirector configuration.
+     */
+    @Nullable
+    private static LevelStem createLevelStem(@NotNull MinecraftServer server, int ageUID, @Nullable AgeDirectorImpl director) {
         try {
             // Get the overworld stem as a template
             Registry<LevelStem> stemRegistry = server.registryAccess().registryOrThrow(Registries.LEVEL_STEM);
@@ -267,14 +290,50 @@ public class AgeDimensionFactory {
                 return null;
             }
 
-            // For now, clone the overworld's dimension type and generator
-            // Later this will be customized based on the Age's pages
+            // Get biome source from overworld
+            BiomeSource biomeSource = overworldStem.generator().getBiomeSource();
+
+            // Create chunk generator based on director configuration
+            ChunkGenerator generator;
+            if (director != null) {
+                // Use custom Age chunk generator with director settings
+                generator = AgeChunkGenerator.fromDirector(director, biomeSource);
+                Mystcraft.LOGGER.info("Created Age {} with terrain type: {}", ageUID, director.getTerrainType());
+            } else {
+                // Use overworld generator as fallback
+                generator = overworldStem.generator();
+            }
+
             return new LevelStem(
                     overworldStem.type(),
-                    overworldStem.generator()
+                    generator
             );
         } catch (Exception e) {
             Mystcraft.LOGGER.error("Failed to create LevelStem", e);
+            return null;
+        }
+    }
+
+    /**
+     * Creates an Age dimension with a specific AgeDirector configuration.
+     */
+    @Nullable
+    public static ServerLevel createAgeDimension(@NotNull MinecraftServer server, int ageUID,
+                                                  @NotNull UUID ageUUID, @Nullable AgeDirectorImpl director) {
+        ResourceLocation dimensionId = new ResourceLocation(Mystcraft.MOD_ID, DIMENSION_PREFIX + ageUID);
+        ResourceKey<Level> dimensionKey = ResourceKey.create(Registries.DIMENSION, dimensionId);
+
+        // Check if dimension already exists
+        ServerLevel existing = server.getLevel(dimensionKey);
+        if (existing != null) {
+            Mystcraft.LOGGER.info("Age {} already exists, returning existing level", ageUID);
+            return existing;
+        }
+
+        try {
+            return createAndRegisterWorld(server, dimensionKey, ageUID, ageUUID, director);
+        } catch (Exception e) {
+            Mystcraft.LOGGER.error("Failed to create Age dimension {}", ageUID, e);
             return null;
         }
     }

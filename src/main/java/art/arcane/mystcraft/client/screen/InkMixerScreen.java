@@ -16,14 +16,13 @@ import org.jetbrains.annotations.NotNull;
  */
 public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
 
-    // Use vanilla dispenser texture as placeholder until custom texture is created
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation("textures/gui/container/dispenser.png");
+            new ResourceLocation(Mystcraft.MOD_ID, "gui/inkmixer.png");
 
     public InkMixerScreen(InkMixerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 166;
+        this.imageHeight = 181;
     }
 
     @Override

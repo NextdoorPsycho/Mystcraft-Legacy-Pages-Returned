@@ -1,37 +1,16 @@
 {
-    "forge_marker": 0,
-    "multipart": [
-        {
-            "when": {"AND": [{"hasface": "true"}, {"renderface": "x"}]},
-            "apply": [
-                {
-                    "model": "mystcraft:linkportal_ew"
-                }
-            ]
-        },
-        {
-            "when": {"AND": [{"hasface": "true"}, {"renderface": "y"}]},
-            "apply": [
-                {
-                    "model": "mystcraft:linkportal_ud"
-                }
-            ]
-        },
-        {
-            "when": {"AND": [{"hasface": "true"}, {"renderface": "z"}]},
-            "apply": [
-                {
-                    "model": "mystcraft:linkportal_ns"
-                }
-            ]
-        },
-        {
-            "when": {"hasface": "false"},
-            "apply": [
-                {
-                    "model": "mystcraft:linkportal_full"
-                }
-            ]
-        }
-    ]
+  "variants": {
+    "active=false,facing=north": { "model": "mystcraft:block/linkportal_ns" },
+    "active=false,facing=south": { "model": "mystcraft:block/linkportal_ns" },
+    "active=false,facing=east": { "model": "mystcraft:block/linkportal_ew" },
+    "active=false,facing=west": { "model": "mystcraft:block/linkportal_ew" },
+    "active=false,facing=up": { "model": "mystcraft:block/linkportal_ud" },
+    "active=false,facing=down": { "model": "mystcraft:block/linkportal_ud" },
+    "active=true,facing=north": { "model": "mystcraft:block/linkportal_ns" },
+    "active=true,facing=south": { "model": "mystcraft:block/linkportal_ns" },
+    "active=true,facing=east": { "model": "mystcraft:block/linkportal_ew" },
+    "active=true,facing=west": { "model": "mystcraft:block/linkportal_ew" },
+    "active=true,facing=up": { "model": "mystcraft:block/linkportal_ud" },
+    "active=true,facing=down": { "model": "mystcraft:block/linkportal_ud" }
+  }
 }

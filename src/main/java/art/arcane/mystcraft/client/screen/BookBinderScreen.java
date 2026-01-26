@@ -16,9 +16,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
-    // Use vanilla dispenser texture as placeholder until custom texture is created
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation("textures/gui/container/dispenser.png");
+            new ResourceLocation(Mystcraft.MOD_ID, "gui/pagebinder.png");
 
     public BookBinderScreen(BookBinderMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

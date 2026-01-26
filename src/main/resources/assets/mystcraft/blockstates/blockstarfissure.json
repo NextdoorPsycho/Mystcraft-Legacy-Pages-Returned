@@ -1,11 +1,5 @@
 {
-    "multipart": [
-        {
-            "apply": [
-                {
-                    "model": "mystcraft:blockstarfissure_placeholder"
-                }
-            ]
-        }
-    ]
+  "variants": {
+    "": { "model": "mystcraft:block/blockstarfissure_placeholder" }
+  }
 }

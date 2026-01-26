@@ -10,6 +10,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
+import com.mojang.serialization.Codec;
+import net.minecraftforge.common.loot.IGlobalLootModifier;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.registries.DeferredRegister;
@@ -48,6 +50,9 @@ public final class MystcraftRegistries {
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(ForgeRegistries.MENU_TYPES, Mystcraft.MOD_ID);
 
+    public static final DeferredRegister<Codec<? extends IGlobalLootModifier>> LOOT_MODIFIERS =
+            DeferredRegister.create(ForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, Mystcraft.MOD_ID);
+
     private MystcraftRegistries() {
     }
 
@@ -65,5 +70,6 @@ public final class MystcraftRegistries {
         SOUNDS.register(modEventBus);
         CREATIVE_TABS.register(modEventBus);
         MENUS.register(modEventBus);
+        LOOT_MODIFIERS.register(modEventBus);
     }
 }

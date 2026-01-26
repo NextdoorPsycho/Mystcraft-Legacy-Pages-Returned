@@ -1,11 +1,16 @@
 package art.arcane.mystcraft.item;
 
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.link.LinkingManager;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
+import art.arcane.mystcraft.world.AgeDirectorImpl;
 import art.arcane.mystcraft.world.AgeManager;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.nbt.CompoundTag;
@@ -88,10 +93,16 @@ public class AgebookItem extends Item {
     public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (!level.isClientSide) {
-            // TODO: Open Age book GUI
-            // TODO: Handle linking if looking at panel
-            activate(stack, level, player);
+        if (player.isShiftKeyDown()) {
+            // Open book viewing screen on client
+            if (level.isClientSide) {
+                art.arcane.mystcraft.client.screen.BookScreen.open(stack);
+            }
+        } else {
+            // Perform linking on server
+            if (!level.isClientSide) {
+                activate(stack, level, player);
+            }
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
@@ -135,12 +146,24 @@ public class AgebookItem extends Item {
     private void createAge(ItemStack stack, ServerLevel level, ServerPlayer player) {
         player.displayClientMessage(Component.translatable("item.mystcraft.agebook.creating"), true);
 
+        // Extract symbols from pages
+        List<ItemStack> pages = getPageList(stack);
+        List<IAgeSymbol> symbols = extractSymbols(pages);
+
+        // Generate a seed from the player's position and time
+        long seed = System.currentTimeMillis() ^ player.blockPosition().asLong();
+
+        // Build the Age using the grammar system
+        AgeBuilder builder = new AgeBuilder(symbols, seed);
+        AgeDirectorImpl director = builder.build();
+
         // Allocate a new age UID
         AgeManager ageManager = AgeManager.get(level);
         int ageUID = ageManager.allocateUID();
 
-        // Create the dimension
-        ServerLevel ageLevel = AgeDimensionFactory.createAgeDimension(level.getServer(), ageUID, java.util.UUID.randomUUID());
+        // Create the dimension with director configuration
+        ServerLevel ageLevel = AgeDimensionFactory.createAgeDimension(
+                level.getServer(), ageUID, java.util.UUID.randomUUID(), director);
 
         if (ageLevel == null) {
             player.displayClientMessage(Component.translatable("item.mystcraft.agebook.creation_failed"), true);
@@ -154,7 +177,10 @@ public class AgebookItem extends Item {
         for (String author : getAuthors(stack)) {
             ageData.addAuthor(author);
         }
-        ageData.setPages(getPageList(stack));
+        ageData.setPages(pages);
+
+        // Set instability from grammar system
+        ageData.setInstability(builder.getInstability());
 
         // Set spawn point at the center of spawn chunk
         net.minecraft.core.BlockPos spawn = ageLevel.getSharedSpawnPos();
@@ -164,10 +190,36 @@ public class AgebookItem extends Item {
         LinkOptions.setDimensionUID(stack.getTag(), ageUID);
         LinkOptions.setSpawn(stack.getTag(), spawn.above());
 
-        player.displayClientMessage(Component.translatable("item.mystcraft.agebook.created", ageUID), true);
+        // Report creation with instability info
+        if (!builder.isComplete()) {
+            player.displayClientMessage(Component.translatable("item.mystcraft.agebook.created_incomplete",
+                    ageUID, String.format("%.1f", builder.getInstability())), true);
+        } else {
+            player.displayClientMessage(Component.translatable("item.mystcraft.agebook.created", ageUID), true);
+        }
 
         // Link to the newly created Age
         linkToAge(stack, level, player);
+    }
+
+    /**
+     * Extracts IAgeSymbol objects from a list of pages.
+     */
+    private List<IAgeSymbol> extractSymbols(List<ItemStack> pages) {
+        List<IAgeSymbol> symbols = new ArrayList<>();
+        for (ItemStack page : pages) {
+            if (Page.isLinkPanel(page)) {
+                continue; // Link panels are not symbols
+            }
+            ResourceLocation symbolId = Page.getSymbol(page);
+            if (symbolId != null) {
+                IAgeSymbol symbol = SymbolRegistry.get(symbolId);
+                if (symbol != null) {
+                    symbols.add(symbol);
+                }
+            }
+        }
+        return symbols;
     }
 
     /**

@@ -2,6 +2,8 @@ package art.arcane.mystcraft.link;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.data.LinkOptions;
+import art.arcane.mystcraft.network.LinkEffectPacket;
+import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.registry.ModSounds;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
@@ -101,8 +103,9 @@ public final class LinkingManager {
             Mystcraft.LOGGER.debug("Intra-dimensional link attempted without modifier");
         }
 
-        // Play departure sound
+        // Play departure sound and effects
         playLinkSound(sourceLevel, entity.blockPosition(), linkData, true);
+        sendLinkEffect(sourceLevel, entity.blockPosition(), LinkEffectPacket.LinkEffectType.DEPARTURE);
 
         // Handle following link (brings nearby entities)
         List<Entity> followers = null;
@@ -143,12 +146,15 @@ public final class LinkingManager {
                     teleportEntity(follower, targetLevel, followerTarget, follower.getYRot());
                 }
             }
-            // Play following sound
+            // Play following sound and effect
             playSound(targetLevel, targetPos, ModSounds.LINKING_FOLLOWING.get(), 1.0f, 1.0f);
+            sendLinkEffect(targetLevel, targetPos, LinkEffectPacket.LinkEffectType.FOLLOWING);
         }
 
-        // Play arrival sound
-        playLinkSound(targetLevel, BlockPos.containing(targetVec), linkData, false);
+        // Play arrival sound and effects
+        BlockPos arrivalPos = BlockPos.containing(targetVec);
+        playLinkSound(targetLevel, arrivalPos, linkData, false);
+        sendLinkEffect(targetLevel, arrivalPos, LinkEffectPacket.LinkEffectType.ARRIVAL);
 
         return LinkResult.SUCCESS;
     }
@@ -332,6 +338,19 @@ public final class LinkingManager {
      */
     private static void playSound(ServerLevel level, BlockPos pos, net.minecraft.sounds.SoundEvent sound, float volume, float pitch) {
         level.playSound(null, pos, sound, SoundSource.PLAYERS, volume, pitch);
+    }
+
+    /**
+     * Sends a link effect packet to all nearby players.
+     */
+    private static void sendLinkEffect(ServerLevel level, BlockPos pos, LinkEffectPacket.LinkEffectType type) {
+        LinkEffectPacket packet = new LinkEffectPacket(pos, type);
+        // Send to all players tracking this position
+        for (ServerPlayer player : level.players()) {
+            if (player.blockPosition().distSqr(pos) < 64 * 64) { // Within 64 blocks
+                MystcraftNetwork.sendToPlayer(packet, player);
+            }
+        }
     }
 
     /**

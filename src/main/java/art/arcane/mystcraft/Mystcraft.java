@@ -1,14 +1,19 @@
 package art.arcane.mystcraft;
 
+import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModCreativeTabs;
 import art.arcane.mystcraft.registry.ModEntities;
 import art.arcane.mystcraft.registry.ModFluids;
 import art.arcane.mystcraft.registry.ModItems;
+import art.arcane.mystcraft.registry.ModLootModifiers;
 import art.arcane.mystcraft.registry.ModMenuTypes;
 import art.arcane.mystcraft.registry.ModSounds;
+import art.arcane.mystcraft.registry.ModWorldGen;
 import art.arcane.mystcraft.registry.MystcraftRegistries;
+import art.arcane.mystcraft.symbol.ModSymbols;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -49,6 +54,8 @@ public class Mystcraft {
         ModSounds.register();
         ModCreativeTabs.register();
         ModMenuTypes.register();
+        ModLootModifiers.register();
+        ModWorldGen.register(modEventBus);
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
@@ -62,10 +69,19 @@ public class Mystcraft {
     private void commonSetup(FMLCommonSetupEvent event) {
         LOGGER.info("Mystcraft common setup");
 
-        // TODO: Common setup tasks
-        // - Initialize networking
-        // - Register capabilities
-        // - Setup grammar system
+        event.enqueueWork(() -> {
+            // Initialize networking
+            MystcraftNetwork.register();
+
+            // Register all symbols
+            ModSymbols.registerAll();
+
+            // Freeze symbol registry to prevent late registration
+            SymbolRegistry.freeze();
+
+            // TODO: Register capabilities
+            // TODO: Setup grammar system
+        });
     }
 
     @SubscribeEvent
@@ -104,9 +120,25 @@ public class Mystcraft {
                         ModMenuTypes.PORTFOLIO.get(),
                         art.arcane.mystcraft.client.screen.PortfolioScreen::new);
             });
+        }
 
-            // TODO: Register client-side renderers
-            // TODO: Register key bindings
+        @SubscribeEvent
+        public static void onRegisterRenderers(net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+            LOGGER.info("Registering Mystcraft renderers");
+
+            // Block entity renderers
+            event.registerBlockEntityRenderer(ModBlockEntities.BOOKSTAND.get(),
+                    art.arcane.mystcraft.client.renderer.BookstandRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.LECTERN.get(),
+                    art.arcane.mystcraft.client.renderer.LecternRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.STAR_FISSURE.get(),
+                    art.arcane.mystcraft.client.renderer.StarFissureRenderer::new);
+
+            // Entity renderers
+            event.registerEntityRenderer(ModEntities.LINKBOOK.get(),
+                    art.arcane.mystcraft.client.renderer.LinkbookEntityRenderer::new);
+            event.registerEntityRenderer(ModEntities.METEOR.get(),
+                    art.arcane.mystcraft.client.renderer.MeteorEntityRenderer::new);
         }
     }
 }

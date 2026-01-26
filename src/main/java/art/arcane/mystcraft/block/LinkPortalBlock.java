@@ -1,10 +1,17 @@
 package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
+import art.arcane.mystcraft.item.AgebookItem;
+import art.arcane.mystcraft.item.LinkbookItem;
+import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.registry.ModBlocks;
+import art.arcane.mystcraft.registry.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -20,6 +27,10 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 /**
  * The Link Portal block.
  * Created by book receptacles when a book is placed.
@@ -31,6 +42,10 @@ public class LinkPortalBlock extends Block {
     public static final DirectionProperty SOURCE_DIRECTION = BlockStateProperties.FACING;
 
     private static final VoxelShape SHAPE_SMALL = Block.box(4, 4, 4, 12, 12, 12);
+
+    // Cooldown to prevent spam teleporting (entity UUID -> last teleport time)
+    private static final Map<UUID, Long> TELEPORT_COOLDOWNS = new HashMap<>();
+    private static final long COOLDOWN_TICKS = 100; // 5 seconds
 
     public LinkPortalBlock(Properties properties) {
         super(properties);
@@ -92,6 +107,14 @@ public class LinkPortalBlock extends Block {
             return;
         }
 
+        // Check cooldown
+        UUID entityId = entity.getUUID();
+        long currentTime = level.getGameTime();
+        Long lastTeleport = TELEPORT_COOLDOWNS.get(entityId);
+        if (lastTeleport != null && currentTime - lastTeleport < COOLDOWN_TICKS) {
+            return; // Still in cooldown
+        }
+
         // Find the book receptacle to get the link destination
         BookReceptacleBlockEntity receptacle = findReceptacle(level, pos, state);
         if (receptacle == null || !receptacle.hasBook()) {
@@ -100,9 +123,42 @@ public class LinkPortalBlock extends Block {
             return;
         }
 
-        // TODO: Implement actual linking/teleportation
-        // For now this is a stub - needs LinkingManager to be implemented
-        // The linking system will read the book's destination and teleport the entity
+        // Get link data from the book
+        ItemStack book = receptacle.getBook();
+        CompoundTag linkData = getLinkData(book);
+        if (linkData == null) {
+            return;
+        }
+
+        // Play portal sound
+        level.playSound(null, pos, ModSounds.LINKING_PORTAL.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
+
+        // Set cooldown before teleporting
+        TELEPORT_COOLDOWNS.put(entityId, currentTime);
+
+        // Perform the link
+        LinkingManager.LinkResult result = LinkingManager.performLink(entity, linkData);
+
+        // Clean up old cooldowns occasionally
+        if (currentTime % 1200 == 0) { // Every minute
+            TELEPORT_COOLDOWNS.entrySet().removeIf(entry -> currentTime - entry.getValue() > COOLDOWN_TICKS * 2);
+        }
+    }
+
+    /**
+     * Extracts link data from a book item.
+     */
+    private CompoundTag getLinkData(ItemStack book) {
+        if (book.isEmpty() || book.getTag() == null) {
+            return null;
+        }
+
+        // Both Linkbooks and Agebooks store their link data in the item tag
+        if (book.getItem() instanceof LinkbookItem || book.getItem() instanceof AgebookItem) {
+            return book.getTag();
+        }
+
+        return null;
     }
 
     /**

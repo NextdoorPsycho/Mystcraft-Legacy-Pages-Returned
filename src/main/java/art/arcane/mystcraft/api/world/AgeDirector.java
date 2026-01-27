@@ -453,6 +453,12 @@ public interface AgeDirector {
     void setTendrilsEnabled(boolean enabled);
 
     /**
+     * Enables or disables vertical tendril formations.
+     * @param enabled true to enable
+     */
+    void setVerticalTendrilsEnabled(boolean enabled);
+
+    /**
      * Enables or disables crystal formations.
      * @param enabled true to enable
      */
@@ -696,10 +702,9 @@ public interface AgeDirector {
      */
     void setCloudColorNatural(boolean natural);
 
-    // ========================= Interface Registration =========================
+    // --- Interface Registration ---
     // These methods allow symbols to register actual generation logic objects
-    // rather than just configuration strings. This enables the full legacy
-    // Mystcraft world generation pipeline.
+    // rather than just configuration strings.
 
     /**
      * Registers a terrain generator for this Age.

@@ -136,7 +136,7 @@ public final class StructureSymbols {
         }
     }
 
-    // ========================= Overworld Structures =========================
+    // --- Overworld Structures ---
 
     public static class PillagerOutposts extends SymbolBase {
         public PillagerOutposts() {
@@ -269,7 +269,7 @@ public final class StructureSymbols {
         }
     }
 
-    // ========================= Underground Structures =========================
+    // --- Underground Structures ---
 
     public static class AncientCities extends SymbolBase {
         public AncientCities() {
@@ -287,7 +287,7 @@ public final class StructureSymbols {
         }
     }
 
-    // ========================= Nether Structures =========================
+    // --- Nether Structures ---
 
     public static class BastionRemnants extends SymbolBase {
         public BastionRemnants() {
@@ -307,7 +307,7 @@ public final class StructureSymbols {
         }
     }
 
-    // ========================= End Structures =========================
+    // --- End Structures ---
 
     public static class EndCities extends SymbolBase {
         public EndCities() {

@@ -4,7 +4,6 @@ import net.minecraft.resources.ResourceLocation;
 
 /**
  * Constants and identifiers used throughout Mystcraft.
- * Registry names match original 1.12 names for world compatibility.
  */
 public final class MystcraftConstants {
 
@@ -19,9 +18,7 @@ public final class MystcraftConstants {
         return new ResourceLocation(Mystcraft.MOD_ID, path);
     }
 
-    /**
-     * Block registry names (matching 1.12 names)
-     */
+    /** Block registry names */
     public static final class Blocks {
         public static final String INK_MIXER = "blockinkmixer";
         public static final String BOOK_BINDER = "blockbookbinder";
@@ -94,9 +91,7 @@ public final class MystcraftConstants {
         private Fluids() {}
     }
 
-    /**
-     * Sound event registry names (matching sounds.json)
-     */
+    /** Sound event registry names */
     public static final class Sounds {
         public static final String LINKING_POP = "linking.pop";
         public static final String LINKING_LINK = "linking.link";

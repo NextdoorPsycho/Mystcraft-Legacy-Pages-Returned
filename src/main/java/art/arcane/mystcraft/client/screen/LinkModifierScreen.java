@@ -27,7 +27,6 @@ import java.util.Set;
 
 /**
  * Screen for the Link Modifier block.
- * Replicates legacy GuiLinkModifier with full features.
  */
 public class LinkModifierScreen extends AbstractContainerScreen<LinkModifierMenu> {
 

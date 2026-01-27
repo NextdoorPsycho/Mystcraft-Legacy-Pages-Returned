@@ -271,14 +271,23 @@ public class ContainerActionPacket {
         // Get current pages
         List<ItemStack> pages = new ArrayList<>(agebook.getPageList(writingItem));
 
+        // Check page limit
+        int maxSymbols = art.arcane.mystcraft.config.MystcraftConfig.maxSymbolsPerBook.get();
+
         if (singleItem) {
             // Insert a single page
+            if (maxSymbols >= 0 && pages.size() >= maxSymbols) {
+                return;
+            }
             ItemStack single = carried.split(1);
             pages.add(Math.min(index, pages.size()), single);
         } else {
             // Insert all pages
             int insertIndex = Math.min(index, pages.size());
             while (!carried.isEmpty()) {
+                if (maxSymbols >= 0 && pages.size() >= maxSymbols) {
+                    break;
+                }
                 ItemStack single = carried.split(1);
                 pages.add(insertIndex++, single);
             }

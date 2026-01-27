@@ -10,8 +10,7 @@ import net.minecraftforge.event.network.CustomPayloadEvent;
 
 /**
  * Packet sent from client to server to activate a linking book.
- * This is sent when the player clicks the "Link" button in the book GUI.
- * Matches legacy behavior where linking happens through GUI activation.
+ * Sent when the player clicks the "Link" button in the book GUI.
  */
 public class LinkBookActivatePacket {
 

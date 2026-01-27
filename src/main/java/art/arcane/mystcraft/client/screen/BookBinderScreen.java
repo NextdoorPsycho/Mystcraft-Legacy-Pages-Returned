@@ -28,7 +28,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(Mystcraft.MOD_ID, "gui/pagebinder.png");
 
-    // Page list area (from legacy: 7, 45, xSize - 14, 40)
+    // Page list area
     private static final int PAGE_LIST_X = 7;
     private static final int PAGE_LIST_Y = 45;
     private static final int PAGE_LIST_WIDTH = 162; // 176 - 14
@@ -37,7 +37,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     private static final int PAGE_SLOT_SIZE = PAGE_SIZE + 2; // Including spacing
     private static final int PAGES_PER_ROW = PAGE_LIST_WIDTH / PAGE_SLOT_SIZE; // 162/18 = 9
 
-    // Text field area (from legacy: 7, 9, xSize - 60, 14)
+    // Text field area
     private static final int TEXT_FIELD_X = 7;
     private static final int TEXT_FIELD_Y = 9;
     private static final int TEXT_FIELD_WIDTH = 116; // 176 - 60
@@ -203,7 +203,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
         int warningX = this.leftPos + MISSING_PANEL_X;
         int warningY = this.topPos + MISSING_PANEL_Y;
 
-        // Draw warning icon from texture (176, 0, 30, 40 in legacy)
+        // Draw warning icon from texture at (176, 0)
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1.0f, 0.5f, 0.5f, warningAlpha);
         guiGraphics.blit(TEXTURE, warningX, warningY, 176, 0, 18, 18);
@@ -245,7 +245,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
     @Override
     protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // Only render inventory label (legacy doesn't show title)
+        // Only render inventory label (title is baked into texture)
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
 
         // Show page count

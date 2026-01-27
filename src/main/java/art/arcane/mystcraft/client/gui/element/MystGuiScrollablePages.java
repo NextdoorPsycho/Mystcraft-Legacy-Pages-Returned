@@ -15,7 +15,6 @@ import java.util.function.Supplier;
 
 /**
  * Scrollable horizontal page list element.
- * Replicates legacy GuiElementScrollablePages.
  */
 public class MystGuiScrollablePages extends MystGuiElement {
 

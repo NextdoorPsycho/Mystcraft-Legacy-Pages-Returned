@@ -12,25 +12,24 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import java.util.Random;
 
 /**
- * Tendrils populator that generates vine-like terrain formations.
- * Tendrils twist, curve, and creep across multiple chunks.
- * Uses the neighbor-seed pattern: each chunk deterministically replays
- * nearby tendril paths and only places blocks within its own 16x16 area.
+ * Vertical tendrils populator that generates tall, mostly-straight columns
+ * extending from ground or ceiling. These are the classic Mystcraft pillar-like
+ * formations that grow vertically with only minor wobble.
+ * Uses the neighbor-seed pattern for chunk-safe generation.
  */
-public class TendrilsPopulator implements IPopulate {
+public class VerticalTendrilsPopulator implements IPopulate {
 
     private final long seed;
 
-    private static final int TENDRILS_PER_CHUNK = 3;
-    private static final int MIN_LENGTH = 30;
-    private static final int MAX_LENGTH = 80;
+    private static final int TENDRILS_PER_CHUNK = 4;
+    private static final int MIN_LENGTH = 20;
+    private static final int MAX_LENGTH = 60;
     private static final float CEILING_CHANCE = 0.3f;
 
-    // A tendril with max length 80 and aggressive curvature can drift
-    // up to ~3 chunks horizontally. Scan that range of neighbors.
-    private static final int NEIGHBOR_RANGE = 3;
+    // Vertical tendrils only wobble slightly, so 1 neighbor chunk is enough
+    private static final int NEIGHBOR_RANGE = 1;
 
-    public TendrilsPopulator(long seed) {
+    public VerticalTendrilsPopulator(long seed) {
         this.seed = seed;
     }
 
@@ -44,7 +43,6 @@ public class TendrilsPopulator implements IPopulate {
         int chunkMinZ = thisChunkZ << 4;
         int chunkMaxZ = chunkMinZ + 15;
 
-        // Check this chunk and neighbors for tendrils that might reach us
         for (int ncx = thisChunkX - NEIGHBOR_RANGE; ncx <= thisChunkX + NEIGHBOR_RANGE; ncx++) {
             for (int ncz = thisChunkZ - NEIGHBOR_RANGE; ncz <= thisChunkZ + NEIGHBOR_RANGE; ncz++) {
                 long chunkSeed = getChunkSeed(ncx, ncz);
@@ -54,31 +52,23 @@ public class TendrilsPopulator implements IPopulate {
                 int neighborMinZ = ncz << 4;
 
                 for (int i = 0; i < TENDRILS_PER_CHUNK; i++) {
-                    // Deterministically compute tendril origin
                     int startX = neighborMinX + chunkRand.nextInt(16);
                     int startZ = neighborMinZ + chunkRand.nextInt(16);
                     boolean fromCeiling = chunkRand.nextFloat() < CEILING_CHANCE;
 
-                    // Consume all random state for this tendril deterministically
-                    // (material, decoration, length, curvature params, etc.)
                     BlockState tendrilBlock = getTendrilMaterial(chunkRand);
                     BlockState decorationBlock = getDecorationBlock(tendrilBlock, chunkRand);
                     int length = MIN_LENGTH + chunkRand.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
+                    int baseThickness = 1 + chunkRand.nextInt(2);
 
-                    // Initial curvature
-                    double curvatureX = (chunkRand.nextDouble() - 0.5) * 0.6;
-                    double curvatureZ = (chunkRand.nextDouble() - 0.5) * 0.6;
-                    int baseThickness = 1 + chunkRand.nextInt(3);
-
-                    // Pre-consume all random calls for the tendril path so that
-                    // the path is fully deterministic regardless of which chunk visits it.
-                    // We store the path positions and then filter to our chunk.
+                    // Slight wobble parameters
+                    double wobbleX = (chunkRand.nextDouble() - 0.5) * 0.15;
+                    double wobbleZ = (chunkRand.nextDouble() - 0.5) * 0.15;
                     long pathSeed = chunkRand.nextLong();
                     long decorSeed = chunkRand.nextLong();
 
-                    // Now replay the tendril path and place only blocks in our chunk
                     generateTendril(world, pathSeed, decorSeed, startX, startZ, fromCeiling,
-                            tendrilBlock, decorationBlock, length, curvatureX, curvatureZ,
+                            tendrilBlock, decorationBlock, length, wobbleX, wobbleZ,
                             baseThickness, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
                 }
             }
@@ -86,23 +76,21 @@ public class TendrilsPopulator implements IPopulate {
     }
 
     private long getChunkSeed(int chunkX, int chunkZ) {
-        return seed ^ ((long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + 0x7E4D51L);
+        return seed ^ ((long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + 0xBE47L);
     }
 
     private void generateTendril(WorldGenLevel world, long pathSeed, long decorSeed,
                                  int startX, int startZ, boolean fromCeiling,
                                  BlockState tendrilBlock, BlockState decorationBlock,
-                                 int length, double curvatureX, double curvatureZ,
+                                 int length, double wobbleX, double wobbleZ,
                                  int baseThickness,
                                  int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
-        // Get Y position from world state
         int startY;
         if (fromCeiling) {
             startY = findCeilingPosition(world, startX, startZ, pathSeed);
             if (startY == -1) {
                 return;
             }
-            // Validate ceiling
             BlockPos checkPos = new BlockPos(startX, startY, startZ);
             if (!world.getBlockState(checkPos).isSolid() || !world.getBlockState(checkPos.below()).isAir()) {
                 return;
@@ -122,40 +110,27 @@ public class TendrilsPopulator implements IPopulate {
         double currentY = startY;
         double currentZ = startZ;
 
-        double curX = curvatureX;
-        double curZ = curvatureZ;
-
         for (int segment = 0; segment < length; segment++) {
             float progress = (float) segment / length;
 
-            // Update curve direction frequently for twisty behavior
-            if (segment % 3 == 0) {
-                curX += (pathRand.nextDouble() - 0.5) * 0.4;
-                curZ += (pathRand.nextDouble() - 0.5) * 0.4;
-
-                // Allow wider curvature range for more dramatic twisting
-                curX = Math.max(-0.8, Math.min(0.8, curX));
-                curZ = Math.max(-0.8, Math.min(0.8, curZ));
+            // Very gentle wobble updates
+            if (segment % 5 == 0) {
+                wobbleX += (pathRand.nextDouble() - 0.5) * 0.08;
+                wobbleZ += (pathRand.nextDouble() - 0.5) * 0.08;
+                wobbleX = Math.max(-0.2, Math.min(0.2, wobbleX));
+                wobbleZ = Math.max(-0.2, Math.min(0.2, wobbleZ));
             }
 
-            // Occasionally make sharp turns
-            if (pathRand.nextInt(12) == 0) {
-                curX = (pathRand.nextDouble() - 0.5) * 1.2;
-                curZ = (pathRand.nextDouble() - 0.5) * 1.2;
-            }
-
-            // Move along the curved path
-            currentX += curX;
+            currentX += wobbleX;
             currentY += direction;
-            currentZ += curZ;
+            currentZ += wobbleZ;
 
-            // Thickness tapers toward the tip
-            int thickness = (int) Math.max(1, baseThickness * (1.0f - progress * 0.6f));
+            int thickness = (int) Math.max(1, baseThickness * (1.0f - progress * 0.7f));
 
-            // Place blocks in a small cross-section, only within our chunk
             int centerBx = (int) Math.floor(currentX);
             int centerBy = (int) Math.floor(currentY);
             int centerBz = (int) Math.floor(currentZ);
+
             for (int dx = -thickness; dx <= thickness; dx++) {
                 for (int dz = -thickness; dz <= thickness; dz++) {
                     int dist = Math.abs(dx) + Math.abs(dz);
@@ -163,10 +138,9 @@ public class TendrilsPopulator implements IPopulate {
                         int bx = centerBx + dx;
                         int bz = centerBz + dz;
 
-                        // Only place if within our chunk
                         if (bx >= chunkMinX && bx <= chunkMaxX && bz >= chunkMinZ && bz <= chunkMaxZ) {
                             BlockPos tendrilPos = new BlockPos(bx, centerBy, bz);
-                            if (shouldPlaceTendrilBlock(world, tendrilPos)) {
+                            if (shouldPlaceBlock(world, tendrilPos)) {
                                 world.setBlock(tendrilPos, tendrilBlock, 2);
                             }
                         }
@@ -174,11 +148,10 @@ public class TendrilsPopulator implements IPopulate {
                 }
             }
 
-            // Decorations use position-deterministic hash instead of sequential random,
-            // so they're consistent regardless of which chunk is being populated
+            // Position-deterministic decorations
             if (segment > 3) {
                 long decorHash = positionHash(decorSeed, centerBx, centerBy, centerBz);
-                if ((decorHash & 0x7) == 0) { // ~1/8 chance, matching old decorRand.nextInt(8)
+                if ((decorHash & 0x7) == 0) {
                     int dir = (int) ((decorHash >> 3) & 0x3);
                     int ddx = (dir == 0) ? 1 : (dir == 1) ? -1 : 0;
                     int ddz = (dir == 2) ? 1 : (dir == 3) ? -1 : 0;
@@ -193,7 +166,6 @@ public class TendrilsPopulator implements IPopulate {
                 }
             }
 
-            // Y bounds check (don't go past the allocated length)
             if (fromCeiling && currentY < startY - length) {
                 break;
             } else if (!fromCeiling && currentY > startY + length) {
@@ -215,7 +187,7 @@ public class TendrilsPopulator implements IPopulate {
         return -1;
     }
 
-    private boolean shouldPlaceTendrilBlock(WorldGenLevel world, BlockPos pos) {
+    private boolean shouldPlaceBlock(WorldGenLevel world, BlockPos pos) {
         BlockState existing = world.getBlockState(pos);
         return existing.isAir() ||
                existing.is(BlockTags.LEAVES) ||
@@ -252,10 +224,6 @@ public class TendrilsPopulator implements IPopulate {
         return baseBlock;
     }
 
-    /**
-     * Position-deterministic hash. Same position always produces the same value
-     * regardless of which chunk is being populated.
-     */
     private static long positionHash(long seed, int x, int y, int z) {
         long h = seed;
         h ^= (long) x * 73856093L;
@@ -267,6 +235,6 @@ public class TendrilsPopulator implements IPopulate {
 
     @Override
     public String getIdentifier() {
-        return "mystcraft:tendrils";
+        return "mystcraft:vertical_tendrils";
     }
 }

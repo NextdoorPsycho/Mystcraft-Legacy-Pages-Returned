@@ -69,10 +69,7 @@ public abstract class MystcraftBlockEntity extends BlockEntity {
         }
     }
 
-    /**
-     * Alias for sync() - marks dirty and sends update.
-     * Named to match legacy code style.
-     */
+    /** Alias for sync(). */
     protected void markForUpdate() {
         sync();
     }

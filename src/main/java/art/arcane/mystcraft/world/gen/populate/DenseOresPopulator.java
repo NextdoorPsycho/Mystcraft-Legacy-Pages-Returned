@@ -17,9 +17,8 @@ public class DenseOresPopulator implements IPopulate {
 
     private final long seed;
 
-    // Dense ore configurations matching legacy Mystcraft 1.12.2 rates
+    // Dense ore configurations
     // blockState, veinSize, veinsPerChunk, minY, maxY
-    // Legacy Y ranges adjusted for 1.20 world height (-64 to 320)
     private static final OreConfig[] ORE_CONFIGS = {
             // Coal: 20 veins, size 16, 0-128 -> adjusted to -64 to 128
             new OreConfig(Blocks.COAL_ORE.defaultBlockState(), Blocks.DEEPSLATE_COAL_ORE.defaultBlockState(),

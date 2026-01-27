@@ -25,17 +25,12 @@ import java.util.List;
 
 /**
  * Screen for viewing book contents (Agebooks and Linkbooks).
- * Displays the book in the legacy Mystcraft style with proper textures.
- *
- * Legacy behavior:
- * - Page 0 is the title page with link panel
- * - Click link panel to trigger linking
- * - Click left/right sides to navigate pages
- * - Gold borders for Agebooks
+ * Page 0 is the title page with link panel. Click to link.
+ * Navigate with left/right clicks. Agebooks have gold borders.
  */
 public class BookScreen extends Screen {
 
-    // Textures from legacy assets
+    // Book textures
     private static final ResourceLocation BOOK_COVER =
             new ResourceLocation("mystcraft", "gui/bookui_cover.png");
     private static final ResourceLocation BOOK_PAGE_LEFT =
@@ -45,7 +40,7 @@ public class BookScreen extends Screen {
     private static final ResourceLocation BOOK_PAGE_RIGHT_SOLID =
             new ResourceLocation("mystcraft", "gui/bookui_rpage_full.png");
 
-    // Book dimensions from legacy (327x199)
+    // Book dimensions (327x199)
     private static final int BOOK_TEX_WIDTH = 327;
     private static final int BOOK_TEX_HEIGHT = 199;
 

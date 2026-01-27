@@ -8,7 +8,6 @@ import java.util.*;
 
 /**
  * Central registry for instability providers and deck management.
- * Manages the card-based instability system from the legacy Mystcraft.
  */
 public final class InstabilityProviderRegistry {
 

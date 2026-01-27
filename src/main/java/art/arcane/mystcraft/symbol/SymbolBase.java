@@ -37,11 +37,6 @@ public abstract class SymbolBase implements IAgeSymbol {
         return category;
     }
 
-    /**
-     * Sets the poem words for this symbol.
-     * @param words The poem words
-     * @return This symbol for chaining
-     */
     public SymbolBase setPoem(String... words) {
         this.poemWords = words;
         return this;
@@ -52,11 +47,6 @@ public abstract class SymbolBase implements IAgeSymbol {
         return poemWords;
     }
 
-    /**
-     * Sets the card rank for this symbol.
-     * @param rank The card rank (rarity tier)
-     * @return This symbol for chaining
-     */
     public SymbolBase setCardRank(Integer rank) {
         this.cardRank = rank;
         return this;
@@ -67,11 +57,6 @@ public abstract class SymbolBase implements IAgeSymbol {
         return cardRank;
     }
 
-    /**
-     * Sets the instability cost for this symbol.
-     * @param cost The instability cost
-     * @return This symbol for chaining
-     */
     public SymbolBase setInstabilityCost(float cost) {
         this.instabilityCost = cost;
         return this;
@@ -82,10 +67,6 @@ public abstract class SymbolBase implements IAgeSymbol {
         return instabilityCost;
     }
 
-    /**
-     * Gets the unlocalized name for this symbol.
-     * @return The translation key
-     */
     protected String getUnlocalizedName() {
         return "myst.symbol." + registryName.getNamespace() + "." + registryName.getPath();
     }

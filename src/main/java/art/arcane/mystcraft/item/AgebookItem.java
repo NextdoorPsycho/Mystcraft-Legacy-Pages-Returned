@@ -19,9 +19,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.ChunkStatus;
-import net.minecraft.world.level.levelgen.Heightmap;
+import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -237,19 +235,51 @@ public class AgebookItem extends Item {
         int spawnX = 8;
         int spawnZ = 8;
 
-        // Force the spawn chunk to fully generate so the heightmap is populated
-        ChunkAccess chunk = ageLevel.getChunk(spawnX >> 4, spawnZ >> 4, ChunkStatus.FULL, true);
+        // IMPORTANT: Do NOT force synchronous chunk generation here.
+        // Calling ageLevel.getChunk(x, z, ChunkStatus.FULL, true) on the server thread
+        // will DEADLOCK because chunk generation schedules tasks that need the server
+        // thread to complete, but the server thread is blocked waiting for chunk gen.
+        //
+        // Instead, estimate the spawn Y from the director/terrain type.
+        // LinkingManager.findSafeY will do actual terrain validation when the player links,
+        // at which point the chunk gets generated as part of the teleport process.
 
-        if (chunk != null) {
-            int surfaceY = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, spawnX & 15, spawnZ & 15);
-            if (surfaceY > ageLevel.getMinBuildHeight()) {
-                // Surface found - spawn one block above it
-                return new BlockPos(spawnX, surfaceY + 1, spawnZ);
+        // Try to get terrain info from the chunk generator
+        if (ageLevel.getChunkSource().getGenerator() instanceof AgeChunkGenerator ageGen) {
+            AgeDirectorImpl director = ageGen.getDirector();
+            if (director != null) {
+                String terrainType = director.getTerrainType();
+                int spawnY;
+
+                if ("void".equals(terrainType)) {
+                    // Void terrain has a platform at Y=65 (placed at Y=64, spawn on top)
+                    spawnY = 65;
+                } else if ("flat".equals(terrainType)) {
+                    // Flat terrain goes up to director's ground level
+                    int gl = director.getAverageGroundLevel();
+                    spawnY = (gl > 0) ? gl + 1 : 65;
+                } else if ("nether".equals(terrainType)) {
+                    spawnY = 33;
+                } else if ("end".equals(terrainType)) {
+                    spawnY = 65;
+                } else {
+                    // Normal/amplified terrain - use vanilla overworld ground level.
+                    // Do NOT trust director.getAverageGroundLevel() here because
+                    // symbol processing order can leave it at invalid values
+                    // (e.g., terrain_end sets ground=-20, then terrain_normal
+                    // overrides the type but doesn't reset the ground level).
+                    spawnY = 65;
+                }
+
+                art.arcane.mystcraft.Mystcraft.LOGGER.info(
+                        "[AgebookItem] findAgeSpawnPosition: terrain={}, estimated spawn Y={} (no chunk gen forced)",
+                        terrainType, spawnY);
+                return new BlockPos(spawnX, spawnY, spawnZ);
             }
         }
 
-        // Fallback for void worlds or if chunk gen failed - use a reasonable default
-        // LinkingManager.findSafeY will do further validation when the player actually links
+        // Fallback if no director available
+        art.arcane.mystcraft.Mystcraft.LOGGER.info("[AgebookItem] findAgeSpawnPosition: no director, using fallback Y=65");
         return new BlockPos(spawnX, 65, spawnZ);
     }
 
@@ -434,7 +464,7 @@ public class AgebookItem extends Item {
         return stack.getTag() != null && LinkOptions.getDimensionUID(stack.getTag()) != null;
     }
 
-    // ========================= Custom Entity on Q-Drop =========================
+    // --- Custom Entity on Q-Drop ---
 
     /**
      * Tell Forge that Q-dropped agebooks should spawn as LinkbookEntity, not ItemEntity.
@@ -444,10 +474,7 @@ public class AgebookItem extends Item {
         return true;
     }
 
-    /**
-     * Creates a LinkbookEntity when the item is Q-dropped instead of a regular ItemEntity.
-     * This matches legacy behavior where dropped books appear as open books on the ground.
-     */
+    /** Creates a LinkbookEntity when Q-dropped so the book renders open on the ground. */
     @Override
     @Nullable
     public Entity createEntity(Level level, Entity location, @NotNull ItemStack stack) {

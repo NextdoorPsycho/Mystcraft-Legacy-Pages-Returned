@@ -21,6 +21,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 public class HugeTreePopulator implements IPopulate {
 
     private final long seed;
+    private BlockPos currentChunkPos;
 
     // Number of huge tree attempts per chunk
     private static final int HUGE_TREES_PER_CHUNK = 3;
@@ -31,17 +32,16 @@ public class HugeTreePopulator implements IPopulate {
 
     @Override
     public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
-        int chunkX = chunkPos.getX();
-        int chunkZ = chunkPos.getZ();
+        this.currentChunkPos = chunkPos;
 
         // Sample biome at chunk center
-        BlockPos centerPos = new BlockPos(chunkX + 8, 64, chunkZ + 8);
+        BlockPos centerPos = new BlockPos(chunkPos.getX() + 8, 64, chunkPos.getZ() + 8);
         Holder<Biome> biomeHolder = world.getBiome(centerPos);
 
         for (int i = 0; i < HUGE_TREES_PER_CHUNK; i++) {
-            // Huge trees need 2x2 base, so start at 0-14 to leave room
-            int x = chunkPos.getX() + random.nextInt(14);
-            int z = chunkPos.getZ() + random.nextInt(14);
+            // Huge trees need 2x2 base, so start at 2-12 to keep canopy within writable area
+            int x = chunkPos.getX() + 2 + random.nextInt(12);
+            int z = chunkPos.getZ() + 2 + random.nextInt(12);
             int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
             BlockPos treePos = new BlockPos(x, y, z);
 
@@ -76,11 +76,13 @@ public class HugeTreePopulator implements IPopulate {
     }
 
     private boolean hasSpaceForHugeTree(WorldGenLevel world, BlockPos pos) {
-        // Check vertical clearance for huge tree
+        // Check vertical clearance for huge tree (only within writable area)
         for (int dy = 0; dy < 16; dy++) {
             for (int dx = -1; dx <= 2; dx++) {
                 for (int dz = -1; dz <= 2; dz++) {
-                    BlockState state = world.getBlockState(pos.offset(dx, dy, dz));
+                    BlockPos checkPos = pos.offset(dx, dy, dz);
+                    if (!isInWritableArea(checkPos, currentChunkPos)) continue;
+                    BlockState state = world.getBlockState(checkPos);
                     if (state.isSolid() && !state.is(BlockTags.LEAVES) && !state.is(BlockTags.LOGS)) {
                         return false;
                     }
@@ -200,7 +202,7 @@ public class HugeTreePopulator implements IPopulate {
                         if (dx == -1 || dx == 2 || dz == -1 || dz == 2) {
                             if (random.nextInt(4) == 0) {
                                 BlockPos vinePos = pos.offset(dx, y, dz);
-                                if (world.getBlockState(vinePos).isAir()) {
+                                if (isInWritableArea(vinePos, currentChunkPos) && world.getBlockState(vinePos).isAir()) {
                                     world.setBlock(vinePos, Blocks.VINE.defaultBlockState(), 2);
                                 }
                             }
@@ -232,7 +234,7 @@ public class HugeTreePopulator implements IPopulate {
                     int dx = (side == 0) ? -1 : (side == 1) ? 2 : random.nextInt(2);
                     int dz = (side == 2) ? -1 : (side == 3) ? 2 : random.nextInt(2);
                     BlockPos cocoaPos = pos.offset(dx, y, dz);
-                    if (world.getBlockState(cocoaPos).isAir()) {
+                    if (isInWritableArea(cocoaPos, currentChunkPos) && world.getBlockState(cocoaPos).isAir()) {
                         // Would need proper facing calculation, simplified for now
                         world.setBlock(cocoaPos, Blocks.COCOA.defaultBlockState(), 2);
                     }
@@ -331,6 +333,7 @@ public class HugeTreePopulator implements IPopulate {
     }
 
     private void setBlockIfAir(WorldGenLevel world, BlockPos pos, BlockState state) {
+        if (!isInWritableArea(pos, currentChunkPos)) return;
         BlockState existing = world.getBlockState(pos);
         if (existing.isAir() || existing.is(BlockTags.LEAVES)) {
             world.setBlock(pos, state, 2);
@@ -338,6 +341,7 @@ public class HugeTreePopulator implements IPopulate {
     }
 
     private void setLeafIfAir(WorldGenLevel world, BlockPos pos, BlockState leaves) {
+        if (!isInWritableArea(pos, currentChunkPos)) return;
         if (world.getBlockState(pos).isAir()) {
             world.setBlock(pos, leaves, 2);
         }

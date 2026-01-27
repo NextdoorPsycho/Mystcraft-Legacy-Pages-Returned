@@ -27,6 +27,8 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import art.arcane.mystcraft.config.MystcraftConfig;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -196,9 +198,18 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
             return ItemStack.EMPTY;
         }
 
+        // Check page limit
+        int maxSymbols = MystcraftConfig.maxSymbolsPerBook.get();
+        if (maxSymbols >= 0 && pages.size() >= maxSymbols) {
+            return stack;
+        }
+
         // Convert paper to blank pages
         if (stack.is(Items.PAPER)) {
             while (stack.getCount() > 0) {
+                if (maxSymbols >= 0 && pages.size() >= maxSymbols) {
+                    return stack;
+                }
                 ItemStack page = Page.createPage();
                 ItemStack remainder = insertPage(page, index);
                 if (!remainder.isEmpty()) {
@@ -217,6 +228,9 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
 
         // Insert pages one at a time
         while (stack.getCount() > 0) {
+            if (maxSymbols >= 0 && pages.size() >= maxSymbols) {
+                break;
+            }
             ItemStack clone = stack.copy();
             clone.setCount(1);
             pages.add(Math.min(index, pages.size()), clone);

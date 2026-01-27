@@ -50,10 +50,7 @@ public class FolderItem extends Item {
         super(properties.stacksTo(STACK_SIZE_EMPTY)); // Default max stack when empty
     }
 
-    /**
-     * Folders stack to 32 when empty, but only 1 when containing pages.
-     * This is legacy Mystcraft behavior for workspace items.
-     */
+    /** Folders stack to 32 when empty, but only 1 when containing pages. */
     @Override
     public int getMaxStackSize(ItemStack stack) {
         return isEmpty(stack) ? STACK_SIZE_EMPTY : STACK_SIZE_FILLED;
@@ -187,7 +184,7 @@ public class FolderItem extends Item {
         return getPages(stack).isEmpty();
     }
 
-    // ==================== FOLDER-SPECIFIC: WRITABLE ====================
+    // --- Folder: Writable ---
 
     /**
      * Writes a symbol to the first blank page in this folder.
@@ -233,7 +230,7 @@ public class FolderItem extends Item {
         return countBlankPages(folder) > 0;
     }
 
-    // ==================== FOLDER-SPECIFIC: BOOKBINDER COVER ====================
+    // --- Folder: BookBinder Cover ---
 
     /**
      * Checks if this folder can be used as a BookBinder cover.
@@ -253,7 +250,7 @@ public class FolderItem extends Item {
         return pages;
     }
 
-    // ==================== FOLDER-SPECIFIC: ORDERED ACCESS ====================
+    // --- Folder: Ordered Access ---
 
     /**
      * Gets a page at a specific slot index.

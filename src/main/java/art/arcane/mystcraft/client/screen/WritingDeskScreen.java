@@ -30,25 +30,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Screen for the Writing Desk block.
- * Complex multi-panel interface replicating the legacy Mystcraft Writing Desk.
- *
- * Legacy layout:
- * - leftsize = 228 (left panel with tabs + page surface)
- * - windowsizeX = 176 (right panel - main inventory texture)
- * - windowsizeY = 166 (main panel height)
- * - buttonssizeY = 18 (top button bar)
- * - guiCenter = leftsize + 5 = 233 (offset to right panel)
- * - mainTop = buttonssizeY + 2 = 20 (y offset for main content)
- * - xSize = leftsize + windowsizeX + 5 = 409
- * - ySize = windowsizeY + buttonssizeY + 1 = 185
+ * Screen for the Writing Desk block. Multi-panel layout:
+ * left panel (228px, tabs + page surface), right panel (176x166, inventory),
+ * button bar (18px), total 409x185.
  */
 public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> {
 
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(Mystcraft.MOD_ID, "gui/writingdesk.png");
 
-    // Layout constants (matching legacy GuiWritingDesk)
+    // Layout constants
     private static final int LEFT_SIZE = 228;
     private static final int WINDOW_SIZE_X = 176;
     private static final int WINDOW_SIZE_Y = 166;
@@ -97,8 +88,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
 
     @Override
     protected void init() {
-        // Legacy centering: guiLeft = (width / 2) - (leftsize / 2) - (windowsizeX / 2)
-        // This centers the combined GUI
+        // Center the combined GUI
         this.leftPos = (this.width / 2) - (LEFT_SIZE / 2) - (WINDOW_SIZE_X / 2);
         this.topPos = (this.height - TOTAL_HEIGHT) / 2;
 
@@ -111,17 +101,17 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         // Create root element
         rootElement = new MystGuiPanel(0, 0, TOTAL_WIDTH, TOTAL_HEIGHT);
 
-        // Create surface tabs (left side) - Legacy: (0, mainTop, 58, ySize)
+        // Surface tabs (left side)
         surfaceTabs = new MystGuiSurfaceTabs(new TabHandler(), 0, MAIN_TOP, TAB_WIDTH, TOTAL_HEIGHT);
         rootElement.addElement(surfaceTabs);
 
-        // Create page surface (center) - Legacy: (58, mainTop, leftsize-53, windowsizeY)
+        // Page surface (center)
         int surfaceX = 58;
         int surfaceWidth = LEFT_SIZE - 53; // 175
         pageSurface = new MystGuiPageSurface(new PagesProvider(), surfaceX, MAIN_TOP, surfaceWidth, WINDOW_SIZE_Y);
         rootElement.addElement(pageSurface);
 
-        // Create sort buttons - Legacy: (58, 0, buttonssizeY, buttonssizeY)
+        // Sort buttons
         sortAzButton = new MystGuiToggleButton("AZ", () -> sortAlphabetically, btn -> {
             sortAlphabetically = !sortAlphabetically;
         }, 58, 0, BUTTONS_SIZE_Y, BUTTONS_SIZE_Y);
@@ -129,7 +119,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         sortAzButton.setTooltip(List.of(Component.literal("Sort Alphabetically")));
         rootElement.addElement(sortAzButton);
 
-        // Legacy: (58 + buttonssizeY, 0, buttonssizeY, buttonssizeY) = (76, 0, 18, 18)
+        // Show-all toggle at (76, 0, 18, 18)
         showAllButton = new MystGuiToggleButton("ALL", () -> showAll, btn -> {
             showAll = !showAll;
         }, 58 + BUTTONS_SIZE_Y, 0, BUTTONS_SIZE_Y, BUTTONS_SIZE_Y);
@@ -137,8 +127,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         showAllButton.setTooltip(List.of(Component.literal("Show all Symbols")));
         rootElement.addElement(showAllButton);
 
-        // Create search field - Legacy: (58 + (buttonssizeY + 2) * 2, 0, leftsize - 53 - (buttonssizeY + 2) * 2, buttonssizeY)
-        // = (58 + 40, 0, 175 - 40, 18) = (98, 0, 135, 18)
+        // Search field at (98, 0, 135, 18)
         int searchX = 58 + (BUTTONS_SIZE_Y + 2) * 2;
         int searchWidth = LEFT_SIZE - 53 - (BUTTONS_SIZE_Y + 2) * 2;
         searchField = new MystGuiTextField("SearchBox", () -> searchText, text -> {
@@ -147,8 +136,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         }, searchX, 0, searchWidth, BUTTONS_SIZE_Y);
         rootElement.addElement(searchField);
 
-        // Create ink tank display - Legacy: (guiCenter + windowsizeX - 44, mainTop + 7, 16, 70)
-        // = (233 + 176 - 44, 20 + 7, 16, 70) = (365, 27, 16, 70)
+        // Ink tank display at (365, 27, 16, 70)
         int tankX = GUI_CENTER + WINDOW_SIZE_X - 44;
         int tankY = MAIN_TOP + 7;
         inkTank = new MystGuiFluidTank(
@@ -160,8 +148,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         );
         rootElement.addElement(inkTank);
 
-        // Create name field - Legacy: (guiCenter + 28, mainTop + 61, windowsizeX - 48 - 9 - 20, 14)
-        // = (233 + 28, 20 + 61, 176 - 77, 14) = (261, 81, 99, 14)
+        // Name field at (261, 81, 99, 14)
         int nameX = GUI_CENTER + 28;
         int nameY = MAIN_TOP + 61;
         int nameWidth = WINDOW_SIZE_X - 48 - 9 - 20;
@@ -172,8 +159,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         nameField.setMaxLength(21);
         rootElement.addElement(nameField);
 
-        // Book page list - Legacy: (guiCenter + 27, mainTop + 6, windowsizeX - 47 - 9 - 19, 50)
-        // = (233 + 27, 20 + 6, 176 - 75, 50) = (260, 26, 101, 50)
+        // Book page list at (260, 26, 101, 50)
         int listX = GUI_CENTER + 27;
         int listY = MAIN_TOP + 6;
         int listWidth = WINDOW_SIZE_X - 47 - 9 - 19;
@@ -457,8 +443,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         // Note: renderLabels is called with an offset to the GUI origin (leftPos, topPos),
         // so positions here are relative to (0, 0) of the GUI, not screen coordinates.
 
-        // Legacy doesn't draw title in the WritingDesk - the texture has the title built in
-        // We don't draw title or inventory label as the legacy version doesn't either
+        // Title is baked into the texture; no labels rendered
     }
 
     @Override

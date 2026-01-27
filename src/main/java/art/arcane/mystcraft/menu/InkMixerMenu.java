@@ -60,7 +60,7 @@ public class InkMixerMenu extends AbstractContainerMenu {
         IItemHandler handler = blockEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER)
                 .orElseThrow(() -> new IllegalStateException("InkMixer has no item handler"));
 
-        // Block entity slots (matching legacy texture positions)
+        // Block entity slots
         // Ink input slot (top left)
         addSlot(new SlotItemHandler(handler, InkMixerBlockEntity.SLOT_INK_IN, 8, 27));
         // Paper slot (bottom left)

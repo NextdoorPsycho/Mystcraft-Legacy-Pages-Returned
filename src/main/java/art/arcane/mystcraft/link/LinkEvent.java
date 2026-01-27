@@ -57,7 +57,7 @@ public abstract class LinkEvent extends Event {
         return sourcePos;
     }
 
-    // ==================== Event Subtypes ====================
+    // --- Event Subtypes ---
 
     /**
      * Fired before any link processing begins.

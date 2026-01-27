@@ -54,7 +54,7 @@ public final class BlockSymbols {
         Mystcraft.LOGGER.info("Registered block symbols");
     }
 
-    // ========================= Terrain Blocks =========================
+    // --- Terrain Blocks ---
 
     public static class TerrainBlockStone extends SymbolBase {
         public TerrainBlockStone() {
@@ -355,7 +355,7 @@ public final class BlockSymbols {
         }
     }
 
-    // ========================= Sea Blocks =========================
+    // --- Sea Blocks ---
 
     public static class SeaBlockWater extends SymbolBase {
         public SeaBlockWater() {

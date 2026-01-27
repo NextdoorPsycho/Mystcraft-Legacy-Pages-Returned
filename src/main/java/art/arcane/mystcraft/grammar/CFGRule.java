@@ -38,9 +38,18 @@ public class CFGRule implements WeightedItemSelector.IWeightedItem {
         if (rank == null) {
             return 0;
         }
-        // Weight inversely proportional to rank - lower rank = more common = higher weight
-        // Rank 0 = weight 1000, Rank 1 = weight 100, Rank 2 = weight 10, etc.
-        return (float) Math.pow(10, 3 - rank);
+        // Look up the dynamically computed weight from the grammar generator's rank data.
+        // Each rule's weight depends on the rank distribution of all rules
+        // sharing the same parent token.
+        CFGGrammarGenerator.RankData rankData = CFGGrammarGenerator.getRankData(parent);
+        if (rankData != null && rankData.rankWeights != null) {
+            Integer weight = rankData.rankWeights.get(rank);
+            if (weight != null) {
+                return weight;
+            }
+        }
+        // Fallback if grammar hasn't been built yet
+        return 1;
     }
 
     /**

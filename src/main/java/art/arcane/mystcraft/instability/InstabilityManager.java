@@ -4,7 +4,7 @@ import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.entity.MeteorEntity;
-import art.arcane.mystcraft.grammar.GrammarGenerator;
+import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.AgeData;
@@ -42,7 +42,7 @@ public final class InstabilityManager {
     private InstabilityManager() {
     }
 
-    // ===== Config accessors (read from ForgeConfigSpec) =====
+    // --- Config Accessors ---
 
     private static float getThresholdDecay() {
         return MystcraftConfig.thresholdDecay.get().floatValue();
@@ -404,11 +404,10 @@ public final class InstabilityManager {
             }
         }
 
-        // Use grammar system to calculate instability
+        // Use CFG-based AgeBuilder for instability calculation
         long seed = System.currentTimeMillis();
-        GrammarGenerator.GenerationResult result = GrammarGenerator.generateAge(symbols, seed);
-
-        return result.getInstability();
+        AgeBuilder builder = new AgeBuilder(symbols, seed);
+        return builder.getInstability();
     }
 
     /**
@@ -423,8 +422,8 @@ public final class InstabilityManager {
             return 100.0f; // Blank age is very unstable
         }
 
-        GrammarGenerator.GenerationResult result = GrammarGenerator.generateAge(symbols, seed);
-        return result.getInstability();
+        AgeBuilder builder = new AgeBuilder(symbols, seed);
+        return builder.getInstability();
     }
 
     /**

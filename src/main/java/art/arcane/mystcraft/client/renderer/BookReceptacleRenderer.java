@@ -80,13 +80,9 @@ public class BookReceptacleRenderer implements BlockEntityRenderer<BookReceptacl
             }
         }
 
-        // Scale to match legacy (0.8x)
-        poseStack.scale(0.8f, 0.8f, 0.8f);
+        poseStack.scale(0.8f, 0.8f, 0.8f); // Book display scale
 
-        // Set the book to closed state
-        // Old: bookmodel.render(null, 0.1f, 0.1f, 0.1f, 0.005f /* Closed */, 0.0f, 0.0625F);
-        // New BookModel.setupAnim(time, clamp, flip1, open) where open=0 is closed
-        bookModel.setupAnim(0, 0, 0, 0.0f);
+        bookModel.setupAnim(0, 0, 0, 0.0f); // Closed state
 
         // Choose texture based on book type
         ResourceLocation bookTexture = (book.getItem() instanceof AgebookItem)

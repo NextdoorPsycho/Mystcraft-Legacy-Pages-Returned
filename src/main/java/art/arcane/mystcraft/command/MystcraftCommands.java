@@ -478,7 +478,7 @@ public class MystcraftCommands {
         return 1;
     }
 
-    // ========================= Instability Toggle Commands =========================
+    // --- Instability Toggle Commands ---
 
     /**
      * Toggles instability for the current Age.
@@ -577,7 +577,7 @@ public class MystcraftCommands {
         return 1;
     }
 
-    // ========================= Chunk Regeneration Command =========================
+    // --- Chunk Regeneration Command ---
 
     /**
      * Regenerates chunks around the player by clearing and forcing reload.
@@ -627,7 +627,7 @@ public class MystcraftCommands {
         return regenerated;
     }
 
-    // ========================= Time Control Commands =========================
+    // --- Time Control Commands ---
 
     /**
      * Sets the time in the current Age.
@@ -670,7 +670,7 @@ public class MystcraftCommands {
         return 1;
     }
 
-    // ========================= Weather Control Command =========================
+    // --- Weather Control Command ---
 
     /**
      * Sets the weather in the current Age.
@@ -709,7 +709,7 @@ public class MystcraftCommands {
         return 1;
     }
 
-    // ========================= Spawn Meteor Command =========================
+    // --- Spawn Meteor Command ---
 
     /**
      * Spawns a meteor at the player's look position.
@@ -747,7 +747,7 @@ public class MystcraftCommands {
         return 1;
     }
 
-    // ========================= Reprofile Commands =========================
+    // --- Reprofile Commands ---
 
     /**
      * Recalculates instability profile for the current Age.

@@ -22,13 +22,11 @@ import org.jetbrains.annotations.NotNull;
  * Provides access to writing slot, paper slot, ink container slots,
  * tab slots, and displays ink level.
  *
- * Legacy layout constants:
- * - xShift = 228 + 5 = 233 (offset for right panel)
- * - yShift = 20 (top button bar height + gap)
+ * Layout: xShift=233 (right panel offset), yShift=20 (button bar + gap)
  */
 public class WritingDeskMenu extends AbstractContainerMenu {
 
-    // Legacy positioning constants
+    // Positioning constants
     public static final int X_SHIFT = 228 + 5; // Left panel width + gap
     public static final int Y_SHIFT = 20; // Button bar + gap
     public static final int TAB_SLOT_COUNT = 4; // Visible tab slots
@@ -38,7 +36,7 @@ public class WritingDeskMenu extends AbstractContainerMenu {
     private final DataSlot inkAmountData;
     private final DataSlot inkCapacityData;
 
-    // Slot indices in the menu (matching legacy order)
+    // Slot indices in the menu
     // First 4 slots are tab slots (visible tabs)
     public static final int TAB_SLOTS_START = 0;
     public static final int TAB_SLOTS_END = TAB_SLOT_COUNT;
@@ -63,7 +61,7 @@ public class WritingDeskMenu extends AbstractContainerMenu {
 
     /**
      * Server-side constructor.
-     * Legacy slot positions:
+     * Slot positions:
      * - Tab slots (4 visible): x=37, y=14+i*37+yShift for i=0..3
      * - Main slot 0 (target): (8+xShift, 60+yShift) = (241, 80)
      * - Main slot 1 (paper): (8+xShift, 8+yShift) = (241, 28)
@@ -81,7 +79,6 @@ public class WritingDeskMenu extends AbstractContainerMenu {
         IItemHandler tabHandler = blockEntity.getTabInventory();
 
         // Tab slots (4 visible slots on left side)
-        // Legacy: (37, 14 + i * 37 + yShift) where yShift=20
         for (int i = 0; i < TAB_SLOT_COUNT; i++) {
             SlotItemHandler slot = new SlotItemHandler(tabHandler, i, 37, 14 + i * 37 + Y_SHIFT);
             addSlot(slot);

@@ -6,6 +6,9 @@ import art.arcane.mystcraft.instability.InstabilityManager;
 import art.arcane.mystcraft.network.LinkEffectPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.registry.ModSounds;
+import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
@@ -14,7 +17,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -113,10 +118,16 @@ public final class LinkingManager {
             return LinkResult.DIMENSION_NOT_FOUND;
         }
 
-        // === CHECK INSTABILITY (for Mystcraft Ages) ===
+        // === LOG SYMBOLS & CHECK INSTABILITY (for Mystcraft Ages) ===
         if (AgeDimensionFactory.isMystcraftAge(targetLevel.dimension())) {
             AgeData ageData = AgeData.getIfPresent(targetLevel);
             if (ageData != null) {
+                // Log all symbols in this Age (console + player chat)
+                logAgeSymbols(ageData, dimId);
+                if (entity instanceof ServerPlayer player) {
+                    sendAgeSymbolsToPlayer(player, ageData, dimId);
+                }
+
                 float instability = ageData.getInstability();
                 if (!InstabilityManager.isAgeAllowed(instability)) {
                     String rating = InstabilityManager.getInstabilityRating(instability);
@@ -178,8 +189,34 @@ public final class LinkingManager {
             Mystcraft.LOGGER.debug("Intra-dimensional link attempted without modifier");
         }
 
-        // Calculate initial target position
+        // Pre-load the destination chunk BEFORE calculating target position.
+        // findSafeY() needs the chunk loaded to read the heightmap and check block states.
+        // Without this, unloaded chunks cause the player to spawn at the raw estimated Y,
+        // which is often inside the ground.
+        int destChunkX = targetPos.getX() >> 4;
+        int destChunkZ = targetPos.getZ() >> 4;
+        net.minecraft.world.level.ChunkPos destChunkPos = new net.minecraft.world.level.ChunkPos(destChunkX, destChunkZ);
+        targetLevel.getChunkSource().addRegionTicket(
+                net.minecraft.server.level.TicketType.POST_TELEPORT,
+                destChunkPos, 1, entity.getId()
+        );
+        // Force the chunk to load synchronously so findSafeY() can read terrain.
+        // This is safe - vanilla does the same during teleportation (ServerPlayer.teleportTo).
+        targetLevel.getChunk(destChunkX, destChunkZ);
+        Mystcraft.LOGGER.info("[LinkingManager] Pre-loaded destination chunk [{}, {}] in {}",
+                destChunkX, destChunkZ, targetLevel.dimension().location());
+
+        // Calculate target position (now findSafeY can read the loaded chunk)
         Vec3 targetVec = calculateTargetPosition(targetPos, linkData, entity.position(), sourcePos, targetLevel);
+
+        // Generate spawn platform if needed (chunk is loaded, safe to place blocks)
+        BlockPos destBlock = BlockPos.containing(targetVec);
+        if (LinkOptions.getFlag(linkData, LinkFlags.GENERATE_PLATFORM)) {
+            generateSpawnPlatform(targetLevel, destBlock);
+            // Re-calculate after platform generation since blocks changed
+            targetVec = calculateTargetPosition(targetPos, linkData, entity.position(), sourcePos, targetLevel);
+            destBlock = BlockPos.containing(targetVec);
+        }
 
         // === FIRE ALTER EVENT ===
         LinkEvent.Alter alterEvent = new LinkEvent.Alter(entity, linkData, sourceDimension, sourcePos,
@@ -220,11 +257,6 @@ public final class LinkingManager {
             disarmEntity(player);
         }
 
-        // Generate spawn platform if needed
-        if (LinkOptions.getFlag(linkData, LinkFlags.GENERATE_PLATFORM)) {
-            generateSpawnPlatform(targetLevel, BlockPos.containing(targetVec));
-        }
-
         // Store momentum if maintaining
         Vec3 momentum = entity.getDeltaMovement();
 
@@ -255,6 +287,93 @@ public final class LinkingManager {
         MinecraftForge.EVENT_BUS.post(endEvent);
 
         return LinkResult.SUCCESS;
+    }
+
+    /**
+     * Logs all symbols present in an Age when entering.
+     */
+    private static void logAgeSymbols(AgeData ageData, int ageUID) {
+        List<ItemStack> pages = ageData.getPages();
+        if (pages.isEmpty()) {
+            Mystcraft.LOGGER.info("[LinkingManager] Age {} has no pages stored", ageUID);
+            return;
+        }
+
+        List<String> symbolNames = new ArrayList<>();
+        int linkPanelCount = 0;
+
+        for (ItemStack page : pages) {
+            if (Page.isLinkPanel(page)) {
+                linkPanelCount++;
+                continue;
+            }
+            ResourceLocation symbolId = Page.getSymbol(page);
+            if (symbolId != null) {
+                IAgeSymbol symbol = SymbolRegistry.get(symbolId);
+                if (symbol != null) {
+                    symbolNames.add(symbolId.getPath() + " [" + symbol.getCategory().name() + "]");
+                } else {
+                    symbolNames.add(symbolId.getPath() + " [MISSING]");
+                }
+            }
+        }
+
+        Mystcraft.LOGGER.info("========== Age {} Symbol List ==========", ageUID);
+        Mystcraft.LOGGER.info("[Age {}] {} pages total, {} link panel(s), {} symbol(s)",
+                ageUID, pages.size(), linkPanelCount, symbolNames.size());
+        for (int i = 0; i < symbolNames.size(); i++) {
+            Mystcraft.LOGGER.info("[Age {}]   [{}] {}", ageUID, i + 1, symbolNames.get(i));
+        }
+        Mystcraft.LOGGER.info("[Age {}] Instability: {}", ageUID, String.format("%.1f", ageData.getInstability()));
+        Mystcraft.LOGGER.info("========================================");
+    }
+
+    /**
+     * Sends age symbol information to the player as chat messages.
+     */
+    private static void sendAgeSymbolsToPlayer(ServerPlayer player, AgeData ageData, int ageUID) {
+        List<ItemStack> pages = ageData.getPages();
+
+        player.sendSystemMessage(Component.literal("[Mystcraft] Entering Age " + ageUID)
+                .withStyle(net.minecraft.ChatFormatting.GOLD));
+
+        if (pages.isEmpty()) {
+            player.sendSystemMessage(Component.literal("  No pages in this Age.")
+                    .withStyle(net.minecraft.ChatFormatting.GRAY));
+            return;
+        }
+
+        int linkPanelCount = 0;
+        List<String> symbolEntries = new ArrayList<>();
+
+        for (ItemStack page : pages) {
+            if (Page.isLinkPanel(page)) {
+                linkPanelCount++;
+                continue;
+            }
+            ResourceLocation symbolId = Page.getSymbol(page);
+            if (symbolId != null) {
+                IAgeSymbol symbol = SymbolRegistry.get(symbolId);
+                if (symbol != null) {
+                    symbolEntries.add(symbolId.getPath() + " [" + symbol.getCategory().name() + "]");
+                } else {
+                    symbolEntries.add(symbolId.getPath() + " [MISSING]");
+                }
+            }
+        }
+
+        player.sendSystemMessage(Component.literal("  " + pages.size() + " pages, "
+                + linkPanelCount + " link panel(s), " + symbolEntries.size() + " symbol(s)")
+                .withStyle(net.minecraft.ChatFormatting.YELLOW));
+
+        for (int i = 0; i < symbolEntries.size(); i++) {
+            player.sendSystemMessage(Component.literal("  [" + (i + 1) + "] " + symbolEntries.get(i))
+                    .withStyle(net.minecraft.ChatFormatting.AQUA));
+        }
+
+        player.sendSystemMessage(Component.literal("  Instability: "
+                + String.format("%.1f", ageData.getInstability()))
+                .withStyle(net.minecraft.ChatFormatting.RED));
     }
 
     /**
@@ -383,7 +502,7 @@ public final class LinkingManager {
 
         // For positive UIDs, check Mystcraft Ages BEFORE The End
         // This ensures registered Ages take priority over the End's hardcoded UID 1
-        // (handles both new Ages with UID >= 2 and any legacy Ages with UID 1)
+        // (handles Ages with any positive UID)
         if (uid > 0) {
             AgeManager ageManager = AgeManager.get(server);
             ResourceLocation ageDimension = ageManager.getDimension(uid);
@@ -535,6 +654,12 @@ public final class LinkingManager {
      * Generates a spawn platform at the target location.
      */
     private static void generateSpawnPlatform(ServerLevel level, BlockPos pos) {
+        // Don't attempt block operations if chunk isn't loaded - would deadlock server thread
+        if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
+            Mystcraft.LOGGER.warn("[LinkingManager] Spawn chunk not loaded at {}, skipping platform generation", pos);
+            return;
+        }
+
         BlockState platformBlock = Blocks.STONE.defaultBlockState();
 
         // Create a 3x3 platform
@@ -590,62 +715,113 @@ public final class LinkingManager {
 
     /**
      * Finds a safe Y position for spawning.
-     * Uses the heightmap first for an accurate surface Y, then validates
-     * and adjusts by searching both up and down from that point.
+     * The chunk at (x,z) MUST be loaded before calling this method
+     * (performLink pre-loads it via getChunk before calling calculateTargetPosition).
      */
     private static int findSafeY(ServerLevel level, int x, int startY, int z) {
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, startY, z);
         int minY = level.getMinBuildHeight();
         int maxY = level.getMaxBuildHeight();
 
-        // Try to get the actual terrain surface from the heightmap.
-        // This is the most reliable way to find where terrain actually is,
-        // especially for newly generated Ages where startY may be a guess.
-        int heightmapY = startY;
         ChunkAccess chunk = level.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, false);
-        if (chunk != null) {
-            int hmY = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15);
-            if (hmY > minY) {
-                heightmapY = hmY + 1; // +1 because heightmap returns top solid block Y
+
+        if (chunk == null) {
+            Mystcraft.LOGGER.warn("[LinkingManager] findSafeY: chunk not loaded at ({}, {}), forcing load",
+                    x >> 4, z >> 4);
+            chunk = level.getChunk(x >> 4, z >> 4);
+        }
+
+        // Detect if this is a ceiling terrain type (nether, cave) where the heightmap
+        // points to the roof and we need to search inside the cave instead.
+        boolean hasCeiling = hasCeilingTerrain(level);
+
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+
+        if (hasCeiling) {
+            // For nether/cave terrain: search bottom-up to find a safe spot INSIDE the cave.
+            // The heightmap would return the top of the bedrock ceiling which is wrong.
+            Mystcraft.LOGGER.debug("Ceiling terrain detected, searching bottom-up for safe spawn");
+
+            // Start from just above minY and scan upward
+            for (int y = minY + 1; y < maxY - 1; y++) {
+                if (isSafeSpawn(level, pos, x, y, z)) {
+                    Mystcraft.LOGGER.debug("Found safe spawn inside ceiling terrain at Y={}", y);
+                    return y;
+                }
             }
-        }
 
-        // Check if the heightmap position is safe (solid below, 2 clear above)
-        if (isSafeSpawn(level, pos, x, heightmapY, z)) {
-            Mystcraft.LOGGER.debug("Safe spawn from heightmap at Y={} (requested Y={})", heightmapY, startY);
-            return heightmapY;
-        }
+            // If nothing found bottom-up, try the requested startY
+            if (isSafeSpawn(level, pos, x, startY, z)) {
+                return startY;
+            }
 
-        // Check if the originally requested position is safe
-        if (startY != heightmapY && isSafeSpawn(level, pos, x, startY, z)) {
+            // Absolute fallback for ceiling terrain
+            Mystcraft.LOGGER.warn("No safe spawn in ceiling terrain at ({}, {}), using startY={}", x, z, startY);
             return startY;
         }
 
-        // Search outward from the best guess (heightmap Y), checking both up and down
-        int searchFrom = heightmapY;
-        for (int offset = 1; offset < 128; offset++) {
-            // Search downward
-            int downY = searchFrom - offset;
-            if (downY > minY && isSafeSpawn(level, pos, x, downY, z)) {
-                Mystcraft.LOGGER.debug("Found safe spawn at Y={} (searched down from {})", downY, searchFrom);
-                return downY;
-            }
+        // Open-sky terrain: use the heightmap
+        int hmY = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15);
+        int heightmapY = (hmY > minY) ? hmY + 1 : startY;
 
-            // Search upward
+        // Check heightmap position first (most likely correct)
+        if (isSafeSpawn(level, pos, x, heightmapY, z)) {
+            Mystcraft.LOGGER.debug("Safe spawn from heightmap at Y={}", heightmapY);
+            return heightmapY;
+        }
+
+        // Check the originally requested position
+        if (startY != heightmapY && isSafeSpawn(level, pos, x, startY, z)) {
+            Mystcraft.LOGGER.debug("Safe spawn from requested Y={}", startY);
+            return startY;
+        }
+
+        // Search outward from heightmap Y, preferring upward
+        int searchFrom = heightmapY;
+        for (int offset = 1; offset < 256; offset++) {
             int upY = searchFrom + offset;
             if (upY < maxY - 1 && isSafeSpawn(level, pos, x, upY, z)) {
                 Mystcraft.LOGGER.debug("Found safe spawn at Y={} (searched up from {})", upY, searchFrom);
                 return upY;
             }
+
+            int downY = searchFrom - offset;
+            if (downY > minY && isSafeSpawn(level, pos, x, downY, z)) {
+                Mystcraft.LOGGER.debug("Found safe spawn at Y={} (searched down from {})", downY, searchFrom);
+                return downY;
+            }
         }
 
-        // Absolute fallback: place above heightmap and let the generate-platform flag handle it
-        Mystcraft.LOGGER.warn("No safe spawn found near ({}, {}, {}), using heightmap Y={}", x, startY, z, heightmapY);
+        // Last resort: scan the entire column top-down
+        Mystcraft.LOGGER.warn("Exhaustive search for safe spawn at ({}, {})", x, z);
+        for (int y = maxY - 2; y > minY; y--) {
+            if (isSafeSpawn(level, pos, x, y, z)) {
+                Mystcraft.LOGGER.info("Found safe spawn via full column scan at Y={}", y);
+                return y;
+            }
+        }
+
+        Mystcraft.LOGGER.warn("No safe spawn found at ({}, {}), using heightmap+1 Y={}", x, z, heightmapY);
         return heightmapY;
     }
 
     /**
-     * Checks if a position is safe to spawn: solid ground below, 2 passable blocks at feet and head.
+     * Checks if the level uses a terrain type with a ceiling (nether, cave).
+     * These terrain types have a bedrock roof so the heightmap points to
+     * the top of the ceiling rather than inside the habitable cave.
+     */
+    private static boolean hasCeilingTerrain(ServerLevel level) {
+        ChunkGenerator generator = level.getChunkSource().getGenerator();
+        if (generator instanceof art.arcane.mystcraft.world.gen.AgeChunkGenerator ageGen) {
+            String type = ageGen.getTerrainType();
+            return "nether".equals(type) || "cave".equals(type);
+        }
+        // Also check the dimension type's natural flag - nether dimensions have hasCeiling=true
+        return level.dimensionType().hasCeiling();
+    }
+
+    /**
+     * Checks if a position is safe to spawn: solid ground below, 2 passable blocks at feet and head,
+     * no lava/fire, ground is not bedrock (could indicate void beneath).
      */
     private static boolean isSafeSpawn(ServerLevel level, BlockPos.MutableBlockPos pos, int x, int y, int z) {
         int minY = level.getMinBuildHeight();
@@ -653,18 +829,33 @@ public final class LinkingManager {
             return false;
         }
 
+        if (!level.hasChunk(x >> 4, z >> 4)) {
+            return false;
+        }
+
+        // Ground must be solid and not a hazard
         pos.set(x, y - 1, z);
         BlockState ground = level.getBlockState(pos);
         if (!ground.isSolidRender(level, pos)) {
             return false;
         }
+        // Don't spawn on lava or fire
+        if (ground.is(Blocks.LAVA) || ground.is(Blocks.FIRE) || ground.is(Blocks.SOUL_FIRE)
+                || ground.is(Blocks.MAGMA_BLOCK)) {
+            return false;
+        }
 
+        // Feet must be passable and not liquid/fire
         pos.set(x, y, z);
         BlockState feet = level.getBlockState(pos);
         if (feet.blocksMotion()) {
             return false;
         }
+        if (feet.is(Blocks.LAVA) || feet.is(Blocks.FIRE) || feet.is(Blocks.SOUL_FIRE)) {
+            return false;
+        }
 
+        // Head must be passable
         pos.set(x, y + 1, z);
         BlockState head = level.getBlockState(pos);
         return !head.blocksMotion();

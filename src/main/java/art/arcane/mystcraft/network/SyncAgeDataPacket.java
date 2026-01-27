@@ -104,7 +104,7 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
             return 0.0f;
         }
 
-        // ========================= Rendering Configuration Getters =========================
+        // --- Rendering Configuration Getters ---
 
         private static CompoundTag getConfig(int ageUID) {
             CompoundTag data = CACHE.get(ageUID);

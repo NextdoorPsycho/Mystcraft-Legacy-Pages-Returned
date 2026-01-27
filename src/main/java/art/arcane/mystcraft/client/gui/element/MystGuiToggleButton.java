@@ -10,8 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Toggle button GUI element.
- * Replicates legacy GuiElementButtonToggle.
+ * Toggle button GUI element for the Mystcraft GUI system.
  */
 public class MystGuiToggleButton extends MystGuiElement {
 

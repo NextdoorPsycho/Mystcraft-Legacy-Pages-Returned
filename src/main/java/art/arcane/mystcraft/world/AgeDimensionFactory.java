@@ -657,6 +657,11 @@ public class AgeDimensionFactory {
             return false;
         }
 
+        // Don't read blocks from unloaded chunks - would deadlock the server thread
+        if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
+            return false;
+        }
+
         // Check block below (must be solid and not bedrock)
         BlockPos below = pos.below();
         var groundState = level.getBlockState(below);
@@ -735,9 +740,15 @@ public class AgeDimensionFactory {
     /**
      * Finds the surface Y coordinate at a given X/Z position.
      * Returns the position of the first air block above solid ground.
+     * Returns null if the chunk is not loaded (to avoid deadlocking the server thread).
      */
     @Nullable
     private static BlockPos findSurfaceY(@NotNull ServerLevel level, int x, int z, int minY, int maxY) {
+        // Don't read blocks from unloaded chunks - would deadlock the server thread
+        if (!level.hasChunk(x >> 4, z >> 4)) {
+            return null;
+        }
+
         // Start from a reasonable height and search down
         int startY = Math.min(maxY - 1, 128);
 

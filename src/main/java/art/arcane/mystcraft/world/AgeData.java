@@ -474,7 +474,7 @@ public class AgeData extends SavedData {
         return String.join(", ", authors);
     }
 
-    // ========================= Age Configuration Getters =========================
+    // --- Age Configuration Getters ---
 
     public String getWeatherType() { return weatherType; }
     public String getLightingType() { return lightingType; }
@@ -550,7 +550,7 @@ public class AgeData extends SavedData {
         setDirty();
     }
 
-    // ========================= Deck Order Methods =========================
+    // --- Deck Order Methods ---
 
     /**
      * Gets the saved deck order for a deck.

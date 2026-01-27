@@ -21,7 +21,6 @@ import net.minecraftforge.registries.RegistryObject;
 
 /**
  * Block registrations for Mystcraft.
- * Registry names match original 1.12 names for compatibility.
  */
 public final class ModBlocks {
 

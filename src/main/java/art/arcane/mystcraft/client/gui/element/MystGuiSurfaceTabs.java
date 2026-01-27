@@ -12,7 +12,6 @@ import java.util.List;
 
 /**
  * Tab interface for page collections (folders/portfolios) on the side of the Writing Desk.
- * Replicates legacy GuiElementSurfaceTabs.
  */
 public class MystGuiSurfaceTabs extends MystGuiElement {
 

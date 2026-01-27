@@ -10,7 +10,6 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Utility methods for entity operations.
- * Ported from legacy Mystcraft EntityUtils.
  */
 public final class EntityUtils {
 

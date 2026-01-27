@@ -59,7 +59,7 @@ public final class ModifierSymbols {
         SymbolRegistry.register(new GradientDusk());
     }
 
-    // ========================= Angles =========================
+    // --- Angles ---
 
     public static class AngleNorth extends SymbolBase {
         public AngleNorth() {
@@ -113,7 +113,7 @@ public final class ModifierSymbols {
         }
     }
 
-    // ========================= Phases =========================
+    // --- Phases ---
 
     public static class PhaseNadir extends SymbolBase {
         public PhaseNadir() {
@@ -167,7 +167,7 @@ public final class ModifierSymbols {
         }
     }
 
-    // ========================= Lengths =========================
+    // --- Lengths ---
 
     public static class LengthZero extends SymbolBase {
         public LengthZero() {
@@ -221,7 +221,7 @@ public final class ModifierSymbols {
         }
     }
 
-    // ========================= Colors =========================
+    // --- Colors ---
 
     public static class ColorRed extends SymbolBase {
         public ColorRed() {
@@ -431,7 +431,7 @@ public final class ModifierSymbols {
         }
     }
 
-    // ========================= Special Modifiers =========================
+    // --- Special Modifiers ---
 
     public static class ModifierClear extends SymbolBase {
         public ModifierClear() {
@@ -462,7 +462,7 @@ public final class ModifierSymbols {
         }
     }
 
-    // ========================= Gradient Modifiers =========================
+    // --- Gradient Modifiers ---
 
     public static class GradientSunset extends SymbolBase {
         public GradientSunset() {

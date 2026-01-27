@@ -52,7 +52,7 @@ public class WritingDeskBlock extends BaseEntityBlock {
     public static final BooleanProperty IS_TOP = BooleanProperty.create("is_top");
     public static final BooleanProperty IS_FOOT = BooleanProperty.create("is_foot");
 
-    /** Offset mapping for each horizontal direction index - foot extends in the facing direction (matching legacy) */
+    /** Offset mapping for each horizontal direction index - foot extends in the facing direction */
     private static final int[][] HEAD_FOOT_MAP = {
             {0, 1},   // SOUTH (index 0): foot to Z+1 (south)
             {-1, 0},  // WEST (index 1): foot to X-1 (west)
@@ -81,7 +81,7 @@ public class WritingDeskBlock extends BaseEntityBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        // Match legacy: desk FACING is set to player's horizontal facing direction
+        // Desk FACING is set to player's horizontal facing direction
         // The foot extends in the facing direction (away from where player is standing)
         return defaultBlockState().setValue(FACING, context.getHorizontalDirection());
     }

@@ -3,7 +3,7 @@ package art.arcane.mystcraft.world.gen.noise;
 import net.minecraft.util.RandomSource;
 
 /**
- * Improved Perlin noise generator ported from legacy Mystcraft.
+ * Improved Perlin noise generator for terrain generation.
  */
 public class NoiseGeneratorPerlin {
 

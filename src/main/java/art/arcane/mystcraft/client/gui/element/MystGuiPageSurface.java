@@ -17,7 +17,6 @@ import java.util.List;
 
 /**
  * A scrollable surface that displays pages/symbols.
- * Replicates legacy GuiElementPageSurface.
  */
 public class MystGuiPageSurface extends MystGuiElement {
 
@@ -248,7 +247,7 @@ public class MystGuiPageSurface extends MystGuiElement {
         int guiLeft = getLeft();
         int contentWidth = width - 16;
 
-        // Right-click release = copy (if shift held in legacy, full stack)
+        // Right-click release = copy
         if (mouseX >= guiLeft && mouseX < guiLeft + contentWidth &&
             hoverItem != null && button == 1 && mouseDown) {
             provider.copy(hoverItem);

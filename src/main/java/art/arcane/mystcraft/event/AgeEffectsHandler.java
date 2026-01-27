@@ -1,11 +1,14 @@
 package art.arcane.mystcraft.event;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.api.world.logic.IWeatherController;
 import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.registry.ModEntities;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
+import art.arcane.mystcraft.world.weather.*;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -18,7 +21,9 @@ import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Handles server-side Age effects based on symbol configuration.
@@ -31,6 +36,10 @@ import java.util.Random;
 public class AgeEffectsHandler {
 
     private static final Random random = new Random();
+
+    // Per-dimension weather controller instances, lazily created from the weather type string.
+    // These maintain internal state (timers, rain levels) across ticks.
+    private static final Map<ResourceKey<Level>, IWeatherController> weatherControllers = new ConcurrentHashMap<>();
 
     @SubscribeEvent
     public static void onLevelTick(TickEvent.LevelTickEvent event) {
@@ -52,52 +61,41 @@ public class AgeEffectsHandler {
     }
 
     /**
-     * Controls weather based on the Age's weather type setting.
+     * Controls weather using the actual IWeatherController implementation.
+     * Controllers are cached per-dimension and maintain their own internal state
+     * (timers, rain levels, transitions).
      */
     private static void handleWeather(ServerLevel level, AgeData ageData) {
         String weatherType = ageData.getWeatherType();
 
-        switch (weatherType) {
-            case "off" -> {
-                // Clear weather always
-                if (level.isRaining() || level.isThundering()) {
-                    level.setWeatherParameters(6000, 0, false, false);
-                }
-            }
-            case "always", "rain" -> {
-                // Always raining (not thunder)
-                if (!level.isRaining() || level.isThundering()) {
-                    level.setWeatherParameters(0, 6000, true, false);
-                }
-            }
-            case "snow" -> {
-                // Always raining (snow handled by biome temperature)
-                if (!level.isRaining()) {
-                    level.setWeatherParameters(0, 6000, true, false);
-                }
-            }
-            case "storm" -> {
-                // Always thunderstorm
-                if (!level.isThundering()) {
-                    level.setWeatherParameters(0, 6000, true, true);
-                }
-            }
-            case "cloudy" -> {
-                // Raining but with reduced rain level effect (visual only)
-                // Forge doesn't easily support this, so we'll just keep it not raining
-                // but cloudy effect would need client-side rendering
-            }
-            case "fast" -> {
-                // Weather changes faster - reduce duration
-                // This is handled by vanilla, we just let it cycle naturally
-                // but can force shorter weather periods
-            }
-            case "slow" -> {
-                // Weather changes slower - extend duration
-                // This is harder to implement without reflection
-            }
-            // "normal" - let vanilla handle it
+        // "normal" means let vanilla handle it - no intervention needed
+        if ("normal".equals(weatherType)) {
+            return;
         }
+
+        // Get or create the weather controller for this dimension
+        IWeatherController controller = weatherControllers.computeIfAbsent(
+                level.dimension(), key -> createWeatherController(weatherType));
+
+        // Let the controller manage weather state
+        controller.updateWeather(level);
+    }
+
+    /**
+     * Creates an IWeatherController instance from the weather type string.
+     */
+    private static IWeatherController createWeatherController(String type) {
+        return switch (type) {
+            case "off" -> new WeatherControllerNever();
+            case "always", "rain" -> new WeatherControllerAlwaysRain();
+            case "snow" -> new WeatherControllerSnow();
+            case "storm", "thunder" -> new WeatherControllerAlwaysThunder();
+            case "cloudy" -> new WeatherControllerCloudy();
+            case "fast" -> new WeatherControllerFast();
+            case "slow" -> new WeatherControllerSlow();
+            case "blizzard" -> new WeatherControllerBlizzard();
+            default -> new WeatherControllerNormal();
+        };
     }
 
     /**

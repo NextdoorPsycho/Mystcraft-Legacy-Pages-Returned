@@ -17,6 +17,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 public class SurfaceLakesPopulator implements IPopulate {
 
     private final long seed;
+    private BlockPos currentChunkPos;
 
     // Number of lake attempts per chunk
     private static final int WATER_ATTEMPTS_PER_CHUNK = 4;
@@ -31,6 +32,8 @@ public class SurfaceLakesPopulator implements IPopulate {
 
     @Override
     public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        this.currentChunkPos = chunkPos;
+
         // Generate water lakes
         for (int i = 0; i < WATER_ATTEMPTS_PER_CHUNK; i++) {
             int x = chunkPos.getX() + random.nextInt(16);
@@ -93,6 +96,7 @@ public class SurfaceLakesPopulator implements IPopulate {
                 for (int y = 4; y < 8; y++) {
                     if (lakeShape[(x * 16 + z) * 8 + y]) {
                         BlockPos checkPos = center.offset(x, y, z);
+                        if (!isInWritableArea(checkPos, currentChunkPos)) continue;
                         BlockState state = world.getBlockState(checkPos);
 
                         // Don't generate if there's already a liquid at the surface
@@ -120,7 +124,7 @@ public class SurfaceLakesPopulator implements IPopulate {
                     boolean inLake = lakeShape[(x * 16 + z) * 8 + y];
                     if (inLake) {
                         BlockPos lakePos = center.offset(x, y, z);
-                        BlockState existing = world.getBlockState(lakePos);
+                        if (!isInWritableArea(lakePos, currentChunkPos)) continue;
 
                         if (y >= 4) {
                             // Air space above the lake
@@ -152,14 +156,14 @@ public class SurfaceLakesPopulator implements IPopulate {
                     if (z < 15 && !lakeShape[(x * 16 + (z + 1)) * 8 + y]) isEdge = true;
                     if (z > 0 && !lakeShape[(x * 16 + (z - 1)) * 8 + y]) isEdge = true;
 
-                    if (isEdge && y < 4) {
+                    if (isEdge && y < 4 && isInWritableArea(edgePos, currentChunkPos)) {
                         // Check blocks around the lake edge for decoration
                         BlockPos aboveEdge = edgePos.above();
                         BlockState aboveState = world.getBlockState(aboveEdge);
 
                         if (isWater) {
                             // Add sand/gravel around water lakes
-                            if (aboveState.isSolid()) {
+                            if (aboveState.isSolid() && isInWritableArea(aboveEdge, currentChunkPos)) {
                                 if (random.nextInt(2) == 0) {
                                     world.setBlock(aboveEdge, Blocks.SAND.defaultBlockState(), 2);
                                 } else {
@@ -173,7 +177,7 @@ public class SurfaceLakesPopulator implements IPopulate {
                             }
                         } else {
                             // Add stone around lava lakes
-                            if (aboveState.isSolid()) {
+                            if (aboveState.isSolid() && isInWritableArea(aboveEdge, currentChunkPos)) {
                                 world.setBlock(aboveEdge, Blocks.STONE.defaultBlockState(), 2);
                             }
 
@@ -195,6 +199,7 @@ public class SurfaceLakesPopulator implements IPopulate {
                         boolean inLake = lakeShape[(x * 16 + z) * 8 + y];
                         if (inLake) {
                             BlockPos burnPos = center.offset(x, y, z);
+                            if (!isInWritableArea(burnPos, currentChunkPos)) continue;
                             BlockState burnState = world.getBlockState(burnPos);
 
                             // Burn wooden blocks and leaves

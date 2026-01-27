@@ -138,7 +138,7 @@ public final class ColorTargetSymbols {
         return colors[rand.nextInt(colors.length)];
     }
 
-    // ========================= Sky Colors =========================
+    // --- Sky Colors ---
 
     public static class ColorSky extends SymbolBase {
         public ColorSky() {
@@ -198,7 +198,7 @@ public final class ColorTargetSymbols {
         }
     }
 
-    // ========================= Cloud Colors =========================
+    // --- Cloud Colors ---
 
     public static class ColorCloud extends SymbolBase {
         public ColorCloud() {
@@ -234,7 +234,7 @@ public final class ColorTargetSymbols {
         }
     }
 
-    // ========================= Fog Colors =========================
+    // --- Fog Colors ---
 
     public static class ColorFog extends SymbolBase {
         public ColorFog() {
@@ -269,7 +269,7 @@ public final class ColorTargetSymbols {
         }
     }
 
-    // ========================= Foliage Colors =========================
+    // --- Foliage Colors ---
 
     public static class ColorFoliage extends SymbolBase {
         public ColorFoliage() {
@@ -304,7 +304,7 @@ public final class ColorTargetSymbols {
         }
     }
 
-    // ========================= Grass Colors =========================
+    // --- Grass Colors ---
 
     public static class ColorGrass extends SymbolBase {
         public ColorGrass() {
@@ -339,7 +339,7 @@ public final class ColorTargetSymbols {
         }
     }
 
-    // ========================= Water Colors =========================
+    // --- Water Colors ---
 
     public static class ColorWater extends SymbolBase {
         public ColorWater() {

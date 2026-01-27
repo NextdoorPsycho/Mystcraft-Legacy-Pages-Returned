@@ -21,24 +21,18 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * The Unlinked Linkbook item.
- * A blank linkbook that can be linked to the current location.
- *
- * Legacy behavior (exact match):
- * - Stack size of 16
- * - When right-clicked with exactly 1 in hand, converts to a linked linkbook at current position
- * - Does NOT convert if stack count > 1 (legacy line 54)
- * - Transfers any link panel properties from the unlinked book to the new linked book
+ * A blank linkbook that converts to a linked linkbook at the current position on right-click.
+ * Only converts when exactly 1 is held. Transfers link panel properties to the new book.
  */
 public class LinkbookUnlinkedItem extends Item {
 
     public LinkbookUnlinkedItem(Properties properties) {
-        super(properties.stacksTo(16)); // Legacy: setMaxStackSize(16)
+        super(properties.stacksTo(16));
     }
 
     @Override
     public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
-        // Legacy: Show link panel properties in tooltip
+        // Show link panel properties in tooltip
         if (stack.getTag() != null) {
             Page.getTooltip(stack, tooltip);
         }
@@ -49,8 +43,7 @@ public class LinkbookUnlinkedItem extends Item {
     public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
         ItemStack inHand = player.getItemInHand(hand);
 
-        // Legacy behavior: Only convert if on server AND stack count is exactly 1
-        // See legacy ItemLinkbookUnlinked.java line 54: if (worldIn.isRemote || inHand.getCount() > 1)
+        // Only convert if on server and holding exactly 1
         if (level.isClientSide || inHand.getCount() > 1) {
             return InteractionResultHolder.pass(inHand);
         }
@@ -58,23 +51,15 @@ public class LinkbookUnlinkedItem extends Item {
         // Create a new linked linkbook
         ItemStack linkBook = new ItemStack(ModItems.LINKBOOK.get());
 
-        // Initialize the linkbook with current position (legacy: ((ItemLinkbook) ModItems.linkbook).initialize(worldIn, linkBook, playerIn))
         initializeLinkbook(linkBook, level, player);
-
-        // Apply link panel properties from unlinked book to linked book (legacy: Page.applyLinkPanel(inHand, linkBook))
         Page.applyLinkPanel(inHand, linkBook);
-
-        // Replace the unlinked book with the linked one (legacy lines 60-61)
         player.setItemInHand(hand, linkBook);
         inHand.setCount(0);
 
         return InteractionResultHolder.pass(linkBook);
     }
 
-    /**
-     * Initializes a linkbook with the current position.
-     * Matches legacy ItemLinkbook.initialize() behavior.
-     */
+    /** Initializes a linkbook with the player's current position and dimension. */
     private void initializeLinkbook(ItemStack linkBook, Level level, Player player) {
         CompoundTag tag = new CompoundTag();
 
@@ -109,10 +94,7 @@ public class LinkbookUnlinkedItem extends Item {
         return dimension.location().getPath();
     }
 
-    /**
-     * Creates an unlinked book with a link panel's properties.
-     * Legacy: ItemLinkbookUnlinked.createItem()
-     */
+    /** Creates an unlinked book with a link panel's properties. */
     public static ItemStack createItem(@NotNull ItemStack linkpanel, @NotNull ItemStack covermat) {
         ItemStack linkbook = new ItemStack(ModItems.LINKBOOK_UNLINKED.get());
         CompoundTag prev = linkpanel.getTag();

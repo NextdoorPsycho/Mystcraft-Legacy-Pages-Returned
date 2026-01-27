@@ -17,8 +17,7 @@ import org.slf4j.LoggerFactory;
  * For special terrain (void, flat): These symbols set the terrain type which
  * triggers custom generation in AgeChunkGenerator.
  *
- * This matches how legacy Mystcraft worked - most terrain types were vanilla
- * terrain with modifications applied on top.
+ * Most terrain types use vanilla terrain with modifications applied on top.
  */
 public final class TerrainSymbols {
 

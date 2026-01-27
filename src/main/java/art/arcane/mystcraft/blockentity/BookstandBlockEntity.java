@@ -85,7 +85,7 @@ public class BookstandBlockEntity extends MystcraftBlockEntity implements IRotat
     protected void readNbt(CompoundTag tag) {
         super.readNbt(tag);
         inventory.deserializeNBT(tag.getCompound(TAG_INVENTORY));
-        // Support legacy "Rotation" key from old versions
+        // Support alternate "Rotation" key format
         if (tag.contains("Rotation")) {
             setYaw(tag.getInt("Rotation") + 270);
         } else if (tag.contains(TAG_YAW)) {
@@ -96,7 +96,7 @@ public class BookstandBlockEntity extends MystcraftBlockEntity implements IRotat
         }
     }
 
-    // ========== IRotateableBlockEntity Implementation ==========
+    // --- IRotateableBlockEntity Implementation ---
 
     @Override
     public short getYaw() {

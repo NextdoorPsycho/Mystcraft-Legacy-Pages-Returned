@@ -18,7 +18,6 @@ import java.util.List;
 
 /**
  * Helper class for rendering pages with D'ni symbols.
- * Replicates the visual style of the legacy Mystcraft page rendering.
  */
 @OnlyIn(Dist.CLIENT)
 public class PageRenderHelper {

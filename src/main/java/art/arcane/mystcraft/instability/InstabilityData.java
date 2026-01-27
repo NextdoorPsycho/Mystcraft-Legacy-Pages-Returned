@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Initializes all default instability providers and configurations.
- * Ported from the legacy Mystcraft instability system.
  */
 public final class InstabilityData {
 

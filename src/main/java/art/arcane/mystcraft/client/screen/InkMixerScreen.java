@@ -26,7 +26,6 @@ import java.util.Map;
 /**
  * Screen for the Ink Mixer block.
  * Click on the basin area while holding an item to add it to the ink.
- * Replicates legacy GuiInkMixer with animated color gradient.
  */
 public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
 
@@ -34,7 +33,7 @@ public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
             new ResourceLocation(Mystcraft.MOD_ID, "gui/inkmixer.png");
 
     // Basin area - center of the GUI where ink is displayed
-    // Legacy uses radius check: x*x + y*y < 900 (radius 30) around center (88, 49)
+    // Radius check: x*x + y*y < 900 (radius 30) around center (88, 49)
     private static final int BASIN_CENTER_X = 88;
     private static final int BASIN_CENTER_Y = 49;
     private static final int BASIN_RADIUS_SQ = 900; // 30^2
@@ -138,7 +137,7 @@ public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
 
     /**
      * Renders an animated color "ball" effect in the center of the ink.
-     * Replicates the legacy DniColorRenderer effect.
+     * Animated D'ni color renderer effect.
      */
     private void renderColorBall(GuiGraphics guiGraphics, int centerX, int centerY, float radius,
                                   float r, float g, float b, float pulse) {
@@ -216,7 +215,7 @@ public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
 
     @Override
     protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // Only render inventory label (no title - the ink mixer doesn't show one in legacy)
+        // Only render inventory label (title is baked into texture)
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
 
         // Show "Click to add" hint when hovering over basin with item

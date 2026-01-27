@@ -18,6 +18,7 @@ import art.arcane.mystcraft.world.gen.populate.SpikesPopulator;
 import art.arcane.mystcraft.world.gen.populate.StarFissurePopulator;
 import art.arcane.mystcraft.world.gen.populate.SurfaceLakesPopulator;
 import art.arcane.mystcraft.world.gen.populate.TendrilsPopulator;
+import art.arcane.mystcraft.world.gen.populate.VerticalTendrilsPopulator;
 
 /**
  * Terrain feature symbols (caves, ravines, etc).
@@ -40,6 +41,7 @@ public final class FeatureSymbols {
         SymbolRegistry.register(new Spikes());
         SymbolRegistry.register(new Spheres());
         SymbolRegistry.register(new Tendrils());
+        SymbolRegistry.register(new VerticalTendrils());
 
         // Cave biome features (1.17+)
         SymbolRegistry.register(new DripstoneCaves());
@@ -140,7 +142,7 @@ public final class FeatureSymbols {
         public void registerLogic(AgeDirector director, long seed) {
             director.setDenseOresEnabled(true);
 
-            // Register the dense ores populator (matching legacy Mystcraft behavior)
+            // Register the dense ores populator
             director.registerInterface(new DenseOresPopulator(seed));
 
             director.addInstability(getInstabilityCost());
@@ -257,7 +259,25 @@ public final class FeatureSymbols {
         }
     }
 
-    // ========================= Cave Biome Features =========================
+    public static class VerticalTendrils extends SymbolBase {
+        public VerticalTendrils() {
+            super(SymbolRegistry.mystcraftId("vertical_tendrils"), SymbolCategory.FEATURE);
+            setCardRank(3);
+            setInstabilityCost(4.0f);
+            setPoem("Terrain", "Transform", "Stone", "Column");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setVerticalTendrilsEnabled(true);
+
+            director.registerInterface(new VerticalTendrilsPopulator(seed));
+
+            director.addInstability(getInstabilityCost());
+        }
+    }
+
+    // --- Cave Biome Features ---
 
     public static class DripstoneCaves extends SymbolBase {
         public DripstoneCaves() {
@@ -312,7 +332,7 @@ public final class FeatureSymbols {
         }
     }
 
-    // ========================= Star Fissure Generation =========================
+    // --- Star Fissure Generation ---
 
     public static class StarFissureFeature extends SymbolBase {
         public StarFissureFeature() {

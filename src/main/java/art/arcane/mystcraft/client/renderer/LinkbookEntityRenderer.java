@@ -18,8 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Renderer for the Linkbook entity (dropped book in world).
- * Uses the vanilla BookModel to render an open book on the ground,
- * matching the legacy 1.12.2 appearance.
+ * Uses the vanilla BookModel to render an open book on the ground.
  */
 public class LinkbookEntityRenderer extends EntityRenderer<LinkbookEntity> {
 
@@ -46,19 +45,16 @@ public class LinkbookEntityRenderer extends EntityRenderer<LinkbookEntity> {
 
         poseStack.pushPose();
 
-        // Position slightly above ground (legacy: y + 0.0625)
+        // Slight vertical offset so the book sits on top of the ground plane
         poseStack.translate(0, 0.0625, 0);
 
-        // Rotate to match legacy: rotate(entityYaw + 90, 0, -1, 0) then rotate(90, 0, 0, 1)
-        // This makes the book lie flat on the ground, facing the direction
+        // Lay the book flat on the ground, facing the entity direction
         poseStack.mulPose(Axis.YN.rotationDegrees(entityYaw + 90));
         poseStack.mulPose(Axis.ZP.rotationDegrees(90));
 
-        // Scale to 0.8x like legacy
-        poseStack.scale(0.8f, 0.8f, 0.8f);
+        poseStack.scale(0.8f, 0.8f, 0.8f); // Book display scale
 
-        // Set the book to fully open state (1.2f like legacy)
-        // BookModel.setupAnim takes time values - we use static 1.2 for open state
+        // Fully open state
         bookModel.setupAnim(0, 0, 0, 1.2f);
 
         // Choose texture based on book type

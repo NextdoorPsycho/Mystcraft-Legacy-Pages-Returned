@@ -44,7 +44,7 @@ public class LinkbookEntity extends Entity {
     private static final EntityDataAccessor<Float> BOOK_HEALTH =
             SynchedEntityData.defineId(LinkbookEntity.class, EntityDataSerializers.FLOAT);
 
-    // Damage constants (matching legacy)
+    // Damage constants
     private static final float MAX_HEALTH = 100.0f;
     private static final float FIRE_DAMAGE = 5.0f;
     private static final float COLLISION_DAMAGE = 10.0f; // 2x fire damage
@@ -55,7 +55,7 @@ public class LinkbookEntity extends Entity {
     private int ticksExisted = 0;
     private int lastStarvationTick = 0;
 
-    /** Visual hurt time for rendering red tint when damaged (legacy behavior) */
+    /** Visual hurt time for rendering red tint when damaged */
     public int hurtTime = 0;
 
     // Item handler for hopper/minecart interaction
@@ -246,7 +246,7 @@ public class LinkbookEntity extends Entity {
         }
     }
 
-    // ========================= Health/Damage System =========================
+    // --- Health/Damage System ---
 
     /**
      * Gets the current health of the book.
@@ -333,7 +333,7 @@ public class LinkbookEntity extends Entity {
             return false;
         }
 
-        // Set hurt time for visual red tint (10 ticks like legacy)
+        // Set hurt time for visual red tint (10 ticks)
         hurtTime = 10;
 
         // Check for fire damage using tags
@@ -358,7 +358,7 @@ public class LinkbookEntity extends Entity {
         return false; // Books can burn
     }
 
-    // ========================= Capability System (Hopper/Minecart Support) =========================
+    // --- Capability System (Hopper/Minecart Support) ---
 
     @Override
     @NotNull

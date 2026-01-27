@@ -15,9 +15,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Modern 1.20 model for the Writing Desk, ported from the original 1.12 ModelWritingDesk.
+ * Writing Desk block entity model.
  * Uses a 256x128 texture (displayed as 2048x1024 in the actual file - 8x scale).
- * This is a simplified version focusing on the main structural elements.
  */
 public class WritingDeskModel extends Model {
 

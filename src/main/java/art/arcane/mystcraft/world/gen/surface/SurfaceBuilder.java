@@ -15,9 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Surface builder that applies biome-appropriate surface blocks to terrain.
- * This is the 1.20.2+ equivalent of the legacy Biome.genTerrainBlocks() method.
- *
+ * Applies biome-appropriate surface blocks to terrain.
  * Each biome has associated surface and subsurface blocks that get applied
  * to the top layers of terrain (replacing stone with grass/dirt, sand, etc.)
  */
@@ -120,7 +118,7 @@ public final class SurfaceBuilder {
 
     /**
      * Builds biome-appropriate surfaces for a chunk.
-     * This is the main entry point, similar to the legacy ChunkProviderMyst.replaceBlocksForBiome().
+     * Main entry point for applying biome surfaces to a chunk.
      */
     public static void buildBiomeSurfaces(ChunkAccess chunk, BiomeManager biomeManager, RandomState randomState, int seaLevel) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();

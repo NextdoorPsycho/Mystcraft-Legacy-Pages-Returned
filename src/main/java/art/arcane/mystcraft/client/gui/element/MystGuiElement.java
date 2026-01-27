@@ -10,7 +10,6 @@ import java.util.List;
 
 /**
  * Base class for Mystcraft GUI elements.
- * Replicates the legacy GuiElement system for 1.20.2.
  */
 public abstract class MystGuiElement {
 

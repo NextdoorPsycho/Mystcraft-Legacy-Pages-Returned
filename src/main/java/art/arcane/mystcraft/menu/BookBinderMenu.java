@@ -31,7 +31,7 @@ public class BookBinderMenu extends AbstractContainerMenu {
     private final DataSlot canBuildData;
     private final Container craftResult;
 
-    // Slot indices (matching legacy ContainerBookBinder)
+    // Slot indices
     public static final int SLOT_COVER = 0;
     public static final int SLOT_OUTPUT = 1;
     public static final int BLOCK_ENTITY_SLOTS = 2;
@@ -60,10 +60,10 @@ public class BookBinderMenu extends AbstractContainerMenu {
         IItemHandler handler = blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER)
                 .orElseThrow(() -> new IllegalStateException("BookBinder has no item handler"));
 
-        // Cover/Input slot (matching legacy at 8, 27)
+        // Cover/Input slot at (8, 27)
         addSlot(new SlotItemHandler(handler, 0, 8, 27));
 
-        // Output/Craft result slot (matching legacy at 152, 27) - uses separate inventory
+        // Output/Craft result slot at (152, 27) - uses separate inventory
         addSlot(new Slot(craftResult, 0, 152, 27) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {

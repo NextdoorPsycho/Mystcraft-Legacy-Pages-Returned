@@ -15,8 +15,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Modern 1.20 model for the Bookstand, ported from the original 1.12 ModelBookstand.
- * Uses the 64x32 entity texture.
+ * Bookstand block entity model. Uses the 64x32 entity texture.
  */
 public class BookstandModel extends Model {
 

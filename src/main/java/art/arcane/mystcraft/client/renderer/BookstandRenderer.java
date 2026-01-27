@@ -75,11 +75,9 @@ public class BookstandRenderer implements BlockEntityRenderer<BookstandBlockEnti
             poseStack.mulPose(Axis.YN.rotationDegrees(90 + rotation));
             poseStack.mulPose(Axis.ZP.rotationDegrees(120));
 
-            // Scale to match legacy (0.8x)
-            poseStack.scale(0.8f, 0.8f, 0.8f);
+            poseStack.scale(0.8f, 0.8f, 0.8f); // Book display scale
 
-            // Set the book to open state (1.05f like legacy bookstand)
-            bookModel.setupAnim(0, 0, 0, 1.05f);
+            bookModel.setupAnim(0, 0, 0, 1.05f); // Open state
 
             // Choose texture based on book type
             ResourceLocation bookTexture = (book.getItem() instanceof AgebookItem)

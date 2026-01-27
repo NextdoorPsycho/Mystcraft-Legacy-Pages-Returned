@@ -6,6 +6,7 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
  * Village populator that generates simplified villages.
@@ -45,10 +46,11 @@ public class VillagesPopulator implements IPopulate {
             return;
         }
 
-        int x = chunkPos.getX() + random.nextInt(16) + 8;
-        int z = chunkPos.getZ() + random.nextInt(16) + 8;
+        // Keep village center within current chunk to avoid cascading
+        int x = chunkPos.getX() + 4 + random.nextInt(8);
+        int z = chunkPos.getZ() + 4 + random.nextInt(8);
 
-        int surfaceY = findSurfaceY(world, x, z);
+        int surfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
         if (surfaceY < world.getMinBuildHeight() || surfaceY > world.getMaxBuildHeight() - 10) {
             return;
         }
@@ -67,32 +69,38 @@ public class VillagesPopulator implements IPopulate {
         int samples = 0;
         int baseHeight = center.getY();
 
+        // Only check within writable area to avoid cascading chunk loads
         for (int x = -FLATNESS_CHECK_RADIUS; x <= FLATNESS_CHECK_RADIUS; x += 2) {
             for (int z = -FLATNESS_CHECK_RADIUS; z <= FLATNESS_CHECK_RADIUS; z += 2) {
-                int y = findSurfaceY(world, center.getX() + x, center.getZ() + z);
+                int checkX = center.getX() + x;
+                int checkZ = center.getZ() + z;
+                BlockPos checkPos = new BlockPos(checkX, 0, checkZ);
+                if (!isInWritableArea(checkPos, new BlockPos(chunkMinX, 0, chunkMinZ))) continue;
+
+                int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, checkX, checkZ);
                 totalHeightDiff += Math.abs(y - baseHeight);
                 samples++;
             }
         }
 
+        if (samples == 0) return false;
         double avgHeightDiff = (double) totalHeightDiff / samples;
         return avgHeightDiff < 2.0;
     }
 
     /**
-     * Checks if a position is within the current chunk boundaries.
-     * This prevents cascade chunk loading when structures extend beyond chunk edges.
+     * Checks if a position is within the writable area for this chunk.
+     * Uses the IPopulate writable area (±16 blocks) rather than strict chunk boundaries.
      */
-    private boolean isInChunk(BlockPos pos) {
-        return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
-               pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
+    private boolean isInBounds(BlockPos pos) {
+        return isInWritableArea(pos, new BlockPos(chunkMinX, 0, chunkMinZ));
     }
 
     /**
-     * Safe setBlock that only places blocks within current chunk boundaries.
+     * Safe setBlock that only places blocks within writable area.
      */
     private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
-        if (isInChunk(pos)) {
+        if (isInBounds(pos)) {
             world.setBlock(pos, state, 2);
         }
     }
@@ -212,7 +220,7 @@ public class VillagesPopulator implements IPopulate {
             int y = findSurfaceY(world, x, z);
 
             BlockPos pathPos = new BlockPos(x, y, z);
-            if (isInChunk(pathPos) && world.getBlockState(pathPos).isSolid()) {
+            if (isInBounds(pathPos) && world.getBlockState(pathPos).isSolid()) {
                 safeSetBlock(world, pathPos, Blocks.DIRT_PATH.defaultBlockState());
             }
         }
@@ -226,7 +234,7 @@ public class VillagesPopulator implements IPopulate {
 
                 for (int dy = -3; dy < 5; dy++) {
                     BlockPos checkPos = groundPos.offset(0, dy, 0);
-                    if (isInChunk(checkPos)) {
+                    if (isInBounds(checkPos)) {
                         if (dy < 0) {
                             if (!world.getBlockState(checkPos).isSolid()) {
                                 safeSetBlock(world, checkPos, Blocks.DIRT.defaultBlockState());
@@ -243,14 +251,7 @@ public class VillagesPopulator implements IPopulate {
     }
 
     private int findSurfaceY(WorldGenLevel world, int x, int z) {
-        for (int y = world.getMaxBuildHeight() - 1; y > world.getMinBuildHeight(); y--) {
-            BlockPos pos = new BlockPos(x, y, z);
-            if (world.getBlockState(pos).isSolid() &&
-                world.getBlockState(pos.above()).isAir()) {
-                return y + 1;
-            }
-        }
-        return world.getSeaLevel();
+        return world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
     }
 
     @Override

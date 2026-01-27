@@ -213,7 +213,7 @@ public class PortfolioItem extends Item {
         return getPages(stack).isEmpty();
     }
 
-    // ==================== PORTFOLIO-SPECIFIC: COLLECTION SEMANTICS ====================
+    // --- Portfolio: Collection Semantics ---
 
     /**
      * Removes a page by CONTENT matching (not by index).
@@ -263,7 +263,7 @@ public class PortfolioItem extends Item {
         return count;
     }
 
-    // ==================== PORTFOLIO-SPECIFIC: CATEGORY STATISTICS ====================
+    // --- Portfolio: Category Statistics ---
 
     /**
      * Counts pages by type in this portfolio.
@@ -304,7 +304,7 @@ public class PortfolioItem extends Item {
         return count;
     }
 
-    // ==================== PORTFOLIO-SPECIFIC: BULK OPERATIONS ====================
+    // --- Portfolio: Bulk Operations ---
 
     /**
      * Imports all pages from another portfolio or folder into this one.

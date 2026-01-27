@@ -74,14 +74,12 @@ public class LecternRenderer implements BlockEntityRenderer<LecternBlockEntity> 
             // Position book on the lectern's sloped surface
             poseStack.translate(0, 0.255, 0);
 
-            // Tilt to match the lectern slope (110 degrees like legacy)
+            // Tilt to match the lectern slope
             poseStack.mulPose(Axis.ZP.rotationDegrees(110));
 
-            // Scale to match legacy (0.8x)
-            poseStack.scale(0.8f, 0.8f, 0.8f);
+            poseStack.scale(0.8f, 0.8f, 0.8f); // Book display scale
 
-            // Set the book to open state (1.22f like legacy lectern)
-            bookModel.setupAnim(0, 0, 0, 1.22f);
+            bookModel.setupAnim(0, 0, 0, 1.22f); // Open state
 
             // Choose texture based on book type
             ResourceLocation bookTexture = (book.getItem() instanceof AgebookItem)

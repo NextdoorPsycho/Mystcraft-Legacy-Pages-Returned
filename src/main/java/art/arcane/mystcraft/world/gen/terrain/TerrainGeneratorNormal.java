@@ -48,7 +48,7 @@ public class TerrainGeneratorNormal extends TerrainGeneratorBase {
     protected static final float[] PARABOLIC_FIELD = new float[25];
 
     // Biome height lookup table: maps biome resource location to [baseHeight, heightVariation]
-    // Values match legacy Minecraft biome heights from 1.12.2
+    // Maps biome to [baseHeight, heightVariation] for terrain shaping
     private static final Map<ResourceLocation, float[]> BIOME_HEIGHT_MAP = new HashMap<>();
 
     static {
@@ -60,7 +60,7 @@ public class TerrainGeneratorNormal extends TerrainGeneratorBase {
             }
         }
 
-        // Initialize biome height map with accurate values from legacy Minecraft
+        // Initialize biome height map
         // Format: [baseHeight, heightVariation]
         // Positive baseHeight = above sea level, negative = below
 
@@ -335,7 +335,7 @@ public class TerrainGeneratorNormal extends TerrainGeneratorBase {
      * Gets height data for a biome from the lookup table.
      * Returns [baseHeight, heightVariation].
      *
-     * Uses accurate biome height values matching legacy Minecraft terrain generation.
+     * Uses the biome height lookup table.
      * Falls back to plains-like values for unknown biomes.
      */
     private float[] getBiomeHeightData(Holder<Biome> biomeHolder) {

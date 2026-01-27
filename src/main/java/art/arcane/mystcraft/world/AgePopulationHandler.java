@@ -171,7 +171,7 @@ public class AgePopulationHandler {
         int z = chunkZ * 16;
         BlockPos chunkPos = new BlockPos(x, 0, z);
 
-        // Create random source for this chunk (matching legacy behavior)
+        // Create deterministic random source for this chunk
         long worldSeed = level.getSeed();
         RandomSource random = RandomSource.create();
         long k = random.nextLong() / 2L * 2L + 1L;

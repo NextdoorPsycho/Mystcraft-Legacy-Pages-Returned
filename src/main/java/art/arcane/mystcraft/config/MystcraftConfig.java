@@ -20,6 +20,7 @@ public class MystcraftConfig {
 
     // General settings
     public static final ForgeConfigSpec.BooleanValue giveGuidebookOnFirstSpawn;
+    public static final ForgeConfigSpec.IntValue maxSymbolsPerBook;
 
     // Instability settings
     public static final ForgeConfigSpec.BooleanValue instabilityEnabled;
@@ -45,16 +46,25 @@ public class MystcraftConfig {
     static {
         COMMON_BUILDER.comment("Mystcraft Common Configuration");
 
-        // ========== General ==========
+        // --- General ---
         COMMON_BUILDER.push("general");
 
         giveGuidebookOnFirstSpawn = COMMON_BUILDER
                 .comment("Whether to give new players a copy of the Mystcraft Guidebook when they first join the world.")
                 .define("giveGuidebookOnFirstSpawn", true);
 
+        maxSymbolsPerBook = COMMON_BUILDER
+                .comment(
+                        "Maximum number of symbol pages allowed in a single Agebook.",
+                        "Higher values allow more complex ages but may increase server load.",
+                        "Set to -1 for unlimited (not recommended).",
+                        "Default: 50"
+                )
+                .defineInRange("maxSymbolsPerBook", 50, -1, 1000);
+
         COMMON_BUILDER.pop();
 
-        // ========== Instability ==========
+        // --- Instability ---
         COMMON_BUILDER.comment(
                 "Instability Settings",
                 "The instability system is core to Mystcraft's balance.",
@@ -93,7 +103,7 @@ public class MystcraftConfig {
 
         COMMON_BUILDER.pop();
 
-        // ========== Instability Thresholds ==========
+        // --- Instability Thresholds ---
         COMMON_BUILDER.comment(
                 "Instability Thresholds",
                 "The instability level required before each effect type begins.",
@@ -126,7 +136,7 @@ public class MystcraftConfig {
 
         COMMON_BUILDER.pop();
 
-        // ========== Effect Chances ==========
+        // --- Effect Chances ---
         COMMON_BUILDER.comment(
                 "Effect Base Chances",
                 "Base probability per tick for each effect type.",

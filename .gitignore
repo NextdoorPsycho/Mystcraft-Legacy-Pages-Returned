@@ -166,3 +166,4 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 .run/
+Plan.md

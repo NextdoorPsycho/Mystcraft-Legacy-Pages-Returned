@@ -149,13 +149,46 @@ public class AgeBuilder {
 
         // Apply each symbol's logic to the director
         Random symbolRand = new Random(seed);
-        for (IAgeSymbol symbol : expandedSymbols) {
+        for (int i = 0; i < expandedSymbols.size(); i++) {
+            IAgeSymbol symbol = expandedSymbols.get(i);
             try {
+                LOGGER.info("[AgeBuilder] [{}/{}] Applying symbol: {} (category: {}, instability: {})",
+                        i + 1, expandedSymbols.size(), symbol.getRegistryName(),
+                        symbol.getCategory().name(), symbol.getInstabilityCost());
                 symbol.registerLogic(director, symbolRand.nextLong());
-                LOGGER.trace("Applied symbol: {}", symbol.getRegistryName());
             } catch (Exception e) {
-                LOGGER.error("Failed to apply symbol {}: {}",
-                        symbol.getRegistryName(), e.getMessage());
+                LOGGER.error("[AgeBuilder] [{}/{}] FAILED to apply symbol {}: {}",
+                        i + 1, expandedSymbols.size(), symbol.getRegistryName(), e.getMessage(), e);
+            }
+        }
+
+        // Log final director state
+        LOGGER.info("[AgeBuilder] Director state after all symbols applied:");
+        LOGGER.info("[AgeBuilder]   Terrain: type={}, groundLevel={}, seaLevel={}, hasSea={}",
+                director.getTerrainType(), director.getAverageGroundLevel(),
+                director.getSeaLevel(), director.hasSea());
+        LOGGER.info("[AgeBuilder]   Blocks: terrain={}, sea={}",
+                director.getTerrainBlock(), director.getSeaBlock());
+        LOGGER.info("[AgeBuilder]   Weather: {}, Lighting: {}",
+                director.getWeatherType(), director.getLightingType());
+        LOGGER.info("[AgeBuilder]   Colors: sky={}, fog={}, grass={}, foliage={}, water={}, cloud={}",
+                colorHex(director.getSkyColor()), colorHex(director.getFogColor()),
+                colorHex(director.getGrassColor()), colorHex(director.getFoliageColor()),
+                colorHex(director.getWaterColor()), colorHex(director.getCloudColor()));
+        LOGGER.info("[AgeBuilder]   Biomes: {} registered, controller={}",
+                director.getBiomes().size(), director.getBiomeController());
+        LOGGER.info("[AgeBuilder]   Registered interfaces: {} alterations, {} populators, {} celestials",
+                director.getTerrainAlterations().size(),
+                director.getPopulateFunctions().size(),
+                director.getCelestials().size());
+        if (!director.getTerrainAlterations().isEmpty()) {
+            for (var alt : director.getTerrainAlterations()) {
+                LOGGER.info("[AgeBuilder]     Alteration: {}", alt.getClass().getSimpleName());
+            }
+        }
+        if (!director.getPopulateFunctions().isEmpty()) {
+            for (var pop : director.getPopulateFunctions()) {
+                LOGGER.info("[AgeBuilder]     Populator: {}", pop.getIdentifier());
             }
         }
 
@@ -289,6 +322,10 @@ public class AgeBuilder {
         }
 
         return sb.toString();
+    }
+
+    private static String colorHex(int color) {
+        return color == -1 ? "default" : String.format("#%06X", color & 0xFFFFFF);
     }
 
     /**

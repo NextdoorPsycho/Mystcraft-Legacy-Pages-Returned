@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Fluid tank display element.
- * Replicates legacy GuiElementFluidTank.
+ * Fluid tank display element for the Mystcraft GUI system.
  */
 public class MystGuiFluidTank extends MystGuiElement {
 

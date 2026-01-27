@@ -21,7 +21,7 @@ public class ColoredLightningEntity extends LightningBolt {
     private static final EntityDataAccessor<Integer> DATA_COLOR =
             SynchedEntityData.defineId(ColoredLightningEntity.class, EntityDataSerializers.INT);
 
-    // Default color: grayish-blue (matches legacy)
+    // Default color: grayish-blue
     private static final int DEFAULT_COLOR = packColor(0.45f, 0.45f, 0.5f);
 
     public ColoredLightningEntity(EntityType<? extends LightningBolt> entityType, Level level) {

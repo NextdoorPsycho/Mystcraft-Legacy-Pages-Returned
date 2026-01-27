@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Registers trades for the Archivist villager profession.
  * Trades include various Mystcraft items at different levels.
  *
- * Symbol pricing follows the legacy formula: 4 * (1 + symbolRank) emeralds
+ * Symbol pricing formula: 4 * (1 + symbolRank) emeralds
  * - Rank 1: 8 emeralds
  * - Rank 2: 12 emeralds
  * - Rank 3: 16 emeralds
@@ -46,7 +46,7 @@ public final class ArchivistTrades {
 
     /**
      * Calculates the emerald price for a symbol based on its rank.
-     * Legacy formula: 4 * (1 + symbolRank)
+     * Pricing formula: 4 * (1 + symbolRank)
      */
     public static int calculateSymbolPrice(IAgeSymbol symbol) {
         int rank = symbol.getCardRank() != null ? symbol.getCardRank() : 1;

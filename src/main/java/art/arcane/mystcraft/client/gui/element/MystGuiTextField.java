@@ -9,8 +9,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Text field GUI element.
- * Replicates legacy GuiElementTextField.
+ * Text field GUI element for the Mystcraft GUI system.
  */
 public class MystGuiTextField extends MystGuiElement {
 

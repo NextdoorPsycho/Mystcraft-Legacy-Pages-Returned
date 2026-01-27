@@ -92,8 +92,17 @@ public class Mystcraft {
             // Initialize ink effects registry
             InkEffects.init();
 
-            // Register all symbols
+            // Register all built-in symbols
             ModSymbols.registerAll();
+
+            // Fire the event so third-party mods can register their symbols
+            art.arcane.mystcraft.api.RegisterSymbolsEvent symbolEvent =
+                    new art.arcane.mystcraft.api.RegisterSymbolsEvent();
+            FMLJavaModLoadingContext.get().getModEventBus().post(symbolEvent);
+            if (symbolEvent.getRegisteredCount() > 0) {
+                LOGGER.info("Third-party mods registered {} additional symbols",
+                        symbolEvent.getRegisteredCount());
+            }
 
             // Freeze symbol registry to prevent late registration
             SymbolRegistry.freeze();
@@ -142,6 +151,9 @@ public class Mystcraft {
             event.enqueueWork(() -> {
                 // Initialize D'ni word rendering system
                 art.arcane.mystcraft.client.render.DrawableWordManager.initialize();
+
+                // Pre-warm page textures on a background thread
+                art.arcane.mystcraft.client.render.PageItemRendererBEWLR.prewarmCache();
 
                 // Register menu screens
                 net.minecraft.client.gui.screens.MenuScreens.register(

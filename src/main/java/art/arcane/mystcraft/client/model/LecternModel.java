@@ -10,12 +10,9 @@ import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 /**
- * Modern 1.20 model for the Lectern, ported from the original 1.12 ModelLectern.
- * Uses the 64x32 entity texture.
- *
- * Original used ModelPrism for a wedge shape (height1=1, height2=7, width=16, depth=16).
- * This creates a true wedge geometry using manual vertex rendering since ModelPart
- * doesn't support non-rectangular shapes.
+ * Lectern block entity model. Uses the 64x32 entity texture.
+ * Renders a wedge shape (height1=1, height2=7, width=16, depth=16) using manual
+ * vertex rendering since ModelPart doesn't support non-rectangular shapes.
  */
 public class LecternModel {
 

@@ -171,7 +171,7 @@ public class LinkPermissions extends SavedData {
         return list;
     }
 
-    // ==================== Permission Checks ====================
+    // --- Permission Checks ---
 
     /**
      * Checks if a player can enter the specified Age.
@@ -224,7 +224,7 @@ public class LinkPermissions extends SavedData {
         return blocked == null || !blocked.contains(playerId);
     }
 
-    // ==================== Permission Management ====================
+    // --- Permission Management ---
 
     /**
      * Sets the owner of an Age.
@@ -365,7 +365,7 @@ public class LinkPermissions extends SavedData {
         setDirty();
     }
 
-    // ==================== Data Access ====================
+    // --- Data Access ---
 
     /**
      * Creates a factory for loading LinkPermissions.

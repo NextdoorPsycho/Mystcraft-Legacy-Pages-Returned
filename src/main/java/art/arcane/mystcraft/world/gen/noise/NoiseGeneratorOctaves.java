@@ -3,8 +3,7 @@ package art.arcane.mystcraft.world.gen.noise;
 import net.minecraft.util.RandomSource;
 
 /**
- * Octave-based noise generator ported from legacy Mystcraft.
- * Generates multi-octave Perlin noise for terrain generation.
+ * Multi-octave Perlin noise generator for terrain generation.
  */
 public class NoiseGeneratorOctaves {
 

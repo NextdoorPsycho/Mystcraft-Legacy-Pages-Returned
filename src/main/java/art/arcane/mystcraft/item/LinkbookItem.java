@@ -29,24 +29,17 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The Linkbook item.
  * Links to a specific location in any dimension.
- *
- * Legacy behavior (exact match):
- * - Stack size of 1
- * - Max damage of 10 (health system)
- * - Right-click opens the book GUI (not direct linking!)
- * - Linking happens through the activate() method
- * - Book is dropped as an entity when linking (unless "following" flag)
- * - Auto-initializes with current position when first in inventory
- * - Returns a single link page when queried
+ * Right-click opens the book GUI; linking happens through activate().
+ * Auto-initializes with current position when first in inventory.
+ * Dropped as an entity when used for linking (unless "following" flag is set).
  */
 public class LinkbookItem extends Item {
 
     private static final float DEFAULT_MAX_HEALTH = 10.0f;
 
     public LinkbookItem(Properties properties) {
-        super(properties.stacksTo(1).durability(10)); // Legacy: setMaxStackSize(1), setMaxDamage(10)
+        super(properties.stacksTo(1).durability(10));
     }
 
     @Override
@@ -70,7 +63,7 @@ public class LinkbookItem extends Item {
     @Override
     public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         if (stack.getTag() != null) {
-            // Legacy shows display name in tooltip
+            // Show display name in tooltip
             String name = LinkOptions.getDisplayName(stack.getTag());
             if (!name.isEmpty() && !"???".equals(name)) {
                 tooltip.add(Component.literal(name));
@@ -80,25 +73,20 @@ public class LinkbookItem extends Item {
 
     @Override
     public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slotId, boolean isSelected) {
-        // Legacy: validate() is called in onUpdate which calls initialize() if no tag
+        // Ensure the book is initialized with link data
         if (!level.isClientSide) {
             validate(level, stack, entity);
         }
     }
 
-    /**
-     * Legacy: validate() - ensures the book is initialized.
-     */
+    /** Ensures the book has been initialized with link data. */
     public void validate(@Nullable Level level, @NotNull ItemStack stack, @Nullable Entity entity) {
         if (stack.getTag() == null) {
             initialize(level, stack, entity);
         }
     }
 
-    /**
-     * Legacy: initialize() - creates link info from current position.
-     * Called when the book has no tag yet.
-     */
+    /** Creates link info from current position. Called when the book has no tag yet. */
     protected void initialize(@Nullable Level level, @NotNull ItemStack stack, @Nullable Entity entity) {
         if (level == null || entity == null) {
             return;
@@ -120,8 +108,7 @@ public class LinkbookItem extends Item {
     public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        // Legacy: onItemRightClick opens the GUI on server, passes on client
-        // See legacy ItemLinking.java line 148-154
+        // Client opens book GUI; server handles linking through activate()
         if (level.isClientSide) {
             // On client, open the book viewing screen
             art.arcane.mystcraft.client.screen.BookScreen.open(stack);
@@ -133,10 +120,7 @@ public class LinkbookItem extends Item {
         return InteractionResultHolder.success(stack);
     }
 
-    /**
-     * Legacy: activate() - performs the actual linking.
-     * Called from the GUI or other activation sources.
-     */
+    /** Performs the actual linking. Called from the book GUI or other activation sources. */
     public void activate(@NotNull ItemStack stack, Level level, Entity entity) {
         if (level.isClientSide) {
             return;
@@ -161,14 +145,11 @@ public class LinkbookItem extends Item {
         LinkingManager.performLink(entity, linkData);
     }
 
-    /**
-     * Legacy: onLink() - called before linking, drops book if not "following".
-     */
+    /** Called before linking. Drops book in world if "following" flag is not set. */
     protected void onLink(@NotNull ItemStack stack, Level level, Entity entity) {
         if (entity instanceof Player player) {
             // Find which slot has this book (main hand or off hand)
-            // Legacy used reference comparison with a server container, but we use content comparison
-            // since our BookScreen is client-only
+            // Content comparison since BookScreen is client-only
             ItemStack mainHand = player.getInventory().getSelected();
             ItemStack offHand = player.getOffhandItem();
 
@@ -195,26 +176,17 @@ public class LinkbookItem extends Item {
         }
     }
 
-    /**
-     * Legacy: dropItemOnLink() - checks if book should be dropped on link.
-     * Returns true unless "following" flag is set.
-     */
+    /** Returns true unless "following" flag is set (book stays with player). */
     public boolean dropItemOnLink(@NotNull ItemStack stack) {
         return !LinkOptions.getFlag(stack.getTag(), LinkFlags.FOLLOWING);
     }
 
-    /**
-     * Gets the list of pages - linkbooks always have a single link page.
-     * Legacy: getPageList() returns Collections.singletonList(Page.createLinkPage())
-     */
+    /** Linkbooks always contain a single link page. */
     public List<ItemStack> getPageList(Player player, @NotNull ItemStack stack) {
         return Collections.singletonList(Page.createLinkPage());
     }
 
-    /**
-     * Gets the authors of this book.
-     * Legacy: getAuthors() checks for "Author" in NBT
-     */
+    /** Gets the authors of this book from NBT. */
     public Collection<String> getAuthors(@NotNull ItemStack stack) {
         if (stack.getTag() != null && stack.getTag().contains("Author")) {
             return Collections.singleton(stack.getTag().getString("Author"));
@@ -251,19 +223,15 @@ public class LinkbookItem extends Item {
         LinkOptions.setSpawn(stack.getOrCreateTag(), pos);
     }
 
-    // ========================= Health/Durability System =========================
-    // Legacy: ItemLinking has health system with getHealth/setHealth/getMaxHealth
+    // --- Health/Durability ---
 
-    /**
-     * Linkbooks can take damage (health system from legacy).
-     */
     public boolean isDamageableItem() {
         return true;
     }
 
     @Override
     public boolean isEnchantable(@NotNull ItemStack stack) {
-        return false; // Legacy: isBookEnchantable returns false
+        return false;
     }
 
     @Override
@@ -271,18 +239,12 @@ public class LinkbookItem extends Item {
         return false;
     }
 
-    /**
-     * Legacy: setHealth()
-     */
     public static void setHealth(@NotNull ItemStack book, float health) {
         if (book.isEmpty()) return;
         CompoundTag tag = book.getOrCreateTag();
         tag.putFloat("damage", getMaxHealth(book) - health);
     }
 
-    /**
-     * Legacy: getHealth()
-     */
     public static float getHealth(@NotNull ItemStack book) {
         float health = getMaxHealth(book);
         if (book.isEmpty()) return health;
@@ -292,9 +254,6 @@ public class LinkbookItem extends Item {
         return health - damage;
     }
 
-    /**
-     * Legacy: getMaxHealth()
-     */
     public static float getMaxHealth(@NotNull ItemStack book) {
         float health = DEFAULT_MAX_HEALTH;
         if (book.isEmpty()) return health;
@@ -326,15 +285,13 @@ public class LinkbookItem extends Item {
         return (int) getMaxHealth(stack);
     }
 
-    /**
-     * Legacy: hasEffect() returns true if "following" flag is set.
-     */
+    /** Enchantment glint when "following" flag is set. */
     @Override
     public boolean isFoil(@NotNull ItemStack stack) {
         return LinkOptions.getFlag(stack.getTag(), LinkFlags.FOLLOWING);
     }
 
-    // ========================= Custom Entity on Q-Drop =========================
+    // --- Custom Entity on Q-Drop ---
 
     /**
      * Tell Forge that Q-dropped linkbooks should spawn as LinkbookEntity, not ItemEntity.
@@ -344,10 +301,7 @@ public class LinkbookItem extends Item {
         return true;
     }
 
-    /**
-     * Creates a LinkbookEntity when the item is Q-dropped instead of a regular ItemEntity.
-     * This matches legacy behavior where dropped linkbooks appear as open books on the ground.
-     */
+    /** Creates a LinkbookEntity when Q-dropped so the book renders open on the ground. */
     @Override
     @Nullable
     public Entity createEntity(Level level, Entity location, @NotNull ItemStack stack) {

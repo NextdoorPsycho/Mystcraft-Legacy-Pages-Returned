@@ -11,7 +11,6 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 
 /**
  * Cave generator that carves tunnels and rooms into terrain.
- * Ported from legacy Mystcraft MapGenCavesMyst.
  */
 public class MapGenCavesMyst implements ITerrainAlteration {
 

@@ -1,11 +1,6 @@
-# Build outputs
-/build/
-/out/
-/bin/
-/libs/
+
 
 # Gradle
-/.gradle/
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 

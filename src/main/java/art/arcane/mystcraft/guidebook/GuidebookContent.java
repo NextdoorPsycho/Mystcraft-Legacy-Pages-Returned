@@ -29,10 +29,6 @@ public class GuidebookContent {
         return chapters;
     }
 
-    public static void invalidate() {
-        INSTANCE = null;
-    }
-
     private void initializeContent() {
         chapters.add(createCoreConcepts());
         chapters.add(createItems());

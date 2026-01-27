@@ -33,28 +33,6 @@ public class CrystalBlock extends Block {
         builder.add(ACTIVE, SOURCE_DIRECTION);
     }
 
-    /**
-     * Sets this crystal as part of an active portal.
-     */
-    public void setActive(Level level, BlockPos pos, Direction sourceDirection) {
-        BlockState current = level.getBlockState(pos);
-        if (current.getBlock() == this) {
-            level.setBlock(pos, current
-                    .setValue(ACTIVE, true)
-                    .setValue(SOURCE_DIRECTION, sourceDirection), 2);
-        }
-    }
-
-    /**
-     * Deactivates this crystal's portal state.
-     */
-    public void setInactive(Level level, BlockPos pos) {
-        BlockState current = level.getBlockState(pos);
-        if (current.getBlock() == this) {
-            level.setBlock(pos, defaultBlockState(), 2);
-        }
-    }
-
     @Override
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
         if (level.isClientSide) {
@@ -67,7 +45,7 @@ public class CrystalBlock extends Block {
 
         // Follow the full direction chain to verify the receptacle is still reachable.
         if (PortalUtils.findReceptacle(level, pos) == null) {
-            setInactive(level, pos);
+            level.setBlock(pos, defaultBlockState(), 2);
             PortalUtils.validatePortal(level, pos);
         }
     }

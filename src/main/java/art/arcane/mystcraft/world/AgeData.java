@@ -479,11 +479,6 @@ public class AgeData extends SavedData {
         setDirty();
     }
 
-    public void clearSpawn() {
-        this.spawnSet = false;
-        setDirty();
-    }
-
     /**
      * Checks if this dimension is a Mystcraft Age.
      */

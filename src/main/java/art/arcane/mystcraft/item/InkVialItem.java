@@ -79,20 +79,6 @@ public class InkVialItem extends Item {
     }
 
     /**
-     * Consumes ink from this vial.
-     *
-     * @return true if there was enough ink
-     */
-    public boolean consumeInk(ItemStack stack, int amount) {
-        int current = getInkAmount(stack);
-        if (current < amount) {
-            return false;
-        }
-        setInkAmount(stack, current - amount);
-        return true;
-    }
-
-    /**
      * Gets the color of this ink.
      */
     public int getInkColor(ItemStack stack) {
@@ -114,29 +100,4 @@ public class InkVialItem extends Item {
         tag.putInt(TAG_INK_COLOR, color & 0xFFFFFF);
     }
 
-    /**
-     * Checks if this vial is empty.
-     */
-    public boolean isEmpty(ItemStack stack) {
-        return getInkAmount(stack) <= 0;
-    }
-
-    /**
-     * Checks if this vial is full.
-     */
-    public boolean isFull(ItemStack stack) {
-        return getInkAmount(stack) >= MAX_INK;
-    }
-
-    /**
-     * Creates an ink vial with the specified color and amount.
-     */
-    public static ItemStack createVial(Item item, int color, int amount) {
-        ItemStack stack = new ItemStack(item);
-        CompoundTag tag = new CompoundTag();
-        tag.putInt(TAG_INK_COLOR, color & 0xFFFFFF);
-        tag.putInt(TAG_INK_AMOUNT, Math.max(0, Math.min(MAX_INK, amount)));
-        stack.setTag(tag);
-        return stack;
-    }
 }

@@ -4,7 +4,6 @@ import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.registry.ModEntities;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -15,27 +14,19 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 /**
  * The Linkbook entity.
  * Represents a dropped/placed linkbook in the world that can be used for linking.
- * Features damage/decay system for survival mechanics and hopper/minecart support.
+ * Features damage/decay system for survival mechanics.
  */
 public class LinkbookEntity extends Entity {
 
@@ -57,41 +48,6 @@ public class LinkbookEntity extends Entity {
 
     /** Visual hurt time for rendering red tint when damaged */
     public int hurtTime = 0;
-
-    // Item handler for hopper/minecart interaction
-    private final ItemStackHandler itemHandler = new ItemStackHandler(1) {
-        @Override
-        protected void onContentsChanged(int slot) {
-            if (!getStackInSlot(0).isEmpty()) {
-                setBookItem(getStackInSlot(0));
-            }
-        }
-
-        @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return stack.getItem() instanceof LinkbookItem || stack.getItem() instanceof AgebookItem;
-        }
-
-        @Override
-        @NotNull
-        public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            if (!getBookItem().isEmpty()) {
-                return stack; // Already has a book
-            }
-            return super.insertItem(slot, stack, simulate);
-        }
-
-        @Override
-        @NotNull
-        public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            ItemStack extracted = super.extractItem(slot, amount, simulate);
-            if (!simulate && !extracted.isEmpty()) {
-                setBookItem(ItemStack.EMPTY);
-            }
-            return extracted;
-        }
-    };
-    private final LazyOptional<IItemHandler> itemHandlerLazy = LazyOptional.of(() -> itemHandler);
 
     public LinkbookEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -239,11 +195,6 @@ public class LinkbookEntity extends Entity {
             }
         }
 
-        // Sync item handler with book item
-        ItemStack book = getBookItem();
-        if (!book.isEmpty() && itemHandler.getStackInSlot(0).isEmpty()) {
-            itemHandler.setStackInSlot(0, book.copy());
-        }
     }
 
     // --- Health/Damage System ---
@@ -358,52 +309,4 @@ public class LinkbookEntity extends Entity {
         return false; // Books can burn
     }
 
-    // --- Capability System (Hopper/Minecart Support) ---
-
-    @Override
-    @NotNull
-    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            return itemHandlerLazy.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        itemHandlerLazy.invalidate();
-    }
-
-    /**
-     * Checks if the book can be picked up by a hopper minecart.
-     */
-    public boolean canBePickedUpByMinecart(AbstractMinecart minecart) {
-        return !getBookItem().isEmpty();
-    }
-
-    /**
-     * Gets the book item for hopper extraction.
-     */
-    public ItemStack extractBook() {
-        ItemStack book = getBookItem();
-        if (!book.isEmpty()) {
-            setBookItem(ItemStack.EMPTY);
-            itemHandler.setStackInSlot(0, ItemStack.EMPTY);
-            return book;
-        }
-        return ItemStack.EMPTY;
-    }
-
-    /**
-     * Inserts a book from a hopper.
-     */
-    public boolean insertBook(ItemStack book) {
-        if (getBookItem().isEmpty() && isValidLinkBook(book)) {
-            setBookItem(book);
-            itemHandler.setStackInSlot(0, book.copy());
-            return true;
-        }
-        return false;
-    }
 }

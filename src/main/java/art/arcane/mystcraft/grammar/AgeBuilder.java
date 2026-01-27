@@ -553,62 +553,6 @@ public class AgeBuilder {
         return missingSymbolCount;
     }
 
-    public List<ResourceLocation> getMissingSymbols() {
-        return new ArrayList<>(missingSymbols);
-    }
-
-    public boolean hasMissingSymbols() {
-        return missingSymbolCount > 0;
-    }
-
-    public List<String> getValidationIssues() {
-        List<String> issues = new ArrayList<>();
-
-        boolean hasVoidTerrain = expandedSymbols.stream()
-                .anyMatch(s -> s.getRegistryName().getPath().equals("terrain_void"));
-        boolean hasCaves = expandedSymbols.stream()
-                .anyMatch(s -> s.getRegistryName().getPath().equals("caves"));
-
-        if (hasVoidTerrain && hasCaves) {
-            issues.add("Caves symbol conflicts with Void Terrain");
-        }
-
-        return issues;
-    }
-
-    public String getSummary() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Age Summary:\n");
-        sb.append("  Symbols: ").append(expandedSymbols.size()).append("\n");
-        sb.append("  Provided: ").append(providedCount).append("\n");
-        sb.append("  Generated: ").append(generatedCount).append("\n");
-        sb.append("  Instability: ").append(String.format("%.1f", instability)).append("\n");
-
-        if (!isComplete()) {
-            sb.append("  Status: INCOMPLETE (random elements added)\n");
-        } else {
-            sb.append("  Status: COMPLETE\n");
-        }
-
-        if (missingSymbolCount > 0) {
-            sb.append("  WARNING: ").append(missingSymbolCount).append(" missing symbol(s):\n");
-            for (ResourceLocation missing : missingSymbols) {
-                sb.append("    - ").append(missing).append("\n");
-            }
-            sb.append("  (Instability penalty: +").append(String.format("%.1f", missingSymbolCount * MISSING_SYMBOL_INSTABILITY)).append(")\n");
-        }
-
-        List<String> issues = getValidationIssues();
-        if (!issues.isEmpty()) {
-            sb.append("  Issues:\n");
-            for (String issue : issues) {
-                sb.append("    - ").append(issue).append("\n");
-            }
-        }
-
-        return sb.toString();
-    }
-
     // ===================================================================
     // --- Terrain Block Bias ---
     // ===================================================================
@@ -1100,18 +1044,4 @@ public class AgeBuilder {
         return color == -1 ? "default" : String.format("#%06X", color & 0xFFFFFF);
     }
 
-    public String getSymbolList() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Symbols in Age:\n");
-
-        for (IAgeSymbol symbol : expandedSymbols) {
-            ResourceLocation name = symbol.getRegistryName();
-            sb.append("  - ").append(name.getPath())
-                    .append(" (").append(symbol.getCategory().name())
-                    .append(", instability: ").append(symbol.getInstabilityCost())
-                    .append(")\n");
-        }
-
-        return sb.toString();
-    }
 }

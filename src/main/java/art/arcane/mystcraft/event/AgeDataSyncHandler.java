@@ -135,15 +135,4 @@ public class AgeDataSyncHandler {
                 ageData.getSunsetColor() != -1 ? Integer.toHexString(ageData.getSunsetColor()) : "none");
     }
 
-    /**
-     * Syncs Age data to all players in a specific Age.
-     * Call this after modifying Age configuration.
-     */
-    public static void syncAgeDataToAllInAge(ServerLevel ageLevel) {
-        if (!AgeDimensionFactory.isMystcraftAge(ageLevel.dimension())) return;
-
-        for (ServerPlayer player : ageLevel.players()) {
-            syncAgeDataToPlayer(player, ageLevel);
-        }
-    }
 }

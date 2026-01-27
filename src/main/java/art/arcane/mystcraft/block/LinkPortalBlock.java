@@ -216,17 +216,4 @@ public class LinkPortalBlock extends Block {
         PortalUtils.validatePortal(level, pos);
     }
 
-    /**
-     * Gets the portal color from the associated book receptacle.
-     */
-    public int getPortalColor(BlockGetter level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        if (!(state.getBlock() instanceof LinkPortalBlock)) {
-            return 0xFFFFFF;
-        }
-
-        // This would need to find the receptacle and get its color
-        // For now return default white
-        return 0xFFFFFF;
-    }
 }

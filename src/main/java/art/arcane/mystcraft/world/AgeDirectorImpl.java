@@ -50,8 +50,8 @@ public class AgeDirectorImpl implements AgeDirector {
     private boolean hasSea = true;
     private BlockState terrainBlock = Blocks.STONE.defaultBlockState();
     private BlockState seaBlock = Blocks.WATER.defaultBlockState();
-    private BlockState surfaceBlock = null;      // Override for surface (grass, sand, etc.) - null means use vanilla
-    private BlockState subsurfaceBlock = null;   // Override for subsurface (dirt, sandstone, etc.) - null means use vanilla
+    private BlockState surfaceBlock = null;
+    private BlockState subsurfaceBlock = null;
 
     // Biomes
     private String biomeController = "native";
@@ -292,32 +292,18 @@ public class AgeDirectorImpl implements AgeDirector {
         return seaBlock;
     }
 
-    /**
-     * Sets the surface block override (replaces grass/sand/etc.).
-     * Null means use vanilla biome surfaces.
-     */
     public void setSurfaceBlock(BlockState block) {
         this.surfaceBlock = block;
     }
 
-    /**
-     * Gets the surface block override, or null to use vanilla.
-     */
     public BlockState getSurfaceBlock() {
         return surfaceBlock;
     }
 
-    /**
-     * Sets the subsurface block override (replaces dirt/sandstone/etc.).
-     * Null means use vanilla biome subsurfaces.
-     */
     public void setSubsurfaceBlock(BlockState block) {
         this.subsurfaceBlock = block;
     }
 
-    /**
-     * Gets the subsurface block override, or null to use vanilla.
-     */
     public BlockState getSubsurfaceBlock() {
         return subsurfaceBlock;
     }

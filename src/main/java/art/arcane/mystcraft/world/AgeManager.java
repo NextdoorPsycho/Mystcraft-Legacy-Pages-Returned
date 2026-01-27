@@ -166,18 +166,6 @@ public class AgeManager extends SavedData {
     }
 
     /**
-     * Unregisters an age.
-     */
-    public void unregisterAge(int uid) {
-        ResourceLocation dim = ageUIDtoDimension.remove(uid);
-        if (dim != null) {
-            dimensionToAgeUID.remove(dim);
-        }
-        ageUUIDtoUID.values().removeIf(v -> v == uid);
-        setDirty();
-    }
-
-    /**
      * Gets the dimension for an age UID.
      */
     @Nullable

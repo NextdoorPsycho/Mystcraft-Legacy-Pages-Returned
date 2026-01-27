@@ -40,10 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mod.EventBusSubscriber(modid = Mystcraft.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class ArchivistTrades {
 
-    // Cache for villager inventory restocking simulation (WeakHashMap to avoid memory leaks)
-    private static final Map<Integer, Long> villagerRestockTimes = new WeakHashMap<>();
-    private static final int RESTOCK_INTERVAL_TICKS = 1000;
-
     /**
      * Calculates the emerald price for a symbol based on its rank.
      * Pricing formula: 4 * (1 + symbolRank)

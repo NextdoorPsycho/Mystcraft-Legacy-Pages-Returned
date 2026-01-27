@@ -553,54 +553,6 @@ public class AgeDimensionFactory {
     }
 
     /**
-     * Unloads an Age dimension from the server.
-     * Note: This doesn't delete the dimension data.
-     */
-    @SuppressWarnings("unchecked")
-    public static void unloadAgeDimension(@NotNull MinecraftServer server, int ageUID) {
-        AgeManager ageManager = AgeManager.get(server);
-        ResourceLocation dimLoc = ageManager.getDimension(ageUID);
-
-        if (dimLoc == null) {
-            return;
-        }
-
-        ResourceKey<Level> dimensionKey = ResourceKey.create(Registries.DIMENSION, dimLoc);
-        ServerLevel level = server.getLevel(dimensionKey);
-
-        if (level == null) {
-            return;
-        }
-
-        try {
-            // Remove from levels map
-            Map<ResourceKey<Level>, ServerLevel> levels =
-                    (Map<ResourceKey<Level>, ServerLevel>) levelsField.get(server);
-            levels.remove(dimensionKey);
-
-            // Fire unload event
-            MinecraftForge.EVENT_BUS.post(new LevelEvent.Unload(level));
-
-            // Close the level
-            level.close();
-
-            Mystcraft.LOGGER.info("Unloaded Age dimension {}", ageUID);
-
-        } catch (Exception e) {
-            Mystcraft.LOGGER.error("Failed to unload Age {}", ageUID, e);
-        }
-    }
-
-    /**
-     * Gets the dimension ResourceKey for an Age UID.
-     */
-    @Nullable
-    public static ResourceKey<Level> getDimensionKey(int ageUID) {
-        ResourceLocation dimensionId = new ResourceLocation(Mystcraft.MOD_ID, DIMENSION_PREFIX + ageUID);
-        return ResourceKey.create(Registries.DIMENSION, dimensionId);
-    }
-
-    /**
      * Checks if a dimension key belongs to a Mystcraft Age.
      */
     public static boolean isMystcraftAge(@NotNull ResourceKey<Level> dimensionKey) {

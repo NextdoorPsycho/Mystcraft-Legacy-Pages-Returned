@@ -285,8 +285,6 @@ public class Mystcraft {
                     art.arcane.mystcraft.client.renderer.MystcraftFallingBlockRenderer::new);
             event.registerEntityRenderer(ModEntities.COLORED_LIGHTNING.get(),
                     art.arcane.mystcraft.client.renderer.ColoredLightningRenderer::new);
-            event.registerEntityRenderer(ModEntities.DUMMY.get(),
-                    art.arcane.mystcraft.client.renderer.NoopEntityRenderer::new);
         }
 
         @SubscribeEvent

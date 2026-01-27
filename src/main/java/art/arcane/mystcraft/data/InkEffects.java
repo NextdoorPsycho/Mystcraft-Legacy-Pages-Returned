@@ -225,17 +225,6 @@ public final class InkEffects {
     }
 
     /**
-     * Adds a property probability to items matching a tag.
-     */
-    public static void addPropertyToTag(TagKey<Item> tag, String property, float probability) {
-        Map<String, Float> tagMap = TAG_EFFECTS.computeIfAbsent(tag, k -> new HashMap<>());
-        Float existing = tagMap.get(property);
-        float newProb = probability + (existing != null ? existing : 0f);
-        tagMap.put(property, newProb);
-        validateProbabilities(tagMap, tag.location().toString());
-    }
-
-    /**
      * Validates that probabilities don't exceed 1.0.
      */
     private static void validateProbabilities(Map<String, Float> probMap, String source) {
@@ -282,10 +271,4 @@ public final class InkEffects {
         return getItemEffects(stack) != null;
     }
 
-    /**
-     * Gets all items that have registered effects.
-     */
-    public static Set<Item> getEffectItems() {
-        return Collections.unmodifiableSet(ITEM_EFFECTS.keySet());
-    }
 }

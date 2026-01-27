@@ -223,6 +223,31 @@ public final class ColorUtils {
     }
 
     /**
+     * Blends an array of gradient colors by averaging their RGB components.
+     *
+     * @param colors Array of colors
+     * @param count Number of valid colors in the array
+     * @return The blended color
+     */
+    public static int blendGradientColors(int[] colors, int count) {
+        if (count <= 0) return -1;
+        if (count == 1) return colors[0];
+
+        float totalR = 0, totalG = 0, totalB = 0;
+        for (int i = 0; i < count; i++) {
+            totalR += getRed(colors[i]);
+            totalG += getGreen(colors[i]);
+            totalB += getBlue(colors[i]);
+        }
+
+        return packRGB(
+                (int) (totalR / count),
+                (int) (totalG / count),
+                (int) (totalB / count)
+        );
+    }
+
+    /**
      * Calculates a day factor (0-1) based on time of day.
      * Returns higher values during day, lower during night.
      *
@@ -237,71 +262,4 @@ public final class ColorUtils {
         return Mth.clamp(factor * 0.8f + 0.2f, 0.2f, 1.0f);
     }
 
-    /**
-     * Blends a color with time of day.
-     *
-     * @param color The base color
-     * @param timeOfDay The time of day (0-1)
-     * @return The blended color
-     */
-    public static int blendWithTimeOfDay(int color, float timeOfDay) {
-        if (color == -1) {
-            return -1;
-        }
-
-        float dayFactor = calculateDayFactor(timeOfDay);
-
-        int r = (int) (getRed(color) * dayFactor);
-        int g = (int) (getGreen(color) * dayFactor);
-        int b = (int) (getBlue(color) * dayFactor);
-
-        return packRGB(r, g, b);
-    }
-
-    /**
-     * Blends a list of gradient colors into a single averaged color.
-     *
-     * @param colors Array of RGB colors to blend
-     * @param count Number of valid entries in the array
-     * @return The blended color, or -1 if no colors
-     */
-    public static int blendGradientColors(int[] colors, int count) {
-        if (count <= 0) {
-            return -1;
-        }
-        if (count == 1) {
-            return colors[0];
-        }
-
-        int totalR = 0;
-        int totalG = 0;
-        int totalB = 0;
-
-        for (int i = 0; i < count; i++) {
-            totalR += getRed(colors[i]);
-            totalG += getGreen(colors[i]);
-            totalB += getBlue(colors[i]);
-        }
-
-        return packRGB(totalR / count, totalG / count, totalB / count);
-    }
-
-    /**
-     * Multiplies a color by a brightness factor.
-     *
-     * @param color The base color
-     * @param brightness The brightness multiplier
-     * @return The adjusted color
-     */
-    public static int multiplyBrightness(int color, float brightness) {
-        if (color == -1) {
-            return -1;
-        }
-
-        int r = Mth.clamp((int) (getRed(color) * brightness), 0, 255);
-        int g = Mth.clamp((int) (getGreen(color) * brightness), 0, 255);
-        int b = Mth.clamp((int) (getBlue(color) * brightness), 0, 255);
-
-        return packRGB(r, g, b);
-    }
 }

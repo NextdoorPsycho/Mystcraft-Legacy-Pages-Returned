@@ -1,0 +1,104 @@
+---- Minecraft Crash Report ----
+// I let you down. Sorry :(
+
+Time: 2026-01-27 12:45:25
+Description: Exception ticking world
+
+java.lang.ArrayIndexOutOfBoundsException: null
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Thread: Server thread
+Suspected Mods: NONE
+Stacktrace:
+	at net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:897) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+-- Affected level --
+Details:
+	All players: 0 total; []
+	Chunk stats: 729
+	Level dimension: mystcraft:mystcraft_age_1001
+	Derived: true
+	Level spawn location: World: (0,98,0), Section: (at 0,2,0 in 0,6,0; chunk contains blocks 0,-64,0 to 15,319,15), Region: (0,0; contains chunks 0,0 to 31,31, blocks 0,-64,0 to 511,319,511)
+	Level time: 2706 game time, 2706 day time
+	Level name: New World
+	Level game mode: Game mode: creative (ID 1). Hardcore: false. Cheats: true
+	Level weather: Rain time: 135793 (now: false), thunder time: 17098 (now: false)
+	Known server brands: forge
+	Removed feature flags: 
+	Level was modded: true
+	Level storage version: 0x04ABD - Anvil
+Stacktrace:
+	at net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:897) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:809) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.server.IntegratedServer.tickServer(IntegratedServer.java:89) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading,pl:runtimedistcleaner:A}
+	at net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:656) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:249) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+	at java.lang.Thread.run(Thread.java:840) ~[?:?] {}
+
+
+-- System Details --
+Details:
+	Minecraft Version: 1.20.2
+	Minecraft Version ID: 1.20.2
+	Operating System: Mac OS X (aarch64) version 26.3
+	Java Version: 17.0.15, Eclipse Adoptium
+	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode, sharing), Eclipse Adoptium
+	Memory: 1289637352 bytes (1229 MiB) / 2449473536 bytes (2336 MiB) up to 32178700288 bytes (30688 MiB)
+	CPUs: 16
+	Processor Vendor: Apple Inc.
+	Processor Name: Apple M3 Max
+	Identifier: Apple Inc. Family 0x72015832 Model 0 Stepping 0
+	Microarchitecture: unknown
+	Frequency (GHz): -0.00
+	Number of physical packages: 1
+	Number of physical CPUs: 16
+	Number of logical CPUs: 16
+	Graphics card #0 name: Apple M3 Max
+	Graphics card #0 vendor: Apple (0x106b)
+	Graphics card #0 VRAM (MB): 0.00
+	Graphics card #0 deviceId: unknown
+	Graphics card #0 versionInfo: unknown
+	Memory slot #0 capacity (MB): 0.00
+	Memory slot #0 clockSpeed (GHz): 0.00
+	Memory slot #0 type: unknown
+	Virtual memory max (MB): 131072.00
+	Virtual memory used (MB): 37504.48
+	Swap memory total (MB): 0.00
+	Swap memory used (MB): 0.00
+	JVM Flags: 0 total; 
+	Server Running: true
+	Player Count: 1 / 8; [ServerPlayer['Dev'/131, l='ServerLevel[New World]', x=1.38, y=93.00, z=4.89]]
+	Data Packs: vanilla, mod:forge, mod:mystcraft
+	Enabled Feature Flags: minecraft:vanilla
+	World Generation: Stable
+	Type: Integrated Server (map_client.txt)
+	Is Modded: Definitely; Client brand changed to 'forge'; Server brand changed to 'forge'
+	Launched Version: MOD_DEV
+	ModLauncher: 10.1.1
+	ModLauncher launch target: forge_userdev_client
+	ModLauncher naming: mcp
+	ModLauncher services: 
+		mixin-0.8.5.jar mixin PLUGINSERVICE 
+		eventbus-6.2.0.jar eventbus PLUGINSERVICE 
+		fmlloader-1.20.2-48.1.0.jar slf4jfixer PLUGINSERVICE 
+		fmlloader-1.20.2-48.1.0.jar object_holder_definalize PLUGINSERVICE 
+		fmlloader-1.20.2-48.1.0.jar runtime_enum_extender PLUGINSERVICE 
+		fmlloader-1.20.2-48.1.0.jar capability_token_subclass PLUGINSERVICE 
+		accesstransformers-8.1.1.jar accesstransformer PLUGINSERVICE 
+		fmlloader-1.20.2-48.1.0.jar runtimedistcleaner PLUGINSERVICE 
+		modlauncher-10.1.1.jar mixin TRANSFORMATIONSERVICE 
+		modlauncher-10.1.1.jar fml TRANSFORMATIONSERVICE 
+	FML Language Providers: 
+		minecraft@1.0
+		lowcodefml@48
+		javafml@null
+	Mod List: 
+		forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.|Minecraft                     |minecraft                     |1.20.2              |DONE      |Manifest: a1:d4:5e:04:4f:d3:d6:e0:7b:37:97:cf:77:b0:de:ad:4a:47:ce:8c:96:49:5f:0a:cf:8c:ae:b2:6d:4b:8a:3f
+		                                                  |Forge                         |forge                         |48.1.0              |DONE      |Manifest: NOSIGNATURE
+		main                                              |Mystcraft Legacy - Pages Retur|mystcraft                     |1.0.0               |DONE      |Manifest: NOSIGNATURE
+	Crash Report UUID: 64355619-6bdb-4815-86ea-97b9ecf5a389
+	FML: 48.1
+	Forge: net.minecraftforge:48.1.0

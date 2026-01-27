@@ -1,0 +1,50 @@
+/effect give Dev minecraft:night_vision 9999 99
+/mystcraft give randombook 50
+/mystcraft give preset blood_moon
+/tp Dev ~ ~100 ~
+/mystcraft give preset rainbow
+/mystcraft give preset unstable
+/mystcraft instability
+/mystcraft instability toggle
+/mystcraft instability toggle 1000
+/mystcraft instability toggle 1000 true
+/mystcraft give preset unstable
+/mystcraft give preset rainbow
+/tp Dev ~ ~111 ~
+/spectate
+/mystcraft give preset rainbow
+/mystcraft give preset unstable
+/mystcraft give preset rainbow
+/tp Dev ~ ~111 ~
+/mystcraft give preset unstable
+/gamemode survival
+/gamemode creative
+/mystcraft give preset unstable
+/kill
+/mystcraft give preset rainbow
+/kill
+/mystcraft give preset rainbow
+/mystcraft give preset twilight
+/mystcraft give preset unstable
+/mystcraft give preset rainbow
+/mystcraft instability set 75
+/mystcraft instability set 60
+/mystcraft give preset
+/mystcraft give preset accelerated
+/mystcraft give preset blend
+/mystcraft give randombook 20
+/kill
+/mystcraft give randombook 20
+/mystcraft give preset accelerated
+/mystcraft give randombook 20
+/effect give Dev minecraft:night_vision 9999 99
+/kill
+/mystcraft give randombook 20
+/mystcraft give randombook 50
+/mystcraft give randombook 500
+/mystcraft give preset rainbow
+/tp Dev ~ ~250 ~
+/mystcraft give preset unstable
+/gamemode survival
+/gamemode creative
+/gamemode survival

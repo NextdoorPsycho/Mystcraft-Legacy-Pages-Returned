@@ -1,0 +1,27 @@
+{
+  "mystcraft:agebook": {
+    "criteria": {
+      "myst_agebook_in_inventory": "2026-01-27 12:48:56 -0700"
+    },
+    "done": true
+  },
+  "minecraft:recipes/decorations/crafting_table": {
+    "criteria": {
+      "unlock_right_away": "2026-01-27 12:48:46 -0700"
+    },
+    "done": true
+  },
+  "minecraft:adventure/adventuring_time": {
+    "criteria": {
+      "minecraft:badlands": "2026-01-27 12:48:47 -0700"
+    },
+    "done": false
+  },
+  "mystcraft:root": {
+    "criteria": {
+      "mystcraft_present": "2026-01-27 12:48:46 -0700"
+    },
+    "done": true
+  },
+  "DataVersion": 3578
+}

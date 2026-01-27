@@ -1,0 +1,83 @@
+
+#Mystcraft Common Configuration
+[general]
+	#Whether to give new players a copy of the Mystcraft Guidebook when they first join the world.
+	giveGuidebookOnFirstSpawn = true
+	#Maximum number of symbol pages allowed in a single Agebook.
+	#Higher values allow more complex ages but may increase server load.
+	#Set to -1 for unlimited (not recommended).
+	#Default: 50
+	#Range: -1 ~ 1000
+	maxSymbolsPerBook = 50
+	#If true, all Mystcraft Ages will be deleted every time the server starts. Use for development/testing.
+	deleteAgesOnStartup = false
+
+#Instability Settings
+#The instability system is core to Mystcraft's balance.
+#Ages with incomplete or greedy symbol combinations become unstable.
+#Unstable ages experience increasingly severe negative effects.
+[instability]
+	#Master switch for the instability system. If false, no instability effects occur.
+	enabled = true
+	#Whether to allow creation of Ages that exceed the maximum instability threshold.
+	#If false, attempting to link to an Age with instability above 'maxAllowedInstability' will fail.
+	#The player will be warned and the link will not activate.
+	allowUnstableAges = true
+	#Global multiplier for all instability effect chances.
+	#0.0 = no effects ever trigger (but instability still accumulates)
+	#1.0 = normal effect frequency (default)
+	#2.0 = double frequency, etc.
+	#Range: 0.0 ~ 10.0
+	effectMultiplier = 1.0
+	#Maximum instability allowed when 'allowUnstableAges' is false.
+	#Ages at or below this value can be created freely.
+	#Default: 150.0 (allows moderately unstable ages)
+	#Range: 0.0 ~ 1000.0
+	maxAllowedInstability = 150.0
+	#Whether thematic death effects (messages, debuffs, instability surge) occur when players die in Ages.
+	deathEffectsEnabled = true
+
+#Instability Thresholds
+#The instability level required before each effect type begins.
+#Lower values = effects start sooner. Higher values = more lenient.
+[instability_thresholds]
+	#Instability threshold for decay blocks to start spreading.
+	#Range: 0.0 ~ 500.0
+	decay = 20.0
+	#Instability threshold for random block transmutation to begin.
+	#Range: 0.0 ~ 500.0
+	transmute = 30.0
+	#Instability threshold for random lightning strikes.
+	#Range: 0.0 ~ 500.0
+	lightning = 40.0
+	#Instability threshold for meteor falls.
+	#Range: 0.0 ~ 500.0
+	meteor = 60.0
+	#Instability threshold for poison/hunger effects on players.
+	#Range: 0.0 ~ 500.0
+	poison = 80.0
+	#Instability threshold for wither effects on players (most severe).
+	#Range: 0.0 ~ 500.0
+	wither = 100.0
+
+#Effect Base Chances
+#Base probability per tick for each effect type.
+#Actual chance scales with instability above threshold.
+#Values are decimals: 0.001 = 0.1% chance per tick
+[instability_chances]
+	#Base chance per tick for decay to spread (default: 0.001 = 0.1%)
+	#Range: 0.0 ~ 1.0
+	decay = 0.001
+	#Base chance per tick for block transmutation (default: 0.002 = 0.2%)
+	#Range: 0.0 ~ 1.0
+	transmute = 0.002
+	#Base chance per tick for lightning strikes (default: 0.0005 = 0.05%)
+	#Range: 0.0 ~ 1.0
+	lightning = 5.0E-4
+	#Base chance per tick for meteor spawns (default: 0.0002 = 0.02%)
+	#Range: 0.0 ~ 1.0
+	meteor = 2.0E-4
+	#Base chance per tick for player debuffs (default: 0.0001 = 0.01%)
+	#Range: 0.0 ~ 1.0
+	playerEffect = 1.0E-4
+

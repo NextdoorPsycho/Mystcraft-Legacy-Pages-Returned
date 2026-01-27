@@ -1,0 +1,190 @@
+---- Minecraft Crash Report ----
+// Who set us up the TNT?
+
+Time: 2026-01-26 10:32:12
+Description: Rendering overlay
+
+java.lang.RuntimeException: null
+	at net.minecraftforge.fml.DeferredWorkQueue.runTasks(DeferredWorkQueue.java:58) ~[fmlcore-1.20.2-48.1.0.jar:?] {}
+	at net.minecraftforge.fml.core.ParallelTransition.lambda$finalActivityGenerator$2(ParallelTransition.java:37) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading}
+	at java.util.concurrent.CompletableFuture$UniApply.tryFire(CompletableFuture.java:646) ~[?:?] {}
+	at java.util.concurrent.CompletableFuture$Completion.run(CompletableFuture.java:482) ~[?:?] {}
+	at net.minecraft.server.packs.resources.SimpleReloadInstance.lambda$new$3(SimpleReloadInstance.java:65) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading}
+	at net.minecraft.util.thread.BlockableEventLoop.doRunTask(BlockableEventLoop.java:143) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.util.thread.ReentrantBlockableEventLoop.doRunTask(ReentrantBlockableEventLoop.java:22) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading}
+	at net.minecraft.util.thread.BlockableEventLoop.pollTask(BlockableEventLoop.java:116) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.util.thread.BlockableEventLoop.runAllTasks(BlockableEventLoop.java:104) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.client.Minecraft.runTick(Minecraft.java:1171) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.client.Minecraft.run(Minecraft.java:781) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.client.main.Main.main(Main.java:221) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:runtimedistcleaner:A}
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?] {}
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?] {}
+	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?] {}
+	at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:98) ~[fmlloader-1.20.2-48.1.0.jar:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:82) ~[fmlloader-1.20.2-48.1.0.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:17) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:40) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:58) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:96) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:66) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:13) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:10) ~[modlauncher-10.1.1.jar:?] {}
+	at net.minecraftforge.bootstrap.BootstrapLauncher.main(BootstrapLauncher.java:126) ~[bootstrap-1.2.0.jar:?] {}
+	Suppressed: java.lang.ExceptionInInitializerError
+		at art.arcane.mystcraft.Mystcraft.lambda$commonSetup$0(Mystcraft.java:93) ~[main/:?] {re:classloading}
+		at java.util.concurrent.CompletableFuture$AsyncRun.run(CompletableFuture.java:1804) ~[?:?] {}
+		at net.minecraftforge.fml.DeferredWorkQueue.lambda$makeRunnable$2(DeferredWorkQueue.java:81) ~[fmlcore-1.20.2-48.1.0.jar:?] {}
+		at net.minecraftforge.fml.DeferredWorkQueue.makeRunnable(DeferredWorkQueue.java:76) ~[fmlcore-1.20.2-48.1.0.jar:?] {}
+		at net.minecraftforge.fml.DeferredWorkQueue.lambda$runTasks$0(DeferredWorkQueue.java:60) ~[fmlcore-1.20.2-48.1.0.jar:?] {}
+		at java.util.concurrent.ConcurrentLinkedDeque.forEach(ConcurrentLinkedDeque.java:1650) ~[?:?] {}
+		at net.minecraftforge.fml.DeferredWorkQueue.runTasks(DeferredWorkQueue.java:60) ~[fmlcore-1.20.2-48.1.0.jar:?] {}
+		at net.minecraftforge.fml.core.ParallelTransition.lambda$finalActivityGenerator$2(ParallelTransition.java:37) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading}
+		at java.util.concurrent.CompletableFuture$UniApply.tryFire(CompletableFuture.java:646) ~[?:?] {}
+		at java.util.concurrent.CompletableFuture$Completion.run(CompletableFuture.java:482) ~[?:?] {}
+		at net.minecraft.server.packs.resources.SimpleReloadInstance.lambda$new$3(SimpleReloadInstance.java:65) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading}
+		at net.minecraft.util.thread.BlockableEventLoop.doRunTask(BlockableEventLoop.java:143) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B}
+		at net.minecraft.util.thread.ReentrantBlockableEventLoop.doRunTask(ReentrantBlockableEventLoop.java:22) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading}
+		at net.minecraft.util.thread.BlockableEventLoop.pollTask(BlockableEventLoop.java:116) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B}
+		at net.minecraft.util.thread.BlockableEventLoop.runAllTasks(BlockableEventLoop.java:104) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B}
+		at net.minecraft.client.Minecraft.runTick(Minecraft.java:1171) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+		at net.minecraft.client.Minecraft.run(Minecraft.java:781) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+		at net.minecraft.client.main.Main.main(Main.java:221) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:runtimedistcleaner:A}
+		at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?] {}
+		at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?] {}
+		at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?] {}
+		at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?] {}
+		at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:98) ~[fmlloader-1.20.2-48.1.0.jar:?] {}
+		at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:82) ~[fmlloader-1.20.2-48.1.0.jar:?] {}
+		at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:17) ~[modlauncher-10.1.1.jar:?] {}
+		at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:40) ~[modlauncher-10.1.1.jar:?] {}
+		at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:58) ~[modlauncher-10.1.1.jar:?] {}
+		at cpw.mods.modlauncher.Launcher.run(Launcher.java:96) ~[modlauncher-10.1.1.jar:?] {}
+		at cpw.mods.modlauncher.Launcher.main(Launcher.java:66) ~[modlauncher-10.1.1.jar:?] {}
+		at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:13) ~[modlauncher-10.1.1.jar:?] {}
+		at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:10) ~[modlauncher-10.1.1.jar:?] {}
+		at net.minecraftforge.bootstrap.BootstrapLauncher.main(BootstrapLauncher.java:126) ~[bootstrap-1.2.0.jar:?] {}
+	Caused by: net.minecraft.ResourceLocationException: Non [a-z0-9/._-] character in path of location: mystcraft:Age
+		at net.minecraft.resources.ResourceLocation.assertValidPath(ResourceLocation.java:236) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+		at net.minecraft.resources.ResourceLocation.<init>(ResourceLocation.java:38) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+		at art.arcane.mystcraft.grammar.GrammarRules.asMyst(GrammarRules.java:262) ~[%23189!/:?] {re:classloading}
+		at art.arcane.mystcraft.grammar.GrammarRules.<clinit>(GrammarRules.java:20) ~[%23189!/:?] {re:classloading}
+		... 32 more
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Thread: Render thread
+Suspected Mods: NONE
+Stacktrace:
+	at net.minecraftforge.fml.DeferredWorkQueue.runTasks(DeferredWorkQueue.java:58) ~[fmlcore-1.20.2-48.1.0.jar%23184!/:?] {}
+	at net.minecraftforge.fml.core.ParallelTransition.lambda$finalActivityGenerator$2(ParallelTransition.java:37) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23182%23188!/:?] {re:classloading}
+	at java.util.concurrent.CompletableFuture$UniApply.tryFire(CompletableFuture.java:646) ~[?:?] {}
+	at java.util.concurrent.CompletableFuture$Completion.run(CompletableFuture.java:482) ~[?:?] {}
+	at net.minecraft.server.packs.resources.SimpleReloadInstance.lambda$new$3(SimpleReloadInstance.java:65) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading}
+	at net.minecraft.util.thread.BlockableEventLoop.doRunTask(BlockableEventLoop.java:143) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+	at net.minecraft.util.thread.ReentrantBlockableEventLoop.doRunTask(ReentrantBlockableEventLoop.java:22) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading}
+	at net.minecraft.util.thread.BlockableEventLoop.pollTask(BlockableEventLoop.java:116) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+-- Overlay render details --
+Details:
+	Overlay name: net.minecraftforge.client.loading.ForgeLoadingOverlay
+Stacktrace:
+	at net.minecraft.client.renderer.GameRenderer.render(GameRenderer.java:958) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.client.Minecraft.runTick(Minecraft.java:1211) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.client.Minecraft.run(Minecraft.java:781) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:accesstransformer:B,pl:runtimedistcleaner:A}
+	at net.minecraft.client.main.Main.main(Main.java:221) ~[forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.jar:?] {re:classloading,pl:runtimedistcleaner:A}
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:?] {}
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[?:?] {}
+	at jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:?] {}
+	at java.lang.reflect.Method.invoke(Method.java:569) ~[?:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:98) ~[fmlloader-1.20.2-48.1.0.jar:?] {}
+	at net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:82) ~[fmlloader-1.20.2-48.1.0.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:17) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:40) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:58) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.run(Launcher.java:96) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.Launcher.main(Launcher.java:66) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:13) ~[modlauncher-10.1.1.jar:?] {}
+	at cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:10) ~[modlauncher-10.1.1.jar:?] {}
+	at net.minecraftforge.bootstrap.BootstrapLauncher.main(BootstrapLauncher.java:126) ~[bootstrap-1.2.0.jar:?] {}
+
+
+-- Last reload --
+Details:
+	Reload number: 1
+	Reload reason: initial
+	Finished: No
+	Packs: vanilla, mod_resources
+
+-- System Details --
+Details:
+	Minecraft Version: 1.20.2
+	Minecraft Version ID: 1.20.2
+	Operating System: Mac OS X (aarch64) version 26.3
+	Java Version: 17.0.15, Eclipse Adoptium
+	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode, sharing), Eclipse Adoptium
+	Memory: 284420672 bytes (271 MiB) / 838860800 bytes (800 MiB) up to 32178700288 bytes (30688 MiB)
+	CPUs: 16
+	Processor Vendor: Apple Inc.
+	Processor Name: Apple M3 Max
+	Identifier: Apple Inc. Family 0x72015832 Model 0 Stepping 0
+	Microarchitecture: unknown
+	Frequency (GHz): -0.00
+	Number of physical packages: 1
+	Number of physical CPUs: 16
+	Number of logical CPUs: 16
+	Graphics card #0 name: Apple M3 Max
+	Graphics card #0 vendor: Apple (0x106b)
+	Graphics card #0 VRAM (MB): 0.00
+	Graphics card #0 deviceId: unknown
+	Graphics card #0 versionInfo: unknown
+	Memory slot #0 capacity (MB): 0.00
+	Memory slot #0 clockSpeed (GHz): 0.00
+	Memory slot #0 type: unknown
+	Virtual memory max (MB): 131072.00
+	Virtual memory used (MB): 62706.92
+	Swap memory total (MB): 0.00
+	Swap memory used (MB): 0.00
+	JVM Flags: 0 total; 
+	JVM uptime in seconds: 7.238
+	Launched Version: MOD_DEV
+	Backend library: LWJGL version 3.3.2+13
+	Backend API: Apple M3 Max GL version 4.1 Metal - 90.5, Apple
+	Window size: 1708x960
+	GL Caps: Using framebuffer using OpenGL 3.2
+	GL debug messages: <disabled>
+	Using VBOs: Yes
+	Is Modded: Definitely; Client brand changed to 'forge'
+	Type: Client (map_client.txt)
+	Graphics mode: fancy
+	Resource Packs: 
+	Current Language: en_us
+	Locale: en_US
+	CPU: 16x Apple M3 Max
+	ModLauncher: 10.1.1
+	ModLauncher launch target: forge_userdev_client
+	ModLauncher naming: mcp
+	ModLauncher services: 
+		mixin-0.8.5.jar mixin PLUGINSERVICE 
+		eventbus-6.2.0.jar eventbus PLUGINSERVICE 
+		fmlloader-1.20.2-48.1.0.jar slf4jfixer PLUGINSERVICE 
+		fmlloader-1.20.2-48.1.0.jar object_holder_definalize PLUGINSERVICE 
+		fmlloader-1.20.2-48.1.0.jar runtime_enum_extender PLUGINSERVICE 
+		fmlloader-1.20.2-48.1.0.jar capability_token_subclass PLUGINSERVICE 
+		accesstransformers-8.1.1.jar accesstransformer PLUGINSERVICE 
+		fmlloader-1.20.2-48.1.0.jar runtimedistcleaner PLUGINSERVICE 
+		modlauncher-10.1.1.jar mixin TRANSFORMATIONSERVICE 
+		modlauncher-10.1.1.jar fml TRANSFORMATIONSERVICE 
+	FML Language Providers: 
+		minecraft@1.0
+		lowcodefml@48
+		javafml@null
+	Mod List: 
+		forge-1.20.2-48.1.0_mapped_official_1.20.2-recomp.|Minecraft                     |minecraft                     |1.20.2              |SIDED_SETU|Manifest: a1:d4:5e:04:4f:d3:d6:e0:7b:37:97:cf:77:b0:de:ad:4a:47:ce:8c:96:49:5f:0a:cf:8c:ae:b2:6d:4b:8a:3f
+		                                                  |Forge                         |forge                         |48.1.0              |SIDED_SETU|Manifest: NOSIGNATURE
+		main                                              |Mystcraft Legacy - Pages Retur|mystcraft                     |1.0.0               |SIDED_SETU|Manifest: NOSIGNATURE
+	Crash Report UUID: 370263d2-0b66-4a76-a7bd-4f85fa3319fb
+	FML: 48.1
+	Forge: net.minecraftforge:48.1.0

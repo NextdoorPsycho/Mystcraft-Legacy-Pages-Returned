@@ -1,0 +1,88 @@
+{
+  "minecraft:recipes/transportation/mangrove_boat": {
+    "criteria": {
+      "in_water": "2026-01-27 12:35:49 -0700"
+    },
+    "done": true
+  },
+  "mystcraft:quinn": {
+    "criteria": {
+      "myst_quinn_trigger": "2026-01-27 12:35:30 -0700"
+    },
+    "done": true
+  },
+  "mystcraft:agebook": {
+    "criteria": {
+      "myst_agebook_in_inventory": "2026-01-27 12:35:28 -0700"
+    },
+    "done": true
+  },
+  "minecraft:recipes/decorations/crafting_table": {
+    "criteria": {
+      "unlock_right_away": "2026-01-27 12:34:41 -0700"
+    },
+    "done": true
+  },
+  "minecraft:recipes/transportation/acacia_boat": {
+    "criteria": {
+      "in_water": "2026-01-27 12:35:49 -0700"
+    },
+    "done": true
+  },
+  "minecraft:recipes/transportation/cherry_boat": {
+    "criteria": {
+      "in_water": "2026-01-27 12:35:49 -0700"
+    },
+    "done": true
+  },
+  "minecraft:adventure/adventuring_time": {
+    "criteria": {
+      "minecraft:grove": "2026-01-27 12:34:47 -0700",
+      "minecraft:swamp": "2026-01-27 12:35:31 -0700"
+    },
+    "done": false
+  },
+  "minecraft:recipes/transportation/bamboo_raft": {
+    "criteria": {
+      "in_water": "2026-01-27 12:35:49 -0700"
+    },
+    "done": true
+  },
+  "minecraft:recipes/transportation/spruce_boat": {
+    "criteria": {
+      "in_water": "2026-01-27 12:35:49 -0700"
+    },
+    "done": true
+  },
+  "minecraft:recipes/transportation/birch_boat": {
+    "criteria": {
+      "in_water": "2026-01-27 12:35:49 -0700"
+    },
+    "done": true
+  },
+  "minecraft:recipes/transportation/oak_boat": {
+    "criteria": {
+      "in_water": "2026-01-27 12:35:49 -0700"
+    },
+    "done": true
+  },
+  "minecraft:recipes/transportation/jungle_boat": {
+    "criteria": {
+      "in_water": "2026-01-27 12:35:49 -0700"
+    },
+    "done": true
+  },
+  "mystcraft:root": {
+    "criteria": {
+      "mystcraft_present": "2026-01-27 12:34:41 -0700"
+    },
+    "done": true
+  },
+  "minecraft:recipes/transportation/dark_oak_boat": {
+    "criteria": {
+      "in_water": "2026-01-27 12:35:49 -0700"
+    },
+    "done": true
+  },
+  "DataVersion": 3578
+}

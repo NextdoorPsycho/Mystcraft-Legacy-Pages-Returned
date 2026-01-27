@@ -50,6 +50,7 @@ public final class PortalUtils {
     public static int isValidLinkPortalBlock(BlockState state) {
         if (state.getBlock() == getFrameBlock()) return 1;
         if (state.getBlock() == getPortalBlock()) return 1;
+        if (state.getBlock() == getReceptacleBlock()) return 1;
         return 0;
     }
 
@@ -130,13 +131,19 @@ public final class PortalUtils {
 
     /**
      * Fires (activates) a portal from the receptacle position.
+     * Flood fill starts from the crystal behind the receptacle, not the receptacle itself.
      */
     public static void firePortal(Level level, BlockPos receptaclePos) {
         if (level.isClientSide) return;
 
-        // First create portal blocks in air spaces
-        createPortalBlocks(level, receptaclePos);
-        // Then path all blocks to point to receptacle
+        BlockState receptacleState = level.getBlockState(receptaclePos);
+        BlockPos crystalPos = receptaclePos;
+        if (receptacleState.getBlock() == getReceptacleBlock()) {
+            Direction facing = receptacleState.getValue(BookReceptacleBlock.FACING);
+            crystalPos = receptaclePos.relative(facing.getOpposite());
+        }
+
+        createPortalBlocks(level, crystalPos);
         pathToReceptacle(level, receptaclePos);
     }
 

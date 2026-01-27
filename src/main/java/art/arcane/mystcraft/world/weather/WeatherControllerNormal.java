@@ -24,15 +24,15 @@ public class WeatherControllerNormal implements IWeatherController {
     private int thunderTime = 0;
 
     // Duration and cooldown in ticks
-    private static final int RAIN_DURATION_BASE = 12000; // ~10 minutes
+    private static final int RAIN_DURATION_BASE = 6000; // ~5 minutes
     private static final int RAIN_DURATION_VARIANCE = 12000;
-    private static final int RAIN_COOLDOWN_BASE = 12000;
-    private static final int RAIN_COOLDOWN_VARIANCE = 168000; // Up to ~2.3 hours
+    private static final int RAIN_COOLDOWN_BASE = 6000;
+    private static final int RAIN_COOLDOWN_VARIANCE = 48000; // Up to ~40 minutes
 
     private static final int THUNDER_DURATION_BASE = 3600; // ~3 minutes
-    private static final int THUNDER_DURATION_VARIANCE = 12000;
+    private static final int THUNDER_DURATION_VARIANCE = 6000;
     private static final int THUNDER_COOLDOWN_BASE = 12000;
-    private static final int THUNDER_COOLDOWN_VARIANCE = 168000;
+    private static final int THUNDER_COOLDOWN_VARIANCE = 60000; // Up to ~50 minutes
 
     public WeatherControllerNormal() {
         resetTimers();

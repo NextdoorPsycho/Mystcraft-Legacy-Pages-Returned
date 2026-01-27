@@ -7,7 +7,6 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.Random;
 
@@ -22,14 +21,16 @@ public class SpheresPopulator implements IPopulate {
 
     private final long seed;
 
-    private static final int SPHERES_PER_CHUNK = 2;
+    private static final int SPHERES_PER_CHUNK = 1;
     private static final int MIN_RADIUS = 5;
     private static final int MAX_RADIUS = 15;
     private static final float FLOATING_CHANCE = 0.4f;
+    // ~3% of chunks spawn a sphere (~1 per 33 chunks)
+    private static final float SPAWN_CHANCE = 0.03f;
 
     // How many neighbor chunks to scan in each direction.
-    // Must cover MAX_RADIUS / 16, rounded up = 1 chunk.
-    private static final int NEIGHBOR_RANGE = 1;
+    // Worst case: center at position 15 + radius 15 = 30 blocks = 2 chunks away.
+    private static final int NEIGHBOR_RANGE = 2;
 
     public SpheresPopulator(long seed) {
         this.seed = seed;
@@ -56,38 +57,46 @@ public class SpheresPopulator implements IPopulate {
                 int neighborMinZ = ncz << 4;
 
                 for (int i = 0; i < SPHERES_PER_CHUNK; i++) {
-                    // Compute sphere parameters deterministically for this neighbor chunk
+                    // Deterministic spawn chance - skip most chunks
+                    if (chunkRand.nextFloat() >= SPAWN_CHANCE) {
+                        continue;
+                    }
+
+                    // Compute ALL sphere parameters deterministically BEFORE any skip checks.
+                    // Every chunkRand call must happen regardless of whether this sphere
+                    // overlaps our chunk, so subsequent spheres stay in sync.
                     int cx = neighborMinX + chunkRand.nextInt(16);
                     int cz = neighborMinZ + chunkRand.nextInt(16);
                     boolean floating = chunkRand.nextFloat() < FLOATING_CHANCE;
                     int radius = MIN_RADIUS + chunkRand.nextInt(MAX_RADIUS - MIN_RADIUS + 1);
-
-                    // Material choices must be consumed deterministically
                     BlockState sphereBlock = getSphereMaterial(chunkRand, floating);
                     BlockState coreBlock = getCoreBlock(sphereBlock, chunkRand);
+
+                    // Y offset random - consume regardless of skip
+                    int yOffset = floating ? (30 + chunkRand.nextInt(70)) : chunkRand.nextInt(20);
+
+                    // Irregularity sub-seed - consume regardless of skip
+                    long irregSeed = chunkRand.nextLong();
+
+                    // Decoration sub-seed - consume regardless of skip
+                    long decorSubSeed = chunkRand.nextLong();
 
                     // Quick AABB check: can this sphere overlap our chunk at all?
                     if (cx + radius < chunkMinX || cx - radius > chunkMaxX ||
                         cz + radius < chunkMinZ || cz - radius > chunkMaxZ) {
-                        // Still need to consume the random state for heightmap lookups
-                        // so that subsequent spheres in this neighbor chunk stay deterministic.
-                        // The heightmap calls use world state, not random, so we just skip.
                         continue;
                     }
 
-                    // Get Y from heightmap (this is world-state dependent, not random-dependent)
-                    int y;
-                    if (floating) {
-                        int groundY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, cx, cz);
-                        y = groundY + 30 + chunkRand.nextInt(70);
-                    } else {
-                        int groundY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, cx, cz);
-                        y = groundY - chunkRand.nextInt(20);
-                    }
+                    // Derive Y deterministically from the sphere's own seed so all chunks
+                    // agree on the same center. Reading the heightmap at a neighbor chunk's
+                    // coordinates can return wrong values if that chunk isn't generated yet,
+                    // causing half-spheres at chunk borders.
+                    int baseY = 40 + (int) ((irregSeed & 0x7FL) % 60); // Deterministic range 40-99
+                    int y = floating ? (baseY + 40 + yOffset) : baseY;
 
                     BlockPos center = new BlockPos(cx, y, cz);
-                    generateSphere(world, chunkRand, center, radius, floating, sphereBlock, coreBlock,
-                            chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
+                    generateSphere(world, irregSeed, decorSubSeed, center, radius, floating,
+                            sphereBlock, coreBlock, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
                 }
             }
         }
@@ -105,7 +114,8 @@ public class SpheresPopulator implements IPopulate {
                pos.getZ() >= minZ && pos.getZ() <= maxZ;
     }
 
-    private void generateSphere(WorldGenLevel world, Random rand, BlockPos center, int radius,
+    private void generateSphere(WorldGenLevel world, long irregSeed, long decorSubSeed,
+                                BlockPos center, int radius,
                                 boolean floating, BlockState sphereBlock, BlockState coreBlock,
                                 int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
         int coreRadius = radius > 8 ? radius / 3 : 0;
@@ -116,14 +126,10 @@ public class SpheresPopulator implements IPopulate {
         int startZ = Math.max(-radius, chunkMinZ - center.getZ());
         int endZ = Math.min(radius, chunkMaxZ - center.getZ());
 
-        // Use a sub-seed for irregularity so it's position-deterministic, not iteration-order dependent
-        long irregSeed = rand.nextLong();
-
         for (int dx = startX; dx <= endX; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
                 for (int dz = startZ; dz <= endZ; dz++) {
                     double distSq = dx * dx + dy * dy + dz * dz;
-                    double radiusSq = (double) radius * radius;
 
                     // Position-deterministic irregularity
                     int bx = center.getX() + dx;
@@ -153,7 +159,7 @@ public class SpheresPopulator implements IPopulate {
 
         // Decorations for floating spheres
         if (floating) {
-            addFloatingSphereDecorations(world, rand, center, radius,
+            addFloatingSphereDecorations(world, decorSubSeed, center, radius,
                     chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
         }
     }
@@ -224,10 +230,10 @@ public class SpheresPopulator implements IPopulate {
         return outerBlock;
     }
 
-    private void addFloatingSphereDecorations(WorldGenLevel world, Random rand, BlockPos center, int radius,
+    private void addFloatingSphereDecorations(WorldGenLevel world, long decorSubSeed,
+                                              BlockPos center, int radius,
                                               int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
-        // Use deterministic sub-seed for decorations
-        Random decorRand = new Random(rand.nextLong());
+        Random decorRand = new Random(decorSubSeed);
         for (int attempt = 0; attempt < radius / 2; attempt++) {
             double angle = decorRand.nextDouble() * Math.PI * 2;
             double elevation = (decorRand.nextDouble() - 0.5) * Math.PI;
@@ -236,10 +242,15 @@ public class SpheresPopulator implements IPopulate {
             int dy = (int) (Math.sin(elevation) * (radius + 1));
             int dz = (int) (Math.sin(angle) * Math.cos(elevation) * (radius + 1));
 
+            // Consume random calls unconditionally to keep decorRand in sync
+            // across all chunks visiting this sphere
+            int chance = decorRand.nextInt(4);
+            boolean useGlowstone = decorRand.nextBoolean();
+
             BlockPos decorPos = center.offset(dx, dy, dz);
             if (isInChunk(decorPos, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ)
-                    && world.getBlockState(decorPos).isAir() && decorRand.nextInt(4) == 0) {
-                BlockState decoration = decorRand.nextBoolean()
+                    && world.getBlockState(decorPos).isAir() && chance == 0) {
+                BlockState decoration = useGlowstone
                         ? Blocks.GLOWSTONE.defaultBlockState()
                         : Blocks.SEA_LANTERN.defaultBlockState();
                 world.setBlock(decorPos, decoration, 2);

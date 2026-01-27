@@ -2,10 +2,11 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.ElderGuardian;
+import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -51,8 +52,8 @@ public class OceanMonumentsPopulator implements IPopulate {
             return;
         }
 
-        int x = chunkPos.getX() + random.nextInt(16) + 8;
-        int z = chunkPos.getZ() + random.nextInt(16) + 8;
+        int x = chunkPos.getX() + random.nextInt(16);
+        int z = chunkPos.getZ() + random.nextInt(16);
 
         // Find ocean floor
         int oceanFloor = -1;
@@ -196,16 +197,16 @@ public class OceanMonumentsPopulator implements IPopulate {
         BlockPos goldPos = pos.offset(0, spongeY, 0);
         safeSetBlock(world, goldPos, Blocks.GOLD_BLOCK.defaultBlockState());
 
-        // Get ServerLevel for entity spawning
-        net.minecraft.server.level.ServerLevel serverLevel = world.getLevel();
-
-        // Spawn elder guardian (only if in chunk)
+        // Spawn guardians using addFreshEntity to avoid chunk-loading deadlocks
         BlockPos guardianPos = pos.offset(0, spongeY + 2, 0);
         if (isInChunk(guardianPos)) {
-            EntityType.ELDER_GUARDIAN.spawn(serverLevel, guardianPos, MobSpawnType.STRUCTURE);
+            ElderGuardian elder = EntityType.ELDER_GUARDIAN.create(world.getLevel());
+            if (elder != null) {
+                elder.setPos(guardianPos.getX() + 0.5, guardianPos.getY(), guardianPos.getZ() + 0.5);
+                world.addFreshEntity(elder);
+            }
         }
 
-        // Spawn regular guardians (only if in chunk)
         for (int i = 0; i < 3; i++) {
             int dx = random.nextInt(8) - 4;
             int dy = random.nextInt(height - 2) + 1;
@@ -213,7 +214,11 @@ public class OceanMonumentsPopulator implements IPopulate {
 
             BlockPos spawnPos = pos.offset(dx, dy, dz);
             if (isInChunk(spawnPos) && world.getBlockState(spawnPos).is(Blocks.WATER)) {
-                EntityType.GUARDIAN.spawn(serverLevel, spawnPos, MobSpawnType.STRUCTURE);
+                Guardian guardian = EntityType.GUARDIAN.create(world.getLevel());
+                if (guardian != null) {
+                    guardian.setPos(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
+                    world.addFreshEntity(guardian);
+                }
             }
         }
     }

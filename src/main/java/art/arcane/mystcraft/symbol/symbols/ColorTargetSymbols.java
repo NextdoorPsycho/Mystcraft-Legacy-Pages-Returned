@@ -34,6 +34,14 @@ public final class ColorTargetSymbols {
         0xFFE4B5, // Moccasin
         0xFAFAD2, // Light goldenrod
         0xD8BFD8, // Thistle
+        0xFF7F50, // Coral
+        0x40E0D0, // Turquoise
+        0xFFD700, // Gold
+        0xDC143C, // Crimson
+        0x50C878, // Emerald
+        0xFF007F, // Rose
+        0xFFBF00, // Amber
+        0xEE82EE, // Violet
     };
 
     private static final int[] SKY_COLORS = {
@@ -49,6 +57,12 @@ public final class ColorTargetSymbols {
         0xFFA07A, // Light salmon (sunset)
         0x98FB98, // Pale green (alien)
         0xDDA0DD, // Plum (alien)
+        0xFF6347, // Tomato (fiery sky)
+        0xFFD700, // Gold (golden sky)
+        0x8B0000, // Dark red (blood sky)
+        0x4B0082, // Indigo (twilight)
+        0x191970, // Midnight blue (deep twilight)
+        0x00FF88, // Spring green (aurora)
     };
 
     private static final int[] FOG_COLORS = {
@@ -75,6 +89,10 @@ public final class ColorTargetSymbols {
         0x98FB98, // Pale green
         0x8B4513, // Saddle brown (autumn)
         0xFF8C00, // Dark orange (autumn)
+        0xDC143C, // Crimson (blood grass)
+        0x4B0082, // Indigo (alien grass)
+        0x00CED1, // Dark turquoise (alien grass)
+        0xFFD700, // Gold (golden plains)
     };
 
     private static final int[] FOLIAGE_COLORS = {
@@ -101,6 +119,27 @@ public final class ColorTargetSymbols {
         0x6495ED, // Cornflower blue
         0x7B68EE, // Medium slate blue
         0x8A2BE2, // Blue violet
+        0xFF4500, // Orange red (lava water)
+        0x50C878, // Emerald (emerald sea)
+        0x191970, // Midnight blue (deep ocean)
+        0xDC143C, // Crimson (blood sea)
+        0x00FF88, // Spring green (mystic sea)
+        0xFFD700, // Gold (golden sea)
+    };
+
+    private static final int[] SUNSET_COLORS = {
+        0xFF4500, // Orange red
+        0xFF6347, // Tomato
+        0xFF7F50, // Coral
+        0xFFA07A, // Light salmon
+        0xFFD700, // Gold
+        0xFF8C00, // Dark orange
+        0xDC143C, // Crimson
+        0x8B0000, // Dark red
+        0xFF69B4, // Hot pink
+        0xDA70D6, // Orchid
+        0x4B0082, // Indigo (deep sunset)
+        0x00FF88, // Spring green (alien sunset)
     };
 
     public static void register() {
@@ -128,6 +167,14 @@ public final class ColorTargetSymbols {
         // Water colors
         SymbolRegistry.register(new ColorWater());
         SymbolRegistry.register(new ColorWaterNatural());
+
+        // Horizon colors
+        SymbolRegistry.register(new ColorHorizon());
+        SymbolRegistry.register(new ColorHorizonNatural());
+
+        // Sunset colors
+        SymbolRegistry.register(new ColorSunset());
+        SymbolRegistry.register(new ColorSunsetNatural());
     }
 
     /**
@@ -170,6 +217,7 @@ public final class ColorTargetSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            director.setSkyColor(-1);
             director.setSkyColorNatural(true);
         }
     }
@@ -230,6 +278,7 @@ public final class ColorTargetSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            director.setCloudColor(-1);
             director.setCloudColorNatural(true);
         }
     }
@@ -265,6 +314,7 @@ public final class ColorTargetSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            director.setFogColor(-1);
             director.setFogColorNatural(true);
         }
     }
@@ -300,6 +350,7 @@ public final class ColorTargetSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            director.setFoliageColor(-1);
             director.setFoliageColorNatural(true);
         }
     }
@@ -312,6 +363,11 @@ public final class ColorTargetSymbols {
             setCardRank(2);
             setInstabilityCost(0.0f);
             setPoem("Grass", "Image", "Color", "Form");
+        }
+
+        @Override
+        public boolean canDuplicate() {
+            return true;
         }
 
         @Override
@@ -335,6 +391,7 @@ public final class ColorTargetSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            // setGrassColorNatural(true) clears the color list in AgeDirectorImpl
             director.setGrassColorNatural(true);
         }
     }
@@ -370,7 +427,79 @@ public final class ColorTargetSymbols {
 
         @Override
         public void registerLogic(AgeDirector director, long seed) {
+            director.setWaterColor(-1);
             director.setWaterColorNatural(true);
+        }
+    }
+
+    // --- Horizon Colors ---
+
+    public static class ColorHorizon extends SymbolBase {
+        public ColorHorizon() {
+            super(SymbolRegistry.mystcraftId("color_horizon"), SymbolCategory.VISUAL_EFFECT);
+            setCardRank(2);
+            setInstabilityCost(0.0f);
+            setPoem("Horizon", "Image", "Color", "Form");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            int color = director.popColor();
+            if (color == -1) {
+                color = getRandomColor(SKY_COLORS, seed ^ 0x48_4F52495A4FL);
+                director.addInstability(3.0f);
+            }
+            director.setHorizonColor(color);
+        }
+    }
+
+    public static class ColorHorizonNatural extends SymbolBase {
+        public ColorHorizonNatural() {
+            super(SymbolRegistry.mystcraftId("color_horizon_natural"), SymbolCategory.VISUAL_EFFECT);
+            setCardRank(3);
+            setInstabilityCost(-2.0f);
+            setPoem("Horizon", "Image", "Nature", "Flow");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setHorizonColor(-1);
+            director.setHorizonColorNatural(true);
+        }
+    }
+
+    // --- Sunset Colors ---
+
+    public static class ColorSunset extends SymbolBase {
+        public ColorSunset() {
+            super(SymbolRegistry.mystcraftId("color_sunset"), SymbolCategory.VISUAL_EFFECT);
+            setCardRank(2);
+            setInstabilityCost(0.0f);
+            setPoem("Sun", "Image", "Color", "Fade");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            int color = director.popColor();
+            if (color == -1) {
+                color = getRandomColor(SUNSET_COLORS, seed);
+                director.addInstability(3.0f);
+            }
+            director.setSunsetColor(color);
+        }
+    }
+
+    public static class ColorSunsetNatural extends SymbolBase {
+        public ColorSunsetNatural() {
+            super(SymbolRegistry.mystcraftId("color_sunset_natural"), SymbolCategory.VISUAL_EFFECT);
+            setCardRank(3);
+            setInstabilityCost(-2.0f);
+            setPoem("Sun", "Image", "Nature", "Fade");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setSunsetColor(-1);
         }
     }
 }

@@ -15,6 +15,8 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * The Age Director receives symbol logic registrations and builds an Age's properties.
@@ -53,6 +55,30 @@ public interface AgeDirector {
      * @return The terrain type
      */
     String getTerrainType();
+
+    /**
+     * Sets the terrain mix mode for this Age.
+     * @param mode The mix mode ("none", "checkerboard", "noise", "stripes")
+     */
+    void setTerrainMixMode(String mode);
+
+    /**
+     * Gets the terrain mix mode.
+     * @return The mix mode
+     */
+    String getTerrainMixMode();
+
+    /**
+     * Sets the secondary terrain type for mixed terrain modes.
+     * @param type The secondary terrain type identifier
+     */
+    void setSecondaryTerrainType(String type);
+
+    /**
+     * Gets the secondary terrain type.
+     * @return The secondary terrain type, or "none" if not set
+     */
+    String getSecondaryTerrainType();
 
     /**
      * Sets the average ground level for the Age.
@@ -221,16 +247,24 @@ public interface AgeDirector {
     int getFogColor();
 
     /**
-     * Sets the grass color.
+     * Adds a grass color to the palette. Each call accumulates into the list,
+     * enabling multi-color grass when called multiple times.
      * @param color The RGB color
      */
     void setGrassColor(int color);
 
     /**
-     * Gets the grass color.
+     * Gets the first grass color, or -1 if none set.
      * @return The RGB color, or -1 for default
      */
     int getGrassColor();
+
+    /**
+     * Gets all grass colors in the palette.
+     * Empty list means natural biome-based colors.
+     * @return Unmodifiable list of RGB colors
+     */
+    List<Integer> getGrassColors();
 
     /**
      * Sets the foliage color.
@@ -315,6 +349,21 @@ public interface AgeDirector {
      * @param enabled true to enable
      */
     void setAcceleratedEnabled(boolean enabled);
+
+    /**
+     * Sets the timescale multiplier for day/night cycle speed.
+     * Values below 1.0 slow down time, above 1.0 speed it up.
+     * A value of 0.0 stops the cycle entirely (static time).
+     * Default is 1.0 (normal speed).
+     * @param scale The timescale multiplier
+     */
+    void setTimescale(float scale);
+
+    /**
+     * Gets the timescale multiplier for the day/night cycle.
+     * @return The timescale multiplier (default 1.0)
+     */
+    float getTimescale();
 
     /**
      * Enables or disables meteor spawning.
@@ -417,6 +466,58 @@ public interface AgeDirector {
     void setDenseOresEnabled(boolean enabled);
 
     /**
+     * Sets the master switch to disable all ore generation.
+     * @param disabled true to disable all ores
+     */
+    void setOresDisabled(boolean disabled);
+
+    /**
+     * Checks if all ores are disabled.
+     * @return true if ores are disabled
+     */
+    boolean areOresDisabled();
+
+    /**
+     * Disables a specific ore type.
+     * @param oreType The ore type identifier (e.g., "coal", "iron", "diamond")
+     * @param disabled true to disable this ore
+     */
+    void setOreDisabled(String oreType, boolean disabled);
+
+    /**
+     * Checks if a specific ore type is disabled.
+     * @param oreType The ore type identifier
+     * @return true if this ore is disabled
+     */
+    boolean isOreDisabled(String oreType);
+
+    /**
+     * Gets all disabled ore types.
+     * @return Set of disabled ore type identifiers
+     */
+    Set<String> getDisabledOres();
+
+    /**
+     * Sets a multiplier for a specific ore type's vein count.
+     * @param oreType The ore type identifier
+     * @param multiplier The vein count multiplier (1.0 = normal, 2.0 = double)
+     */
+    void setOreMultiplier(String oreType, float multiplier);
+
+    /**
+     * Gets the vein count multiplier for a specific ore type.
+     * @param oreType The ore type identifier
+     * @return The multiplier (default 1.0)
+     */
+    float getOreMultiplier(String oreType);
+
+    /**
+     * Gets all ore multipliers.
+     * @return Map of ore type to multiplier
+     */
+    Map<String, Float> getOreMultipliers();
+
+    /**
      * Enables or disables huge tree generation.
      * @param enabled true to enable
      */
@@ -457,6 +558,12 @@ public interface AgeDirector {
      * @param enabled true to enable
      */
     void setVerticalTendrilsEnabled(boolean enabled);
+
+    /**
+     * Enables or disables Perlin worm tunnel carving.
+     * @param enabled true to enable
+     */
+    void setPerlinWormsEnabled(boolean enabled);
 
     /**
      * Enables or disables crystal formations.
@@ -594,6 +701,36 @@ public interface AgeDirector {
      */
     void setBastionRemnantsEnabled(boolean enabled);
 
+    /**
+     * Enables or disables igloo generation.
+     * @param enabled true to enable
+     */
+    void setIgloosEnabled(boolean enabled);
+
+    /**
+     * Enables or disables shipwreck generation.
+     * @param enabled true to enable
+     */
+    void setShipwrecksEnabled(boolean enabled);
+
+    /**
+     * Enables or disables ocean ruins generation.
+     * @param enabled true to enable
+     */
+    void setOceanRuinsEnabled(boolean enabled);
+
+    /**
+     * Enables or disables buried treasure generation.
+     * @param enabled true to enable
+     */
+    void setBuriedTreasureEnabled(boolean enabled);
+
+    /**
+     * Enables or disables nether fossil generation.
+     * @param enabled true to enable
+     */
+    void setNetherFossilsEnabled(boolean enabled);
+
     // ========================= Cave Features =========================
 
     /**
@@ -701,6 +838,24 @@ public interface AgeDirector {
      * @param natural true for weather-dependent color
      */
     void setCloudColorNatural(boolean natural);
+
+    /**
+     * Sets the horizon color.
+     * @param color The RGB color
+     */
+    void setHorizonColor(int color);
+
+    /**
+     * Gets the horizon color.
+     * @return The RGB color, or -1 for default
+     */
+    int getHorizonColor();
+
+    /**
+     * Marks the horizon color as natural (biome-dependent).
+     * @param natural true for biome-dependent color
+     */
+    void setHorizonColorNatural(boolean natural);
 
     // --- Interface Registration ---
     // These methods allow symbols to register actual generation logic objects

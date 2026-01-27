@@ -218,6 +218,17 @@ public final class LinkingManager {
             destBlock = BlockPos.containing(targetVec);
         }
 
+        // If the destination has no solid ground (e.g. ocean Ages), build a platform
+        // at the fluid surface so the player doesn't spawn underwater
+        if (!hasSolidGround(targetLevel, destBlock)) {
+            BlockPos platformSpawn = buildFluidSurfacePlatform(targetLevel, destBlock);
+            if (platformSpawn != null) {
+                targetVec = new Vec3(platformSpawn.getX() + 0.5, platformSpawn.getY(), platformSpawn.getZ() + 0.5);
+                destBlock = platformSpawn;
+                Mystcraft.LOGGER.info("[LinkingManager] Built spawn platform over fluid at {}", platformSpawn);
+            }
+        }
+
         // === FIRE ALTER EVENT ===
         LinkEvent.Alter alterEvent = new LinkEvent.Alter(entity, linkData, sourceDimension, sourcePos,
                 targetLevel, targetVec, targetYaw);
@@ -286,6 +297,11 @@ public final class LinkingManager {
                 targetLevel, targetVec);
         MinecraftForge.EVENT_BUS.post(endEvent);
 
+        // === ADVANCEMENT TRIGGERS ===
+        if (AgeDimensionFactory.isMystcraftAge(targetLevel.dimension()) && entity instanceof ServerPlayer serverPlayer) {
+            checkMystDimensionAdvancements(serverPlayer);
+        }
+
         return LinkResult.SUCCESS;
     }
 
@@ -318,14 +334,14 @@ public final class LinkingManager {
             }
         }
 
-        Mystcraft.LOGGER.info("========== Age {} Symbol List ==========", ageUID);
-        Mystcraft.LOGGER.info("[Age {}] {} pages total, {} link panel(s), {} symbol(s)",
+        Mystcraft.LOGGER.debug("========== Age {} Symbol List ==========", ageUID);
+        Mystcraft.LOGGER.debug("[Age {}] {} pages total, {} link panel(s), {} symbol(s)",
                 ageUID, pages.size(), linkPanelCount, symbolNames.size());
         for (int i = 0; i < symbolNames.size(); i++) {
-            Mystcraft.LOGGER.info("[Age {}]   [{}] {}", ageUID, i + 1, symbolNames.get(i));
+            Mystcraft.LOGGER.debug("[Age {}]   [{}] {}", ageUID, i + 1, symbolNames.get(i));
         }
-        Mystcraft.LOGGER.info("[Age {}] Instability: {}", ageUID, String.format("%.1f", ageData.getInstability()));
-        Mystcraft.LOGGER.info("========================================");
+        Mystcraft.LOGGER.debug("[Age {}] Instability: {}", ageUID, String.format("%.1f", ageData.getInstability()));
+        Mystcraft.LOGGER.debug("========================================");
     }
 
     /**
@@ -687,6 +703,71 @@ public final class LinkingManager {
     }
 
     /**
+     * Checks whether a position has solid ground below it.
+     */
+    private static boolean hasSolidGround(ServerLevel level, BlockPos pos) {
+        if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
+            return true; // Assume safe if chunk not loaded
+        }
+        BlockPos below = pos.below();
+        BlockState ground = level.getBlockState(below);
+        return ground.isSolidRender(level, below);
+    }
+
+    /**
+     * Finds a fluid surface near the given position and builds a 3x3 oak plank platform on top.
+     * Returns the spawn position one block above the platform center, or null if no fluid found.
+     */
+    @Nullable
+    private static BlockPos buildFluidSurfacePlatform(ServerLevel level, BlockPos center) {
+        if (!level.hasChunk(center.getX() >> 4, center.getZ() >> 4)) {
+            return null;
+        }
+
+        int minY = level.getMinBuildHeight();
+        int startY = Math.min(level.getMaxBuildHeight() - 1, 128);
+        int cx = center.getX();
+        int cz = center.getZ();
+
+        // Search downward for the top of a fluid column
+        for (int y = startY; y > minY; y--) {
+            BlockPos pos = new BlockPos(cx, y, cz);
+            BlockState state = level.getBlockState(pos);
+            BlockState aboveState = level.getBlockState(pos.above());
+
+            boolean isFluid = !state.getFluidState().isEmpty();
+            boolean aboveIsClear = aboveState.isAir();
+
+            if (isFluid && aboveIsClear) {
+                // Build a 3x3 oak plank platform one block above the fluid surface
+                int platY = y + 1;
+                BlockState plank = Blocks.OAK_PLANKS.defaultBlockState();
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        BlockPos platPos = new BlockPos(cx + dx, platY, cz + dz);
+                        level.setBlock(platPos, plank, 2);
+                    }
+                }
+                // Clear space above the platform for the player
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dy = 1; dy <= 2; dy++) {
+                        for (int dz = -1; dz <= 1; dz++) {
+                            BlockPos clearPos = new BlockPos(cx + dx, platY + dy, cz + dz);
+                            BlockState clearState = level.getBlockState(clearPos);
+                            if (!clearState.isAir()) {
+                                level.setBlock(clearPos, Blocks.AIR.defaultBlockState(), 2);
+                            }
+                        }
+                    }
+                }
+                return new BlockPos(cx, platY + 1, cz);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Calculates the final target position, applying any modifiers.
      */
     private static Vec3 calculateTargetPosition(BlockPos targetPos, CompoundTag linkData, Vec3 entityPos,
@@ -839,26 +920,35 @@ public final class LinkingManager {
         if (!ground.isSolidRender(level, pos)) {
             return false;
         }
-        // Don't spawn on lava or fire
+        // Don't spawn on lava, fire, or bedrock (bedrock indicates a roof or void boundary)
         if (ground.is(Blocks.LAVA) || ground.is(Blocks.FIRE) || ground.is(Blocks.SOUL_FIRE)
-                || ground.is(Blocks.MAGMA_BLOCK)) {
+                || ground.is(Blocks.MAGMA_BLOCK) || ground.is(Blocks.BEDROCK)) {
             return false;
         }
 
-        // Feet must be passable and not liquid/fire
+        // Feet must be passable, not liquid, and not fire
         pos.set(x, y, z);
         BlockState feet = level.getBlockState(pos);
         if (feet.blocksMotion()) {
             return false;
         }
-        if (feet.is(Blocks.LAVA) || feet.is(Blocks.FIRE) || feet.is(Blocks.SOUL_FIRE)) {
+        if (!feet.getFluidState().isEmpty()) {
+            return false;
+        }
+        if (feet.is(Blocks.FIRE) || feet.is(Blocks.SOUL_FIRE)) {
             return false;
         }
 
-        // Head must be passable
+        // Head must be passable and not liquid
         pos.set(x, y + 1, z);
         BlockState head = level.getBlockState(pos);
-        return !head.blocksMotion();
+        if (head.blocksMotion()) {
+            return false;
+        }
+        if (!head.getFluidState().isEmpty()) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -915,5 +1005,20 @@ public final class LinkingManager {
         CompoundTag data = createLinkData(level, pos, yaw);
         LinkOptions.setDisplayName(data, displayName);
         return data;
+    }
+
+    /**
+     * Checks whether the player entered a Myst dimension with or without a linkbook
+     * and fires the appropriate advancement trigger.
+     */
+    private static void checkMystDimensionAdvancements(ServerPlayer player) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack itemStack = player.getInventory().getItem(i);
+            if (!itemStack.isEmpty() && itemStack.getItem() instanceof art.arcane.mystcraft.item.LinkbookItem) {
+                art.arcane.mystcraft.advancements.ModAdvancements.ENTER_MYST_DIMENSION_SAFE.trigger(player);
+                return;
+            }
+        }
+        art.arcane.mystcraft.advancements.ModAdvancements.ENTER_MYST_DIMENSION_QUINN.trigger(player);
     }
 }

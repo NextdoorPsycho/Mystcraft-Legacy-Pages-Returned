@@ -6,29 +6,26 @@ import net.minecraft.world.level.biome.Biome;
 import java.util.List;
 
 /**
- * Biome controller that arranges biomes in a repeating tile pattern.
- * Each tile is a fixed size and contains one biome.
+ * Biome controller that tiles biomes in a repeating pattern with Voronoi-jittered
+ * boundaries. Each tile center is offset by a deterministic jitter based on the seed,
+ * creating organic edges instead of sharp rectangles while maintaining a regular layout.
  */
 public class BiomeControllerTiled extends BiomeControllerBase {
 
     private final int tileSize;
 
-    /**
-     * Creates a tiled biome controller with default 256 block tiles.
-     */
     public BiomeControllerTiled(List<Holder<Biome>> biomes, long seed) {
         this(biomes, seed, 256);
     }
 
     /**
-     * Creates a tiled biome controller with custom tile size.
      * @param biomes List of biomes to tile
      * @param seed World seed
-     * @param tileSize Size of each tile in blocks
+     * @param tileSize Approximate size of each tile in blocks
      */
     public BiomeControllerTiled(List<Holder<Biome>> biomes, long seed, int tileSize) {
         super(biomes, seed);
-        this.tileSize = Math.max(16, tileSize); // Minimum 16 blocks
+        this.tileSize = Math.max(16, tileSize);
     }
 
     @Override
@@ -37,15 +34,48 @@ public class BiomeControllerTiled extends BiomeControllerBase {
             return null;
         }
 
-        // Calculate which tile this coordinate is in
         int tileX = Math.floorDiv(x, tileSize);
         int tileZ = Math.floorDiv(z, tileSize);
 
-        // Use a simple pattern that cycles through biomes
-        // Add tileZ * 7 to offset the pattern for visual variety
-        int index = Math.abs((tileX + tileZ * 7)) % biomes.size();
+        double closestDist = Double.MAX_VALUE;
+        int closestTileX = tileX;
+        int closestTileZ = tileZ;
 
+        // Check 3x3 neighborhood for closest jittered tile center
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                int tx = tileX + dx;
+                int tz = tileZ + dz;
+
+                long tileHash = hashTile(tx, tz);
+                double jitterX = (tileHash & 0xFFFFL) / (double) 0xFFFF;
+                double jitterZ = ((tileHash >>> 16) & 0xFFFFL) / (double) 0xFFFF;
+
+                double centerX = (tx + 0.15 + jitterX * 0.7) * tileSize;
+                double centerZ = (tz + 0.15 + jitterZ * 0.7) * tileSize;
+
+                double distSq = (x - centerX) * (x - centerX) + (z - centerZ) * (z - centerZ);
+
+                if (distSq < closestDist) {
+                    closestDist = distSq;
+                    closestTileX = tx;
+                    closestTileZ = tz;
+                }
+            }
+        }
+
+        // Deterministic biome index from tile position (repeating pattern)
+        int index = Math.abs((closestTileX + closestTileZ * 7)) % biomes.size();
         return biomes.get(index);
+    }
+
+    private long hashTile(int tx, int tz) {
+        long h = seed;
+        h ^= (long) tx * 73856093L;
+        h ^= (long) tz * 83492791L;
+        h = h * 6364136223846793005L + 1442695040888963407L;
+        h ^= h >>> 16;
+        return h;
     }
 
     @Override

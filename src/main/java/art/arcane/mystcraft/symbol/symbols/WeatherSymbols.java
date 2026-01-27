@@ -39,7 +39,7 @@ public final class WeatherSymbols {
     public static class WeatherNormal extends SymbolBase {
         public WeatherNormal() {
             super(SymbolRegistry.mystcraftId("weather_normal"), SymbolCategory.WEATHER);
-            setCardRank(2);
+            setCardRank(0);
             setInstabilityCost(0.0f);
             setPoem("Sustain", "Dynamic", "Tradition", "Balance");
         }
@@ -53,7 +53,7 @@ public final class WeatherSymbols {
     public static class WeatherOff extends SymbolBase {
         public WeatherOff() {
             super(SymbolRegistry.mystcraftId("weather_off"), SymbolCategory.WEATHER);
-            setCardRank(3);
+            setCardRank(0);
             setInstabilityCost(0.0f);
             setPoem("Sustain", "Static", "Stimulate", "Energy");
         }
@@ -82,7 +82,7 @@ public final class WeatherSymbols {
     public static class WeatherRain extends SymbolBase {
         public WeatherRain() {
             super(SymbolRegistry.mystcraftId("weather_rain"), SymbolCategory.WEATHER);
-            setCardRank(3);
+            setCardRank(2);
             setInstabilityCost(3.0f);
             setPoem("Sustain", "Static", "Rebirth", "Growth");
         }
@@ -97,7 +97,7 @@ public final class WeatherSymbols {
     public static class WeatherSnow extends SymbolBase {
         public WeatherSnow() {
             super(SymbolRegistry.mystcraftId("weather_snow"), SymbolCategory.WEATHER);
-            setCardRank(3);
+            setCardRank(2);
             setInstabilityCost(3.0f);
             setPoem("Sustain", "Static", "Inhibit", "Energy");
         }
@@ -128,7 +128,7 @@ public final class WeatherSymbols {
     public static class WeatherCloudy extends SymbolBase {
         public WeatherCloudy() {
             super(SymbolRegistry.mystcraftId("weather_cloudy"), SymbolCategory.WEATHER);
-            setCardRank(3);
+            setCardRank(1);
             setInstabilityCost(0.0f);
             setPoem("Sustain", "Static", "Believe", "Motion");
         }
@@ -142,7 +142,7 @@ public final class WeatherSymbols {
     public static class WeatherFast extends SymbolBase {
         public WeatherFast() {
             super(SymbolRegistry.mystcraftId("weather_fast"), SymbolCategory.WEATHER);
-            setCardRank(3);
+            setCardRank(2);
             setInstabilityCost(3.0f);
             setPoem("Sustain", "Dynamic", "Spur", "Change");
         }
@@ -157,7 +157,7 @@ public final class WeatherSymbols {
     public static class WeatherSlow extends SymbolBase {
         public WeatherSlow() {
             super(SymbolRegistry.mystcraftId("weather_slow"), SymbolCategory.WEATHER);
-            setCardRank(3);
+            setCardRank(2);
             setInstabilityCost(2.0f);
             setPoem("Sustain", "Dynamic", "Inhibit", "Motion");
         }
@@ -172,7 +172,7 @@ public final class WeatherSymbols {
     public static class WeatherThunder extends SymbolBase {
         public WeatherThunder() {
             super(SymbolRegistry.mystcraftId("weather_thunder"), SymbolCategory.WEATHER);
-            setCardRank(3);
+            setCardRank(4);
             setInstabilityCost(10.0f);
             setPoem("Sustain", "Static", "Power", "Lightning");
         }
@@ -188,7 +188,7 @@ public final class WeatherSymbols {
     public static class WeatherBlizzard extends SymbolBase {
         public WeatherBlizzard() {
             super(SymbolRegistry.mystcraftId("weather_blizzard"), SymbolCategory.WEATHER);
-            setCardRank(3);
+            setCardRank(4);
             setInstabilityCost(12.0f);
             setPoem("Sustain", "Static", "Ice", "Fury");
         }

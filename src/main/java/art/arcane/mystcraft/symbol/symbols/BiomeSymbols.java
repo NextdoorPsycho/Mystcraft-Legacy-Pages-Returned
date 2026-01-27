@@ -16,6 +16,7 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Dynamic biome symbols that are generated from the biome registry.
@@ -28,6 +29,17 @@ public final class BiomeSymbols {
 
     // Map of biome resource locations to their symbols
     private static final Map<ResourceLocation, BiomeSymbol> BIOME_SYMBOLS = new HashMap<>();
+
+    // Water-related biomes get higher card ranks (less likely to appear in random generation)
+    private static final Set<ResourceKey<Biome>> OCEAN_BIOMES = Set.of(
+            Biomes.OCEAN, Biomes.DEEP_OCEAN, Biomes.WARM_OCEAN, Biomes.LUKEWARM_OCEAN,
+            Biomes.COLD_OCEAN, Biomes.FROZEN_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN,
+            Biomes.DEEP_COLD_OCEAN, Biomes.DEEP_FROZEN_OCEAN
+    );
+
+    private static final Set<ResourceKey<Biome>> SHORE_BIOMES = Set.of(
+            Biomes.RIVER, Biomes.FROZEN_RIVER, Biomes.BEACH, Biomes.SNOWY_BEACH, Biomes.STONY_SHORE
+    );
 
     /**
      * Registers all vanilla biome symbols.
@@ -132,9 +144,19 @@ public final class BiomeSymbols {
             this.biomeKey = biomeKey;
             this.displayName = displayName;
             this.groundLevel = groundLevel;
-            setCardRank(1);
+            setCardRank(cardRankForBiome(biomeKey));
             setInstabilityCost(0.0f);
             setPoem("Nature", "Nurture", "Encourage", displayName.split(" ")[0]);
+        }
+
+        private static int cardRankForBiome(ResourceKey<Biome> key) {
+            if (OCEAN_BIOMES.contains(key)) {
+                return 4;
+            }
+            if (SHORE_BIOMES.contains(key)) {
+                return 3;
+            }
+            return 1;
         }
 
         @Override

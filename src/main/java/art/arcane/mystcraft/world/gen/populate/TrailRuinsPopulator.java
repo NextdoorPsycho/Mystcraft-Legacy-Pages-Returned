@@ -60,8 +60,8 @@ public class TrailRuinsPopulator implements IPopulate {
             return;
         }
 
-        int x = chunkPos.getX() + random.nextInt(16) + 8;
-        int z = chunkPos.getZ() + random.nextInt(16) + 8;
+        int x = chunkPos.getX() + random.nextInt(16);
+        int z = chunkPos.getZ() + random.nextInt(16);
 
         // Find surface
         int y = world.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x, z);

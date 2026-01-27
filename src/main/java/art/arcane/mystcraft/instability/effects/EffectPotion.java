@@ -37,9 +37,11 @@ public class EffectPotion implements IEnvironmentalEffect {
     }
 
     @Override
-    public void tick(ServerLevel level, LevelChunk chunk) {
-        // Calculate chance based on level
-        float chance = BASE_CHANCE * this.level;
+    public void tick(ServerLevel level, LevelChunk chunk, float instability) {
+        // Potions only activate at instability 50+ (eating deck gate). Scale from there.
+        float intensity = Math.max(0.0f, Math.min((instability - 50.0f) / 50.0f, 1.0f));
+        if (intensity <= 0.0f) return;
+        float chance = BASE_CHANCE * this.level * intensity;
         if (level.random.nextFloat() >= chance) {
             return;
         }

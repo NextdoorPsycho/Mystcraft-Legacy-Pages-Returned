@@ -11,16 +11,22 @@ import java.util.List;
 
 /**
  * Environmental effect that causes random explosions.
+ * Scales with instability: nearly silent at low values, dangerous at high.
  */
 public class EffectExplosion implements IEnvironmentalEffect {
 
-    private static final float BASE_CHANCE = 0.0002f;
+    private static final float BASE_CHANCE = 0.0005f;
     private static final int RANGE = 32;
-    private static final float EXPLOSION_POWER = 2.0f;
+    private static final float MIN_POWER = 1.0f;
+    private static final float MAX_POWER = 2.0f;
 
     @Override
-    public void tick(ServerLevel level, LevelChunk chunk) {
-        if (level.random.nextFloat() >= BASE_CHANCE) {
+    public void tick(ServerLevel level, LevelChunk chunk, float instability) {
+        // Destructive: ramps from near-zero at instability 30 to full at 100
+        float intensity = Math.max(0.0f, Math.min((instability - 30.0f) / 70.0f, 1.0f));
+        if (intensity <= 0.0f) return;
+
+        if (level.random.nextFloat() >= BASE_CHANCE * intensity) {
             return;
         }
 
@@ -43,8 +49,11 @@ public class EffectExplosion implements IEnvironmentalEffect {
             return;
         }
 
+        // Power scales with intensity
+        float power = MIN_POWER + (MAX_POWER - MIN_POWER) * intensity;
+
         // Create explosion
         level.explode(null, x + 0.5, y + 0.5, z + 0.5,
-                EXPLOSION_POWER, Level.ExplosionInteraction.BLOCK);
+                power, Level.ExplosionInteraction.BLOCK);
     }
 }

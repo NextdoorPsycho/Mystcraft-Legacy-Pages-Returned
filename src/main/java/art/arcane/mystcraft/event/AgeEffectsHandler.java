@@ -2,7 +2,9 @@ package art.arcane.mystcraft.event;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.world.logic.IWeatherController;
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.entity.MeteorEntity;
+import art.arcane.mystcraft.instability.InstabilityController;
 import art.arcane.mystcraft.registry.ModEntities;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
@@ -15,6 +17,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
@@ -41,6 +44,9 @@ public class AgeEffectsHandler {
     // These maintain internal state (timers, rain levels) across ticks.
     private static final Map<ResourceKey<Level>, IWeatherController> weatherControllers = new ConcurrentHashMap<>();
 
+    // Per-dimension instability controllers that manage deck-based effect activation and ticking.
+    private static final Map<ResourceKey<Level>, InstabilityController> instabilityControllers = new ConcurrentHashMap<>();
+
     @SubscribeEvent
     public static void onLevelTick(TickEvent.LevelTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
@@ -53,25 +59,25 @@ public class AgeEffectsHandler {
         // Apply weather control
         handleWeather(level, ageData);
 
-        // Apply environmental effects
+        // Apply environmental effects (flag-based: meteors, lightning, explosions, scorched)
         handleEnvironmentEffects(level, ageData);
 
-        // Handle accelerated time
-        handleAcceleratedTime(level, ageData);
+        // Tick instability controller (deck-based: decay, crumble, erosion, potion effects, etc.)
+        tickInstabilityController(level, ageData);
+
+        // Handle time scaling (accelerated, slow, static, etc.)
+        handleTimescale(level, ageData);
     }
 
     /**
      * Controls weather using the actual IWeatherController implementation.
      * Controllers are cached per-dimension and maintain their own internal state
      * (timers, rain levels, transitions).
+     * All weather types including "normal" are handled by Mystcraft controllers
+     * because vanilla weather cycling is unreliable in custom dimensions.
      */
     private static void handleWeather(ServerLevel level, AgeData ageData) {
         String weatherType = ageData.getWeatherType();
-
-        // "normal" means let vanilla handle it - no intervention needed
-        if ("normal".equals(weatherType)) {
-            return;
-        }
 
         // Get or create the weather controller for this dimension
         IWeatherController controller = weatherControllers.computeIfAbsent(
@@ -118,12 +124,15 @@ public class AgeEffectsHandler {
             }
         }
 
-        // Random lightning
+        // Random lightning - frequent strikes across the landscape
         if (ageData.isLightningEnabled()) {
-            // 2% chance per second per player
             for (ServerPlayer player : level.players()) {
-                if (random.nextFloat() < 0.02f) {
-                    spawnLightningNearPlayer(level, player);
+                // ~15% chance per second per player, plus 1-3 extra bolts each time
+                if (random.nextFloat() < 0.15f) {
+                    int bolts = 1 + random.nextInt(3);
+                    for (int i = 0; i < bolts; i++) {
+                        spawnLightningNearPlayer(level, player);
+                    }
                 }
             }
         }
@@ -160,16 +169,75 @@ public class AgeEffectsHandler {
     }
 
     /**
-     * Handles accelerated time (faster day/night cycle).
+     * Ticks the instability controller for this level.
+     * The controller manages deck-based effect activation (decay, crumble, erosion, potions, etc.)
+     * and ticks all active IEnvironmentalEffect instances on loaded chunks near players.
      */
-    private static void handleAcceleratedTime(ServerLevel level, AgeData ageData) {
-        if (!ageData.isAcceleratedEnabled()) return;
+    private static void tickInstabilityController(ServerLevel level, AgeData ageData) {
+        if (!MystcraftConfig.instabilityEnabled.get()) return;
+        if (ageData.getInstability() <= 0) return;
+        if (level.players().isEmpty()) return;
 
-        // Advance time faster - add extra time each tick
-        // Normal: 24000 ticks = 20 minutes
-        // Accelerated: double speed = 10 minutes
+        InstabilityController controller = instabilityControllers.computeIfAbsent(
+                level.dimension(),
+                key -> new InstabilityController(level, ageData, level.getSeed()));
+
+        if (!controller.isEnabled()) return;
+
+        // Tick effects on chunks near each player
+        for (ServerPlayer player : level.players()) {
+            int chunkX = player.getBlockX() >> 4;
+            int chunkZ = player.getBlockZ() >> 4;
+
+            // Process a radius of chunks around each player
+            int radius = 4;
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX + dx, chunkZ + dz);
+                    if (chunk != null) {
+                        controller.tick(chunk);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles day/night cycle speed based on the timescale value.
+     * Timescale 1.0 = normal (no-op), 2.0 = double speed, 0.5 = half speed, 0.0 = frozen.
+     * The accelerated flag is treated as timescale 2.0 for backwards compatibility.
+     */
+    private static void handleTimescale(ServerLevel level, AgeData ageData) {
+        float timescale = ageData.getTimescale();
+
+        // Accelerated flag acts as timescale 2.0 if no explicit timescale was set
+        if (ageData.isAcceleratedEnabled() && timescale == 1.0f) {
+            timescale = 2.0f;
+        }
+
+        if (timescale == 1.0f) return;
+
         long dayTime = level.getDayTime();
-        level.setDayTime(dayTime + 1); // Adds 1 extra tick, making time 2x faster
+
+        if (timescale == 0.0f) {
+            // Static time: rewind the tick that just happened
+            level.setDayTime(dayTime - 1);
+        } else if (timescale > 1.0f) {
+            // Faster: add extra ticks (e.g. timescale 2.0 adds 1 extra tick per game tick)
+            int extraTicks = Math.round(timescale - 1.0f);
+            level.setDayTime(dayTime + extraTicks);
+        } else {
+            // Slower: periodically rewind ticks to reduce effective speed.
+            // For timescale 0.5, we need to cancel every other tick's time advancement.
+            // Interval = 1 / (1 - timescale). E.g. 0.5 -> every 2 ticks, 0.25 -> every 1.33 ticks.
+            // Use a fractional accumulator approach via game time modulus.
+            float skipRate = 1.0f - timescale;
+            long gameTime = level.getGameTime();
+            // Determine how many ticks to rewind this tick using a consistent pattern
+            if ((gameTime % Math.max(1, Math.round(1.0f / skipRate))) != 0) {
+                level.setDayTime(dayTime - 1);
+            }
+        }
     }
 
     /**

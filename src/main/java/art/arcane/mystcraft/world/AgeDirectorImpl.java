@@ -21,9 +21,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Implementation of AgeDirector that collects symbol configurations.
@@ -38,6 +43,8 @@ public class AgeDirectorImpl implements AgeDirector {
 
     // Terrain
     private String terrainType = "normal";
+    private String terrainMixMode = "none";
+    private String secondaryTerrainType = "none";
     private int averageGroundLevel = 64;
     private int seaLevel = 63;
     private boolean hasSea = true;
@@ -65,7 +72,7 @@ public class AgeDirectorImpl implements AgeDirector {
     // Colors (-1 means use default)
     private int skyColor = -1;
     private int fogColor = -1;
-    private int grassColor = -1;
+    private final List<Integer> grassColors = new ArrayList<>();
     private int foliageColor = -1;
     private int waterColor = -1;
     private int cloudColor = -1;
@@ -76,6 +83,8 @@ public class AgeDirectorImpl implements AgeDirector {
     private boolean foliageColorNatural = true;
     private boolean waterColorNatural = true;
     private boolean cloudColorNatural = true;
+    private int horizonColor = -1;
+    private boolean horizonColorNatural = true;
 
     // Features
     private boolean cavesEnabled = true;
@@ -91,9 +100,15 @@ public class AgeDirectorImpl implements AgeDirector {
 
     // Environment
     private boolean acceleratedEnabled = false;
+    private float timescale = 1.0f;
     private boolean meteorsEnabled = false;
     private boolean lightningEnabled = false;
     private boolean scorchedEnabled = false;
+
+    // Ore control
+    private boolean oresDisabled = false;
+    private final Set<String> disabledOres = new HashSet<>();
+    private final Map<String, Float> oreMultipliers = new HashMap<>();
 
     // Additional features/structures
     private boolean crystalsEnabled = false;
@@ -112,6 +127,7 @@ public class AgeDirectorImpl implements AgeDirector {
     private boolean surfaceLakesEnabled = true;
     private boolean tendrilsEnabled = false;
     private boolean verticalTendrilsEnabled = false;
+    private boolean perlinWormsEnabled = false;
 
     // New structures (1.20+)
     private boolean pillagerOutpostsEnabled = false;
@@ -125,6 +141,11 @@ public class AgeDirectorImpl implements AgeDirector {
     private boolean woodlandMansionsEnabled = false;
     private boolean endCitiesEnabled = false;
     private boolean bastionRemnantsEnabled = false;
+    private boolean igloosEnabled = false;
+    private boolean shipwrecksEnabled = false;
+    private boolean oceanRuinsEnabled = false;
+    private boolean buriedTreasureEnabled = false;
+    private boolean netherFossilsEnabled = false;
 
     // Cave features
     private boolean dripstoneCavesEnabled = false;
@@ -157,10 +178,6 @@ public class AgeDirectorImpl implements AgeDirector {
     private final List<ICelestial> celestials = new ArrayList<>();
     private final List<IDynamicColorProvider> dynamicColorProviders = new ArrayList<>();
     private final List<IStaticColorProvider> staticColorProviders = new ArrayList<>();
-
-    public AgeDirectorImpl() {
-        this(0L);
-    }
 
     public AgeDirectorImpl(long seed) {
         this.seed = seed;
@@ -199,6 +216,28 @@ public class AgeDirectorImpl implements AgeDirector {
     @Override
     public String getTerrainType() {
         return terrainType;
+    }
+
+    @Override
+    public void setTerrainMixMode(String mode) {
+        LOGGER.info("[Director] setTerrainMixMode: {} -> {}", this.terrainMixMode, mode);
+        this.terrainMixMode = mode != null ? mode : "none";
+    }
+
+    @Override
+    public String getTerrainMixMode() {
+        return terrainMixMode;
+    }
+
+    @Override
+    public void setSecondaryTerrainType(String type) {
+        LOGGER.info("[Director] setSecondaryTerrainType: {} -> {}", this.secondaryTerrainType, type);
+        this.secondaryTerrainType = type != null ? type : "none";
+    }
+
+    @Override
+    public String getSecondaryTerrainType() {
+        return secondaryTerrainType;
     }
 
     @Override
@@ -391,12 +430,26 @@ public class AgeDirectorImpl implements AgeDirector {
 
     @Override
     public void setGrassColor(int color) {
-        this.grassColor = color;
+        if (color != -1) {
+            this.grassColors.add(color);
+        }
     }
 
     @Override
     public int getGrassColor() {
-        return grassColor;
+        return grassColors.isEmpty() ? -1 : grassColors.get(0);
+    }
+
+    @Override
+    public List<Integer> getGrassColors() {
+        return Collections.unmodifiableList(grassColors);
+    }
+
+    /**
+     * Clears all grass colors from the palette.
+     */
+    public void clearGrassColors() {
+        grassColors.clear();
     }
 
     @Override
@@ -460,6 +513,9 @@ public class AgeDirectorImpl implements AgeDirector {
     @Override
     public void setGrassColorNatural(boolean natural) {
         this.grassColorNatural = natural;
+        if (natural) {
+            this.grassColors.clear();
+        }
     }
 
     public boolean isGrassColorNatural() {
@@ -491,6 +547,25 @@ public class AgeDirectorImpl implements AgeDirector {
 
     public boolean isCloudColorNatural() {
         return cloudColorNatural;
+    }
+
+    @Override
+    public void setHorizonColor(int color) {
+        this.horizonColor = color;
+    }
+
+    @Override
+    public int getHorizonColor() {
+        return horizonColor;
+    }
+
+    @Override
+    public void setHorizonColorNatural(boolean natural) {
+        this.horizonColorNatural = natural;
+    }
+
+    public boolean isHorizonColorNatural() {
+        return horizonColorNatural;
     }
 
     // --- Features ---
@@ -581,6 +656,16 @@ public class AgeDirectorImpl implements AgeDirector {
     }
 
     @Override
+    public void setTimescale(float scale) {
+        this.timescale = scale;
+    }
+
+    @Override
+    public float getTimescale() {
+        return timescale;
+    }
+
+    @Override
     public void setMeteorsEnabled(boolean enabled) {
         this.meteorsEnabled = enabled;
     }
@@ -634,6 +719,50 @@ public class AgeDirectorImpl implements AgeDirector {
 
     public boolean areDenseOresEnabled() {
         return denseOresEnabled;
+    }
+
+    @Override
+    public void setOresDisabled(boolean disabled) {
+        this.oresDisabled = disabled;
+    }
+
+    @Override
+    public boolean areOresDisabled() {
+        return oresDisabled;
+    }
+
+    @Override
+    public void setOreDisabled(String oreType, boolean disabled) {
+        if (disabled) {
+            disabledOres.add(oreType);
+        } else {
+            disabledOres.remove(oreType);
+        }
+    }
+
+    @Override
+    public boolean isOreDisabled(String oreType) {
+        return oresDisabled || disabledOres.contains(oreType);
+    }
+
+    @Override
+    public Set<String> getDisabledOres() {
+        return Collections.unmodifiableSet(disabledOres);
+    }
+
+    @Override
+    public void setOreMultiplier(String oreType, float multiplier) {
+        oreMultipliers.put(oreType, multiplier);
+    }
+
+    @Override
+    public float getOreMultiplier(String oreType) {
+        return oreMultipliers.getOrDefault(oreType, 1.0f);
+    }
+
+    @Override
+    public Map<String, Float> getOreMultipliers() {
+        return Collections.unmodifiableMap(oreMultipliers);
     }
 
     @Override
@@ -773,6 +902,15 @@ public class AgeDirectorImpl implements AgeDirector {
 
     public boolean areVerticalTendrilsEnabled() {
         return verticalTendrilsEnabled;
+    }
+
+    @Override
+    public void setPerlinWormsEnabled(boolean enabled) {
+        this.perlinWormsEnabled = enabled;
+    }
+
+    public boolean arePerlinWormsEnabled() {
+        return perlinWormsEnabled;
     }
 
     // --- Modifiers ---
@@ -937,6 +1075,51 @@ public class AgeDirectorImpl implements AgeDirector {
 
     public boolean areBastionRemnantsEnabled() {
         return bastionRemnantsEnabled;
+    }
+
+    @Override
+    public void setIgloosEnabled(boolean enabled) {
+        this.igloosEnabled = enabled;
+    }
+
+    public boolean areIgloosEnabled() {
+        return igloosEnabled;
+    }
+
+    @Override
+    public void setShipwrecksEnabled(boolean enabled) {
+        this.shipwrecksEnabled = enabled;
+    }
+
+    public boolean areShipwrecksEnabled() {
+        return shipwrecksEnabled;
+    }
+
+    @Override
+    public void setOceanRuinsEnabled(boolean enabled) {
+        this.oceanRuinsEnabled = enabled;
+    }
+
+    public boolean areOceanRuinsEnabled() {
+        return oceanRuinsEnabled;
+    }
+
+    @Override
+    public void setBuriedTreasureEnabled(boolean enabled) {
+        this.buriedTreasureEnabled = enabled;
+    }
+
+    public boolean isBuriedTreasureEnabled() {
+        return buriedTreasureEnabled;
+    }
+
+    @Override
+    public void setNetherFossilsEnabled(boolean enabled) {
+        this.netherFossilsEnabled = enabled;
+    }
+
+    public boolean areNetherFossilsEnabled() {
+        return netherFossilsEnabled;
     }
 
     // --- Cave Features ---

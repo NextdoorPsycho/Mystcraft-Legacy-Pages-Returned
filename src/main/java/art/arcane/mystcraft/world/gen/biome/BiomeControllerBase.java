@@ -2,7 +2,13 @@ package art.arcane.mystcraft.world.gen.biome;
 
 import art.arcane.mystcraft.api.world.logic.IBiomeController;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraftforge.server.ServerLifecycleHooks;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,12 +19,54 @@ import java.util.List;
  */
 public abstract class BiomeControllerBase implements IBiomeController {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BiomeControllerBase.class);
+
     protected final List<Holder<Biome>> biomes;
     protected final long seed;
 
     public BiomeControllerBase(List<Holder<Biome>> biomes, long seed) {
         this.biomes = new ArrayList<>(biomes);
         this.seed = seed;
+    }
+
+    /**
+     * Resolves a diverse set of fallback biomes from the registry.
+     * Used when a controller is created with an empty biome list.
+     */
+    protected static List<Holder<Biome>> getDefaultBiomeSet() {
+        List<Holder<Biome>> defaults = new ArrayList<>();
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) {
+            LOGGER.warn("[BiomeController] Cannot resolve fallback biomes: server not available");
+            return defaults;
+        }
+        server.registryAccess().registry(Registries.BIOME).ifPresent(registry -> {
+            defaults.add(registry.getHolderOrThrow(Biomes.PLAINS));
+            defaults.add(registry.getHolderOrThrow(Biomes.FOREST));
+            defaults.add(registry.getHolderOrThrow(Biomes.DESERT));
+            defaults.add(registry.getHolderOrThrow(Biomes.TAIGA));
+            defaults.add(registry.getHolderOrThrow(Biomes.JUNGLE));
+            defaults.add(registry.getHolderOrThrow(Biomes.SWAMP));
+        });
+        if (!defaults.isEmpty()) {
+            LOGGER.info("[BiomeController] Using {} fallback biomes for empty biome list", defaults.size());
+        }
+        return defaults;
+    }
+
+    /**
+     * Resolves a single fallback biome (Plains) from the registry.
+     */
+    protected static Holder<Biome> getDefaultSingleBiome() {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) {
+            return null;
+        }
+        Holder<Biome>[] result = new Holder[1];
+        server.registryAccess().registry(Registries.BIOME).ifPresent(registry ->
+                result[0] = registry.getHolderOrThrow(Biomes.PLAINS)
+        );
+        return result[0];
     }
 
     @Override

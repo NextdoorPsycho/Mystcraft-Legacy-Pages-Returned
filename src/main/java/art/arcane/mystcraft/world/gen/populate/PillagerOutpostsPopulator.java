@@ -2,10 +2,10 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -39,8 +39,8 @@ public class PillagerOutpostsPopulator implements IPopulate {
             return;
         }
 
-        int x = chunkPos.getX() + random.nextInt(16) + 8;
-        int z = chunkPos.getZ() + random.nextInt(16) + 8;
+        int x = chunkPos.getX() + random.nextInt(16);
+        int z = chunkPos.getZ() + random.nextInt(16);
 
         // Find surface
         int y = world.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x, z);
@@ -116,7 +116,7 @@ public class PillagerOutpostsPopulator implements IPopulate {
         BlockPos cagePos = pos.offset(random.nextInt(8) + 4, 0, random.nextInt(8) + 4);
         generateCage(world, cagePos);
 
-        // Spawn pillagers
+        // Spawn pillagers using addFreshEntity to avoid chunk-loading deadlocks
         spawnPillagers(world, pos, random);
     }
 
@@ -139,20 +139,18 @@ public class PillagerOutpostsPopulator implements IPopulate {
     }
 
     private void spawnPillagers(WorldGenLevel world, BlockPos pos, RandomSource random) {
-        // Spawn 3-5 pillagers around the outpost
         int count = 3 + random.nextInt(3);
-
-        // Get ServerLevel for entity spawning
-        net.minecraft.server.level.ServerLevel serverLevel = world.getLevel();
-
         for (int i = 0; i < count; i++) {
             int dx = random.nextInt(10) - 5;
             int dz = random.nextInt(10) - 5;
             BlockPos spawnPos = pos.offset(dx, 1, dz);
 
-            // Make sure spawn position is valid
             if (world.getBlockState(spawnPos).isAir() && world.getBlockState(spawnPos.below()).isSolid()) {
-                EntityType.PILLAGER.spawn(serverLevel, spawnPos, MobSpawnType.STRUCTURE);
+                Pillager pillager = EntityType.PILLAGER.create(world.getLevel());
+                if (pillager != null) {
+                    pillager.setPos(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
+                    world.addFreshEntity(pillager);
+                }
             }
         }
     }

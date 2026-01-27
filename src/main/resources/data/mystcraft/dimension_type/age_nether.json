@@ -10,11 +10,11 @@
   "coordinate_scale": 8.0,
   "ambient_light": 0.1,
   "fixed_time": 18000,
-  "logical_height": 128,
+  "logical_height": 384,
   "effects": "mystcraft:age",
   "infiniburn": "#minecraft:infiniburn_nether",
-  "min_y": 0,
-  "height": 256,
+  "min_y": -64,
+  "height": 384,
   "monster_spawn_light_level": 11,
   "monster_spawn_block_light_limit": 15
 }

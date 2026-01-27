@@ -251,4 +251,15 @@ public class AgeManager extends SavedData {
     public Iterable<Integer> getAllAgeUIDs() {
         return ageUIDtoDimension.keySet();
     }
+
+    /**
+     * Clears all registered ages and resets the UID counter to 1000.
+     */
+    public void clearAllAges() {
+        ageUIDtoDimension.clear();
+        dimensionToAgeUID.clear();
+        ageUUIDtoUID.clear();
+        nextUID = 1000;
+        setDirty();
+    }
 }

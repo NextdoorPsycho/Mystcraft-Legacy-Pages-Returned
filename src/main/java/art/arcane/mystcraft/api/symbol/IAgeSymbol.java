@@ -73,4 +73,13 @@ public interface IAgeSymbol {
     default boolean allowInRandomGeneration() {
         return true;
     }
+
+    /**
+     * Whether this symbol can appear multiple times in an Age.
+     * Symbols that accumulate effects (like color targets) should return true.
+     * @return true if duplicates are allowed
+     */
+    default boolean canDuplicate() {
+        return false;
+    }
 }

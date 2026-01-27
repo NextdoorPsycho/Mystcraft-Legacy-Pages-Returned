@@ -21,9 +21,10 @@ public class MystcraftConfig {
     // General settings
     public static final ForgeConfigSpec.BooleanValue giveGuidebookOnFirstSpawn;
     public static final ForgeConfigSpec.IntValue maxSymbolsPerBook;
-
+    public static final ForgeConfigSpec.BooleanValue deleteAgesOnStartup;
     // Instability settings
     public static final ForgeConfigSpec.BooleanValue instabilityEnabled;
+    public static final ForgeConfigSpec.BooleanValue deathEffectsEnabled;
     public static final ForgeConfigSpec.BooleanValue allowUnstableAges;
     public static final ForgeConfigSpec.DoubleValue instabilityMultiplier;
     public static final ForgeConfigSpec.DoubleValue maxAllowedInstability;
@@ -62,6 +63,10 @@ public class MystcraftConfig {
                 )
                 .defineInRange("maxSymbolsPerBook", 50, -1, 1000);
 
+        deleteAgesOnStartup = COMMON_BUILDER
+                .comment("If true, all Mystcraft Ages will be deleted every time the server starts. Use for development/testing.")
+                .define("deleteAgesOnStartup", false);
+
         COMMON_BUILDER.pop();
 
         // --- Instability ---
@@ -75,6 +80,10 @@ public class MystcraftConfig {
         instabilityEnabled = COMMON_BUILDER
                 .comment("Master switch for the instability system. If false, no instability effects occur.")
                 .define("enabled", true);
+
+        deathEffectsEnabled = COMMON_BUILDER
+                .comment("Whether thematic death effects (messages, debuffs, instability surge) occur when players die in Ages.")
+                .define("deathEffectsEnabled", true);
 
         allowUnstableAges = COMMON_BUILDER
                 .comment(
@@ -112,19 +121,19 @@ public class MystcraftConfig {
 
         thresholdDecay = COMMON_BUILDER
                 .comment("Instability threshold for decay blocks to start spreading.")
-                .defineInRange("decay", 20.0, 0.0, 500.0);
+                .defineInRange("decay", 40.0, 0.0, 500.0);
 
         thresholdTransmute = COMMON_BUILDER
                 .comment("Instability threshold for random block transmutation to begin.")
-                .defineInRange("transmute", 30.0, 0.0, 500.0);
+                .defineInRange("transmute", 50.0, 0.0, 500.0);
 
         thresholdLightning = COMMON_BUILDER
                 .comment("Instability threshold for random lightning strikes.")
-                .defineInRange("lightning", 40.0, 0.0, 500.0);
+                .defineInRange("lightning", 70.0, 0.0, 500.0);
 
         thresholdMeteor = COMMON_BUILDER
                 .comment("Instability threshold for meteor falls.")
-                .defineInRange("meteor", 60.0, 0.0, 500.0);
+                .defineInRange("meteor", 70.0, 0.0, 500.0);
 
         thresholdPoison = COMMON_BUILDER
                 .comment("Instability threshold for poison/hunger effects on players.")

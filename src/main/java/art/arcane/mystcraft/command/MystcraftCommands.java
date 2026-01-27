@@ -42,7 +42,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -59,6 +61,10 @@ public class MystcraftCommands {
             symbolIds.add(symbol.getRegistryName());
         }
         return SharedSuggestionProvider.suggestResource(symbolIds, builder);
+    };
+
+    private static final SuggestionProvider<CommandSourceStack> PRESET_SUGGESTIONS = (context, builder) -> {
+        return SharedSuggestionProvider.suggest(AgePresets.PRESET_NAMES, builder);
     };
 
     private static final SuggestionProvider<CommandSourceStack> AGE_SUGGESTIONS = (context, builder) -> {
@@ -107,13 +113,17 @@ public class MystcraftCommands {
                         .requires(source -> source.hasPermission(2))
                         .then(Commands.literal("randombook")
                                 .executes(context -> giveRandomBook(context, 5))
-                                .then(Commands.argument("symbolCount", IntegerArgumentType.integer(1, 20))
+                                .then(Commands.argument("symbolCount", IntegerArgumentType.integer(1, 1000))
                                         .executes(context -> giveRandomBook(context,
                                                 IntegerArgumentType.getInteger(context, "symbolCount")))))
                         .then(Commands.literal("agebook")
                                 .then(Commands.argument("ageId", IntegerArgumentType.integer(1))
                                         .suggests(AGE_SUGGESTIONS)
-                                        .executes(context -> giveAgebook(context)))))
+                                        .executes(context -> giveAgebook(context))))
+                        .then(Commands.literal("preset")
+                                .then(Commands.argument("name", StringArgumentType.string())
+                                        .suggests(PRESET_SUGGESTIONS)
+                                        .executes(MystcraftCommands::givePresetBook))))
                 // Instability toggle command
                 .then(Commands.literal("instability")
                         .requires(source -> source.hasPermission(2))
@@ -123,7 +133,13 @@ public class MystcraftCommands {
                                         .suggests(AGE_SUGGESTIONS)
                                         .executes(MystcraftCommands::toggleInstabilityAge)
                                         .then(Commands.argument("enabled", BoolArgumentType.bool())
-                                                .executes(MystcraftCommands::toggleInstabilityAgeExplicit)))))
+                                                .executes(MystcraftCommands::toggleInstabilityAgeExplicit))))
+                        .then(Commands.literal("set")
+                                .then(Commands.argument("value", FloatArgumentType.floatArg(0.0f, 1000.0f))
+                                        .executes(MystcraftCommands::setInstabilityCurrent)
+                                        .then(Commands.argument("ageId", IntegerArgumentType.integer(1))
+                                                .suggests(AGE_SUGGESTIONS)
+                                                .executes(MystcraftCommands::setInstabilityAge)))))
                 // Chunk regeneration command
                 .then(Commands.literal("regen")
                         .requires(source -> source.hasPermission(2))
@@ -157,6 +173,10 @@ public class MystcraftCommands {
                                 .then(Commands.argument("scale", IntegerArgumentType.integer(1, 10))
                                         .executes(context -> spawnMeteor(context,
                                                 IntegerArgumentType.getInteger(context, "scale"))))))
+                // Where am I command - check if current dim is Mystcraft
+                .then(Commands.literal("where")
+                        .requires(source -> source.hasPermission(0))
+                        .executes(MystcraftCommands::whereAmI))
                 // Reprofile instability command
                 .then(Commands.literal("reprofile")
                         .requires(source -> source.hasPermission(2))
@@ -358,7 +378,73 @@ public class MystcraftCommands {
     }
 
     /**
+     * Shows the player whether they are in a Mystcraft dimension and its ID.
+     */
+    private static int whereAmI(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        Level level = player.level();
+        ResourceLocation dimId = level.dimension().location();
+
+        if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+            source.sendSuccess(() -> Component.literal("You are NOT in a Mystcraft age."), false);
+            source.sendSuccess(() -> Component.literal("  Dimension: " + dimId), false);
+            return 0;
+        }
+
+        AgeData ageData = AgeData.getIfPresent((ServerLevel) level);
+        int ageUID = ageData != null ? ageData.getAgeUID() : -1;
+        String ageName = ageData != null && ageData.getAgeName() != null ? ageData.getAgeName() : "Unnamed";
+        float instability = ageData != null ? ageData.getInstability() : 0;
+
+        source.sendSuccess(() -> Component.literal("=== Mystcraft Age ==="), false);
+        source.sendSuccess(() -> Component.literal("  Age UID: " + ageUID), false);
+        source.sendSuccess(() -> Component.literal("  Name: " + ageName), false);
+        source.sendSuccess(() -> Component.literal("  Dimension ID: " + dimId), false);
+        source.sendSuccess(() -> Component.literal("  Instability: " + String.format("%.2f", instability)), false);
+
+        if (ageData != null) {
+            List<ItemStack> pages = ageData.getPages();
+            int symbolCount = 0;
+            for (ItemStack page : pages) {
+                if (art.arcane.mystcraft.data.Page.getSymbol(page) != null) {
+                    symbolCount++;
+                }
+            }
+            int finalSymbolCount = symbolCount;
+            source.sendSuccess(() -> Component.literal("  Pages: " + pages.size() + " (" + finalSymbolCount + " symbols)"), false);
+        }
+
+        return 1;
+    }
+
+    // Celestial variant symbol IDs for random book generation
+    private static final String[] RANDOM_SUN_VARIANTS = {
+            "mystcraft:sun", "mystcraft:sun_large", "mystcraft:sun_small",
+            "mystcraft:sun_fast", "mystcraft:sun_slow", "mystcraft:sun_dark"
+    };
+    private static final String[] RANDOM_MOON_VARIANTS = {
+            "mystcraft:moon", "mystcraft:moon_large", "mystcraft:moon_small",
+            "mystcraft:moon_full", "mystcraft:moon_fast", "mystcraft:moon_slow"
+    };
+    private static final String[] RANDOM_STAR_VARIANTS = {
+            "mystcraft:stars", "mystcraft:stars_dense", "mystcraft:stars_sparse"
+    };
+    private static final String[] RANDOM_GRADIENT_SYMBOLS = {
+            "mystcraft:gradient_sunset", "mystcraft:gradient_dawn",
+            "mystcraft:gradient_dusk", "mystcraft:gradient_aurora",
+            "mystcraft:gradient_blood_sky"
+    };
+    private static final String[] RANDOM_CLOUD_MODIFIERS = {
+            "mystcraft:clouds_low", "mystcraft:clouds_high", "mystcraft:clouds_none"
+    };
+    private static final String[] RANDOM_HORIZON_MODIFIERS = {
+            "mystcraft:horizon_low", "mystcraft:horizon_high"
+    };
+
+    /**
      * Gives the player a random descriptive book with a link panel and random symbols.
+     * Includes curated picks from celestials, modifiers, gradients, and colors.
      */
     private static int giveRandomBook(CommandContext<CommandSourceStack> context, int symbolCount) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
@@ -372,31 +458,62 @@ public class MystcraftCommands {
         List<ItemStack> pages = new ArrayList<>();
         pages.add(Page.createLinkPage());
 
-        // Add random symbols - try to create a semi-coherent age
-        // Include at least one terrain symbol
+        // --- Core symbols: terrain, biome controller, biome ---
+
         List<IAgeSymbol> terrainSymbols = SymbolRegistry.getByCategory(SymbolCategory.TERRAIN);
         if (!terrainSymbols.isEmpty()) {
             IAgeSymbol terrain = terrainSymbols.get(random.nextInt(terrainSymbols.size()));
             pages.add(Page.createSymbolPage(terrain.getRegistryName()));
         }
 
-        // Include at least one biome controller
         List<IAgeSymbol> biomeControllers = SymbolRegistry.getByCategory(SymbolCategory.BIOME_CONTROLLER);
         if (!biomeControllers.isEmpty()) {
             IAgeSymbol controller = biomeControllers.get(random.nextInt(biomeControllers.size()));
             pages.add(Page.createSymbolPage(controller.getRegistryName()));
         }
 
-        // Include at least one biome
         List<IAgeSymbol> biomes = SymbolRegistry.getByCategory(SymbolCategory.BIOME);
         if (!biomes.isEmpty()) {
             IAgeSymbol biome = biomes.get(random.nextInt(biomes.size()));
             pages.add(Page.createSymbolPage(biome.getRegistryName()));
         }
 
-        // Fill remaining slots with random symbols
+        // --- Celestials: pick a sun, moon, and stars variant ---
+
+        addRandomSymbolFromPool(pages, RANDOM_SUN_VARIANTS, random);
+        addRandomSymbolFromPool(pages, RANDOM_MOON_VARIANTS, random);
+        addRandomSymbolFromPool(pages, RANDOM_STAR_VARIANTS, random);
+
+        // --- Gradient: 50% chance to include one ---
+
+        if (random.nextFloat() < 0.5f) {
+            addRandomSymbolFromPool(pages, RANDOM_GRADIENT_SYMBOLS, random);
+        }
+
+        // --- Cloud modifier: 30% chance ---
+
+        if (random.nextFloat() < 0.3f) {
+            addRandomSymbolFromPool(pages, RANDOM_CLOUD_MODIFIERS, random);
+        }
+
+        // --- Horizon modifier: 20% chance ---
+
+        if (random.nextFloat() < 0.2f) {
+            addRandomSymbolFromPool(pages, RANDOM_HORIZON_MODIFIERS, random);
+        }
+
+        // --- Weather: include one ---
+
+        List<IAgeSymbol> weatherSymbols = SymbolRegistry.getByCategory(SymbolCategory.WEATHER);
+        if (!weatherSymbols.isEmpty()) {
+            IAgeSymbol weather = weatherSymbols.get(random.nextInt(weatherSymbols.size()));
+            pages.add(Page.createSymbolPage(weather.getRegistryName()));
+        }
+
+        // --- Fill remaining slots with random weighted symbols ---
+
         int remaining = symbolCount - (pages.size() - 1); // -1 for link panel
-        for (int i = 0; i < remaining && i < 50; i++) { // Cap at 50 to prevent infinite loop
+        for (int i = 0; i < remaining && i < 50; i++) {
             IAgeSymbol symbol = SymbolRegistry.getRandomWeighted(random);
             if (symbol != null) {
                 pages.add(Page.createSymbolPage(symbol.getRegistryName()));
@@ -404,8 +521,17 @@ public class MystcraftCommands {
         }
 
         // Generate a random age name
-        String[] prefixes = {"Mysterious", "Ancient", "Lost", "Hidden", "Eternal", "Twilight", "Crystal", "Shadow", "Golden", "Silver"};
-        String[] suffixes = {"Realm", "World", "Domain", "Land", "Age", "Dimension", "Expanse", "Haven", "Void", "Sanctuary"};
+        String[] prefixes = {
+                "Mysterious", "Ancient", "Lost", "Hidden", "Eternal",
+                "Twilight", "Crystal", "Shadow", "Golden", "Silver",
+                "Crimson", "Jade", "Sapphire", "Amber", "Emerald",
+                "Copper", "Aurora", "Midnight", "Ivory", "Cobalt"
+        };
+        String[] suffixes = {
+                "Realm", "World", "Domain", "Land", "Age",
+                "Dimension", "Expanse", "Haven", "Void", "Sanctuary",
+                "Horizon", "Depths", "Reach", "Wastes", "Pinnacle"
+        };
         String ageName = prefixes[random.nextInt(prefixes.length)] + " " + suffixes[random.nextInt(suffixes.length)];
 
         // Create the book with pages
@@ -420,6 +546,17 @@ public class MystcraftCommands {
         source.sendSuccess(() -> Component.literal("Created random Descriptive Book '" + ageName + "' with " + totalSymbols + " symbols"), true);
 
         return 1;
+    }
+
+    /**
+     * Picks a random symbol ID from the pool and adds it as a page if it exists in the registry.
+     */
+    private static void addRandomSymbolFromPool(List<ItemStack> pages, String[] pool, RandomSource random) {
+        String chosen = pool[random.nextInt(pool.length)];
+        ResourceLocation id = new ResourceLocation(chosen);
+        if (SymbolRegistry.get(id) != null) {
+            pages.add(Page.createSymbolPage(id));
+        }
     }
 
     /**
@@ -475,6 +612,67 @@ public class MystcraftCommands {
         }
 
         source.sendSuccess(() -> Component.literal("Created Descriptive Book for Age " + ageId + " ('" + ageName + "')"), true);
+        return 1;
+    }
+
+    // --- Preset Book Command ---
+
+    /**
+     * Gives the player a preset descriptive book with curated symbols.
+     */
+    private static int givePresetBook(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        String presetName = StringArgumentType.getString(context, "name");
+
+        AgePresets.Preset preset = AgePresets.getPreset(presetName);
+        if (preset == null) {
+            source.sendFailure(Component.literal("Unknown preset: " + presetName));
+            source.sendFailure(Component.literal("Available: " + String.join(", ", AgePresets.PRESET_NAMES)));
+            return 0;
+        }
+
+        RandomSource random = player.getRandom();
+
+        // Build pages
+        List<ItemStack> pages = new ArrayList<>();
+        pages.add(Page.createLinkPage());
+
+        // Add fixed symbols
+        for (String symbolId : preset.fixedSymbols) {
+            ResourceLocation id = new ResourceLocation(symbolId);
+            if (SymbolRegistry.get(id) != null) {
+                pages.add(Page.createSymbolPage(id));
+            } else {
+                Mystcraft.LOGGER.warn("[Preset] Unknown fixed symbol: {}", symbolId);
+            }
+        }
+
+        // Add random picks from each pool
+        for (AgePresets.RandomPool pool : preset.randomPools) {
+            List<String> available = new ArrayList<>(pool.options);
+            Collections.shuffle(available, new java.util.Random(random.nextLong()));
+            int count = Math.min(pool.pickCount, available.size());
+            for (int i = 0; i < count; i++) {
+                ResourceLocation id = new ResourceLocation(available.get(i));
+                if (SymbolRegistry.get(id) != null) {
+                    pages.add(Page.createSymbolPage(id));
+                } else {
+                    Mystcraft.LOGGER.warn("[Preset] Unknown pool symbol: {}", available.get(i));
+                }
+            }
+        }
+
+        // Create the book
+        ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
+        AgebookItem.create(agebook, player, pages, preset.displayName);
+
+        if (!player.getInventory().add(agebook)) {
+            player.drop(agebook, false);
+        }
+
+        int symbolCount = pages.size() - 1;
+        source.sendSuccess(() -> Component.literal("Created preset book '" + preset.displayName + "' with " + symbolCount + " symbols"), true);
         return 1;
     }
 
@@ -574,6 +772,64 @@ public class MystcraftCommands {
             source.sendSuccess(() -> Component.literal("Instability disabled for Age " + ageId), true);
         }
 
+        return 1;
+    }
+
+    // --- Set Instability Commands ---
+
+    /**
+     * Sets instability to a specific value for the current Age.
+     */
+    private static int setInstabilityCurrent(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        Level level = player.level();
+
+        if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+            source.sendFailure(Component.literal("Not in a Mystcraft age."));
+            return 0;
+        }
+
+        AgeData ageData = AgeData.getIfPresent((ServerLevel) level);
+        if (ageData == null) {
+            source.sendFailure(Component.literal("No age data found."));
+            return 0;
+        }
+
+        float value = FloatArgumentType.getFloat(context, "value");
+        float oldValue = ageData.getInstability();
+        ageData.setInstability(value);
+
+        source.sendSuccess(() -> Component.literal(String.format(
+                "Instability: %.2f -> %.2f", oldValue, value)), true);
+        return 1;
+    }
+
+    /**
+     * Sets instability to a specific value for a specified Age.
+     */
+    private static int setInstabilityAge(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        float value = FloatArgumentType.getFloat(context, "value");
+        int ageId = IntegerArgumentType.getInteger(context, "ageId");
+
+        ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(source.getServer(), ageId);
+        if (ageLevel == null) {
+            source.sendFailure(Component.literal("Age " + ageId + " not found."));
+            return 0;
+        }
+
+        AgeData ageData = AgeData.getIfPresent(ageLevel);
+        if (ageData == null) {
+            source.sendFailure(Component.literal("No age data found for Age " + ageId + "."));
+            return 0;
+        }
+
+        float oldValue = ageData.getInstability();
+        ageData.setInstability(value);
+
+        source.sendSuccess(() -> Component.literal(String.format(
+                "Age %d instability: %.2f -> %.2f", ageId, oldValue, value)), true);
         return 1;
     }
 

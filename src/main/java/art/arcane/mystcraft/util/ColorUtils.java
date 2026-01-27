@@ -259,6 +259,34 @@ public final class ColorUtils {
     }
 
     /**
+     * Blends a list of gradient colors into a single averaged color.
+     *
+     * @param colors Array of RGB colors to blend
+     * @param count Number of valid entries in the array
+     * @return The blended color, or -1 if no colors
+     */
+    public static int blendGradientColors(int[] colors, int count) {
+        if (count <= 0) {
+            return -1;
+        }
+        if (count == 1) {
+            return colors[0];
+        }
+
+        int totalR = 0;
+        int totalG = 0;
+        int totalB = 0;
+
+        for (int i = 0; i < count; i++) {
+            totalR += getRed(colors[i]);
+            totalG += getGreen(colors[i]);
+            totalB += getBlue(colors[i]);
+        }
+
+        return packRGB(totalR / count, totalG / count, totalB / count);
+    }
+
+    /**
      * Multiplies a color by a brightness factor.
      *
      * @param color The base color

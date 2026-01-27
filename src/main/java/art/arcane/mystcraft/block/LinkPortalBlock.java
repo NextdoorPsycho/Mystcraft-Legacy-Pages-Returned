@@ -1,11 +1,13 @@
 package art.arcane.mystcraft.block;
 
+import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
+import art.arcane.mystcraft.data.LinkFlags;
+import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.portal.PortalUtils;
-import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -15,9 +17,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -119,29 +119,62 @@ public class LinkPortalBlock extends Block {
         // Find the book receptacle to get the link destination
         BookReceptacleBlockEntity receptacle = findReceptacle(level, pos, state);
         if (receptacle == null || !receptacle.hasBook()) {
-            // No valid receptacle - remove this portal block
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+            // Don't destroy the portal block here. Portal validation is handled by
+            // neighborChanged / PortalUtils.validatePortal. Destroying on contact
+            // cascades and tears the entire portal apart.
             return;
         }
 
         // Get link data from the book
         ItemStack book = receptacle.getBook();
+
+        // If this is a new Agebook (no dimension assigned yet), activate it to create the Age.
+        // This matches the original behavior where placing a book in a receptacle and walking
+        // through the portal creates the Age on first contact.
+        if (book.getItem() instanceof AgebookItem agebookItem
+                && LinkOptions.getDimensionUID(book.getTag()) == null
+                && entity instanceof net.minecraft.server.level.ServerPlayer player) {
+            agebookItem.activate(book, level, entity);
+            // After activation, the book tag is updated in place with Dimension/Spawn data.
+            // If activation failed (no link panel, etc.), the tag still won't have a dimension.
+            if (LinkOptions.getDimensionUID(book.getTag()) == null) {
+                return;
+            }
+            // activate() already performed the link, so we're done.
+            TELEPORT_COOLDOWNS.put(entityId, currentTime);
+            return;
+        }
+
         CompoundTag linkData = getLinkData(book);
         if (linkData == null) {
             return;
         }
 
-        // Play portal sound
-        level.playSound(null, pos, ModSounds.LINKING_PORTAL.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
-
         // Set cooldown before teleporting
         TELEPORT_COOLDOWNS.put(entityId, currentTime);
 
+        // Play portal sound
+        level.playSound(null, pos, ModSounds.LINKING_PORTAL.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
+
+        // Clone link data and apply portal-specific overrides
+        CompoundTag portalLinkData = linkData.copy();
+        LinkOptions.setFlag(portalLinkData, LinkFlags.MAINTAIN_MOMENTUM, true);
+        LinkOptions.setFlag(portalLinkData, LinkFlags.GENERATE_PLATFORM, false);
+
         // Perform the link
-        LinkingManager.LinkResult result = LinkingManager.performLink(entity, linkData);
+        LinkingManager.LinkResult result = LinkingManager.performLink(entity, portalLinkData);
+
+        if (result != LinkingManager.LinkResult.SUCCESS) {
+            Mystcraft.LOGGER.warn("[Portal] Link failed at {}: {}", pos, result);
+            if (entity instanceof net.minecraft.server.level.ServerPlayer player) {
+                player.displayClientMessage(
+                        net.minecraft.network.chat.Component.translatable("mystcraft.portal.link_failed", result.name()),
+                        true);
+            }
+        }
 
         // Clean up old cooldowns occasionally
-        if (currentTime % 1200 == 0) { // Every minute
+        if (currentTime % 1200 == 0) {
             TELEPORT_COOLDOWNS.entrySet().removeIf(entry -> currentTime - entry.getValue() > COOLDOWN_TICKS * 2);
         }
     }
@@ -175,12 +208,12 @@ public class LinkPortalBlock extends Block {
     }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-        // Validate portal when neighbors change
-        if (!level.isClientSide() && level instanceof Level realLevel) {
-            PortalUtils.validatePortal(realLevel, pos);
-        }
-        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        if (level.isClientSide) return;
+        // Validate when a neighbor is explicitly changed (e.g. frame block broken).
+        // This does NOT fire during portal creation (which uses UPDATE_NONE),
+        // avoiding a cascading validation loop.
+        PortalUtils.validatePortal(level, pos);
     }
 
     /**

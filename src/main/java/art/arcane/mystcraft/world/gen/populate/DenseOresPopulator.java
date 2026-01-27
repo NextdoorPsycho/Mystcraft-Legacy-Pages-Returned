@@ -125,16 +125,15 @@ public class DenseOresPopulator implements IPopulate {
     private void tryPlaceOre(WorldGenLevel world, BlockPos pos, OreConfig config) {
         BlockState existing = world.getBlockState(pos);
 
-        // Replace stone, deepslate, netherrack, or end stone with appropriate ore
-        if (existing.is(Blocks.STONE)) {
-            world.setBlock(pos, config.oreBlock, 2);
-        } else if (existing.is(Blocks.DEEPSLATE)) {
+        // Replace any solid opaque block (supports custom terrain blocks)
+        if (existing.isAir() || !existing.isSolid() || !existing.canOcclude()) {
+            return;
+        }
+
+        // Use deepslate variant below Y=0, regular ore otherwise
+        if (pos.getY() < 0) {
             world.setBlock(pos, config.deepslateOreBlock, 2);
-        } else if (existing.is(Blocks.NETHERRACK)) {
-            // Use regular ore in netherrack (for Mystcraft nether terrain)
-            world.setBlock(pos, config.oreBlock, 2);
-        } else if (existing.is(Blocks.END_STONE)) {
-            // Use regular ore in end stone (for Mystcraft end terrain)
+        } else {
             world.setBlock(pos, config.oreBlock, 2);
         }
     }

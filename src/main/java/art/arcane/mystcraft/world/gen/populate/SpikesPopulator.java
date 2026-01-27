@@ -20,10 +20,12 @@ public class SpikesPopulator implements IPopulate {
 
     private final long seed;
 
-    private static final int SPIKES_PER_CHUNK = 3;
+    private static final int SPIKES_PER_CHUNK = 1;
     private static final int MIN_HEIGHT = 10;
     private static final int MAX_HEIGHT = 30;
     private static final float COLD_TEMPERATURE = 0.15f;
+    // ~8% of chunks spawn a spike
+    private static final float SPAWN_CHANCE = 0.08f;
 
     public SpikesPopulator(long seed) {
         this.seed = seed;
@@ -35,6 +37,10 @@ public class SpikesPopulator implements IPopulate {
         int chunkZ = chunkPos.getZ();
 
         for (int i = 0; i < SPIKES_PER_CHUNK; i++) {
+            if (random.nextFloat() >= SPAWN_CHANCE) {
+                continue;
+            }
+
             int x = chunkX + random.nextInt(16);
             int z = chunkZ + random.nextInt(16);
             int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);

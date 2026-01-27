@@ -47,11 +47,20 @@ public final class ModSymbols {
         // Environment symbols
         EnvironmentSymbols.register();
 
+        // Timescale symbols (day/night cycle speed)
+        TimescaleSymbols.register();
+
         // Modifier symbols (colors, angles, phases, lengths)
         ModifierSymbols.register();
 
-        // Block symbols (terrain and sea blocks)
+        // Block symbols (curated terrain blocks)
         BlockSymbols.register();
+
+        // Fluid sea symbols (dynamic from fluid registry)
+        FluidSymbols.register();
+
+        // Ore control symbols
+        OreSymbols.register();
 
         // Color target symbols (apply colors to world elements)
         ColorTargetSymbols.register();

@@ -52,9 +52,9 @@ public class DungeonPopulator implements IPopulate {
         chunkMaxZ = chunkMinZ + 15;
 
         for (int i = 0; i < ATTEMPTS_PER_CHUNK; i++) {
-            int x = chunkPos.getX() + random.nextInt(16) + 8;
+            int x = chunkPos.getX() + random.nextInt(16);
             int y = random.nextInt(world.getHeight() - 16) + 8;
-            int z = chunkPos.getZ() + random.nextInt(16) + 8;
+            int z = chunkPos.getZ() + random.nextInt(16);
 
             // Keep y in valid range
             y = Math.max(-60, Math.min(y, 48));

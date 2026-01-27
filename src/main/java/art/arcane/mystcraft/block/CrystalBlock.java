@@ -65,15 +65,9 @@ public class CrystalBlock extends Block {
             return;
         }
 
-        // Check if the receptacle is still valid
-        Direction sourceDir = state.getValue(SOURCE_DIRECTION);
-        BlockPos receptaclePos = pos.relative(sourceDir);
-        BlockState receptacleState = level.getBlockState(receptaclePos);
-
-        // If the receptacle is gone or doesn't have a book, deactivate
-        if (!(receptacleState.getBlock() instanceof BookReceptacleBlock)) {
+        // Follow the full direction chain to verify the receptacle is still reachable.
+        if (PortalUtils.findReceptacle(level, pos) == null) {
             setInactive(level, pos);
-            // Validate and potentially remove connected portal blocks
             PortalUtils.validatePortal(level, pos);
         }
     }

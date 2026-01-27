@@ -341,6 +341,7 @@ public class AgeDimensionFactory {
                         case "single" -> new BiomeControllerSingle(directorBiomes, director.getSeed());
                         case "tiny" -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.TINY);
                         case "small" -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.SMALL);
+                        case "medium" -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.MEDIUM);
                         case "large" -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.LARGE);
                         case "huge" -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.HUGE);
                         case "tiled" -> new BiomeControllerTiled(directorBiomes, director.getSeed());
@@ -610,6 +611,7 @@ public class AgeDimensionFactory {
     /**
      * Gets the spawn position for an Age.
      * Uses intelligent search to find safe ground if no spawn is set.
+     * If no dry land exists, builds a small platform above the fluid surface.
      */
     @NotNull
     public static BlockPos getAgeSpawn(@NotNull ServerLevel level) {
@@ -621,7 +623,6 @@ public class AgeDimensionFactory {
         // Try to find a safe spawn near world origin
         BlockPos safeSpawn = findSafeSpawnNear(level, BlockPos.ZERO, 64);
         if (safeSpawn != null) {
-            // Cache the found spawn location
             if (ageData != null) {
                 ageData.setSpawn(safeSpawn.getX(), safeSpawn.getY(), safeSpawn.getZ());
             }
@@ -640,8 +641,62 @@ public class AgeDimensionFactory {
             return safeSpawn;
         }
 
+        // No dry land found - find a fluid surface and build a platform
+        BlockPos platformSpawn = buildSpawnPlatform(level, BlockPos.ZERO);
+        if (platformSpawn != null) {
+            if (ageData != null) {
+                ageData.setSpawn(platformSpawn.getX(), platformSpawn.getY(), platformSpawn.getZ());
+            }
+            return platformSpawn;
+        }
+
         // Last resort: return world spawn
         return worldSpawn;
+    }
+
+    /**
+     * Finds a fluid surface near the given position and builds a 3x3 stone platform on top.
+     * Returns the spawn position one block above the platform center, or null if no fluid found.
+     */
+    @Nullable
+    private static BlockPos buildSpawnPlatform(@NotNull ServerLevel level, @NotNull BlockPos center) {
+        if (!level.hasChunk(center.getX() >> 4, center.getZ() >> 4)) {
+            return null;
+        }
+
+        int minY = level.getMinBuildHeight();
+        int maxY = level.getMaxBuildHeight();
+        int startY = Math.min(maxY - 1, 128);
+        int cx = center.getX();
+        int cz = center.getZ();
+
+        // Search downward for the top of a fluid column
+        for (int y = startY; y > minY; y--) {
+            BlockPos pos = new BlockPos(cx, y, cz);
+            var state = level.getBlockState(pos);
+            var aboveState = level.getBlockState(pos.above());
+
+            boolean isFluid = !state.getFluidState().isEmpty();
+            boolean aboveIsClear = aboveState.isAir() || aboveState.getFluidState().isEmpty();
+
+            if (isFluid && aboveIsClear) {
+                // Found the fluid surface - build a 3x3 raft one block above
+                int platY = y + 1;
+                net.minecraft.world.level.block.state.BlockState plank =
+                        net.minecraft.world.level.block.Blocks.OAK_PLANKS.defaultBlockState();
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        BlockPos platPos = new BlockPos(cx + dx, platY, cz + dz);
+                        level.setBlock(platPos, plank, 2);
+                    }
+                }
+                BlockPos spawnPos = new BlockPos(cx, platY + 1, cz);
+                Mystcraft.LOGGER.info("Built spawn platform at {} over fluid surface", spawnPos);
+                return spawnPos;
+            }
+        }
+
+        return null;
     }
 
     /**

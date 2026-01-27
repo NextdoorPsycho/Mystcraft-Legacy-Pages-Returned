@@ -324,6 +324,9 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
             Page.setSymbol(writingItem, symbol);
             useInk();
             markForUpdate();
+            if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                art.arcane.mystcraft.advancements.ModAdvancements.WRITING_DESK_WRITE.trigger(serverPlayer);
+            }
             return true;
         }
 
@@ -334,6 +337,9 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
             useInk();
             consumePaper();
             markForUpdate();
+            if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                art.arcane.mystcraft.advancements.ModAdvancements.WRITING_DESK_WRITE.trigger(serverPlayer);
+            }
             return true;
         }
 

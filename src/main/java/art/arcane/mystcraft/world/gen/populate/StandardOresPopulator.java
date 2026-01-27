@@ -7,7 +7,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
  * Standard ore populator that provides baseline ore generation for all ages.
@@ -147,23 +146,21 @@ public class StandardOresPopulator implements IPopulate {
     }
 
     private void tryPlaceOre(WorldGenLevel world, BlockPos pos, OreConfig config) {
-        // Skip positions outside current chunk to prevent cascade loading
         if (!isInChunk(pos)) {
             return;
         }
 
         BlockState existing = world.getBlockState(pos);
 
-        // Replace stone, deepslate, netherrack, or end stone with appropriate ore
-        if (existing.is(Blocks.STONE)) {
-            safeSetBlock(world, pos, config.oreBlock);
-        } else if (existing.is(Blocks.DEEPSLATE)) {
+        // Replace any solid opaque block (supports custom terrain blocks)
+        if (existing.isAir() || !existing.isSolid() || !existing.canOcclude()) {
+            return;
+        }
+
+        // Use deepslate variant below Y=0, regular ore otherwise
+        if (pos.getY() < 0) {
             safeSetBlock(world, pos, config.deepslateOreBlock);
-        } else if (existing.is(Blocks.NETHERRACK)) {
-            // Use regular ore in netherrack (for Mystcraft nether terrain)
-            safeSetBlock(world, pos, config.oreBlock);
-        } else if (existing.is(Blocks.END_STONE)) {
-            // Use regular ore in end stone (for Mystcraft end terrain)
+        } else {
             safeSetBlock(world, pos, config.oreBlock);
         }
     }

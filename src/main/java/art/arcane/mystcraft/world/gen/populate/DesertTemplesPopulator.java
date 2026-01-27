@@ -41,8 +41,8 @@ public class DesertTemplesPopulator implements IPopulate {
             return;
         }
 
-        int x = chunkPos.getX() + random.nextInt(16) + 8;
-        int z = chunkPos.getZ() + random.nextInt(16) + 8;
+        int x = chunkPos.getX() + random.nextInt(16);
+        int z = chunkPos.getZ() + random.nextInt(16);
 
         BlockPos surfacePos = world.getHeightmapPos(Heightmap.Types.WORLD_SURFACE_WG, new BlockPos(x, 0, z));
 

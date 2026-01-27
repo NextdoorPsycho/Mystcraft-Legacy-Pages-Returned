@@ -21,13 +21,15 @@ public class VerticalTendrilsPopulator implements IPopulate {
 
     private final long seed;
 
-    private static final int TENDRILS_PER_CHUNK = 4;
-    private static final int MIN_LENGTH = 20;
-    private static final int MAX_LENGTH = 60;
+    private static final int TENDRILS_PER_CHUNK = 1;
+    private static final int MIN_LENGTH = 15;
+    private static final int MAX_LENGTH = 45;
     private static final float CEILING_CHANCE = 0.3f;
+    // ~10% of chunks spawn a vertical tendril
+    private static final float SPAWN_CHANCE = 0.10f;
 
-    // Vertical tendrils only wobble slightly, so 1 neighbor chunk is enough
-    private static final int NEIGHBOR_RANGE = 1;
+    // Vertical tendrils wobble slightly but can be thick, check nearby chunks
+    private static final int NEIGHBOR_RANGE = 2;
 
     public VerticalTendrilsPopulator(long seed) {
         this.seed = seed;
@@ -52,6 +54,11 @@ public class VerticalTendrilsPopulator implements IPopulate {
                 int neighborMinZ = ncz << 4;
 
                 for (int i = 0; i < TENDRILS_PER_CHUNK; i++) {
+                    // Deterministic spawn chance - skip most chunks
+                    if (chunkRand.nextFloat() >= SPAWN_CHANCE) {
+                        continue;
+                    }
+
                     int startX = neighborMinX + chunkRand.nextInt(16);
                     int startZ = neighborMinZ + chunkRand.nextInt(16);
                     boolean fromCeiling = chunkRand.nextFloat() < CEILING_CHANCE;
@@ -59,7 +66,7 @@ public class VerticalTendrilsPopulator implements IPopulate {
                     BlockState tendrilBlock = getTendrilMaterial(chunkRand);
                     BlockState decorationBlock = getDecorationBlock(tendrilBlock, chunkRand);
                     int length = MIN_LENGTH + chunkRand.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
-                    int baseThickness = 1 + chunkRand.nextInt(2);
+                    int baseThickness = 1 + chunkRand.nextInt(4);
 
                     // Slight wobble parameters
                     double wobbleX = (chunkRand.nextDouble() - 0.5) * 0.15;
@@ -95,12 +102,16 @@ public class VerticalTendrilsPopulator implements IPopulate {
             if (!world.getBlockState(checkPos).isSolid() || !world.getBlockState(checkPos.below()).isAir()) {
                 return;
             }
+            // Bury into the ceiling by moving up into solid blocks
+            startY += baseThickness + 3;
         } else {
             startY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, startX, startZ);
             BlockState ground = world.getBlockState(new BlockPos(startX, startY - 1, startZ));
             if (!ground.isSolid() || ground.is(BlockTags.LEAVES)) {
                 return;
             }
+            // Bury into the ground so the base is embedded in terrain
+            startY -= (baseThickness + 3);
         }
 
         int direction = fromCeiling ? -1 : 1;
@@ -131,10 +142,11 @@ public class VerticalTendrilsPopulator implements IPopulate {
             int centerBy = (int) Math.floor(currentY);
             int centerBz = (int) Math.floor(currentZ);
 
+            double thicknessSq = (double) thickness * thickness;
             for (int dx = -thickness; dx <= thickness; dx++) {
                 for (int dz = -thickness; dz <= thickness; dz++) {
-                    int dist = Math.abs(dx) + Math.abs(dz);
-                    if (dist <= thickness) {
+                    double distSq = (double) dx * dx + (double) dz * dz;
+                    if (distSq <= thicknessSq) {
                         int bx = centerBx + dx;
                         int bz = centerBz + dz;
 
@@ -189,11 +201,26 @@ public class VerticalTendrilsPopulator implements IPopulate {
 
     private boolean shouldPlaceBlock(WorldGenLevel world, BlockPos pos) {
         BlockState existing = world.getBlockState(pos);
-        return existing.isAir() ||
-               existing.is(BlockTags.LEAVES) ||
-               existing.is(Blocks.SNOW) ||
-               existing.is(Blocks.VINE) ||
-               existing.is(Blocks.WATER);
+        if (existing.isAir() ||
+                existing.is(BlockTags.LEAVES) ||
+                existing.is(Blocks.SNOW) ||
+                existing.is(Blocks.VINE) ||
+                existing.is(Blocks.WATER)) {
+            return true;
+        }
+        // Allow replacing natural terrain so tendrils root into the ground
+        return existing.is(Blocks.STONE) ||
+               existing.is(Blocks.DEEPSLATE) ||
+               existing.is(Blocks.DIRT) ||
+               existing.is(Blocks.GRASS_BLOCK) ||
+               existing.is(Blocks.SAND) ||
+               existing.is(Blocks.SANDSTONE) ||
+               existing.is(Blocks.GRAVEL) ||
+               existing.is(Blocks.CLAY) ||
+               existing.is(Blocks.NETHERRACK) ||
+               existing.is(Blocks.END_STONE) ||
+               existing.is(BlockTags.TERRACOTTA) ||
+               existing.is(BlockTags.DIRT);
     }
 
     private BlockState getTendrilMaterial(Random random) {

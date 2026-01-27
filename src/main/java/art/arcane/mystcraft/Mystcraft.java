@@ -22,9 +22,12 @@ import art.arcane.mystcraft.symbol.ModSymbols;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.logging.LogUtils;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
+import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -35,6 +38,15 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Mystcraft - A Minecraft mod that brings elements from the Myst series.
@@ -76,6 +88,9 @@ public class Mystcraft {
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
 
+        // Populate creative tab pages after symbols are registered
+        modEventBus.addListener(ModCreativeTabs::onBuildCreativeTabContents);
+
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
 
@@ -86,6 +101,9 @@ public class Mystcraft {
         LOGGER.info("Mystcraft common setup");
 
         event.enqueueWork(() -> {
+            // Register advancement criteria triggers
+            art.arcane.mystcraft.advancements.ModAdvancements.register();
+
             // Initialize networking
             MystcraftNetwork.register();
 
@@ -120,6 +138,59 @@ public class Mystcraft {
         LOGGER.info("Mystcraft server starting");
         // Commands are auto-registered via MystcraftCommands @EventBusSubscriber
         // Dimension data is loaded via AgeManager.get() on demand
+
+        if (MystcraftConfig.deleteAgesOnStartup.get()) {
+            deleteAllAges(event.getServer());
+        }
+    }
+
+    /**
+     * Deletes all Mystcraft Ages from the AgeManager and removes their dimension storage directories.
+     */
+    private void deleteAllAges(MinecraftServer server) {
+        AgeManager ageManager = AgeManager.get(server);
+        int ageCount = ageManager.getAgeCount();
+
+        if (ageCount == 0) {
+            LOGGER.info("[Mystcraft] deleteAgesOnStartup enabled but no ages to delete");
+            return;
+        }
+
+        // Collect UIDs before clearing (iterator would be invalidated)
+        List<Integer> uids = new ArrayList<>();
+        for (int uid : ageManager.getAllAgeUIDs()) {
+            uids.add(uid);
+        }
+
+        // Clear all tracking data and reset UID counter
+        ageManager.clearAllAges();
+
+        // Delete dimension storage directories from disk
+        Path worldDir = server.getWorldPath(LevelResource.ROOT);
+        Path dimensionsDir = worldDir.resolve("dimensions").resolve(MOD_ID);
+        int directoriesDeleted = 0;
+
+        if (Files.isDirectory(dimensionsDir)) {
+            try (Stream<Path> entries = Files.list(dimensionsDir)) {
+                List<Path> ageDirs = entries
+                        .filter(Files::isDirectory)
+                        .filter(p -> p.getFileName().toString().startsWith("mystcraft_age_"))
+                        .toList();
+
+                for (Path ageDir : ageDirs) {
+                    try (Stream<Path> walk = Files.walk(ageDir)) {
+                        walk.sorted(Comparator.reverseOrder())
+                                .map(Path::toFile)
+                                .forEach(File::delete);
+                    }
+                    directoriesDeleted++;
+                }
+            } catch (IOException e) {
+                LOGGER.error("[Mystcraft] Failed to delete age dimension directories", e);
+            }
+        }
+
+        LOGGER.info("[Mystcraft] deleteAgesOnStartup: deleted {} ages ({} directories removed)", ageCount, directoriesDeleted);
     }
 
     @SubscribeEvent

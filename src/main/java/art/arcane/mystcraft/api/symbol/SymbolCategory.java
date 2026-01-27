@@ -39,8 +39,14 @@ public enum SymbolCategory {
     /** Environmental effects (accelerated, meteors, lightning, etc.) */
     ENVIRONMENT("environment"),
 
-    /** Terrain features (caves, ravines, floating islands, etc.) */
-    FEATURE("feature"),
+    /** Large terrain features (caves, ravines, floating islands, perlin worms, deep dark) */
+    FEATURE_LARGE("feature_large"),
+
+    /** Medium terrain features (lakes, huge trees, dense ores, spikes, spheres, tendrils) */
+    FEATURE_MEDIUM("feature_medium"),
+
+    /** Small terrain features (dripstone caves, lush caves, surface lakes) */
+    FEATURE_SMALL("feature_small"),
 
     /** Structures (villages, dungeons, strongholds, etc.) */
     STRUCTURE("structure"),
@@ -53,6 +59,9 @@ public enum SymbolCategory {
 
     /** Length modifiers (zero, half, full, double) */
     LENGTH("length"),
+
+    /** Sea/fluid symbols (water, lava, modded fluids) */
+    SEA("sea"),
 
     /** General modifiers (clear, no sea, etc.) */
     MODIFIER("modifier"),

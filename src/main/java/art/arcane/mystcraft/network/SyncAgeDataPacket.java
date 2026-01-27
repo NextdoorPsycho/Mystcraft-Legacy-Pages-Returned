@@ -36,30 +36,19 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
             // Store the age data in client-side cache
             ClientAgeDataCache.setAgeData(packet.ageUID, packet.data);
 
-            // Debug logging to track sync flow
+            // Log received color values for pipeline tracing
             CompoundTag config = packet.data.contains("AgeConfig") ? packet.data.getCompound("AgeConfig") : null;
-            int configKeys = config != null ? config.getAllKeys().size() : 0;
-            float instability = packet.data.contains("Instability") ? packet.data.getFloat("Instability") : 0;
-            Mystcraft.LOGGER.info("Received Age data for UID {} - {} config keys, instability: {}",
-                    packet.ageUID, configKeys, instability);
-
-            // Log specific color values for debugging
             if (config != null) {
-                if (config.contains("GrassColor")) {
-                    Mystcraft.LOGGER.debug("  GrassColor: 0x{}", Integer.toHexString(config.getInt("GrassColor")));
+                String[] colorKeys = {"SkyColor", "FogColor", "GrassColors", "FoliageColor", "WaterColor", "CloudColor", "NightSkyColor", "SunsetColor"};
+                StringBuilder colorLog = new StringBuilder();
+                for (String key : colorKeys) {
+                    if (config.contains(key)) {
+                        if (colorLog.length() > 0) colorLog.append(", ");
+                        colorLog.append(key).append("=0x").append(Integer.toHexString(config.getInt(key)));
+                    }
                 }
-                if (config.contains("FoliageColor")) {
-                    Mystcraft.LOGGER.debug("  FoliageColor: 0x{}", Integer.toHexString(config.getInt("FoliageColor")));
-                }
-                if (config.contains("WaterColor")) {
-                    Mystcraft.LOGGER.debug("  WaterColor: 0x{}", Integer.toHexString(config.getInt("WaterColor")));
-                }
-                if (config.contains("SkyColor")) {
-                    Mystcraft.LOGGER.debug("  SkyColor: 0x{}", Integer.toHexString(config.getInt("SkyColor")));
-                }
-                if (config.contains("FogColor")) {
-                    Mystcraft.LOGGER.debug("  FogColor: 0x{}", Integer.toHexString(config.getInt("FogColor")));
-                }
+                Mystcraft.LOGGER.info("[AgeSync Client] Age {} received: {}", packet.ageUID,
+                        colorLog.length() > 0 ? colorLog.toString() : "no custom colors");
             }
         });
         ctx.setPacketHandled(true);
@@ -125,8 +114,25 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
         }
 
         public static int getGrassColor(int ageUID) {
+            java.util.List<Integer> colors = getGrassColors(ageUID);
+            return colors.isEmpty() ? -1 : colors.get(0);
+        }
+
+        public static java.util.List<Integer> getGrassColors(int ageUID) {
             CompoundTag config = getConfig(ageUID);
-            return config != null && config.contains("GrassColor") ? config.getInt("GrassColor") : -1;
+            if (config == null) return Collections.emptyList();
+            if (config.contains("GrassColors")) {
+                int[] arr = config.getIntArray("GrassColors");
+                java.util.List<Integer> result = new java.util.ArrayList<>(arr.length);
+                for (int c : arr) {
+                    result.add(c);
+                }
+                return result;
+            }
+            if (config.contains("GrassColor")) {
+                return Collections.singletonList(config.getInt("GrassColor"));
+            }
+            return Collections.emptyList();
         }
 
         public static int getFoliageColor(int ageUID) {
@@ -147,6 +153,11 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
         public static int getNightSkyColor(int ageUID) {
             CompoundTag config = getConfig(ageUID);
             return config != null && config.contains("NightSkyColor") ? config.getInt("NightSkyColor") : -1;
+        }
+
+        public static int getHorizonColor(int ageUID) {
+            CompoundTag config = getConfig(ageUID);
+            return config != null && config.contains("HorizonColor") ? config.getInt("HorizonColor") : -1;
         }
 
         public static boolean isSunVisible(int ageUID) {

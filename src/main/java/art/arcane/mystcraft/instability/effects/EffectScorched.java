@@ -10,14 +10,18 @@ import net.minecraft.world.level.chunk.LevelChunk;
 
 /**
  * Environmental effect that causes random fires (scorched earth).
+ * Scales with instability: rare at low values, frequent at high.
  */
 public class EffectScorched implements IEnvironmentalEffect {
 
-    private static final float BASE_CHANCE = 0.0005f;
+    private static final float BASE_CHANCE = 0.008f;
 
     @Override
-    public void tick(ServerLevel level, LevelChunk chunk) {
-        if (level.random.nextFloat() >= BASE_CHANCE) {
+    public void tick(ServerLevel level, LevelChunk chunk, float instability) {
+        if (instability < 70.0f) return;
+        float intensity = Math.min((instability - 70.0f) / 30.0f, 1.0f);
+
+        if (level.random.nextFloat() >= BASE_CHANCE * intensity) {
             return;
         }
 

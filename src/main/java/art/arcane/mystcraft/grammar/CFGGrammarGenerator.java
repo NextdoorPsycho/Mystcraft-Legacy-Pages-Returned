@@ -174,6 +174,7 @@ public final class CFGGrammarGenerator {
 
         buildShortestPaths();
         buildRankWeights();
+        validateTokenPopulation();
 
         isFinalized = true;
         LOGGER.info("Grammar finalized successfully");
@@ -301,6 +302,61 @@ public final class CFGGrammarGenerator {
                 lastTotal = count * weight;
                 weight += step;
             }
+        }
+    }
+
+    /**
+     * Checks that terminal grammar tokens (TERRAIN, WEATHER, etc.) have at least
+     * one non-epsilon rule registered, meaning at least one symbol maps to them.
+     * Logs warnings for any tokens that will always produce epsilon (nothing).
+     */
+    private static void validateTokenPopulation() {
+        ResourceLocation[] terminalTokens = {
+                GrammarData.TERRAIN,
+                GrammarData.BIOMECONTROLLER,
+                GrammarData.BIOME,
+                GrammarData.WEATHER,
+                GrammarData.LIGHTING,
+                GrammarData.SUN,
+                GrammarData.MOON,
+                GrammarData.STARFIELD,
+                GrammarData.EFFECT,
+                GrammarData.VISUAL_EFFECT,
+                GrammarData.FEATURE_LARGE,
+                GrammarData.FEATURE_MEDIUM,
+                GrammarData.FEATURE_SMALL,
+                GrammarData.BLOCK_SEA,
+                GrammarData.DOODAD
+        };
+
+        int unpopulated = 0;
+        for (ResourceLocation token : terminalTokens) {
+            List<CFGRule> rules = mappings.get(token);
+            if (rules == null) {
+                LOGGER.warn("[Grammar Validation] Token {} has NO rules registered", token);
+                unpopulated++;
+                continue;
+            }
+
+            // Count non-epsilon rules (rules with at least one child)
+            long symbolRules = rules.stream()
+                    .filter(rule -> !rule.getValues().isEmpty())
+                    .count();
+
+            if (symbolRules == 0) {
+                LOGGER.warn("[Grammar Validation] Token {} has {} rules but ALL are epsilon " +
+                        "(no symbols registered) - this token will always produce nothing", token, rules.size());
+                unpopulated++;
+            } else {
+                LOGGER.debug("[Grammar Validation] Token {} has {} symbol rules", token, symbolRules);
+            }
+        }
+
+        if (unpopulated > 0) {
+            LOGGER.warn("[Grammar Validation] {} terminal tokens have no symbols - " +
+                    "ages may be missing components", unpopulated);
+        } else {
+            LOGGER.info("[Grammar Validation] All terminal grammar tokens have symbols registered");
         }
     }
 

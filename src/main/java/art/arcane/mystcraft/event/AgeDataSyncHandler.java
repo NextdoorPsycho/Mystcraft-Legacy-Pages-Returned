@@ -88,11 +88,20 @@ public class AgeDataSyncHandler {
         // Colors (-1 means not set, so only include if set)
         if (ageData.getSkyColor() != -1) config.putInt("SkyColor", ageData.getSkyColor());
         if (ageData.getFogColor() != -1) config.putInt("FogColor", ageData.getFogColor());
-        if (ageData.getGrassColor() != -1) config.putInt("GrassColor", ageData.getGrassColor());
+        java.util.List<Integer> grassColors = ageData.getGrassColors();
+        if (!grassColors.isEmpty()) {
+            int[] arr = new int[grassColors.size()];
+            for (int i = 0; i < grassColors.size(); i++) {
+                arr[i] = grassColors.get(i);
+            }
+            config.putIntArray("GrassColors", arr);
+        }
         if (ageData.getFoliageColor() != -1) config.putInt("FoliageColor", ageData.getFoliageColor());
         if (ageData.getWaterColor() != -1) config.putInt("WaterColor", ageData.getWaterColor());
         if (ageData.getCloudColor() != -1) config.putInt("CloudColor", ageData.getCloudColor());
         if (ageData.getNightSkyColor() != -1) config.putInt("NightSkyColor", ageData.getNightSkyColor());
+        if (ageData.getHorizonColor() != -1) config.putInt("HorizonColor", ageData.getHorizonColor());
+        if (ageData.getSunsetColor() != -1) config.putInt("SunsetColor", ageData.getSunsetColor());
 
         // Celestials
         config.putBoolean("SunVisible", ageData.isSunVisible());
@@ -113,10 +122,17 @@ public class AgeDataSyncHandler {
         SyncAgeDataPacket packet = new SyncAgeDataPacket(ageUID, syncData);
         MystcraftNetwork.sendToPlayer(packet, player);
 
-        // Log what we're sending for debugging
-        int configKeys = config.getAllKeys().size();
-        Mystcraft.LOGGER.info("Synced Age {} data to player {} ({} config keys, instability: {})",
-                ageUID, player.getName().getString(), configKeys, ageData.getInstability());
+        // Log color pipeline trace for debugging
+        Mystcraft.LOGGER.info("[AgeSync] Age {} -> player {}: sky=0x{}, fog=0x{}, grass=0x{}, foliage=0x{}, water=0x{}, cloud=0x{}, nightSky=0x{}, sunset=0x{}",
+                ageUID, player.getName().getString(),
+                ageData.getSkyColor() != -1 ? Integer.toHexString(ageData.getSkyColor()) : "none",
+                ageData.getFogColor() != -1 ? Integer.toHexString(ageData.getFogColor()) : "none",
+                !ageData.getGrassColors().isEmpty() ? ageData.getGrassColors().size() + " colors" : "none",
+                ageData.getFoliageColor() != -1 ? Integer.toHexString(ageData.getFoliageColor()) : "none",
+                ageData.getWaterColor() != -1 ? Integer.toHexString(ageData.getWaterColor()) : "none",
+                ageData.getCloudColor() != -1 ? Integer.toHexString(ageData.getCloudColor()) : "none",
+                ageData.getNightSkyColor() != -1 ? Integer.toHexString(ageData.getNightSkyColor()) : "none",
+                ageData.getSunsetColor() != -1 ? Integer.toHexString(ageData.getSunsetColor()) : "none");
     }
 
     /**

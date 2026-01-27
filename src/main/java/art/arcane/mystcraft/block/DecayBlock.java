@@ -7,6 +7,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -43,9 +44,49 @@ public class DecayBlock extends Block {
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         DecayType type = state.getValue(DECAY_TYPE);
 
-        // Try to spread to adjacent blocks
-        if (type.canSpread()) {
+        if (type == DecayType.BLACK) {
+            tickBlackDecay(state, level, pos, random);
+        } else if (type.canSpread()) {
             trySpread(state, level, pos, random);
+        }
+    }
+
+    /**
+     * Black decay has special aggressive behavior:
+     * falling through blocks, aggressive horizontal corruption, and fluid removal.
+     */
+    private void tickBlackDecay(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        // 1/4 chance: destroy block below and fall
+        if (random.nextInt(4) == 0) {
+            BlockPos below = pos.below();
+            BlockState belowState = level.getBlockState(below);
+            if (canDecay(belowState) && !belowState.isAir()) {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                FallingBlockEntity.fall(level, below, state);
+            }
+        }
+
+        // 1/3 chance: aggressively corrupt all 4 horizontal neighbors
+        if (random.nextInt(3) == 0) {
+            for (Direction direction : Direction.Plane.HORIZONTAL) {
+                BlockPos neighborPos = pos.relative(direction);
+                BlockState neighborState = level.getBlockState(neighborPos);
+                if (canDecay(neighborState)) {
+                    level.setBlock(neighborPos, state, 3);
+                }
+            }
+        } else {
+            // Normal spread
+            trySpread(state, level, pos, random);
+        }
+
+        // Remove adjacent fluids
+        for (Direction direction : Direction.values()) {
+            BlockPos neighborPos = pos.relative(direction);
+            BlockState neighborState = level.getBlockState(neighborPos);
+            if (!neighborState.getFluidState().isEmpty() && !(neighborState.getBlock() instanceof DecayBlock)) {
+                level.setBlock(neighborPos, Blocks.AIR.defaultBlockState(), 3);
+            }
         }
     }
 

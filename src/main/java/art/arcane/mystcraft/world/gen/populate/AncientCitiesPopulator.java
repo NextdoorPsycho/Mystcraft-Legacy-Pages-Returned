@@ -2,10 +2,10 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -53,8 +53,8 @@ public class AncientCitiesPopulator implements IPopulate {
             return;
         }
 
-        int x = chunkPos.getX() + random.nextInt(16) + 8;
-        int z = chunkPos.getZ() + random.nextInt(16) + 8;
+        int x = chunkPos.getX() + random.nextInt(16);
+        int z = chunkPos.getZ() + random.nextInt(16);
 
         // Deep underground only
         int y = MIN_Y + random.nextInt(MAX_Y - MIN_Y);
@@ -215,11 +215,16 @@ public class AncientCitiesPopulator implements IPopulate {
             }
         }
 
-        // Small chance to spawn warden
+        // Small chance to spawn warden using addFreshEntity to avoid chunk-loading deadlocks
         if (random.nextFloat() < 0.1f) {
             BlockPos wardenPos = pos.offset(0, 2, 0);
-            net.minecraft.server.level.ServerLevel serverLevel = world.getLevel();
-            EntityType.WARDEN.spawn(serverLevel, wardenPos, MobSpawnType.STRUCTURE);
+            if (isInChunk(wardenPos)) {
+                Warden warden = EntityType.WARDEN.create(world.getLevel());
+                if (warden != null) {
+                    warden.setPos(wardenPos.getX() + 0.5, wardenPos.getY(), wardenPos.getZ() + 0.5);
+                    world.addFreshEntity(warden);
+                }
+            }
         }
     }
 

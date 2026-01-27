@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.client;
 
+import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.world.logic.ICelestial;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.util.ColorUtils;
@@ -37,6 +38,9 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
 
     private static final ResourceLocation SUN_LOCATION = new ResourceLocation("textures/environment/sun.png");
     private static final ResourceLocation MOON_PHASES_LOCATION = new ResourceLocation("textures/environment/moon_phases.png");
+
+    /** Tracks which age UIDs have already been logged to avoid per-frame spam. */
+    private static final java.util.Set<Integer> LOGGED_SKY_AGES = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
 
     public AgeDimensionSpecialEffects() {
         // Use overworld-like settings as base
@@ -104,8 +108,24 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
         boolean horizonHidden = ClientAgeDataCache.isHorizonHidden(ageUID);
         List<ICelestial> celestials = ClientAgeDataCache.getCelestials(ageUID);
 
-        // If all defaults and no custom celestials, let vanilla handle it
+        int fogColor = ClientAgeDataCache.getFogColor(ageUID);
+        int nightSkyColor = ClientAgeDataCache.getNightSkyColor(ageUID);
+
+        // Log once per age for render pipeline tracing
+        if (LOGGED_SKY_AGES.add(ageUID)) {
+            Mystcraft.LOGGER.info("[SkyRender] Age {}: skyColor=0x{}, fogColor=0x{}, nightSky=0x{}, sunVis={}, moonVis={}, starsVis={}, horizonHidden={}, celestials={}, customRenderer={}",
+                    ageUID,
+                    skyColor != -1 ? Integer.toHexString(skyColor) : "none",
+                    fogColor != -1 ? Integer.toHexString(fogColor) : "none",
+                    nightSkyColor != -1 ? Integer.toHexString(nightSkyColor) : "none",
+                    sunVisible, moonVisible, starsVisible, horizonHidden,
+                    celestials != null ? celestials.size() : 0,
+                    skyColor != -1 || fogColor != -1 || nightSkyColor != -1 || !sunVisible || !moonVisible || !starsVisible || horizonHidden);
+        }
+
+        // If all defaults, no custom colors, and no custom celestials, let vanilla handle it
         if (sunVisible && moonVisible && starsVisible && skyColor == -1 &&
+            fogColor == -1 && nightSkyColor == -1 &&
             !horizonHidden && (celestials == null || celestials.isEmpty())) {
             return false;
         }
@@ -196,87 +216,112 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     }
 
     /**
-     * Renders stars.
+     * Renders fallback stars with multi-layer parallax and color temperature variation.
      */
     private void renderStars(PoseStack poseStack, ClientLevel level, float partialTick, float starBrightness) {
         int ageUID = getCurrentAgeUID();
         String starType = ageUID >= 0 ? ClientAgeDataCache.getStarType(ageUID) : "normal";
 
         if ("dark".equals(starType)) {
-            return; // No stars for dark type
+            return;
         }
 
-        // Apply twinkle effect
-        float twinkle = 1.0f;
-        if ("twinkle".equals(starType)) {
-            long time = System.currentTimeMillis();
-            twinkle = 0.7f + 0.3f * (float) Math.sin(time * 0.005);
-        }
+        boolean twinkle = "twinkle".equals(starType);
+        long timeMs = System.currentTimeMillis();
 
         int nightSkyColor = ageUID >= 0 ? ClientAgeDataCache.getNightSkyColor(ageUID) : -1;
-        float alpha = starBrightness * twinkle;
+        float dayTime = level.getTimeOfDay(partialTick);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.depthMask(false);
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-        // Render a simple star field
+        // Three layers at different rotation speeds for depth parallax
+        renderStarLayer(poseStack, dayTime, starBrightness * 0.5f, twinkle, timeMs,
+                nightSkyColor, 10842L, 500, 0.7f, 0.08f, 0.13f, 0.0f);
+        renderStarLayer(poseStack, dayTime, starBrightness * 0.8f, twinkle, timeMs,
+                nightSkyColor, 29471L, 750, 1.0f, 0.12f, 0.20f, 15.0f);
+        renderStarLayer(poseStack, dayTime, starBrightness, twinkle, timeMs,
+                nightSkyColor, 58293L, 250, 1.15f, 0.18f, 0.35f, -8.0f);
+
+        RenderSystem.depthMask(true);
+        RenderSystem.disableBlend();
+    }
+
+    private void renderStarLayer(PoseStack poseStack, float dayTime, float brightness,
+                                 boolean twinkle, long timeMs, int nightSkyColor,
+                                 long layerSeed, int count, float speedMult,
+                                 float minSize, float maxSize, float tiltDegrees) {
         BufferBuilder builder = Tesselator.getInstance().getBuilder();
         poseStack.pushPose();
 
-        // Rotate stars with time
-        float dayTime = level.getTimeOfDay(partialTick);
-        poseStack.mulPose(Axis.YP.rotationDegrees(-90.0F));
-        poseStack.mulPose(Axis.XP.rotationDegrees(dayTime * 360.0F));
+        poseStack.mulPose(Axis.YP.rotationDegrees(-90.0f));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(tiltDegrees));
+        poseStack.mulPose(Axis.XP.rotationDegrees(dayTime * 360.0f * speedMult));
 
         Matrix4f matrix = poseStack.last().pose();
-
-        // Generate pseudo-random star positions
         builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-        java.util.Random starRandom = new java.util.Random(10842L);
-        for (int i = 0; i < 1500; i++) {
-            double x = (starRandom.nextFloat() * 2.0F - 1.0F);
-            double y = (starRandom.nextFloat() * 2.0F - 1.0F);
-            double z = (starRandom.nextFloat() * 2.0F - 1.0F);
-            double size = 0.15F + starRandom.nextFloat() * 0.1F;
+        java.util.Random starRandom = new java.util.Random(layerSeed);
+        for (int i = 0; i < count; i++) {
+            double x = starRandom.nextFloat() * 2.0f - 1.0f;
+            double y = starRandom.nextFloat() * 2.0f - 1.0f;
+            double z = starRandom.nextFloat() * 2.0f - 1.0f;
+            double starSize = minSize + starRandom.nextFloat() * (maxSize - minSize);
             double dist = x * x + y * y + z * z;
 
-            if (dist < 1.0D && dist > 0.01D) {
-                dist = 1.0D / Math.sqrt(dist);
+            float temperature = starRandom.nextFloat();
+            float twinklePhase = starRandom.nextFloat() * (float) (Math.PI * 2.0);
+            float twinkleFreq = 0.002f + starRandom.nextFloat() * 0.006f;
+
+            if (dist < 1.0 && dist > 0.01) {
+                dist = 1.0 / Math.sqrt(dist);
                 x *= dist;
                 y *= dist;
                 z *= dist;
 
-                double px = x * 100.0D;
-                double py = y * 100.0D;
-                double pz = z * 100.0D;
+                double px = x * 100.0;
+                double py = y * 100.0;
+                double pz = z * 100.0;
 
                 double angle = Math.atan2(x, z);
                 double sinAngle = Math.sin(angle);
                 double cosAngle = Math.cos(angle);
-
                 double angle2 = Math.atan2(Math.sqrt(x * x + z * z), y);
                 double sinAngle2 = Math.sin(angle2);
                 double cosAngle2 = Math.cos(angle2);
 
+                float alpha = brightness;
+                if (twinkle) {
+                    float tw = 0.4f + 0.6f * (0.5f + 0.5f * (float) Math.sin(timeMs * twinkleFreq + twinklePhase));
+                    alpha *= tw;
+                }
                 int starAlpha = (int) (alpha * 255);
-                int starColor = nightSkyColor != -1 ? nightSkyColor : 0xFFFFFF;
-                int sr = ColorUtils.getRed(starColor);
-                int sg = ColorUtils.getGreen(starColor);
-                int sb = ColorUtils.getBlue(starColor);
+                if (starAlpha <= 0) continue;
+
+                int sr, sg, sb;
+                if (nightSkyColor != -1) {
+                    sr = ColorUtils.getRed(nightSkyColor);
+                    sg = ColorUtils.getGreen(nightSkyColor);
+                    sb = ColorUtils.getBlue(nightSkyColor);
+                } else {
+                    int[] rgb = starColorFromTemperature(temperature);
+                    sr = rgb[0];
+                    sg = rgb[1];
+                    sb = rgb[2];
+                }
 
                 for (int v = 0; v < 4; v++) {
-                    double vx = (double) ((v & 2) - 1) * size;
-                    double vy = (double) ((v + 1 & 2) - 1) * size;
+                    double vx = (double) ((v & 2) - 1) * starSize;
+                    double vy = (double) ((v + 1 & 2) - 1) * starSize;
 
                     double ry = vx * sinAngle2 + vy * cosAngle2;
                     double rz = vy * sinAngle2 - vx * cosAngle2;
                     double rx = ry * sinAngle - rz * cosAngle;
                     rz = rz * sinAngle + ry * cosAngle;
 
-                    builder.vertex(matrix, (float) (px + rx), (float) (py + rz), (float) (pz))
+                    builder.vertex(matrix, (float) (px + rx), (float) (py + rz), (float) pz)
                             .color(sr, sg, sb, starAlpha).endVertex();
                 }
             }
@@ -284,9 +329,15 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
 
         BufferUploader.drawWithShader(builder.end());
         poseStack.popPose();
+    }
 
-        RenderSystem.depthMask(true);
-        RenderSystem.disableBlend();
+    /** Maps a 0-1 temperature value to an RGB star color for the fallback renderer. */
+    private static int[] starColorFromTemperature(float t) {
+        if (t < 0.15f) return new int[]{180, 200, 255};
+        if (t < 0.4f) return new int[]{255, 255, 255};
+        if (t < 0.65f) return new int[]{255, 245, 200};
+        if (t < 0.85f) return new int[]{255, 200, 130};
+        return new int[]{255, 150, 100};
     }
 
     /**
@@ -386,7 +437,7 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
 
         double horizonDst = camera.getPosition().y - mc.level.getMinBuildHeight();
 
-        if (horizonHidden || horizonDst < 64.0D) {
+        if (horizonHidden || horizonDst < 16.0D) {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             RenderSystem.depthMask(false);

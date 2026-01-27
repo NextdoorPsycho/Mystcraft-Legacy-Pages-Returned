@@ -117,10 +117,13 @@ public final class SymbolRegistry {
             case STARS -> GrammarData.STARFIELD;
             case WEATHER -> GrammarData.WEATHER;
             case LIGHTING -> GrammarData.LIGHTING;
-            case FEATURE -> GrammarData.FEATURE_LARGE;  // Large features by default
-            case STRUCTURE -> GrammarData.FEATURE_MEDIUM;  // Structures are medium features
+            case FEATURE_LARGE -> GrammarData.FEATURE_LARGE;
+            case FEATURE_MEDIUM -> GrammarData.FEATURE_MEDIUM;
+            case FEATURE_SMALL -> GrammarData.FEATURE_SMALL;
+            case STRUCTURE -> GrammarData.FEATURE_MEDIUM;
             case ENVIRONMENT -> GrammarData.EFFECT;
             case VISUAL_EFFECT -> GrammarData.VISUAL_EFFECT;  // Color targets (sky, fog, grass)
+            case SEA -> GrammarData.BLOCK_SEA;
             // Modifiers don't generate via grammar - they're placed by players
             case COLOR, ANGLE, PHASE, LENGTH, MODIFIER, SPECIAL -> null;
             default -> null;

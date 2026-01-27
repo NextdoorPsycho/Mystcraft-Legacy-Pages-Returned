@@ -79,13 +79,14 @@ public final class GrammarRules {
         registerRule(buildRule(0, ROOT,
                 GrammarData.TERRAIN,
                 GrammarData.BIOMECONTROLLER,
+                GrammarData.BIOME_LIST,
                 GrammarData.WEATHER,
                 GrammarData.LIGHTING,
+                GrammarData.BLOCK_SEA,
                 asMyst("spawning0"),
                 asMyst("suns0"),
                 asMyst("moons0"),
                 asMyst("starfields0"),
-                asMyst("doodads0"),
                 asMyst("visuals0"),
                 asMyst("feature_smalls0"),
                 asMyst("feature_mediums0"),
@@ -145,7 +146,7 @@ public final class GrammarRules {
         registerRule(buildRule(null, asMyst("visuals0"), VISUAL_EFFECT_EXT, GrammarData.VISUAL_EFFECT));
         registerRule(buildRule(null, VISUAL_EFFECT_EXT, VISUAL_EFFECT_EXT, GrammarData.VISUAL_EFFECT));
         registerRule(buildRule(1, VISUAL_EFFECT_EXT));
-        registerRule(buildRule(3, GrammarData.VISUAL_EFFECT)); // Epsilon - lower weight to favor actual visual effects
+        registerRule(buildRule(1, GrammarData.VISUAL_EFFECT)); // Epsilon - low weight so visual effects are more common
 
         // Large feature rules
         registerRule(buildRule(1, asMyst("feature_larges0"), FEATURE_LARGE_GEN));
@@ -154,7 +155,7 @@ public final class GrammarRules {
         registerRule(buildRule(null, asMyst("feature_larges0"), FEATURE_LARGE_EXT, GrammarData.FEATURE_LARGE));
         registerRule(buildRule(null, FEATURE_LARGE_EXT, FEATURE_LARGE_EXT, GrammarData.FEATURE_LARGE));
         registerRule(buildRule(1, FEATURE_LARGE_EXT));
-        registerRule(buildRule(4, GrammarData.FEATURE_LARGE)); // Epsilon
+        registerRule(buildRule(2, GrammarData.FEATURE_LARGE)); // Epsilon
 
         // Medium feature rules
         registerRule(buildRule(1, asMyst("feature_mediums0"), FEATURE_MEDIUM_GEN));
@@ -163,7 +164,7 @@ public final class GrammarRules {
         registerRule(buildRule(null, asMyst("feature_mediums0"), FEATURE_MEDIUM_EXT, GrammarData.FEATURE_MEDIUM));
         registerRule(buildRule(null, FEATURE_MEDIUM_EXT, FEATURE_MEDIUM_EXT, GrammarData.FEATURE_MEDIUM));
         registerRule(buildRule(1, FEATURE_MEDIUM_EXT));
-        registerRule(buildRule(4, GrammarData.FEATURE_MEDIUM)); // Epsilon
+        registerRule(buildRule(2, GrammarData.FEATURE_MEDIUM)); // Epsilon
 
         // Small feature rules
         registerRule(buildRule(1, asMyst("feature_smalls0"), FEATURE_SMALL_GEN));
@@ -172,7 +173,7 @@ public final class GrammarRules {
         registerRule(buildRule(null, asMyst("feature_smalls0"), FEATURE_SMALL_EXT, GrammarData.FEATURE_SMALL));
         registerRule(buildRule(null, FEATURE_SMALL_EXT, FEATURE_SMALL_EXT, GrammarData.FEATURE_SMALL));
         registerRule(buildRule(1, FEATURE_SMALL_EXT));
-        registerRule(buildRule(4, GrammarData.FEATURE_SMALL)); // Epsilon
+        registerRule(buildRule(2, GrammarData.FEATURE_SMALL)); // Epsilon
 
         // Effect rules
         registerRule(buildRule(1, asMyst("effects0"), EFFECT_GEN));

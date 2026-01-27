@@ -7,7 +7,6 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.Random;
 
@@ -21,14 +20,15 @@ public class TendrilsPopulator implements IPopulate {
 
     private final long seed;
 
-    private static final int TENDRILS_PER_CHUNK = 3;
-    private static final int MIN_LENGTH = 30;
-    private static final int MAX_LENGTH = 80;
+    private static final int TENDRILS_PER_CHUNK = 1;
+    private static final int MIN_LENGTH = 20;
+    private static final int MAX_LENGTH = 50;
     private static final float CEILING_CHANCE = 0.3f;
+    // ~8% of chunks spawn a tendril
+    private static final float SPAWN_CHANCE = 0.08f;
 
-    // A tendril with max length 80 and aggressive curvature can drift
-    // up to ~3 chunks horizontally. Scan that range of neighbors.
-    private static final int NEIGHBOR_RANGE = 3;
+    // Max lateral drift: curvature ±2.0 per segment * 50 segments = 100 blocks = 7 chunks
+    private static final int NEIGHBOR_RANGE = 8;
 
     public TendrilsPopulator(long seed) {
         this.seed = seed;
@@ -54,6 +54,11 @@ public class TendrilsPopulator implements IPopulate {
                 int neighborMinZ = ncz << 4;
 
                 for (int i = 0; i < TENDRILS_PER_CHUNK; i++) {
+                    // Deterministic spawn chance - skip most chunks
+                    if (chunkRand.nextFloat() >= SPAWN_CHANCE) {
+                        continue;
+                    }
+
                     // Deterministically compute tendril origin
                     int startX = neighborMinX + chunkRand.nextInt(16);
                     int startZ = neighborMinZ + chunkRand.nextInt(16);
@@ -65,10 +70,11 @@ public class TendrilsPopulator implements IPopulate {
                     BlockState decorationBlock = getDecorationBlock(tendrilBlock, chunkRand);
                     int length = MIN_LENGTH + chunkRand.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
 
-                    // Initial curvature
-                    double curvatureX = (chunkRand.nextDouble() - 0.5) * 0.6;
-                    double curvatureZ = (chunkRand.nextDouble() - 0.5) * 0.6;
-                    int baseThickness = 1 + chunkRand.nextInt(3);
+                    // Initial curvature - moderate lateral bias
+                    double curvatureX = (chunkRand.nextDouble() - 0.5) * 1.5;
+                    double curvatureZ = (chunkRand.nextDouble() - 0.5) * 1.5;
+                    // Moderate base thickness: 2-6 blocks
+                    int baseThickness = 2 + chunkRand.nextInt(5);
 
                     // Pre-consume all random calls for the tendril path so that
                     // the path is fully deterministic regardless of which chunk visits it.
@@ -95,24 +101,16 @@ public class TendrilsPopulator implements IPopulate {
                                  int length, double curvatureX, double curvatureZ,
                                  int baseThickness,
                                  int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
-        // Get Y position from world state
+        // Derive Y deterministically from the path seed so all chunks agree on
+        // the same tendril origin. Reading the heightmap or world state at the
+        // tendril start position can return different values depending on chunk
+        // generation order, causing tendrils to be cut off at chunk borders.
+        Random yRand = new Random(pathSeed ^ 0xA6E_57A47L);
         int startY;
         if (fromCeiling) {
-            startY = findCeilingPosition(world, startX, startZ, pathSeed);
-            if (startY == -1) {
-                return;
-            }
-            // Validate ceiling
-            BlockPos checkPos = new BlockPos(startX, startY, startZ);
-            if (!world.getBlockState(checkPos).isSolid() || !world.getBlockState(checkPos.below()).isAir()) {
-                return;
-            }
+            startY = 130 + yRand.nextInt(70); // Deterministic range 130-199, buried into ceiling
         } else {
-            startY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, startX, startZ);
-            BlockState ground = world.getBlockState(new BlockPos(startX, startY - 1, startZ));
-            if (!ground.isSolid() || ground.is(BlockTags.LEAVES)) {
-                return;
-            }
+            startY = 35 + yRand.nextInt(40);  // Deterministic range 35-74, buried underground
         }
 
         int direction = fromCeiling ? -1 : 1;
@@ -128,38 +126,41 @@ public class TendrilsPopulator implements IPopulate {
         for (int segment = 0; segment < length; segment++) {
             float progress = (float) segment / length;
 
-            // Update curve direction frequently for twisty behavior
+            // Update curve direction every 3 segments
             if (segment % 3 == 0) {
-                curX += (pathRand.nextDouble() - 0.5) * 0.4;
-                curZ += (pathRand.nextDouble() - 0.5) * 0.4;
+                curX += (pathRand.nextDouble() - 0.5) * 0.8;
+                curZ += (pathRand.nextDouble() - 0.5) * 0.8;
 
-                // Allow wider curvature range for more dramatic twisting
-                curX = Math.max(-0.8, Math.min(0.8, curX));
-                curZ = Math.max(-0.8, Math.min(0.8, curZ));
+                curX = Math.max(-2.0, Math.min(2.0, curX));
+                curZ = Math.max(-2.0, Math.min(2.0, curZ));
             }
 
-            // Occasionally make sharp turns
-            if (pathRand.nextInt(12) == 0) {
-                curX = (pathRand.nextDouble() - 0.5) * 1.2;
-                curZ = (pathRand.nextDouble() - 0.5) * 1.2;
+            // Occasional sharp turns
+            if (pathRand.nextInt(10) == 0) {
+                curX = (pathRand.nextDouble() - 0.5) * 2.5;
+                curZ = (pathRand.nextDouble() - 0.5) * 2.5;
             }
 
-            // Move along the curved path
+            // Move along the curved path - lateral movement is the primary motion,
+            // vertical is secondary (tendril creeps more than it climbs)
             currentX += curX;
-            currentY += direction;
+            currentY += direction * (0.3 + pathRand.nextDouble() * 0.7);
             currentZ += curZ;
 
-            // Thickness tapers toward the tip
-            int thickness = (int) Math.max(1, baseThickness * (1.0f - progress * 0.6f));
+            // Dramatic thickness taper: thick base narrows to a point
+            // Uses exponential falloff for more natural look
+            double taperFactor = 1.0 - Math.pow(progress, 0.6);
+            int thickness = (int) Math.max(1, Math.round(baseThickness * taperFactor));
 
-            // Place blocks in a small cross-section, only within our chunk
+            // Place blocks in a round cross-section, only within our chunk
             int centerBx = (int) Math.floor(currentX);
             int centerBy = (int) Math.floor(currentY);
             int centerBz = (int) Math.floor(currentZ);
+            double thicknessSq = (double) thickness * thickness;
             for (int dx = -thickness; dx <= thickness; dx++) {
                 for (int dz = -thickness; dz <= thickness; dz++) {
-                    int dist = Math.abs(dx) + Math.abs(dz);
-                    if (dist <= thickness) {
+                    double distSq = (double) dx * dx + (double) dz * dz;
+                    if (distSq <= thicknessSq) {
                         int bx = centerBx + dx;
                         int bz = centerBz + dz;
 
@@ -202,26 +203,28 @@ public class TendrilsPopulator implements IPopulate {
         }
     }
 
-    private int findCeilingPosition(WorldGenLevel world, int x, int z, long pathSeed) {
-        Random ceilRand = new Random(pathSeed ^ 0xCE116L);
-        for (int attempt = 0; attempt < 10; attempt++) {
-            int y = 80 + ceilRand.nextInt(120);
-            BlockPos checkPos = new BlockPos(x, y, z);
-            if (world.getBlockState(checkPos).isSolid() &&
-                    world.getBlockState(checkPos.below()).isAir()) {
-                return y;
-            }
-        }
-        return -1;
-    }
-
     private boolean shouldPlaceTendrilBlock(WorldGenLevel world, BlockPos pos) {
         BlockState existing = world.getBlockState(pos);
-        return existing.isAir() ||
-               existing.is(BlockTags.LEAVES) ||
-               existing.is(Blocks.SNOW) ||
-               existing.is(Blocks.VINE) ||
-               existing.is(Blocks.WATER);
+        if (existing.isAir() ||
+                existing.is(BlockTags.LEAVES) ||
+                existing.is(Blocks.SNOW) ||
+                existing.is(Blocks.VINE) ||
+                existing.is(Blocks.WATER)) {
+            return true;
+        }
+        // Allow replacing natural terrain so tendrils root into the ground
+        return existing.is(Blocks.STONE) ||
+               existing.is(Blocks.DEEPSLATE) ||
+               existing.is(Blocks.DIRT) ||
+               existing.is(Blocks.GRASS_BLOCK) ||
+               existing.is(Blocks.SAND) ||
+               existing.is(Blocks.SANDSTONE) ||
+               existing.is(Blocks.GRAVEL) ||
+               existing.is(Blocks.CLAY) ||
+               existing.is(Blocks.NETHERRACK) ||
+               existing.is(Blocks.END_STONE) ||
+               existing.is(BlockTags.TERRACOTTA) ||
+               existing.is(BlockTags.DIRT);
     }
 
     private BlockState getTendrilMaterial(Random random) {

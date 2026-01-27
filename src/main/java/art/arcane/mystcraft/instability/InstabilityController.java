@@ -214,9 +214,10 @@ public class InstabilityController implements InstabilityDirector {
             return;
         }
 
+        float instability = ageData.getInstability();
         for (IEnvironmentalEffect effect : effects) {
             try {
-                effect.tick(level, chunk);
+                effect.tick(level, chunk, instability);
             } catch (Exception e) {
                 LOGGER.error("Error ticking instability effect: {}", e.getMessage());
             }

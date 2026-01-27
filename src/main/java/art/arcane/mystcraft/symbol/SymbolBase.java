@@ -18,6 +18,7 @@ public abstract class SymbolBase implements IAgeSymbol {
     protected String[] poemWords;
     protected Integer cardRank;
     protected float instabilityCost = 0.0f;
+    protected boolean duplicatable = false;
 
     @OnlyIn(Dist.CLIENT)
     private String cachedLocalizedName;
@@ -65,6 +66,16 @@ public abstract class SymbolBase implements IAgeSymbol {
     @Override
     public float getInstabilityCost() {
         return instabilityCost;
+    }
+
+    public SymbolBase setDuplicatable(boolean duplicatable) {
+        this.duplicatable = duplicatable;
+        return this;
+    }
+
+    @Override
+    public boolean canDuplicate() {
+        return duplicatable;
     }
 
     protected String getUnlocalizedName() {

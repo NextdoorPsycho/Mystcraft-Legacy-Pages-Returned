@@ -47,6 +47,7 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
     };
 
     private final LazyOptional<IItemHandler> itemHandler = LazyOptional.of(() -> inventory);
+    private boolean loading = false;
 
     public BookReceptacleBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.BOOK_RECEPTACLE.get(), pos, blockState);
@@ -60,8 +61,10 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
 
     @Override
     protected void readNbt(CompoundTag tag) {
+        loading = true;
         super.readNbt(tag);
         inventory.deserializeNBT(tag.getCompound(TAG_INVENTORY));
+        loading = false;
     }
 
     @Override
@@ -120,7 +123,7 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
      * Handles portal activation/deactivation.
      */
     private void handleBookChange() {
-        if (level == null || level.isClientSide) {
+        if (level == null || level.isClientSide || loading) {
             return;
         }
 

@@ -20,6 +20,11 @@ import art.arcane.mystcraft.world.gen.populate.TrailRuinsPopulator;
 import art.arcane.mystcraft.world.gen.populate.VillagesPopulator;
 import art.arcane.mystcraft.world.gen.populate.WitchHutsPopulator;
 import art.arcane.mystcraft.world.gen.populate.WoodlandMansionsPopulator;
+import art.arcane.mystcraft.world.gen.populate.IglooPopulator;
+import art.arcane.mystcraft.world.gen.populate.ShipwreckPopulator;
+import art.arcane.mystcraft.world.gen.populate.OceanRuinsPopulator;
+import art.arcane.mystcraft.world.gen.populate.BuriedTreasurePopulator;
+import art.arcane.mystcraft.world.gen.populate.NetherFossilPopulator;
 
 /**
  * Structure generation symbols.
@@ -54,6 +59,15 @@ public final class StructureSymbols {
 
         // End structures
         SymbolRegistry.register(new EndCities());
+
+        // Additional overworld structures
+        SymbolRegistry.register(new Igloos());
+        SymbolRegistry.register(new Shipwrecks());
+        SymbolRegistry.register(new OceanRuins());
+        SymbolRegistry.register(new BuriedTreasure());
+
+        // Additional nether structures
+        SymbolRegistry.register(new NetherFossils());
     }
 
     public static class Villages extends SymbolBase {
@@ -323,6 +337,86 @@ public final class StructureSymbols {
 
             // Register the end cities populator for custom structure generation
             director.registerInterface(new EndCitiesPopulator(seed));
+            director.addInstability(getInstabilityCost());
+        }
+    }
+
+    // --- Additional Overworld Structures ---
+
+    public static class Igloos extends SymbolBase {
+        public Igloos() {
+            super(SymbolRegistry.mystcraftId("igloos"), SymbolCategory.STRUCTURE);
+            setCardRank(2);
+            setInstabilityCost(0.0f);
+            setPoem("Civilization", "Ice", "Shelter", "Snow");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setIgloosEnabled(true);
+            director.registerInterface(new IglooPopulator(seed));
+        }
+    }
+
+    public static class Shipwrecks extends SymbolBase {
+        public Shipwrecks() {
+            super(SymbolRegistry.mystcraftId("shipwrecks"), SymbolCategory.STRUCTURE);
+            setCardRank(2);
+            setInstabilityCost(0.0f);
+            setPoem("Civilization", "Water", "Journey", "Wreck");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setShipwrecksEnabled(true);
+            director.registerInterface(new ShipwreckPopulator(seed));
+        }
+    }
+
+    public static class OceanRuins extends SymbolBase {
+        public OceanRuins() {
+            super(SymbolRegistry.mystcraftId("ocean_ruins"), SymbolCategory.STRUCTURE);
+            setCardRank(2);
+            setInstabilityCost(0.0f);
+            setPoem("Civilization", "Water", "Past", "Stone");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setOceanRuinsEnabled(true);
+            director.registerInterface(new OceanRuinsPopulator(seed));
+        }
+    }
+
+    public static class BuriedTreasure extends SymbolBase {
+        public BuriedTreasure() {
+            super(SymbolRegistry.mystcraftId("buried_treasure"), SymbolCategory.STRUCTURE);
+            setCardRank(2);
+            setInstabilityCost(0.0f);
+            setPoem("Civilization", "Earth", "Treasure", "Hidden");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setBuriedTreasureEnabled(true);
+            director.registerInterface(new BuriedTreasurePopulator(seed));
+        }
+    }
+
+    // --- Additional Nether Structures ---
+
+    public static class NetherFossils extends SymbolBase {
+        public NetherFossils() {
+            super(SymbolRegistry.mystcraftId("nether_fossils"), SymbolCategory.STRUCTURE);
+            setCardRank(2);
+            setInstabilityCost(3.0f);
+            setPoem("Civilization", "Death", "Bone", "Ancient");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setNetherFossilsEnabled(true);
+            director.registerInterface(new NetherFossilPopulator(seed));
             director.addInstability(getInstabilityCost());
         }
     }

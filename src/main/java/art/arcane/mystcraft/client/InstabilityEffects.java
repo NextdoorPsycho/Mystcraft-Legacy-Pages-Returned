@@ -25,8 +25,8 @@ public final class InstabilityEffects {
 
     @SubscribeEvent
     public static void onRegisterOverlays(RegisterGuiOverlaysEvent event) {
-        event.registerBelow(VanillaGuiOverlay.VIGNETTE.id(), "instability_vignette", new InstabilityVignetteOverlay());
-        Mystcraft.LOGGER.info("Registered instability effects overlay");
+        // Instability vignette overlay removed - instability is communicated
+        // through gameplay effects rather than screen overlays
     }
 
     /**

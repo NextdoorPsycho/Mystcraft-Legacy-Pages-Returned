@@ -30,6 +30,13 @@ public class ModStructures {
             STRUCTURE_TYPES.register("underground_archive",
                     () -> () -> UndergroundArchiveStructure.CODEC);
 
+    /**
+     * Scattered Library - small standalone library buildings scattered across the overworld.
+     */
+    public static final RegistryObject<StructureType<ScatteredLibraryStructure>> SCATTERED_LIBRARY =
+            STRUCTURE_TYPES.register("scattered_library",
+                    () -> () -> ScatteredLibraryStructure.CODEC);
+
     public static void register(IEventBus eventBus) {
         STRUCTURE_TYPES.register(eventBus);
     }

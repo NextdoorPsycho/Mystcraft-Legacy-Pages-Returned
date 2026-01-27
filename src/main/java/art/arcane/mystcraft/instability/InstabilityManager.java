@@ -194,7 +194,7 @@ public final class InstabilityManager {
      */
     private static float calculateChance(float instability, float threshold, float baseChance, float multiplier) {
         float excess = instability - threshold;
-        float factor = Math.min(excess / 50.0f, 2.0f); // Scale up to 3x base (1 + 2)
+        float factor = Math.min(excess / 30.0f, 5.0f); // Scale up to 6x base (1 + 5)
         return baseChance * (1.0f + factor) * multiplier;
     }
 
@@ -288,14 +288,12 @@ public final class InstabilityManager {
                 default -> Blocks.SOUL_SAND.defaultBlockState();
             };
         }
-        // Wood -> Coal block, Air (burned), or Fire
+        // Wood -> Coal block or Air (burned)
         if (original.getBlock() instanceof net.minecraft.world.level.block.RotatedPillarBlock &&
             original.is(net.minecraft.tags.BlockTags.LOGS)) {
-            return switch (random.nextInt(3)) {
-                case 0 -> Blocks.COAL_BLOCK.defaultBlockState();
-                case 1 -> Blocks.AIR.defaultBlockState();
-                default -> Blocks.FIRE.defaultBlockState();
-            };
+            return random.nextBoolean()
+                    ? Blocks.COAL_BLOCK.defaultBlockState()
+                    : Blocks.AIR.defaultBlockState();
         }
         // Leaves -> Air (decay)
         if (original.is(net.minecraft.tags.BlockTags.LEAVES)) {
@@ -332,7 +330,7 @@ public final class InstabilityManager {
         net.minecraft.world.entity.LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
         if (lightning != null) {
             lightning.moveTo(x, y, z);
-            lightning.setVisualOnly(false);
+            lightning.setVisualOnly(true);
             level.addFreshEntity(lightning);
 
             Mystcraft.LOGGER.debug("Spawned instability lightning at {}, {}, {}", x, y, z);
@@ -358,29 +356,51 @@ public final class InstabilityManager {
         Mystcraft.LOGGER.debug("Spawned meteor at {}, {}, {} with size {}", x, y, z, size);
     }
 
+    // Positive effects pool: effect, duration ticks, amplifier
+    private static final Object[][] POSITIVE_EFFECTS = {
+            {MobEffects.MOVEMENT_SPEED, 600, 0},        // Speed 30s
+            {MobEffects.DIG_SPEED, 600, 0},              // Haste 30s
+            {MobEffects.DAMAGE_BOOST, 400, 0},            // Strength 20s
+            {MobEffects.JUMP, 600, 0},                    // Jump Boost 30s
+            {MobEffects.REGENERATION, 200, 0},             // Regeneration 10s
+            {MobEffects.DAMAGE_RESISTANCE, 300, 0},        // Resistance 15s
+            {MobEffects.NIGHT_VISION, 1200, 0},            // Night Vision 60s
+    };
+
+    // Negative effects pool: effect, duration ticks, amplifier
+    private static final Object[][] NEGATIVE_EFFECTS = {
+            {MobEffects.WITHER, 100, 0},                  // Wither 5s
+            {MobEffects.POISON, 100, 0},                   // Poison 5s
+            {MobEffects.HUNGER, 200, 1},                   // Hunger 10s amp 2
+            {MobEffects.MOVEMENT_SLOWDOWN, 160, 0},        // Slowness 8s
+            {MobEffects.WEAKNESS, 160, 0},                 // Weakness 8s
+            {MobEffects.BLINDNESS, 100, 0},                // Blindness 5s
+            {MobEffects.CONFUSION, 120, 0},                // Nausea 6s
+            {MobEffects.DIG_SLOWDOWN, 160, 0},             // Mining Fatigue 8s
+    };
+
     /**
-     * Applies negative effects to players.
-     * Effect severity scales with instability level.
+     * Applies a random potion effect to a player.
+     * Unstable ages are chaotic: ~30% chance positive, ~70% chance negative.
      */
     private static void applyPlayerEffects(ServerLevel level, List<ServerPlayer> players, float instability, RandomSource random) {
         ServerPlayer target = players.get(random.nextInt(players.size()));
 
-        MobEffectInstance effect;
-        float thresholdWither = getThresholdWither();
-
-        if (instability >= thresholdWither && random.nextFloat() < 0.3f) {
-            // Wither effect at very high instability (most severe)
-            effect = new MobEffectInstance(MobEffects.WITHER, 100, 0); // 5 seconds, level 1
-        } else if (random.nextFloat() < 0.5f) {
-            // Poison (moderate)
-            effect = new MobEffectInstance(MobEffects.POISON, 100, 0);
+        Object[][] pool;
+        if (random.nextFloat() < 0.3f) {
+            pool = POSITIVE_EFFECTS;
         } else {
-            // Hunger (mild)
-            effect = new MobEffectInstance(MobEffects.HUNGER, 200, 1);
+            pool = NEGATIVE_EFFECTS;
         }
 
-        target.addEffect(effect);
-        Mystcraft.LOGGER.debug("Applied {} to player {}", effect.getEffect().getDescriptionId(), target.getName().getString());
+        Object[] chosen = pool[random.nextInt(pool.length)];
+        net.minecraft.world.effect.MobEffect effect = (net.minecraft.world.effect.MobEffect) chosen[0];
+        int duration = (int) chosen[1];
+        int amplifier = (int) chosen[2];
+
+        MobEffectInstance instance = new MobEffectInstance(effect, duration, amplifier);
+        target.addEffect(instance);
+        Mystcraft.LOGGER.debug("Applied {} to player {}", effect.getDescriptionId(), target.getName().getString());
     }
 
     /**

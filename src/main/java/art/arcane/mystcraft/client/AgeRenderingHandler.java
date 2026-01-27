@@ -21,6 +21,9 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = Mystcraft.MOD_ID, value = Dist.CLIENT)
 public class AgeRenderingHandler {
 
+    /** Tracks which age UIDs have already logged fog info to avoid per-frame spam. */
+    private static final java.util.Set<Integer> LOGGED_FOG_AGES = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+
     /**
      * Gets the current Age UID the player is in, or -1 if not in an Age.
      */
@@ -75,6 +78,17 @@ public class AgeRenderingHandler {
                 event.setGreen(event.getGreen() * 0.5f);
                 event.setBlue(event.getBlue() * 0.5f);
             }
+        }
+
+        // Log once per age for fog pipeline tracing
+        if (LOGGED_FOG_AGES.add(ageUID)) {
+            Mystcraft.LOGGER.info("[FogRender] Age {}: fogColor=0x{}, lighting={}, applied R={} G={} B={}",
+                    ageUID,
+                    fogColor != -1 ? Integer.toHexString(fogColor) : "none",
+                    lightingType,
+                    String.format("%.3f", event.getRed()),
+                    String.format("%.3f", event.getGreen()),
+                    String.format("%.3f", event.getBlue()));
         }
     }
 

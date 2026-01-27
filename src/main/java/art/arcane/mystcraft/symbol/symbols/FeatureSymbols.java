@@ -18,6 +18,7 @@ import art.arcane.mystcraft.world.gen.populate.SpikesPopulator;
 import art.arcane.mystcraft.world.gen.populate.StarFissurePopulator;
 import art.arcane.mystcraft.world.gen.populate.SurfaceLakesPopulator;
 import art.arcane.mystcraft.world.gen.populate.TendrilsPopulator;
+import art.arcane.mystcraft.world.gen.populate.PerlinWormsPopulator;
 import art.arcane.mystcraft.world.gen.populate.VerticalTendrilsPopulator;
 
 /**
@@ -42,6 +43,7 @@ public final class FeatureSymbols {
         SymbolRegistry.register(new Spheres());
         SymbolRegistry.register(new Tendrils());
         SymbolRegistry.register(new VerticalTendrils());
+        SymbolRegistry.register(new PerlinWorms());
 
         // Cave biome features (1.17+)
         SymbolRegistry.register(new DripstoneCaves());
@@ -54,7 +56,7 @@ public final class FeatureSymbols {
 
     public static class Caves extends SymbolBase {
         public Caves() {
-            super(SymbolRegistry.mystcraftId("caves"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("caves"), SymbolCategory.FEATURE_LARGE);
             setCardRank(2);
             setInstabilityCost(0.0f);
             setPoem("Terrain", "Transform", "Void", "Flow");
@@ -72,7 +74,7 @@ public final class FeatureSymbols {
 
     public static class Ravines extends SymbolBase {
         public Ravines() {
-            super(SymbolRegistry.mystcraftId("ravines"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("ravines"), SymbolCategory.FEATURE_LARGE);
             setCardRank(2);
             setInstabilityCost(0.0f);
             setPoem("Terrain", "Transform", "Void", "Weave");
@@ -90,7 +92,7 @@ public final class FeatureSymbols {
 
     public static class FloatingIslands extends SymbolBase {
         public FloatingIslands() {
-            super(SymbolRegistry.mystcraftId("floating_islands"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("floating_islands"), SymbolCategory.FEATURE_LARGE);
             setCardRank(3);
             setInstabilityCost(10.0f);
             setPoem("Terrain", "Transform", "Form", "Celestial");
@@ -110,7 +112,7 @@ public final class FeatureSymbols {
 
     public static class Skylands extends SymbolBase {
         public Skylands() {
-            super(SymbolRegistry.mystcraftId("skylands"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("skylands"), SymbolCategory.FEATURE_LARGE);
             setCardRank(3);
             setInstabilityCost(8.0f);
             setPoem("Terrain", "Transform", "Void", "Elevate");
@@ -132,7 +134,7 @@ public final class FeatureSymbols {
 
     public static class DenseOres extends SymbolBase {
         public DenseOres() {
-            super(SymbolRegistry.mystcraftId("dense_ores"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("dense_ores"), SymbolCategory.FEATURE_MEDIUM);
             setCardRank(3);
             setInstabilityCost(5.0f);
             setPoem("Resource", "Form", "Abundance", "Wealth");
@@ -151,7 +153,7 @@ public final class FeatureSymbols {
 
     public static class HugeTrees extends SymbolBase {
         public HugeTrees() {
-            super(SymbolRegistry.mystcraftId("huge_trees"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("huge_trees"), SymbolCategory.FEATURE_MEDIUM);
             setCardRank(3);
             setInstabilityCost(3.0f);
             setPoem("Nature", "Form", "Growth", "Giant");
@@ -170,7 +172,7 @@ public final class FeatureSymbols {
 
     public static class DeepLakes extends SymbolBase {
         public DeepLakes() {
-            super(SymbolRegistry.mystcraftId("deep_lakes"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("deep_lakes"), SymbolCategory.FEATURE_MEDIUM);
             setCardRank(2);
             setInstabilityCost(0.0f);
             setPoem("Water", "Form", "Depth", "Abyss");
@@ -187,7 +189,7 @@ public final class FeatureSymbols {
 
     public static class SurfaceLakes extends SymbolBase {
         public SurfaceLakes() {
-            super(SymbolRegistry.mystcraftId("surface_lakes"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("surface_lakes"), SymbolCategory.FEATURE_SMALL);
             setCardRank(2);
             setInstabilityCost(0.0f);
             setPoem("Water", "Form", "Surface", "Flow");
@@ -204,7 +206,7 @@ public final class FeatureSymbols {
 
     public static class Spikes extends SymbolBase {
         public Spikes() {
-            super(SymbolRegistry.mystcraftId("spikes"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("spikes"), SymbolCategory.FEATURE_MEDIUM);
             setCardRank(3);
             setInstabilityCost(5.0f);
             setPoem("Terrain", "Transform", "Stone", "Pierce");
@@ -223,7 +225,7 @@ public final class FeatureSymbols {
 
     public static class Spheres extends SymbolBase {
         public Spheres() {
-            super(SymbolRegistry.mystcraftId("spheres"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("spheres"), SymbolCategory.FEATURE_MEDIUM);
             setCardRank(3);
             setInstabilityCost(8.0f);
             setPoem("Terrain", "Transform", "Form", "Circle");
@@ -242,7 +244,7 @@ public final class FeatureSymbols {
 
     public static class Tendrils extends SymbolBase {
         public Tendrils() {
-            super(SymbolRegistry.mystcraftId("tendrils"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("tendrils"), SymbolCategory.FEATURE_MEDIUM);
             setCardRank(3);
             setInstabilityCost(5.0f);
             setPoem("Terrain", "Transform", "Nature", "Weave");
@@ -261,7 +263,7 @@ public final class FeatureSymbols {
 
     public static class VerticalTendrils extends SymbolBase {
         public VerticalTendrils() {
-            super(SymbolRegistry.mystcraftId("vertical_tendrils"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("vertical_tendrils"), SymbolCategory.FEATURE_MEDIUM);
             setCardRank(3);
             setInstabilityCost(4.0f);
             setPoem("Terrain", "Transform", "Stone", "Column");
@@ -277,11 +279,29 @@ public final class FeatureSymbols {
         }
     }
 
+    public static class PerlinWorms extends SymbolBase {
+        public PerlinWorms() {
+            super(SymbolRegistry.mystcraftId("perlin_worms"), SymbolCategory.FEATURE_LARGE);
+            setCardRank(3);
+            setInstabilityCost(6.0f);
+            setPoem("Terrain", "Transform", "Void", "Serpent");
+        }
+
+        @Override
+        public void registerLogic(AgeDirector director, long seed) {
+            director.setPerlinWormsEnabled(true);
+
+            director.registerInterface(new PerlinWormsPopulator(seed));
+
+            director.addInstability(getInstabilityCost());
+        }
+    }
+
     // --- Cave Biome Features ---
 
     public static class DripstoneCaves extends SymbolBase {
         public DripstoneCaves() {
-            super(SymbolRegistry.mystcraftId("dripstone_caves"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("dripstone_caves"), SymbolCategory.FEATURE_SMALL);
             setCardRank(2);
             setInstabilityCost(0.0f);
             setPoem("Terrain", "Form", "Stone", "Drip");
@@ -298,7 +318,7 @@ public final class FeatureSymbols {
 
     public static class LushCaves extends SymbolBase {
         public LushCaves() {
-            super(SymbolRegistry.mystcraftId("lush_caves"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("lush_caves"), SymbolCategory.FEATURE_SMALL);
             setCardRank(2);
             setInstabilityCost(0.0f);
             setPoem("Terrain", "Nature", "Growth", "Glow");
@@ -315,7 +335,7 @@ public final class FeatureSymbols {
 
     public static class DeepDark extends SymbolBase {
         public DeepDark() {
-            super(SymbolRegistry.mystcraftId("deep_dark"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("deep_dark"), SymbolCategory.FEATURE_LARGE);
             setCardRank(4);
             setInstabilityCost(15.0f);
             setPoem("Terrain", "Void", "Sculk", "Terror");
@@ -336,7 +356,7 @@ public final class FeatureSymbols {
 
     public static class StarFissureFeature extends SymbolBase {
         public StarFissureFeature() {
-            super(SymbolRegistry.mystcraftId("star_fissure_feature"), SymbolCategory.FEATURE);
+            super(SymbolRegistry.mystcraftId("star_fissure_feature"), SymbolCategory.FEATURE_LARGE);
             setCardRank(4);
             setInstabilityCost(-10.0f);
             setPoem("Link", "Form", "Star", "Escape");

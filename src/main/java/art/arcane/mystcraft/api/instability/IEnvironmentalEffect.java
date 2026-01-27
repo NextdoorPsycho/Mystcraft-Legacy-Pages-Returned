@@ -12,8 +12,11 @@ public interface IEnvironmentalEffect {
     /**
      * Called each tick while the effect is active.
      *
-     * @param level The server level
-     * @param chunk The chunk being processed
+     * @param level       The server level
+     * @param chunk       The chunk being processed
+     * @param instability The current Age instability score (0+). Effects should
+     *                    scale their intensity based on this value rather than
+     *                    firing at a flat rate.
      */
-    void tick(ServerLevel level, LevelChunk chunk);
+    void tick(ServerLevel level, LevelChunk chunk, float instability);
 }

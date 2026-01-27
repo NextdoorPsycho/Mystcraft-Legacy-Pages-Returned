@@ -1,17 +1,22 @@
 
-
 # Gradle
+.gradle/
+build/
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 
 # Run directories
-/run/
-/run-data/
-/runs/
+**/run/
+**/run-data/
+**/runs/
+
+# Architectury / Loom
+.architectury-transformer/
+**/remappedSrc/
+**/.loom.experimental.log
 
 # IDE - IntelliJ IDEA
-.idea/*
-!.idea/runConfigurations/
+**/.idea/
 *.iml
 *.ipr
 *.iws
@@ -26,7 +31,7 @@ eclipse/.metadata/.plugins/
 .vscode/
 
 # Generated resources
-/src/generated/
+**/src/generated/
 
 # Local files
 __*
@@ -46,12 +51,6 @@ locations.gradle
 
 # Forge files
 /forge*.zip
-
-# macOS
-.DS_Store
-
-# JetBrains IDEs
-**/.idea/
 
 # AI Crap
 **/.claude/

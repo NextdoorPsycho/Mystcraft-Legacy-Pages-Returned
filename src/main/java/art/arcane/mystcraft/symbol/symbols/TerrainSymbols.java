@@ -121,7 +121,7 @@ public final class TerrainSymbols {
         public void registerLogic(AgeDirector director, long seed) {
             LOGGER.info("[TerrainSymbol] Applying VOID terrain to age (seed: {})", seed);
             director.setTerrainType("void");
-            director.setAverageGroundLevel(0);
+            director.setAverageGroundLevel(65); // Platform at Y=64, spawn on top at Y=65
             director.setSeaLevel(-64);
             director.setHasSea(false);
             director.addInstability(getInstabilityCost());

@@ -25,6 +25,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
@@ -587,42 +590,84 @@ public final class LinkingManager {
 
     /**
      * Finds a safe Y position for spawning.
+     * Uses the heightmap first for an accurate surface Y, then validates
+     * and adjusts by searching both up and down from that point.
      */
     private static int findSafeY(ServerLevel level, int x, int startY, int z) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, startY, z);
+        int minY = level.getMinBuildHeight();
+        int maxY = level.getMaxBuildHeight();
 
-        // First check if we're already at a safe position
-        pos.setY(startY - 1);
-        BlockState groundState = level.getBlockState(pos);
-        if (groundState.isSolidRender(level, pos)) {
-            pos.setY(startY);
-            BlockState above1 = level.getBlockState(pos);
-            pos.setY(startY + 1);
-            BlockState above2 = level.getBlockState(pos);
-            if (!above1.blocksMotion() && !above2.blocksMotion()) {
-                return startY;
+        // Try to get the actual terrain surface from the heightmap.
+        // This is the most reliable way to find where terrain actually is,
+        // especially for newly generated Ages where startY may be a guess.
+        int heightmapY = startY;
+        ChunkAccess chunk = level.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, false);
+        if (chunk != null) {
+            int hmY = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15);
+            if (hmY > minY) {
+                heightmapY = hmY + 1; // +1 because heightmap returns top solid block Y
             }
         }
 
-        // Search downward for solid ground
-        for (int y = startY; y > level.getMinBuildHeight(); y--) {
-            pos.setY(y);
-            BlockState state = level.getBlockState(pos);
-            if (state.isSolidRender(level, pos)) {
-                pos.setY(y + 1);
-                BlockState above1 = level.getBlockState(pos);
-                pos.setY(y + 2);
-                BlockState above2 = level.getBlockState(pos);
+        // Check if the heightmap position is safe (solid below, 2 clear above)
+        if (isSafeSpawn(level, pos, x, heightmapY, z)) {
+            Mystcraft.LOGGER.debug("Safe spawn from heightmap at Y={} (requested Y={})", heightmapY, startY);
+            return heightmapY;
+        }
 
-                if (!above1.blocksMotion() && !above2.blocksMotion()) {
-                    Mystcraft.LOGGER.debug("Found safe spawn at Y={} (original Y={})", y + 1, startY);
-                    return y + 1;
-                }
+        // Check if the originally requested position is safe
+        if (startY != heightmapY && isSafeSpawn(level, pos, x, startY, z)) {
+            return startY;
+        }
+
+        // Search outward from the best guess (heightmap Y), checking both up and down
+        int searchFrom = heightmapY;
+        for (int offset = 1; offset < 128; offset++) {
+            // Search downward
+            int downY = searchFrom - offset;
+            if (downY > minY && isSafeSpawn(level, pos, x, downY, z)) {
+                Mystcraft.LOGGER.debug("Found safe spawn at Y={} (searched down from {})", downY, searchFrom);
+                return downY;
+            }
+
+            // Search upward
+            int upY = searchFrom + offset;
+            if (upY < maxY - 1 && isSafeSpawn(level, pos, x, upY, z)) {
+                Mystcraft.LOGGER.debug("Found safe spawn at Y={} (searched up from {})", upY, searchFrom);
+                return upY;
             }
         }
 
-        Mystcraft.LOGGER.debug("No safe ground found, using original Y={}", startY);
-        return startY;
+        // Absolute fallback: place above heightmap and let the generate-platform flag handle it
+        Mystcraft.LOGGER.warn("No safe spawn found near ({}, {}, {}), using heightmap Y={}", x, startY, z, heightmapY);
+        return heightmapY;
+    }
+
+    /**
+     * Checks if a position is safe to spawn: solid ground below, 2 passable blocks at feet and head.
+     */
+    private static boolean isSafeSpawn(ServerLevel level, BlockPos.MutableBlockPos pos, int x, int y, int z) {
+        int minY = level.getMinBuildHeight();
+        if (y <= minY || y >= level.getMaxBuildHeight() - 1) {
+            return false;
+        }
+
+        pos.set(x, y - 1, z);
+        BlockState ground = level.getBlockState(pos);
+        if (!ground.isSolidRender(level, pos)) {
+            return false;
+        }
+
+        pos.set(x, y, z);
+        BlockState feet = level.getBlockState(pos);
+        if (feet.blocksMotion()) {
+            return false;
+        }
+
+        pos.set(x, y + 1, z);
+        BlockState head = level.getBlockState(pos);
+        return !head.blocksMotion();
     }
 
     /**

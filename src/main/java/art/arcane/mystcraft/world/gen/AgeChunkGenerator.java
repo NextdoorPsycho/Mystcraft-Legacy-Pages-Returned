@@ -41,6 +41,7 @@ import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.blending.Blender;
+import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
@@ -88,6 +89,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
 
     // Vanilla generator delegate - used for normal/amplified terrain
     private NoiseBasedChunkGenerator vanillaDelegate;
+    private RandomState vanillaRandomState;
     private boolean delegateInitialized = false;
 
     // Default block states
@@ -137,9 +139,12 @@ public class AgeChunkGenerator extends ChunkGenerator {
 
     /**
      * Checks if this terrain type should use vanilla delegation.
+     * Normal, amplified, nether, and end all use vanilla noise-based generation.
      */
     private boolean usesVanillaDelegate() {
-        return "normal".equals(terrainType) || "amplified".equals(terrainType) || terrainType == null;
+        return "normal".equals(terrainType) || "amplified".equals(terrainType)
+                || "nether".equals(terrainType) || "end".equals(terrainType)
+                || terrainType == null;
     }
 
     /**
@@ -163,20 +168,32 @@ public class AgeChunkGenerator extends ChunkGenerator {
         }
 
         try {
-            // Get the overworld's NoiseGeneratorSettings
+            // Get the appropriate NoiseGeneratorSettings for the terrain type
             Holder<NoiseGeneratorSettings> noiseSettings;
+            var noiseSettingsRegistry = server.registryAccess()
+                    .registryOrThrow(Registries.NOISE_SETTINGS);
             if ("amplified".equals(terrainType)) {
-                noiseSettings = server.registryAccess()
-                        .registryOrThrow(Registries.NOISE_SETTINGS)
-                        .getHolderOrThrow(NoiseGeneratorSettings.AMPLIFIED);
+                noiseSettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.AMPLIFIED);
+            } else if ("nether".equals(terrainType)) {
+                noiseSettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.NETHER);
+            } else if ("end".equals(terrainType)) {
+                noiseSettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.END);
             } else {
-                noiseSettings = server.registryAccess()
-                        .registryOrThrow(Registries.NOISE_SETTINGS)
-                        .getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
+                noiseSettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
             }
 
             // Create vanilla generator with our biome source
             vanillaDelegate = new NoiseBasedChunkGenerator(biomeSource, noiseSettings);
+
+            // Create a proper RandomState with real noise settings instead of dummy
+            // ServerChunkCache creates RandomState with NoiseGeneratorSettings.dummy() for
+            // non-NoiseBasedChunkGenerator generators, which produces flat terrain.
+            // We need a RandomState built from the actual overworld/amplified noise settings.
+            vanillaRandomState = RandomState.create(
+                    noiseSettings.value(),
+                    server.registryAccess().lookupOrThrow(Registries.NOISE),
+                    seed
+            );
 
             Mystcraft.LOGGER.info("Age {} initialized vanilla terrain delegate (type: {})",
                     ageUID, terrainType);
@@ -253,7 +270,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
 
         // Delegate carving to vanilla for normal terrain
         if (vanillaDelegate != null) {
-            vanillaDelegate.applyCarvers(level, seed, randomState, biomeManager,
+            vanillaDelegate.applyCarvers(level, seed, vanillaRandomState, biomeManager,
                     structureManager, chunk, step);
         }
 
@@ -268,7 +285,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
 
         // Delegate surface building to vanilla - this applies proper biome surfaces
         if (vanillaDelegate != null) {
-            vanillaDelegate.buildSurface(level, structureManager, randomState, chunk);
+            vanillaDelegate.buildSurface(level, structureManager, vanillaRandomState, chunk);
         }
 
         // Mystcraft surface type symbols can modify the surface AFTER vanilla builds it
@@ -408,9 +425,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
                                                         ChunkAccess chunk) {
         ensureVanillaDelegate();
 
-        // For normal/amplified terrain, delegate to vanilla
+        // For normal/amplified terrain, delegate to vanilla with proper RandomState
         if (vanillaDelegate != null) {
-            return vanillaDelegate.fillFromNoise(executor, blender, randomState, structureManager, chunk)
+            return vanillaDelegate.fillFromNoise(executor, blender, vanillaRandomState, structureManager, chunk)
                     .thenApply(filledChunk -> {
                         // Apply Mystcraft terrain alterations AFTER vanilla fills the chunk
                         applyTerrainAlterations(filledChunk, randomState);
@@ -473,16 +490,26 @@ public class AgeChunkGenerator extends ChunkGenerator {
     }
 
     private void generateVoidTerrain(ChunkAccess chunk, RandomSource random) {
-        // Void terrain - just bedrock at bottom, everything else is air
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-        int minY = chunk.getMinBuildHeight();
+        // Void terrain - completely empty, no bedrock.
+        // Only generate a stone spawn platform at (0,0) in the spawn chunk
+        // so the player has somewhere to stand.
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
 
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                pos.set(x, minY, z);
-                chunk.setBlockState(pos, bedrockBlock, false);
+        if (chunkX == 0 && chunkZ == 0) {
+            BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+            BlockState platformBlock = Blocks.STONE.defaultBlockState();
+            int platformY = 64;
+
+            // 5x5 platform centered at (8, 64, 8) within the chunk
+            for (int x = 6; x <= 10; x++) {
+                for (int z = 6; z <= 10; z++) {
+                    pos.set(x, platformY, z);
+                    chunk.setBlockState(pos, platformBlock, false);
+                }
             }
         }
+        // All other chunks are pure void (air)
     }
 
     private void generateFlatTerrain(ChunkAccess chunk, RandomSource random) {
@@ -530,7 +557,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
     public int getBaseHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState randomState) {
         ensureVanillaDelegate();
         if (vanillaDelegate != null) {
-            return vanillaDelegate.getBaseHeight(x, z, type, level, randomState);
+            return vanillaDelegate.getBaseHeight(x, z, type, level, vanillaRandomState);
         }
 
         // Fallback for special terrain
@@ -544,7 +571,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
     public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor level, RandomState randomState) {
         ensureVanillaDelegate();
         if (vanillaDelegate != null) {
-            return vanillaDelegate.getBaseColumn(x, z, level, randomState);
+            return vanillaDelegate.getBaseColumn(x, z, level, vanillaRandomState);
         }
 
         // Fallback for special terrain

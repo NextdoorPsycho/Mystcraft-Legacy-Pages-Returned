@@ -59,7 +59,7 @@ public class TendrilsPopulator implements IPopulate {
             }
 
             // Generate tendril
-            generateTendril(world, random, startPos, fromCeiling);
+            generateTendril(world, random, startPos, fromCeiling, chunkPos);
         }
     }
 
@@ -90,7 +90,7 @@ public class TendrilsPopulator implements IPopulate {
         }
     }
 
-    private void generateTendril(WorldGenLevel world, RandomSource random, BlockPos startPos, boolean fromCeiling) {
+    private void generateTendril(WorldGenLevel world, RandomSource random, BlockPos startPos, boolean fromCeiling, BlockPos chunkPos) {
         // Choose tendril material
         BlockState tendrilBlock = getTendrilMaterial(random);
         BlockState decorationBlock = getDecorationBlock(tendrilBlock, random);
@@ -144,13 +144,13 @@ public class TendrilsPopulator implements IPopulate {
                                 (int) Math.floor(currentZ + dz)
                         );
 
-                        // Place tendril block
-                        if (shouldPlaceTendrilBlock(world, tendrilPos)) {
+                        // Place tendril block with boundary check
+                        if (isInWritableArea(tendrilPos, chunkPos) && shouldPlaceTendrilBlock(world, tendrilPos)) {
                             world.setBlock(tendrilPos, tendrilBlock, 2);
 
                             // Add decorations occasionally
                             if (segment > 3 && random.nextInt(8) == 0) {
-                                addTendrilDecoration(world, random, tendrilPos, decorationBlock, fromCeiling);
+                                addTendrilDecoration(world, random, tendrilPos, decorationBlock, fromCeiling, chunkPos);
                             }
                         }
                     }
@@ -177,7 +177,9 @@ public class TendrilsPopulator implements IPopulate {
                         (int) Math.floor(currentY + direction),
                         (int) Math.floor(currentZ)
                 );
-                if (world.getBlockState(nextPos).isSolid() && !world.getBlockState(nextPos).is(tendrilBlock.getBlock())) {
+                if (isInWritableArea(nextPos, chunkPos) &&
+                        world.getBlockState(nextPos).isSolid() &&
+                        !world.getBlockState(nextPos).is(tendrilBlock.getBlock())) {
                     break;
                 }
             }
@@ -223,7 +225,7 @@ public class TendrilsPopulator implements IPopulate {
     }
 
     private void addTendrilDecoration(WorldGenLevel world, RandomSource random, BlockPos pos,
-                                      BlockState decorationBlock, boolean fromCeiling) {
+                                      BlockState decorationBlock, boolean fromCeiling, BlockPos chunkPos) {
         // Add small protrusions or light sources
         int[] directions = {0, 1, 2, 3}; // N, S, E, W
         int direction = directions[random.nextInt(4)];
@@ -232,7 +234,7 @@ public class TendrilsPopulator implements IPopulate {
         int dz = (direction == 2) ? 1 : (direction == 3) ? -1 : 0;
 
         BlockPos decorPos = pos.offset(dx, 0, dz);
-        if (world.getBlockState(decorPos).isAir()) {
+        if (isInWritableArea(decorPos, chunkPos) && world.getBlockState(decorPos).isAir()) {
             world.setBlock(decorPos, decorationBlock, 2);
         }
     }

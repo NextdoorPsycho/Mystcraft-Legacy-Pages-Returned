@@ -47,10 +47,10 @@ public class MineshaftsPopulator implements IPopulate {
             return;
         }
 
-        generateMineshaft(world, random, startPos, Direction.NORTH, 0);
+        generateMineshaft(world, random, startPos, Direction.NORTH, 0, chunkPos);
     }
 
-    private void generateMineshaft(WorldGenLevel world, RandomSource random, BlockPos pos, Direction direction, int depth) {
+    private void generateMineshaft(WorldGenLevel world, RandomSource random, BlockPos pos, Direction direction, int depth, BlockPos chunkPos) {
         if (depth > MAX_BRANCHES) {
             return;
         }
@@ -65,31 +65,40 @@ public class MineshaftsPopulator implements IPopulate {
                 currentPos = currentPos.above(yChange);
             }
 
+            // Skip blocks outside the writable area
+            if (!isInWritableArea(currentPos, chunkPos)) {
+                break;
+            }
+
             if (!isValidMineshaftPosition(world, currentPos)) {
                 break;
             }
 
-            generateTunnelSection(world, random, currentPos, direction);
+            generateTunnelSection(world, random, currentPos, direction, chunkPos);
 
             if (random.nextInt(8) == 0) {
                 Direction branchDir = random.nextBoolean() ?
                         direction.getClockWise() : direction.getCounterClockWise();
-                generateMineshaft(world, random, currentPos, branchDir, depth + 1);
+                generateMineshaft(world, random, currentPos, branchDir, depth + 1, chunkPos);
             }
 
             if (random.nextInt(60) == 0) {
-                generateSpawnerRoom(world, random, currentPos);
+                generateSpawnerRoom(world, random, currentPos, chunkPos);
             }
         }
     }
 
-    private void generateTunnelSection(WorldGenLevel world, RandomSource random, BlockPos pos, Direction direction) {
+    private void generateTunnelSection(WorldGenLevel world, RandomSource random, BlockPos pos, Direction direction, BlockPos chunkPos) {
         boolean isNorthSouth = direction == Direction.NORTH || direction == Direction.SOUTH;
 
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = 0; dy <= 2; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
                     BlockPos blockPos = pos.offset(dx, dy, dz);
+
+                    if (!isInWritableArea(blockPos, chunkPos)) {
+                        continue;
+                    }
 
                     boolean isCeiling = dy == 2;
                     boolean isFloor = dy == 0;
@@ -109,7 +118,7 @@ public class MineshaftsPopulator implements IPopulate {
 
                         if (dx == 0 && dz == 0 && random.nextInt(3) == 0) {
                             BlockPos railPos = blockPos.above();
-                            if (world.getBlockState(railPos).isAir()) {
+                            if (isInWritableArea(railPos, chunkPos) && world.getBlockState(railPos).isAir()) {
                                 RailShape shape = isNorthSouth ? RailShape.NORTH_SOUTH : RailShape.EAST_WEST;
                                 world.setBlock(railPos, Blocks.RAIL.defaultBlockState()
                                         .setValue(RailBlock.SHAPE, shape), 2);
@@ -123,37 +132,41 @@ public class MineshaftsPopulator implements IPopulate {
         }
 
         if (random.nextInt(5) == 0) {
-            generateSupport(world, pos);
+            generateSupport(world, pos, chunkPos);
         }
     }
 
-    private void generateSupport(WorldGenLevel world, BlockPos pos) {
+    private void generateSupport(WorldGenLevel world, BlockPos pos, BlockPos chunkPos) {
         BlockPos floorPos = pos;
         BlockPos ceilingPos = pos.above(2);
 
-        world.setBlock(floorPos.north().above(), Blocks.OAK_FENCE.defaultBlockState(), 2);
-        world.setBlock(floorPos.south().above(), Blocks.OAK_FENCE.defaultBlockState(), 2);
-        world.setBlock(floorPos.east().above(), Blocks.OAK_FENCE.defaultBlockState(), 2);
-        world.setBlock(floorPos.west().above(), Blocks.OAK_FENCE.defaultBlockState(), 2);
+        safeSetBlock(world, floorPos.north().above(), Blocks.OAK_FENCE.defaultBlockState(), chunkPos);
+        safeSetBlock(world, floorPos.south().above(), Blocks.OAK_FENCE.defaultBlockState(), chunkPos);
+        safeSetBlock(world, floorPos.east().above(), Blocks.OAK_FENCE.defaultBlockState(), chunkPos);
+        safeSetBlock(world, floorPos.west().above(), Blocks.OAK_FENCE.defaultBlockState(), chunkPos);
 
-        world.setBlock(ceilingPos.north(), Blocks.OAK_FENCE.defaultBlockState(), 2);
-        world.setBlock(ceilingPos.south(), Blocks.OAK_FENCE.defaultBlockState(), 2);
-        world.setBlock(ceilingPos.east(), Blocks.OAK_FENCE.defaultBlockState(), 2);
-        world.setBlock(ceilingPos.west(), Blocks.OAK_FENCE.defaultBlockState(), 2);
+        safeSetBlock(world, ceilingPos.north(), Blocks.OAK_FENCE.defaultBlockState(), chunkPos);
+        safeSetBlock(world, ceilingPos.south(), Blocks.OAK_FENCE.defaultBlockState(), chunkPos);
+        safeSetBlock(world, ceilingPos.east(), Blocks.OAK_FENCE.defaultBlockState(), chunkPos);
+        safeSetBlock(world, ceilingPos.west(), Blocks.OAK_FENCE.defaultBlockState(), chunkPos);
 
-        world.setBlock(floorPos.north(), Blocks.OAK_PLANKS.defaultBlockState(), 2);
-        world.setBlock(floorPos.south(), Blocks.OAK_PLANKS.defaultBlockState(), 2);
-        world.setBlock(floorPos.east(), Blocks.OAK_PLANKS.defaultBlockState(), 2);
-        world.setBlock(floorPos.west(), Blocks.OAK_PLANKS.defaultBlockState(), 2);
+        safeSetBlock(world, floorPos.north(), Blocks.OAK_PLANKS.defaultBlockState(), chunkPos);
+        safeSetBlock(world, floorPos.south(), Blocks.OAK_PLANKS.defaultBlockState(), chunkPos);
+        safeSetBlock(world, floorPos.east(), Blocks.OAK_PLANKS.defaultBlockState(), chunkPos);
+        safeSetBlock(world, floorPos.west(), Blocks.OAK_PLANKS.defaultBlockState(), chunkPos);
     }
 
-    private void generateSpawnerRoom(WorldGenLevel world, RandomSource random, BlockPos pos) {
+    private void generateSpawnerRoom(WorldGenLevel world, RandomSource random, BlockPos pos, BlockPos chunkPos) {
         int radius = 2;
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = 0; y <= 3; y++) {
                 for (int z = -radius; z <= radius; z++) {
                     BlockPos roomPos = pos.offset(x, y, z);
+
+                    if (!isInWritableArea(roomPos, chunkPos)) {
+                        continue;
+                    }
 
                     boolean isEdge = Math.abs(x) == radius || Math.abs(z) == radius;
                     boolean isCeiling = y == 3;
@@ -171,15 +184,17 @@ public class MineshaftsPopulator implements IPopulate {
         }
 
         BlockPos spawnerPos = pos.above();
-        world.setBlock(spawnerPos, Blocks.SPAWNER.defaultBlockState(), 2);
-        BlockEntity be = world.getBlockEntity(spawnerPos);
-        if (be instanceof SpawnerBlockEntity spawner) {
-            spawner.setEntityId(EntityType.CAVE_SPIDER, random);
+        if (isInWritableArea(spawnerPos, chunkPos)) {
+            world.setBlock(spawnerPos, Blocks.SPAWNER.defaultBlockState(), 2);
+            BlockEntity be = world.getBlockEntity(spawnerPos);
+            if (be instanceof SpawnerBlockEntity spawner) {
+                spawner.setEntityId(EntityType.CAVE_SPIDER, random);
+            }
         }
 
         if (random.nextBoolean()) {
             BlockPos chestPos = pos.offset(random.nextInt(3) - 1, 1, random.nextInt(3) - 1);
-            if (world.getBlockState(chestPos).isAir()) {
+            if (isInWritableArea(chestPos, chunkPos) && world.getBlockState(chestPos).isAir()) {
                 world.setBlock(chestPos, Blocks.CHEST.defaultBlockState(), 2);
             }
         }

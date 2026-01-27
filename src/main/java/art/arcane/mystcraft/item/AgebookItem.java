@@ -12,12 +12,16 @@ import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
 import art.arcane.mystcraft.world.AgeManager;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -198,13 +202,16 @@ public class AgebookItem extends Item {
         // This ensures colors, instability, and other visual data is available on the client
         AgeDataSyncHandler.syncAgeDataToPlayer(player, ageLevel);
 
-        // Set spawn point at the center of spawn chunk
-        net.minecraft.core.BlockPos spawn = ageLevel.getSharedSpawnPos();
-        ageData.setSpawn(spawn.getX(), spawn.getY() + 1, spawn.getZ());
+        // Find a proper spawn position using the terrain heightmap.
+        // getSharedSpawnPos() returns a generic default (0,64,0) which may not
+        // correspond to actual terrain. Instead, force the spawn chunk to generate
+        // and use the heightmap to find the real surface.
+        BlockPos spawn = findAgeSpawnPosition(ageLevel);
+        ageData.setSpawn(spawn.getX(), spawn.getY(), spawn.getZ());
 
         // Update the book with the Age's dimension ID and spawn
         LinkOptions.setDimensionUID(stack.getTag(), ageUID);
-        LinkOptions.setSpawn(stack.getTag(), spawn.above());
+        LinkOptions.setSpawn(stack.getTag(), spawn);
         LinkOptions.setUUID(stack.getTag(), ageUUID);
 
         // Report creation with instability info
@@ -217,6 +224,33 @@ public class AgebookItem extends Item {
 
         // Link to the newly created Age
         linkToAge(stack, level, player);
+    }
+
+    /**
+     * Finds a proper spawn position in a newly created Age.
+     * Forces the spawn chunk to generate, then uses the heightmap to find
+     * the actual terrain surface.
+     */
+    private BlockPos findAgeSpawnPosition(ServerLevel ageLevel) {
+        // Use (8, 8) as spawn coords - center of the spawn chunk.
+        // This matters for void Ages where the platform is at chunk center.
+        int spawnX = 8;
+        int spawnZ = 8;
+
+        // Force the spawn chunk to fully generate so the heightmap is populated
+        ChunkAccess chunk = ageLevel.getChunk(spawnX >> 4, spawnZ >> 4, ChunkStatus.FULL, true);
+
+        if (chunk != null) {
+            int surfaceY = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, spawnX & 15, spawnZ & 15);
+            if (surfaceY > ageLevel.getMinBuildHeight()) {
+                // Surface found - spawn one block above it
+                return new BlockPos(spawnX, surfaceY + 1, spawnZ);
+            }
+        }
+
+        // Fallback for void worlds or if chunk gen failed - use a reasonable default
+        // LinkingManager.findSafeY will do further validation when the player actually links
+        return new BlockPos(spawnX, 65, spawnZ);
     }
 
     /**

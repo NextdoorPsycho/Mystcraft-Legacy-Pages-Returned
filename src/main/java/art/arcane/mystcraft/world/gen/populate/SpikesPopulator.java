@@ -50,7 +50,7 @@ public class SpikesPopulator implements IPopulate {
             float temperature = biomeHolder.value().getBaseTemperature();
 
             // Generate spike
-            generateSpike(world, random, spikePos, temperature);
+            generateSpike(world, random, spikePos, temperature, chunkPos);
         }
     }
 
@@ -59,7 +59,7 @@ public class SpikesPopulator implements IPopulate {
         return ground.isSolid() && !ground.is(BlockTags.LEAVES);
     }
 
-    private void generateSpike(WorldGenLevel world, RandomSource random, BlockPos basePos, float temperature) {
+    private void generateSpike(WorldGenLevel world, RandomSource random, BlockPos basePos, float temperature, BlockPos chunkPos) {
         // Choose spike material based on biome temperature
         BlockState spikeBlock = temperature < COLD_TEMPERATURE
                 ? Blocks.PACKED_ICE.defaultBlockState()
@@ -91,6 +91,10 @@ public class SpikesPopulator implements IPopulate {
                     if (distance <= radius + random.nextFloat() * 0.5) {
                         BlockPos spikeBlockPos = basePos.offset(dx, y, dz);
 
+                        if (!isInWritableArea(spikeBlockPos, chunkPos)) {
+                            continue;
+                        }
+
                         // Only place if air or replaceable
                         BlockState existing = world.getBlockState(spikeBlockPos);
                         if (existing.isAir() || existing.is(BlockTags.LEAVES) ||
@@ -109,7 +113,7 @@ public class SpikesPopulator implements IPopulate {
                 int dz = (direction == 2) ? 1 : (direction == 3) ? -1 : 0;
 
                 BlockPos protrusionPos = basePos.offset(radius + dx, y, radius + dz);
-                if (world.getBlockState(protrusionPos).isAir()) {
+                if (isInWritableArea(protrusionPos, chunkPos) && world.getBlockState(protrusionPos).isAir()) {
                     world.setBlock(protrusionPos, Blocks.ICE.defaultBlockState(), 2);
                 }
             }
@@ -118,7 +122,7 @@ public class SpikesPopulator implements IPopulate {
         // Add tip block at the very top
         if (height > 0) {
             BlockPos tipPos = basePos.above(height);
-            if (world.getBlockState(tipPos).isAir()) {
+            if (isInWritableArea(tipPos, chunkPos) && world.getBlockState(tipPos).isAir()) {
                 world.setBlock(tipPos, spikeBlock, 2);
             }
         }

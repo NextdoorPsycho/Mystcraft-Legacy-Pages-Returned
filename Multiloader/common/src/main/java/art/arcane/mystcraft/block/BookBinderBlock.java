@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
+import art.arcane.mystcraft.platform.Services;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -84,7 +85,7 @@ public class BookBinderBlock extends BaseEntityBlock {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof BookBinderBlockEntity binder) {
             if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
-                serverPlayer.openMenu(binder);
+                Services.PLATFORM.openMenu(serverPlayer, binder, buf -> buf.writeBlockPos(pos));
             }
         }
 

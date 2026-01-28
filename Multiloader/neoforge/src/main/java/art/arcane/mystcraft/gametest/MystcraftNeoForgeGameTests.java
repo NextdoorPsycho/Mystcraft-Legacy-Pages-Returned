@@ -22,6 +22,16 @@ public class MystcraftNeoForgeGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public void books_drop_as_linkbook_entity(GameTestHelper helper) {
+        MystcraftGameTestRunner.runBookDropEntityTest(helper);
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 800)
+    public void linkbook_entity_decays_and_drops(GameTestHelper helper) {
+        MystcraftGameTestRunner.runLinkbookEntityDecayTest(helper);
+    }
+
     @GameTest(template = "empty", timeoutTicks = 600)
     public void random_books_create_dimensions(GameTestHelper helper) {
         MystcraftGameTestRunner.runRandomBookDimensionTest(helper);

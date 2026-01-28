@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.LinkModifierBlockEntity;
+import art.arcane.mystcraft.platform.Services;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
@@ -81,7 +82,7 @@ public class LinkModifierBlock extends BaseEntityBlock {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof LinkModifierBlockEntity modifier) {
             if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
-                serverPlayer.openMenu(modifier);
+                Services.PLATFORM.openMenu(serverPlayer, modifier, buf -> buf.writeBlockPos(pos));
             }
         }
 

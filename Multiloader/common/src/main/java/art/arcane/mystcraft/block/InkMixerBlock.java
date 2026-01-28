@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
+import art.arcane.mystcraft.platform.Services;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -84,7 +85,7 @@ public class InkMixerBlock extends BaseEntityBlock {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof InkMixerBlockEntity mixer) {
             if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
-                serverPlayer.openMenu(mixer);
+                Services.PLATFORM.openMenu(serverPlayer, mixer, buf -> buf.writeBlockPos(pos));
             }
         }
 

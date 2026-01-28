@@ -104,4 +104,18 @@ public class LinkbookUnlinkedItem extends Item {
         linkbook.setTag(prev.copy());
         return linkbook;
     }
+
+    // --- Custom Entity on Q-Drop ---
+
+    public boolean hasCustomEntity(@NotNull ItemStack stack) {
+        return true;
+    }
+
+    @Nullable
+    public net.minecraft.world.entity.Entity createEntity(Level level, net.minecraft.world.entity.Entity location, @NotNull ItemStack stack) {
+        art.arcane.mystcraft.entity.LinkbookEntity entity = new art.arcane.mystcraft.entity.LinkbookEntity(level, location.getX(), location.getY(), location.getZ());
+        entity.setBookItem(stack.copy());
+        entity.setDeltaMovement(location.getDeltaMovement());
+        return entity;
+    }
 }

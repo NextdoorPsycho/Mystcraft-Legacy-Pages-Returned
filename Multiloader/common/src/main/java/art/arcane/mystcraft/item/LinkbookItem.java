@@ -279,6 +279,20 @@ public class LinkbookItem extends Item {
         return (int) getMaxHealth(stack);
     }
 
+    // --- Custom Entity on Q-Drop ---
+
+    public boolean hasCustomEntity(@NotNull ItemStack stack) {
+        return true;
+    }
+
+    @Nullable
+    public Entity createEntity(Level level, Entity location, @NotNull ItemStack stack) {
+        LinkbookEntity entity = new LinkbookEntity(level, location.getX(), location.getY(), location.getZ());
+        entity.setBookItem(stack.copy());
+        entity.setDeltaMovement(location.getDeltaMovement());
+        return entity;
+    }
+
     /** Enchantment glint when "following" flag is set. */
     @Override
     public boolean isFoil(@NotNull ItemStack stack) {

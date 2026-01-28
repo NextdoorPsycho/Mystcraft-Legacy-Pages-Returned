@@ -2,6 +2,7 @@ package art.arcane.mystcraft.item;
 
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.FolderMenu;
+import art.arcane.mystcraft.platform.Services;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -72,7 +73,7 @@ public class FolderItem extends Item {
 
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             int slot = hand == InteractionHand.MAIN_HAND ? player.getInventory().selected : 40;
-            serverPlayer.openMenu(new MenuProvider() {
+            MenuProvider provider = new MenuProvider() {
                 @Override
                 public Component getDisplayName() {
                     return Component.translatable("container.mystcraft.folder");
@@ -83,7 +84,8 @@ public class FolderItem extends Item {
                 public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player p) {
                     return new FolderMenu(containerId, playerInventory, slot);
                 }
-            });
+            };
+            Services.PLATFORM.openMenu(serverPlayer, provider, buf -> buf.writeVarInt(slot));
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());

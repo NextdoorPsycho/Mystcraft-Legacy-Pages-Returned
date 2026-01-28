@@ -20,6 +20,16 @@ public class MystcraftFabricGameTests implements FabricGameTest {
         helper.succeed();
     }
 
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    public void books_drop_as_linkbook_entity(GameTestHelper helper) {
+        MystcraftGameTestRunner.runBookDropEntityTest(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 800)
+    public void linkbook_entity_decays_and_drops(GameTestHelper helper) {
+        MystcraftGameTestRunner.runLinkbookEntityDecayTest(helper);
+    }
+
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 600)
     public void random_books_create_dimensions(GameTestHelper helper) {
         MystcraftGameTestRunner.runRandomBookDimensionTest(helper);

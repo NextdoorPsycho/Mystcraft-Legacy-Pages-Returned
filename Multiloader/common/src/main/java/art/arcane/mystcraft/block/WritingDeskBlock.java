@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
+import art.arcane.mystcraft.platform.Services;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
@@ -299,7 +300,7 @@ public class WritingDeskBlock extends BaseEntityBlock {
         if (desk != null) {
             if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
                 BlockPos mainPos = getMainBlockPos(pos, state);
-                serverPlayer.openMenu(desk);
+                Services.PLATFORM.openMenu(serverPlayer, desk, buf -> buf.writeBlockPos(mainPos));
             }
         }
 

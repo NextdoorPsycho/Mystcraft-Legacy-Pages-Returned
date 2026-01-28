@@ -34,15 +34,16 @@ public class LinkbookEntity extends Entity {
             SynchedEntityData.defineId(LinkbookEntity.class, EntityDataSerializers.FLOAT);
 
     // Damage constants
-    private static final float MAX_HEALTH = 100.0f;
+    private static final float MAX_HEALTH = 5.0f;
+    private static final int DECAY_DURATION_TICKS = 20 * 30;
+    private static final float DECAY_DAMAGE_PER_TICK = MAX_HEALTH / DECAY_DURATION_TICKS;
+    private static float decayMultiplier = 1.0f;
     private static final float FIRE_DAMAGE = 5.0f;
     private static final float COLLISION_DAMAGE = 10.0f; // 2x fire damage
     private static final float DROWNING_DAMAGE = 20.0f; // Quick damage
-    private static final float STARVATION_DAMAGE = 1.0f;
-    private static final int STARVATION_INTERVAL = 10000; // Every 10k ticks
 
     private int ticksExisted = 0;
-    private int lastStarvationTick = 0;
+    private int ticksOnGround = 0;
 
     /** Visual hurt time for rendering red tint when damaged */
     public int hurtTime = 0;
@@ -72,7 +73,7 @@ public class LinkbookEntity extends Entity {
             setHealth(tag.getFloat("Health"));
         }
         ticksExisted = tag.getInt("TicksExisted");
-        lastStarvationTick = tag.getInt("LastStarvationTick");
+        ticksOnGround = tag.getInt("TicksOnGround");
     }
 
     @Override
@@ -83,7 +84,7 @@ public class LinkbookEntity extends Entity {
         }
         tag.putFloat("Health", getHealth());
         tag.putInt("TicksExisted", ticksExisted);
-        tag.putInt("LastStarvationTick", lastStarvationTick);
+        tag.putInt("TicksOnGround", ticksOnGround);
     }
 
     public ItemStack getBookItem() {
@@ -175,8 +176,8 @@ public class LinkbookEntity extends Entity {
             // Process environmental damage
             processEnvironmentalDamage();
 
-            // Process starvation decay
-            processStarvationDecay();
+            // Process ground decay
+            processGroundDecay();
 
             // Check for death
             if (getHealth() <= 0) {
@@ -243,24 +244,31 @@ public class LinkbookEntity extends Entity {
     /**
      * Processes slow starvation decay over time.
      */
-    private void processStarvationDecay() {
-        if (ticksExisted - lastStarvationTick >= STARVATION_INTERVAL) {
-            damageBook(STARVATION_DAMAGE);
-            lastStarvationTick = ticksExisted;
+    private void processGroundDecay() {
+        if (onGround() && level().getFluidState(blockPosition()).isEmpty()) {
+            ticksOnGround++;
+            damageBook(DECAY_DAMAGE_PER_TICK * decayMultiplier);
+        } else {
+            ticksOnGround = 0;
         }
+    }
+
+    public static void setDecayMultiplierForTests(float multiplier) {
+        decayMultiplier = Math.max(0.01f, multiplier);
     }
 
     /**
      * Destroys the book when health reaches zero.
      */
     private void destroyBook() {
-        // Drop damaged book or destroy it
-        ItemStack book = getBookItem();
-        if (!book.isEmpty()) {
-            // Mark book as damaged if it has durability, otherwise just destroy
-            if (book.isDamageableItem()) {
-                book.setDamageValue(book.getMaxDamage());
+        if (!level().isClientSide) {
+            ItemStack page = art.arcane.mystcraft.registry.ModItems.PAGE != null
+                    ? new ItemStack(art.arcane.mystcraft.registry.ModItems.PAGE.get())
+                    : ItemStack.EMPTY;
+            if (!page.isEmpty()) {
+                level().addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(level(), getX(), getY(), getZ(), page));
             }
+            level().addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(level(), getX(), getY(), getZ(), new ItemStack(net.minecraft.world.item.Items.LEATHER)));
         }
         discard();
     }

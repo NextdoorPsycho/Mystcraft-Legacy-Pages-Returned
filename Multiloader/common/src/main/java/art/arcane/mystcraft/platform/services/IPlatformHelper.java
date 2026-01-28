@@ -1,5 +1,11 @@
 package art.arcane.mystcraft.platform.services;
 
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.MenuProvider;
+
+import java.util.function.Consumer;
+
 // Provides basic platform information
 public interface IPlatformHelper {
 
@@ -11,4 +17,7 @@ public interface IPlatformHelper {
 
     /** Returns true if the current environment is a development (non-production) environment. */
     boolean isDevelopmentEnvironment();
+
+    /** Opens a menu with optional extra data for client-side menu construction. */
+    void openMenu(ServerPlayer player, MenuProvider provider, Consumer<FriendlyByteBuf> extraDataWriter);
 }

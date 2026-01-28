@@ -3,6 +3,7 @@ package art.arcane.mystcraft.item;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.PortfolioMenu;
+import art.arcane.mystcraft.platform.Services;
 import art.arcane.mystcraft.registry.ModMenuTypes;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import net.minecraft.nbt.CompoundTag;
@@ -69,7 +70,7 @@ public class PortfolioItem extends Item {
 
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             int slot = hand == InteractionHand.MAIN_HAND ? player.getInventory().selected : 40;
-            serverPlayer.openMenu(new MenuProvider() {
+            MenuProvider provider = new MenuProvider() {
                 @Override
                 public Component getDisplayName() {
                     return Component.translatable("container.mystcraft.portfolio");
@@ -80,7 +81,8 @@ public class PortfolioItem extends Item {
                 public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player p) {
                     return new PortfolioMenu(containerId, playerInventory, slot);
                 }
-            });
+            };
+            Services.PLATFORM.openMenu(serverPlayer, provider, buf -> buf.writeVarInt(slot));
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());

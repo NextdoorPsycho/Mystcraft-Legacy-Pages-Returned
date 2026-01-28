@@ -7,6 +7,8 @@ import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.entity.LinkbookEntity;
+import art.arcane.mystcraft.registry.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.commands.CommandSourceStack;
@@ -14,9 +16,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,6 +91,77 @@ public final class MystcraftGameTestRunner {
                 helper.fail("Preset book did not create an age dimension");
             }
         });
+    }
+
+    public static void runBookDropEntityTest(net.minecraft.gametest.framework.GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ItemStack linkbook = new ItemStack(ModItems.LINKBOOK.get());
+        ItemStack unlinked = new ItemStack(ModItems.LINKBOOK_UNLINKED.get());
+        ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
+
+        ItemEntity dummy = new ItemEntity(level, 0.5, 2.0, 0.5, linkbook.copy());
+
+        assertCreatesLinkbookEntity(linkbook, dummy);
+        assertCreatesLinkbookEntity(unlinked, dummy);
+        assertCreatesLinkbookEntity(agebook, dummy);
+
+        helper.succeed();
+    }
+
+    public static void runLinkbookEntityDecayTest(net.minecraft.gametest.framework.GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+        double x = origin.getX() + 0.5;
+        double y = origin.getY() + 2.0;
+        double z = origin.getZ() + 0.5;
+
+        LinkbookEntity.setDecayMultiplierForTests(6.0f);
+        LinkbookEntity entity = new LinkbookEntity(level, x, y, z);
+        entity.setBookItem(new ItemStack(ModItems.LINKBOOK.get()));
+        level.addFreshEntity(entity);
+
+        int checkTick = 140;
+        helper.runAtTickTime(checkTick, () -> {
+            LinkbookEntity.setDecayMultiplierForTests(1.0f);
+            if (!entity.isRemoved() && entity.getHealth() > 0) {
+                helper.fail("Linkbook entity did not decay within 30 seconds");
+                return;
+            }
+
+            AABB box = new AABB(x - 2.0, origin.getY(), z - 2.0, x + 2.0, origin.getY() + 3.0, z + 2.0);
+            boolean foundPage = false;
+            boolean foundLeather = false;
+            for (ItemEntity drop : level.getEntitiesOfClass(ItemEntity.class, box)) {
+                ItemStack stack = drop.getItem();
+                if (stack.getItem() == ModItems.PAGE.get()) {
+                    foundPage = true;
+                } else if (stack.getItem() == Items.LEATHER) {
+                    foundLeather = true;
+                }
+            }
+
+            if (foundPage && foundLeather) {
+                helper.succeed();
+            } else {
+                helper.fail("Expected page and leather drops from decayed linkbook entity");
+            }
+        });
+    }
+
+    private static void assertCreatesLinkbookEntity(ItemStack stack, ItemEntity dummy) {
+        net.minecraft.world.entity.Entity created;
+        if (stack.getItem() instanceof art.arcane.mystcraft.item.LinkbookItem linkbookItem) {
+            created = linkbookItem.createEntity(dummy.level(), dummy, stack);
+        } else if (stack.getItem() instanceof art.arcane.mystcraft.item.LinkbookUnlinkedItem unlinkedItem) {
+            created = unlinkedItem.createEntity(dummy.level(), dummy, stack);
+        } else if (stack.getItem() instanceof art.arcane.mystcraft.item.AgebookItem agebookItem) {
+            created = agebookItem.createEntity(dummy.level(), dummy, stack);
+        } else {
+            throw new IllegalStateException("Expected linkbook-like item for custom entity: " + stack.getItem());
+        }
+        if (!(created instanceof LinkbookEntity)) {
+            throw new IllegalStateException("Expected LinkbookEntity for item: " + stack.getItem());
+        }
     }
 
     private static void runRandomBookOnce(net.minecraft.gametest.framework.GameTestHelper helper,

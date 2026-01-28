@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "active=false,facing=north": { "model": "mystcraft:block/linkportal_ns" },
+    "active=false,facing=south": { "model": "mystcraft:block/linkportal_ns" },
+    "active=false,facing=east": { "model": "mystcraft:block/linkportal_ew" },
+    "active=false,facing=west": { "model": "mystcraft:block/linkportal_ew" },
+    "active=false,facing=up": { "model": "mystcraft:block/linkportal_ud" },
+    "active=false,facing=down": { "model": "mystcraft:block/linkportal_ud" },
+    "active=true,facing=north": { "model": "mystcraft:block/linkportal_ns" },
+    "active=true,facing=south": { "model": "mystcraft:block/linkportal_ns" },
+    "active=true,facing=east": { "model": "mystcraft:block/linkportal_ew" },
+    "active=true,facing=west": { "model": "mystcraft:block/linkportal_ew" },
+    "active=true,facing=up": { "model": "mystcraft:block/linkportal_ud" },
+    "active=true,facing=down": { "model": "mystcraft:block/linkportal_ud" }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SIS",
+    "SGS",
+    "SSS"
+  ],
+  "key": {
+    "S": {
+      "tag": "minecraft:stone_crafting_materials"
+    },
+    "I": {
+      "tag": "forge:ingots/iron"
+    },
+    "G": {
+      "item": "minecraft:gold_ingot"
+    }
+  },
+  "result": {
+    "item": "mystcraft:blockbookreceptacle",
+    "count": 1
+  }
+}

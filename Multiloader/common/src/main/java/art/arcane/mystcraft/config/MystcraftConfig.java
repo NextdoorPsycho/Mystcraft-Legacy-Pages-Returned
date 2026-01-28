@@ -1,0 +1,41 @@
+package art.arcane.mystcraft.config;
+
+import java.util.function.Supplier;
+
+/**
+ * Common config accessor for Mystcraft settings.
+ * Platform modules populate these suppliers during initialization.
+ * Each supplier wraps the platform-specific config value (ForgeConfigSpec, JSON, etc.).
+ */
+public final class MystcraftConfig {
+
+    // General
+    public static Supplier<Boolean> giveGuidebookOnFirstSpawn = () -> true;
+    public static Supplier<Integer> maxSymbolsPerBook = () -> 50;
+    public static Supplier<Boolean> deleteAgesOnStartup = () -> false;
+
+    // Instability
+    public static Supplier<Boolean> instabilityEnabled = () -> true;
+    public static Supplier<Boolean> deathEffectsEnabled = () -> true;
+    public static Supplier<Boolean> allowUnstableAges = () -> true;
+    public static Supplier<Double> instabilityMultiplier = () -> 1.0;
+    public static Supplier<Double> maxAllowedInstability = () -> 150.0;
+
+    // Instability thresholds
+    public static Supplier<Double> thresholdDecay = () -> 40.0;
+    public static Supplier<Double> thresholdTransmute = () -> 50.0;
+    public static Supplier<Double> thresholdLightning = () -> 70.0;
+    public static Supplier<Double> thresholdMeteor = () -> 70.0;
+    public static Supplier<Double> thresholdPoison = () -> 80.0;
+    public static Supplier<Double> thresholdWither = () -> 100.0;
+
+    // Effect chances
+    public static Supplier<Double> chanceDecay = () -> 0.001;
+    public static Supplier<Double> chanceTransmute = () -> 0.002;
+    public static Supplier<Double> chanceLightning = () -> 0.0005;
+    public static Supplier<Double> chanceMeteor = () -> 0.0002;
+    public static Supplier<Double> chancePlayerEffect = () -> 0.0001;
+
+    private MystcraftConfig() {
+    }
+}

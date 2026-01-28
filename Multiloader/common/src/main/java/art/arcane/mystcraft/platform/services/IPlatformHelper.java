@@ -1,0 +1,14 @@
+package art.arcane.mystcraft.platform.services;
+
+// Provides basic platform information
+public interface IPlatformHelper {
+
+    /** Returns the name of the current platform (e.g. "Forge", "Fabric", "NeoForge"). */
+    String getPlatformName();
+
+    /** Returns true if the named mod is currently loaded. */
+    boolean isModLoaded(String modId);
+
+    /** Returns true if the current environment is a development (non-production) environment. */
+    boolean isDevelopmentEnvironment();
+}

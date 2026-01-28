@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "active=false,facing=north": { "model": "mystcraft:block/blockcrystal" },
+    "active=false,facing=south": { "model": "mystcraft:block/blockcrystal", "y": 180 },
+    "active=false,facing=east": { "model": "mystcraft:block/blockcrystal", "y": 90 },
+    "active=false,facing=west": { "model": "mystcraft:block/blockcrystal", "y": 270 },
+    "active=false,facing=up": { "model": "mystcraft:block/blockcrystal", "x": 270 },
+    "active=false,facing=down": { "model": "mystcraft:block/blockcrystal", "x": 90 },
+    "active=true,facing=north": { "model": "mystcraft:block/blockcrystal" },
+    "active=true,facing=south": { "model": "mystcraft:block/blockcrystal", "y": 180 },
+    "active=true,facing=east": { "model": "mystcraft:block/blockcrystal", "y": 90 },
+    "active=true,facing=west": { "model": "mystcraft:block/blockcrystal", "y": 270 },
+    "active=true,facing=up": { "model": "mystcraft:block/blockcrystal", "x": 270 },
+    "active=true,facing=down": { "model": "mystcraft:block/blockcrystal", "x": 90 }
+  }
+}

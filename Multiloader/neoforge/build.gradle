@@ -1,0 +1,51 @@
+plugins {
+    id 'net.neoforged.gradle.userdev' version '7.0.41'
+}
+
+base {
+    archivesName = "${mod_id}-neoforge-${minecraft_version}"
+}
+
+minecraft {
+    def at = project(':common').file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (at.exists()) {
+        accessTransformers.file at
+    }
+}
+
+runs {
+    configureEach {
+        modSource project.sourceSets.main
+        modSource project(':common').sourceSets.main
+    }
+    client {
+        systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+    }
+    server {
+        systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        programArgument '--nogui'
+    }
+    data {
+        programArguments.addAll '--mod', mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+    }
+}
+
+sourceSets.main.resources.srcDir 'src/generated/resources'
+
+dependencies {
+    implementation "net.neoforged:neoforge:${neoforge_version}"
+    compileOnly project(':common')
+}
+
+tasks.named('compileJava', JavaCompile) {
+    source(project(':common').sourceSets.main.allSource)
+}
+
+tasks.named('processResources', ProcessResources) {
+    from project(':common').sourceSets.main.resources
+}
+
+tasks.named('sourcesJar', Jar) {
+    from project(':common').sourceSets.main.allSource
+    from project(':common').sourceSets.main.resources
+}

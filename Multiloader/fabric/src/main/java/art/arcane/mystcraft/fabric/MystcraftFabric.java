@@ -14,6 +14,7 @@ import art.arcane.mystcraft.registry.FabricModMenuTypes;
 import art.arcane.mystcraft.registry.FabricModSounds;
 import art.arcane.mystcraft.registry.ModVillagers;
 import art.arcane.mystcraft.registry.ModWorldGen;
+import art.arcane.mystcraft.registry.FabricModStructures;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
@@ -55,6 +56,7 @@ public class MystcraftFabric implements ModInitializer {
         FabricModMenuTypes.register();
         ModVillagers.register();
         ModWorldGen.register();
+        FabricModStructures.register();
 
         // Populate common stubs from Fabric registry objects
         populateCommonRegistries();
@@ -207,6 +209,11 @@ public class MystcraftFabric implements ModInitializer {
         art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingHandler = (packet, player) -> {
             FabricMystcraftNetwork.sendToTracking(packet, player);
         };
+
+        // Structure types
+        art.arcane.mystcraft.world.structure.ModStructures.ABANDONED_LIBRARY = FabricModStructures.ABANDONED_LIBRARY;
+        art.arcane.mystcraft.world.structure.ModStructures.UNDERGROUND_ARCHIVE = FabricModStructures.UNDERGROUND_ARCHIVE;
+        art.arcane.mystcraft.world.structure.ModStructures.SCATTERED_LIBRARY = FabricModStructures.SCATTERED_LIBRARY;
 
         Mystcraft.LOGGER.info("[Mystcraft] Common registry stubs populated from Fabric registrations");
     }

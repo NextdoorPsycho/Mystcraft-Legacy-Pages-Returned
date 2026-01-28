@@ -13,10 +13,10 @@ idea {
                     taskNames = [':fabric:runServer']
                 }
                 "Forge Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:runClient']
+                    taskNames = [':forge:Client']
                 }
                 "Forge Server"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:runServer']
+                    taskNames = [':forge:Server']
                 }
                 "NeoForge Client"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':neoforge:runClient']

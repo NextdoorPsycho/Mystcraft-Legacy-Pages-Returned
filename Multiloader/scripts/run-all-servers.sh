@@ -18,7 +18,7 @@ run_task() {
 }
 
 run_task "fabric-server" ":fabric:runServer"
-run_task "forge-server" ":forge:runServer"
+run_task "forge-server" ":forge:Server"
 run_task "neoforge-server" ":neoforge:runServer"
 
 status=0

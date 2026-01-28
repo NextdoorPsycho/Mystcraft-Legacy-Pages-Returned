@@ -18,7 +18,7 @@ run_task() {
 }
 
 run_task "fabric-client" ":fabric:runClient"
-run_task "forge-client" ":forge:runClient"
+run_task "forge-client" ":forge:Client"
 run_task "neoforge-client" ":neoforge:runClient"
 
 status=0

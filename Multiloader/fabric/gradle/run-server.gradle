@@ -1,0 +1,10 @@
+loom {
+    runs {
+        server {
+            server()
+            setConfigName('Fabric Server')
+            ideConfigGenerated(false)
+            runDir('runs/server')
+        }
+    }
+}

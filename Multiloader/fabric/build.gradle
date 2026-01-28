@@ -2,53 +2,8 @@ plugins {
     id 'fabric-loom' version '1.4-SNAPSHOT'
 }
 
-base {
-    archivesName = "${mod_id}-fabric-${minecraft_version}"
-}
-
-dependencies {
-    minecraft "com.mojang:minecraft:${minecraft_version}"
-    mappings loom.officialMojangMappings()
-    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
-    compileOnly project(':common')
-}
-
-loom {
-    def aw = project(':common').file("src/main/resources/${mod_id}.accesswidener")
-    if (aw.exists()) {
-        accessWidenerPath.set(aw)
-    }
-    mixin {
-        defaultRefmapName.set("${mod_id}.refmap.json")
-    }
-    runs {
-        client {
-            client()
-            setConfigName('Fabric Client')
-            ideConfigGenerated(true)
-            runDir('runs/client')
-        }
-        server {
-            server()
-            setConfigName('Fabric Server')
-            ideConfigGenerated(true)
-            runDir('runs/server')
-        }
-    }
-}
-
-tasks.named('compileJava', JavaCompile) {
-    source(project(':common').sourceSets.main.allSource)
-}
-
-tasks.named('processResources', ProcessResources) {
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    from project(':common').sourceSets.main.resources
-}
-
-tasks.named('sourcesJar', Jar) {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from project(':common').sourceSets.main.allSource
-    from project(':common').sourceSets.main.resources
-}
+apply from: 'gradle/base.gradle'
+apply from: 'gradle/loom.gradle'
+apply from: 'gradle/run-client.gradle'
+apply from: 'gradle/run-server.gradle'
+apply from: 'gradle/tasks.gradle'

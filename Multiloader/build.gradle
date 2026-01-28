@@ -1,8 +1,40 @@
+plugins {
+    id 'org.jetbrains.gradle.plugin.idea-ext' version '1.1.8'
+}
+
+idea {
+    project {
+        settings {
+            runConfigurations {
+                "Fabric Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:runClient']
+                }
+                "Fabric Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:runServer']
+                }
+                "Forge Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:runClient']
+                }
+                "Forge Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:runServer']
+                }
+                "NeoForge Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':neoforge:runClient']
+                }
+                "NeoForge Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':neoforge:runServer']
+                }
+            }
+        }
+    }
+}
+
 subprojects {
     apply plugin: 'java'
 
     java {
-        toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+        def perProjectJava = project.findProperty("java_version_${project.name}") ?: java_version
+        toolchain.languageVersion = JavaLanguageVersion.of(perProjectJava.toString())
         withSourcesJar()
     }
 

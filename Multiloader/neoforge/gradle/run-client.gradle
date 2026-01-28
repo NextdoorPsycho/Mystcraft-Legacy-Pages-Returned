@@ -1,0 +1,8 @@
+runs {
+    client {
+        systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        if (hasProperty('ideConfigGenerated')) {
+            ideConfigGenerated = false
+        }
+    }
+}

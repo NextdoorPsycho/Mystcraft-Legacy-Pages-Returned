@@ -1,0 +1,9 @@
+runs {
+    configureEach {
+        modSource project.sourceSets.main
+        modSource project(':common').sourceSets.main
+        if (it.hasProperty('ideConfigGenerated')) {
+            it.ideConfigGenerated = false
+        }
+    }
+}

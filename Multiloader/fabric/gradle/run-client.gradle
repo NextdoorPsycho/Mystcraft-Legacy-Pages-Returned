@@ -1,0 +1,10 @@
+loom {
+    runs {
+        client {
+            client()
+            setConfigName('Fabric Client')
+            ideConfigGenerated(false)
+            runDir('runs/client')
+        }
+    }
+}

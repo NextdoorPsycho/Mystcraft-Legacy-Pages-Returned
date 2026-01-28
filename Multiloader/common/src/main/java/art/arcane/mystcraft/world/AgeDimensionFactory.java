@@ -73,17 +73,15 @@ public class AgeDimensionFactory {
     private static Method markWorldsDirtyMethod;
 
     static {
-        try {
-            // MinecraftServer private field access
-            Class<?> serverClass = MinecraftServer.class;
+        // MinecraftServer private field access
+        Class<?> serverClass = MinecraftServer.class;
 
-            executorField = findField(serverClass, "executor", Executor.class);
-            levelsField = findField(serverClass, "levels", Map.class);
-            storageSourceField = findField(serverClass, "storageSource", LevelStorageSource.LevelStorageAccess.class);
-            markWorldsDirtyMethod = serverClass.getDeclaredMethod("markWorldsDirty");
-            markWorldsDirtyMethod.setAccessible(true);
-        } catch (Exception e) {
-            Mystcraft.LOGGER.error("Failed to initialize AgeDimensionFactory reflection", e);
+        executorField = findField(serverClass, "executor", Executor.class);
+        levelsField = findField(serverClass, "levels", Map.class);
+        storageSourceField = findField(serverClass, "storageSource", LevelStorageSource.LevelStorageAccess.class);
+        markWorldsDirtyMethod = findNoArgMethod(serverClass, "markWorldsDirty");
+        if (markWorldsDirtyMethod == null) {
+            Mystcraft.LOGGER.debug("MinecraftServer.markWorldsDirty() not found; skipping world dirty mark.");
         }
     }
 
@@ -100,6 +98,23 @@ public class AgeDimensionFactory {
         // Check superclass
         if (clazz.getSuperclass() != null) {
             return findField(clazz.getSuperclass(), name, type);
+        }
+        return null;
+    }
+
+    /**
+     * Finds a no-arg method by name in a class hierarchy.
+     */
+    @Nullable
+    private static Method findNoArgMethod(Class<?> clazz, String name) {
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (method.getName().equals(name) && method.getParameterCount() == 0) {
+                method.setAccessible(true);
+                return method;
+            }
+        }
+        if (clazz.getSuperclass() != null) {
+            return findNoArgMethod(clazz.getSuperclass(), name);
         }
         return null;
     }
@@ -279,6 +294,9 @@ public class AgeDimensionFactory {
             if (markWorldsDirtyMethod != null) {
                 markWorldsDirtyMethod.invoke(server);
             }
+
+            // Disable vanilla death messages in Mystcraft Ages (custom messages only).
+            art.arcane.mystcraft.event.AgeDeathHandler.configureAgeGameRules(newLevel);
 
             // Fire level load event through platform service
             Services.EVENTS.fireLevelLoadEvent(newLevel);

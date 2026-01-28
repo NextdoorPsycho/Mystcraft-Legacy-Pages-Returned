@@ -12,6 +12,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 
 import java.util.HashMap;
@@ -213,5 +214,16 @@ public class AgeDeathHandler {
         int count = playerDeaths.getOrDefault(dimension, 0) + 1;
         playerDeaths.put(dimension, count);
         return count;
+    }
+
+    /**
+     * Disables vanilla death messages for Mystcraft Ages so custom messages can replace them.
+     */
+    public static void configureAgeGameRules(ServerLevel level) {
+        if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+            return;
+        }
+        level.getGameRules().getRule(GameRules.RULE_SHOWDEATHMESSAGES)
+                .set(false, level.getServer());
     }
 }

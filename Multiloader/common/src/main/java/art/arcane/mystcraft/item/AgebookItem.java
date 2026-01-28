@@ -137,9 +137,8 @@ public class AgebookItem extends Item {
             if (!pages.isEmpty() && Page.isLinkPanel(pages.get(0))) {
                 // Create a new Age dimension
                 createAge(stack, serverLevel, serverPlayer);
-            } else {
-                player.displayClientMessage(Component.translatable("item.mystcraft.agebook.no_panel"), true);
             }
+            // Silent in chat; logged to console in createAge/linkToAge.
         } else {
             // Existing Age - perform linking
             linkToAge(stack, serverLevel, serverPlayer);
@@ -150,7 +149,7 @@ public class AgebookItem extends Item {
      * Creates a new Age dimension for this Agebook.
      */
     private void createAge(ItemStack stack, ServerLevel level, ServerPlayer player) {
-        player.displayClientMessage(Component.translatable("item.mystcraft.agebook.creating"), true);
+        Mystcraft.LOGGER.info("Creating age for player {}", player.getGameProfile().getName());
 
         // Extract symbols from pages
         List<ItemStack> pages = getPageList(stack);
@@ -175,7 +174,7 @@ public class AgebookItem extends Item {
                 level.getServer(), ageUID, ageUUID, director);
 
         if (ageLevel == null) {
-            player.displayClientMessage(Component.translatable("item.mystcraft.agebook.creation_failed"), true);
+            Mystcraft.LOGGER.warn("Age creation failed for player {}", player.getGameProfile().getName());
             return;
         }
 
@@ -212,12 +211,11 @@ public class AgebookItem extends Item {
         LinkOptions.setSpawn(stack.getTag(), spawn);
         LinkOptions.setUUID(stack.getTag(), ageUUID);
 
-        // Report creation with instability info
         if (!builder.isComplete()) {
-            player.displayClientMessage(Component.translatable("item.mystcraft.agebook.created_incomplete",
-                    ageUID, String.format("%.1f", builder.getInstability())), true);
+            Mystcraft.LOGGER.info("Created incomplete age uid={} instability={} player={}",
+                    ageUID, String.format("%.1f", builder.getInstability()), player.getGameProfile().getName());
         } else {
-            player.displayClientMessage(Component.translatable("item.mystcraft.agebook.created", ageUID), true);
+            Mystcraft.LOGGER.info("Created age uid={} player={}", ageUID, player.getGameProfile().getName());
         }
 
         // Link to the newly created Age
@@ -314,17 +312,16 @@ public class AgebookItem extends Item {
 
         Integer ageUID = LinkOptions.getDimensionUID(linkData);
         if (ageUID == null) {
-            player.displayClientMessage(Component.translatable("item.mystcraft.agebook.no_age"), true);
+            Mystcraft.LOGGER.warn("Agebook link failed: no age UID for player {}", player.getGameProfile().getName());
             return;
         }
-
-        player.displayClientMessage(Component.translatable("item.mystcraft.agebook.linking"), true);
 
         // Perform the link
         LinkingManager.LinkResult result = LinkingManager.performLink(player, linkData);
 
         if (result != LinkingManager.LinkResult.SUCCESS) {
-            player.displayClientMessage(Component.translatable("item.mystcraft.agebook.link_failed", result.name()), true);
+            Mystcraft.LOGGER.warn("Agebook link failed: result={} player={}", result.name(),
+                    player.getGameProfile().getName());
         }
     }
 

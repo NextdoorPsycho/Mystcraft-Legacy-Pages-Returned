@@ -123,19 +123,12 @@ public final class LinkingManager {
             if (ageData != null) {
                 // Log all symbols in this Age (console + player chat)
                 logAgeSymbols(ageData, dimId);
-                if (entity instanceof ServerPlayer player) {
-                    sendAgeSymbolsToPlayer(player, ageData, dimId);
-                }
-
                 float instability = ageData.getInstability();
                 if (!InstabilityManager.isAgeAllowed(instability)) {
                     String rating = InstabilityManager.getInstabilityRating(instability);
                     String message = "This Age is too unstable to enter safely. (" + rating + ")";
                     fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
                             LinkEvent.Failed.FailureReason.CANCELLED, message);
-                    if (entity instanceof ServerPlayer player) {
-                        player.sendSystemMessage(Component.literal(message));
-                    }
                     Mystcraft.LOGGER.info("Link blocked due to instability: {} ({})", instability, rating);
                     return LinkResult.TOO_UNSTABLE;
                 }
@@ -151,8 +144,8 @@ public final class LinkingManager {
             fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
                     LinkEvent.Failed.FailureReason.CANCELLED, reason.isEmpty() ? "Link was cancelled" : reason);
 
-            if (entity instanceof ServerPlayer player && !reason.isEmpty()) {
-                player.sendSystemMessage(Component.literal(reason));
+            if (!reason.isEmpty()) {
+                Mystcraft.LOGGER.warn("Link cancelled: {}", reason);
             }
             return LinkResult.CANCELLED;
         }
@@ -341,54 +334,6 @@ public final class LinkingManager {
         }
         Mystcraft.LOGGER.debug("[Age {}] Instability: {}", ageUID, String.format("%.1f", ageData.getInstability()));
         Mystcraft.LOGGER.debug("========================================");
-    }
-
-    /**
-     * Sends age symbol information to the player as chat messages.
-     */
-    private static void sendAgeSymbolsToPlayer(ServerPlayer player, AgeData ageData, int ageUID) {
-        List<ItemStack> pages = ageData.getPages();
-
-        player.sendSystemMessage(Component.literal("[Mystcraft] Entering Age " + ageUID)
-                .withStyle(net.minecraft.ChatFormatting.GOLD));
-
-        if (pages.isEmpty()) {
-            player.sendSystemMessage(Component.literal("  No pages in this Age.")
-                    .withStyle(net.minecraft.ChatFormatting.GRAY));
-            return;
-        }
-
-        int linkPanelCount = 0;
-        List<String> symbolEntries = new ArrayList<>();
-
-        for (ItemStack page : pages) {
-            if (Page.isLinkPanel(page)) {
-                linkPanelCount++;
-                continue;
-            }
-            ResourceLocation symbolId = Page.getSymbol(page);
-            if (symbolId != null) {
-                IAgeSymbol symbol = SymbolRegistry.get(symbolId);
-                if (symbol != null) {
-                    symbolEntries.add(symbolId.getPath() + " [" + symbol.getCategory().name() + "]");
-                } else {
-                    symbolEntries.add(symbolId.getPath() + " [MISSING]");
-                }
-            }
-        }
-
-        player.sendSystemMessage(Component.literal("  " + pages.size() + " pages, "
-                + linkPanelCount + " link panel(s), " + symbolEntries.size() + " symbol(s)")
-                .withStyle(net.minecraft.ChatFormatting.YELLOW));
-
-        for (int i = 0; i < symbolEntries.size(); i++) {
-            player.sendSystemMessage(Component.literal("  [" + (i + 1) + "] " + symbolEntries.get(i))
-                    .withStyle(net.minecraft.ChatFormatting.AQUA));
-        }
-
-        player.sendSystemMessage(Component.literal("  Instability: "
-                + String.format("%.1f", ageData.getInstability()))
-                .withStyle(net.minecraft.ChatFormatting.RED));
     }
 
     /**

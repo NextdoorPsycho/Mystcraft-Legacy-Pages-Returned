@@ -6,6 +6,9 @@
     "DimensionSpecialEffectsMixin",
     "FogRendererMixin"
   ],
+  "mixins": [
+    "DataFixerSchemaMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   },

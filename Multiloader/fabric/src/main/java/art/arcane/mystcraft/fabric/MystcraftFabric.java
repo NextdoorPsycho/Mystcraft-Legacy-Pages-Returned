@@ -223,6 +223,7 @@ public class MystcraftFabric implements ModInitializer {
         if (!AgeDimensionFactory.isMystcraftAge(serverLevel.dimension())) {
             return;
         }
+        art.arcane.mystcraft.event.AgeDeathHandler.configureAgeGameRules(serverLevel);
         ChunkGenerator generator = serverLevel.getChunkSource().getGenerator();
         if (generator instanceof AgeChunkGenerator ageGen && ageGen.needsDirectorReconstruction()) {
             Mystcraft.LOGGER.info("[Mystcraft] Reconstructing director for Age: {}", serverLevel.dimension().location());

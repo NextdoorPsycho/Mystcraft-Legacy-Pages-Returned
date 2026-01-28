@@ -1,5 +1,17 @@
-base {
-    archivesName = "${mod_id}-fabric-${minecraft_version}"
+jar {
+    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-dev.jar"
+}
+
+remapJar {
+    archiveFileName = "Mystcraft Legacy - ${version} - Fabric.jar"
+}
+
+sourcesJar {
+    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-sources-dev.jar"
+}
+
+remapSourcesJar {
+    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-sources.jar"
 }
 
 dependencies {

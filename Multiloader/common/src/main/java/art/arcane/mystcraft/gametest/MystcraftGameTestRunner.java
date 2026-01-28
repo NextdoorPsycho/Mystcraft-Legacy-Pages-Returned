@@ -4,6 +4,9 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
+import art.arcane.mystcraft.Mystcraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -54,33 +57,49 @@ public final class MystcraftGameTestRunner {
                                           MinecraftServer server,
                                           ServerLevel level,
                                           ServerPlayer player) {
+        StringBuilder steps = new StringBuilder();
+        steps.append("start");
         CommandSourceStack source = player.createCommandSourceStack().withPermission(2);
         int result = server.getCommands().performPrefixedCommand(source, "mystcraft give randombook 20");
         if (result <= 0) {
-            throw new IllegalStateException("Command failed: mystcraft give randombook 20");
+            throw new IllegalStateException("Command failed: mystcraft give randombook 20 (steps: " + steps + ")");
         }
+        steps.append(" -> command");
 
         ItemStack agebook = findUnlinkedAgebook(player);
         if (agebook.isEmpty()) {
-            throw new IllegalStateException("No unlinked agebook found in player inventory");
+            throw new IllegalStateException("No unlinked agebook found in player inventory (steps: " + steps + ")");
         }
+        steps.append(" -> book");
 
         AgebookItem bookItem = (AgebookItem) agebook.getItem();
         bookItem.activate(agebook, level, player);
+        steps.append(" -> activated");
 
         Integer uid = LinkOptions.getDimensionUID(agebook.getTag());
         if (uid == null) {
-            throw new IllegalStateException("Agebook did not receive a dimension UID");
+            throw new IllegalStateException("Agebook did not receive a dimension UID (steps: " + steps + ")");
         }
+        steps.append(" -> uid=").append(uid);
 
         AgeManager ageManager = AgeManager.get(level);
-        if (ageManager.getDimension(uid) == null) {
-            throw new IllegalStateException("AgeManager does not contain dimension for UID " + uid);
+        ResourceLocation dimId = ageManager.getDimension(uid);
+        if (dimId == null) {
+            throw new IllegalStateException("AgeManager does not contain dimension for UID " + uid + " (steps: " + steps + ")");
         }
+        steps.append(" -> registered=").append(dimId);
 
-        if (AgeDimensionFactory.getOrCreateAgeDimension(server, uid) == null) {
-            throw new IllegalStateException("Failed to load age dimension for UID " + uid);
+        ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(server, uid);
+        if (ageLevel == null) {
+            throw new IllegalStateException("Failed to load age dimension for UID " + uid + " (steps: " + steps + ")");
         }
+        steps.append(" -> loaded");
+
+        BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
+        ageLevel.getChunk(spawn);
+        steps.append(" -> chunk");
+
+        Mystcraft.LOGGER.info("GameTest: opened age dimension uid={} id={} steps={}", uid, dimId, steps);
     }
 
     private static ItemStack findUnlinkedAgebook(ServerPlayer player) {

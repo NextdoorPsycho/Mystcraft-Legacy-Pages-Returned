@@ -1,3 +1,7 @@
-base {
-    archivesName = "${mod_id}-forge-${minecraft_version}"
+jar {
+    archiveFileName = "Mystcraft Legacy - ${version} - Forge.jar"
+}
+
+sourcesJar {
+    archiveFileName = "Mystcraft Legacy - ${version} - Forge-sources.jar"
 }

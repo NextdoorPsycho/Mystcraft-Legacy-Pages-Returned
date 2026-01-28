@@ -33,6 +33,9 @@ idea {
                 "All GameTests"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':runAllGameTests']
                 }
+                "Build All"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':buildAll']
+                }
             }
         }
     }
@@ -48,6 +51,76 @@ tasks.register('runAllServers', Exec) {
 
 tasks.register('runAllGameTests', Exec) {
     commandLine 'bash', 'scripts/run-all-gametests.sh'
+}
+
+tasks.register('cleanLibs') {
+    group = 'build'
+    description = 'Cleans libs directories and output directory'
+
+    doLast {
+        def platforms = ['fabric', 'forge', 'neoforge']
+        platforms.each { platform ->
+            def libsDir = project(":${platform}").file('build/libs')
+            if (libsDir.exists()) {
+                libsDir.listFiles()?.findAll { it.name.endsWith('.jar') }?.each { it.delete() }
+                println "Cleaned ${platform}/build/libs"
+            }
+        }
+
+        def outputDir = project.findProperty('build_output_dir')?.toString()?.trim()
+        if (outputDir != null && !outputDir.isEmpty()) {
+            def targetDir = file(outputDir)
+            if (targetDir.exists()) {
+                targetDir.listFiles()?.findAll { it.name.endsWith('.jar') }?.each { it.delete() }
+                println "Cleaned output directory: ${targetDir.absolutePath}"
+            }
+        }
+    }
+}
+
+tasks.register('buildPlatforms') {
+    group = 'build'
+    description = 'Builds all platforms'
+    dependsOn ':fabric:build', ':forge:build', ':neoforge:build'
+    mustRunAfter 'cleanLibs'
+}
+
+tasks.register('copyBuilds') {
+    group = 'build'
+    description = 'Copies built jars to build_output_dir'
+    mustRunAfter 'buildPlatforms'
+
+    doLast {
+        def outputDir = project.findProperty('build_output_dir')?.toString()?.trim()
+        if (outputDir == null || outputDir.isEmpty()) {
+            println 'build_output_dir not set in gradle.properties - skipping copy'
+            return
+        }
+
+        def targetDir = file(outputDir)
+        if (!targetDir.exists()) {
+            targetDir.mkdirs()
+            println "Created output directory: ${targetDir.absolutePath}"
+        }
+
+        def platforms = ['fabric', 'forge', 'neoforge']
+        platforms.each { platform ->
+            def libsDir = project(":${platform}").file('build/libs')
+            if (libsDir.exists()) {
+                libsDir.listFiles().findAll { it.name.endsWith('.jar') && !it.name.contains('-sources') }.each { jar ->
+                    def destFile = new File(targetDir, jar.name)
+                    destFile.bytes = jar.bytes
+                    println "Copied ${jar.name} -> ${targetDir.absolutePath}"
+                }
+            }
+        }
+    }
+}
+
+tasks.register('buildAll') {
+    group = 'build'
+    description = 'Cleans, builds all platforms, and copies jars to build_output_dir'
+    dependsOn 'cleanLibs', 'buildPlatforms', 'copyBuilds'
 }
 
 subprojects {

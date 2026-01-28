@@ -1,7 +1,6 @@
 runs {
     gameTestServer {
         workingDirectory file('runs/gametest')
-        systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
         programArgument '--nogui'
         if (hasProperty('ideConfigGenerated')) {
             ideConfigGenerated = false

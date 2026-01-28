@@ -26,4 +26,9 @@ public class MystcraftForgeGameTests {
     public void random_books_create_dimensions(GameTestHelper helper) {
         MystcraftGameTestRunner.runRandomBookDimensionTest(helper);
     }
+
+    @GameTest(template = "empty", timeoutTicks = 600)
+    public void preset_cave_book_creates_dimension(GameTestHelper helper) {
+        MystcraftGameTestRunner.runPresetBookDimensionTest(helper);
+    }
 }

@@ -24,4 +24,9 @@ public class MystcraftFabricGameTests implements FabricGameTest {
     public void random_books_create_dimensions(GameTestHelper helper) {
         MystcraftGameTestRunner.runRandomBookDimensionTest(helper);
     }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 600)
+    public void preset_cave_book_creates_dimension(GameTestHelper helper) {
+        MystcraftGameTestRunner.runPresetBookDimensionTest(helper);
+    }
 }

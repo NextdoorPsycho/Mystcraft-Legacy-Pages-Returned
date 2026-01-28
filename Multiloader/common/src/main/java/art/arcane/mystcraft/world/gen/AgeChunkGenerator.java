@@ -856,6 +856,16 @@ public class AgeChunkGenerator extends ChunkGenerator {
         int variedH = Math.max(1, baseH + noiseRand.nextInt(baseH / 2 + 1) - baseH / 4);
         int variedV = Math.max(1, baseV + noiseRand.nextInt(baseV / 2 + 1) - baseV / 4);
 
+        // Ensure vertical noise size aligns with the dimension minY/height.
+        // If cellHeight doesn't divide 64/384, vanilla noise fill can request y < minY.
+        int minY = -64;
+        int height = 384;
+        int cellHeight = variedV * 4;
+        while ((Math.floorMod(minY, cellHeight) != 0 || height % cellHeight != 0) && variedV > 1) {
+            variedV--;
+            cellHeight = variedV * 4;
+        }
+
         Mystcraft.LOGGER.debug("[ChunkGen] Age {} noise variation: horizontal {} -> {}, vertical {} -> {}",
                 ageUID, baseH, variedH, baseV, variedV);
 

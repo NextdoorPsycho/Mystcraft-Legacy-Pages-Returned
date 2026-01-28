@@ -2,6 +2,8 @@ package art.arcane.mystcraft.gametest;
 
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.item.AgebookItem;
+import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.Mystcraft;
@@ -11,9 +13,14 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.Items;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class MystcraftGameTestRunner {
@@ -49,6 +56,35 @@ public final class MystcraftGameTestRunner {
                 helper.succeed();
             } else {
                 helper.fail("Expected " + iterations + " ages, created " + createdCount.get());
+            }
+        });
+    }
+
+    public static void runPresetBookDimensionTest(net.minecraft.gametest.framework.GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        MinecraftServer server = level.getServer();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+        Mystcraft.LOGGER.info("GameTest: starting preset cave book test");
+        AtomicBoolean created = new AtomicBoolean(false);
+        long startTick = 5;
+        long cooldownTicks = 140;
+
+        helper.runAtTickTime(startTick, () -> {
+            try {
+                runPresetBookOnce(helper, server, level, player);
+                created.set(true);
+            } catch (Exception e) {
+                Mystcraft.LOGGER.error("GameTest preset cave book failed", e);
+                helper.fail("Preset book dimension test failed: " + e.getMessage());
+            }
+        });
+
+        helper.runAtTickTime(startTick + cooldownTicks, () -> {
+            if (created.get()) {
+                helper.succeed();
+            } else {
+                helper.fail("Preset book did not create an age dimension");
             }
         });
     }
@@ -100,6 +136,87 @@ public final class MystcraftGameTestRunner {
         steps.append(" -> chunk");
 
         Mystcraft.LOGGER.info("GameTest: opened age dimension uid={} id={} steps={}", uid, dimId, steps);
+    }
+
+    private static void runPresetBookOnce(net.minecraft.gametest.framework.GameTestHelper helper,
+                                          MinecraftServer server,
+                                          ServerLevel level,
+                                          ServerPlayer player) {
+        StringBuilder steps = new StringBuilder();
+        steps.append("start");
+
+        Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(Mystcraft.MOD_ID, "agebook"));
+        if (item == Items.AIR) {
+            throw new IllegalStateException("Agebook item not registered");
+        }
+        if (!(item instanceof AgebookItem)) {
+            throw new IllegalStateException("Registered agebook item is not an AgebookItem: " + item.getClass().getName());
+        }
+        ItemStack agebook = new ItemStack(item);
+        List<ItemStack> pages = createPresetCavePages(helper);
+        AgebookItem.create(agebook, player, pages, "Preset Cave Test");
+        steps.append(" -> book");
+
+        AgebookItem bookItem = (AgebookItem) agebook.getItem();
+        bookItem.activate(agebook, level, player);
+        steps.append(" -> activated");
+
+        Integer uid = LinkOptions.getDimensionUID(agebook.getTag());
+        if (uid == null) {
+            throw new IllegalStateException("Preset agebook did not receive a dimension UID (steps: " + steps + ")");
+        }
+        steps.append(" -> uid=").append(uid);
+
+        AgeManager ageManager = AgeManager.get(level);
+        ResourceLocation dimId = ageManager.getDimension(uid);
+        if (dimId == null) {
+            throw new IllegalStateException("AgeManager does not contain dimension for UID " + uid + " (steps: " + steps + ")");
+        }
+        steps.append(" -> registered=").append(dimId);
+
+        ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(server, uid);
+        if (ageLevel == null) {
+            throw new IllegalStateException("Failed to load age dimension for UID " + uid + " (steps: " + steps + ")");
+        }
+        steps.append(" -> loaded");
+
+        BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
+        int chunkX = spawn.getX() >> 4;
+        int chunkZ = spawn.getZ() >> 4;
+        int radius = 2;
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                ageLevel.getChunk(chunkX + dx, chunkZ + dz);
+            }
+        }
+        steps.append(" -> chunks");
+
+        Mystcraft.LOGGER.info("GameTest: opened preset age dimension uid={} id={} steps={}", uid, dimId, steps);
+    }
+
+    private static List<ItemStack> createPresetCavePages(net.minecraft.gametest.framework.GameTestHelper helper) {
+        List<ItemStack> pages = new ArrayList<>();
+        pages.add(Page.createLinkPage());
+
+        addSymbolPage(helper, pages, "terrain_cave");
+        addSymbolPage(helper, pages, "biome_dripstone_caves");
+        addSymbolPage(helper, pages, "biome_lush_caves");
+        addSymbolPage(helper, pages, "dripstone_caves");
+        addSymbolPage(helper, pages, "lush_caves");
+
+        Mystcraft.LOGGER.info("GameTest: preset cave book pages={}", pages.size());
+        return pages;
+    }
+
+    private static void addSymbolPage(net.minecraft.gametest.framework.GameTestHelper helper,
+                                      List<ItemStack> pages,
+                                      String symbolPath) {
+        ResourceLocation id = SymbolRegistry.mystcraftId(symbolPath);
+        if (!SymbolRegistry.contains(id)) {
+            Mystcraft.LOGGER.error("GameTest: preset symbol not registered: {}", id);
+            helper.fail("Preset symbol not registered: " + id);
+        }
+        pages.add(Page.createSymbolPage(id));
     }
 
     private static ItemStack findUnlinkedAgebook(ServerPlayer player) {

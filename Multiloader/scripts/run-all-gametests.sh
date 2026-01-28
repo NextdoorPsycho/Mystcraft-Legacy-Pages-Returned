@@ -28,6 +28,8 @@ for pid in "${pids[@]}"; do
   fi
 done
 
+bash scripts/report-gametests.sh || true
+
 if [ "$status" -ne 0 ]; then
   echo "One or more GameTest runs failed. Check logs/*.log for details."
 else

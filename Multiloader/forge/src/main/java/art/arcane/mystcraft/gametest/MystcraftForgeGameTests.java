@@ -21,4 +21,9 @@ public class MystcraftForgeGameTests {
         MystcraftGameTestAssertions.assertLinkbookDropsByDefault();
         helper.succeed();
     }
+
+    @GameTest(template = "empty")
+    public void random_books_create_dimensions(GameTestHelper helper) {
+        MystcraftGameTestRunner.runRandomBookDimensionTest(helper);
+    }
 }

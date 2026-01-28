@@ -1,0 +1,33 @@
+Mystcraft GameTest Report
+Generated: Wed Jan 28 07:55:55 MST 2026
+
+Versions
+  minecraft_version: 1.20.2
+  fabric_version: 0.91.6+1.20.2
+  fabric_loader_version: 0.18.4
+  forge_version: 48.1.0
+  neoforge_version: 20.2.86
+  java_version: 17
+
+Tests
+  Fabric:
+    - : FAIL ()
+  Forge:
+    - STATUS: PASS
+  NeoForge:
+    - STATUS: PASS
+
+Errors (all matched lines)
+  Fabric:
+    87:[m[34m[07:55:37][m [31m[main/ERROR][m [36m(Minecraft)[m [31mNo data fixer registered for mystcraft:linkbook
+    88:[m[34m[07:55:37][m [31m[main/ERROR][m [36m(Minecraft)[m [31mNo data fixer registered for mystcraft:falling_block
+    89:[m[34m[07:55:37][m [31m[main/ERROR][m [36m(Minecraft)[m [31mNo data fixer registered for mystcraft:meteor
+    118:[m[34m[07:55:39][m [31m[Server thread/ERROR][m [36m(Mystcraft)[m [31mFailed to initialize AgeDimensionFactory reflection
+    119:[m java.lang.NoSuchMethodException: net.minecraft.server.MinecraftServer.markWorldsDirty()
+    571:[m[34m[07:55:43][m [31m[Server thread/ERROR][m [36m(Minecraft)[m [31mException stopping the server
+    572:[m java.util.concurrent.CompletionException: java.lang.ArrayIndexOutOfBoundsException: Index -1 out of bounds for length 24
+    582:Caused by: java.lang.ArrayIndexOutOfBoundsException: Index -1 out of bounds for length 24
+    590:> Task :fabric:runGametest FAILED
+    610:BUILD FAILED in 24s
+
+Report written to /Users/brianfopiano/Developer/RemoteGit/NextdoorPsycho/Mystcraft-Legacy-Returned/Multiloader/scripts/gametest-report.txt

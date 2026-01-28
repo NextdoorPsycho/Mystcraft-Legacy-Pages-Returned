@@ -1,0 +1,20 @@
+{
+  "category": "biome_controller",
+  "card_rank": 1,
+  "instability_cost": -5.0,
+  "poem": [
+    "Biome",
+    "Form",
+    "Tradition",
+    "Flow"
+  ],
+  "logic": [
+    {
+      "type": "native"
+    },
+    {
+      "type": "add_instability",
+      "value": -5.0
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "category": "visual_effect",
+  "card_rank": 3,
+  "instability_cost": -2.0,
+  "poem": [
+    "Horizon",
+    "Image",
+    "Nature",
+    "Flow"
+  ],
+  "logic": [
+    {
+      "type": "set_horizon_color",
+      "value": -1,
+      "natural": true
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "category": "structure",
+  "card_rank": 4,
+  "instability_cost": 12.0,
+  "poem": [
+    "Civilization",
+    "Fire",
+    "Piglin",
+    "Gold"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "bastion_remnants_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:bastion_remnants"
+    },
+    {
+      "type": "add_instability",
+      "value": 12.0
+    }
+  ]
+}

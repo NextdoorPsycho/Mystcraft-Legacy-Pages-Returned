@@ -70,7 +70,14 @@ public final class TerrainAlterationRegistry {
         int density = GsonHelper.getAsInt(json, "density", 10);
         BlockState structure = resolveBlockState(GsonHelper.getAsString(json, "structure_block", "minecraft:stone"), Blocks.STONE);
         BlockState surface = resolveBlockState(GsonHelper.getAsString(json, "surface_block", "minecraft:grass_block"), Blocks.GRASS_BLOCK);
-        return new MapGenFloatingIslands(seed, density, structure, surface);
+        String styleRaw = GsonHelper.getAsString(json, "style", "mixed").toUpperCase();
+        MapGenFloatingIslands.IslandStyle style;
+        try {
+            style = MapGenFloatingIslands.IslandStyle.valueOf(styleRaw);
+        } catch (IllegalArgumentException e) {
+            style = MapGenFloatingIslands.IslandStyle.MIXED;
+        }
+        return new MapGenFloatingIslands(seed, density, structure, surface, style);
     }
 
     private static BlockState resolveBlockState(String raw, Block fallback) {

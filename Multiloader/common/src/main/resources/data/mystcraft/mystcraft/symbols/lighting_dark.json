@@ -1,0 +1,21 @@
+{
+  "category": "lighting",
+  "card_rank": 3,
+  "instability_cost": 10.0,
+  "poem": [
+    "Light",
+    "Form",
+    "Inhibit",
+    "Void"
+  ],
+  "logic": [
+    {
+      "type": "set_lighting_type",
+      "value": "dark"
+    },
+    {
+      "type": "add_instability",
+      "value": 10.0
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "category": "feature_large",
+  "card_rank": 4,
+  "instability_cost": 10.0,
+  "poem": [
+    "Terrain",
+    "Scatter",
+    "Chain",
+    "Isles"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "floating_islands_enabled",
+      "value": true
+    },
+    {
+      "type": "register_terrain_alteration",
+      "id": "mystcraft:floating_islands",
+      "params": {
+        "style": "archipelago",
+        "density": 7
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 10.0
+    }
+  ]
+}

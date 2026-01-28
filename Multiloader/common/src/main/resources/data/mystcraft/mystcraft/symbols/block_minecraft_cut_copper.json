@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 3,
+  "instability_cost": 12.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Earth",
+    "Crafted"
+  ],
+  "display_name": "Cut Copper Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:cut_copper"
+    },
+    {
+      "type": "add_instability",
+      "value": 12.0
+    }
+  ]
+}

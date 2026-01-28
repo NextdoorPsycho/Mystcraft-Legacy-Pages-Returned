@@ -1,0 +1,17 @@
+{
+  "category": "weather",
+  "card_rank": 0,
+  "instability_cost": 0.0,
+  "poem": [
+    "Sustain",
+    "Dynamic",
+    "Tradition",
+    "Balance"
+  ],
+  "logic": [
+    {
+      "type": "set_weather_type",
+      "value": "normal"
+    }
+  ]
+}

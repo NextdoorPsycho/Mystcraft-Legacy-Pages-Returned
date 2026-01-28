@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 4,
+  "instability_cost": 20.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Earth",
+    "Refined"
+  ],
+  "display_name": "Gold Block Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:gold_block"
+    },
+    {
+      "type": "add_instability",
+      "value": 20.0
+    }
+  ]
+}

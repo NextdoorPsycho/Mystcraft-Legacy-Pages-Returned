@@ -1,0 +1,20 @@
+{
+  "category": "biome_controller",
+  "card_rank": 2,
+  "instability_cost": -3.0,
+  "poem": [
+    "Biome",
+    "Form",
+    "Cycle",
+    "Entropy"
+  ],
+  "logic": [
+    {
+      "type": "small"
+    },
+    {
+      "type": "add_instability",
+      "value": -3.0
+    }
+  ]
+}

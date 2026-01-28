@@ -1,17 +1,21 @@
 {
   "category": "environment",
-  "card_rank": 2,
-  "instability_cost": 1.0,
+  "card_rank": 4,
+  "instability_cost": 15.0,
   "poem": [
-    "Time",
-    "Flow",
-    "Change",
-    "Energy"
+    "Environment",
+    "Sustain",
+    "Stasis",
+    "Eternity"
   ],
   "logic": [
     {
       "type": "set_timescale",
       "value": 0.0
+    },
+    {
+      "type": "add_instability",
+      "value": 15.0
     }
   ]
 }

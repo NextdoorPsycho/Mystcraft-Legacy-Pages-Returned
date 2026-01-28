@@ -285,7 +285,11 @@ public final class SymbolRegistry {
             int rank = entry.getKey();
             int weight = Math.max(1, 5 - rank); // Rank 0: weight 5, Rank 4: weight 1
             for (int i = 0; i < weight; i++) {
-                weighted.addAll(entry.getValue());
+                for (IAgeSymbol symbol : entry.getValue()) {
+                    if (!symbol.allowInRandomGeneration()) continue;
+                    if (isBlacklisted(symbol.getRegistryName())) continue;
+                    weighted.add(symbol);
+                }
             }
         }
         if (weighted.isEmpty()) return null;

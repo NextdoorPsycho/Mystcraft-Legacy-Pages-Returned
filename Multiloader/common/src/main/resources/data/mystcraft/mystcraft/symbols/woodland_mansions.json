@@ -1,0 +1,26 @@
+{
+  "category": "structure",
+  "card_rank": 4,
+  "instability_cost": 8.0,
+  "poem": [
+    "Civilization",
+    "Dark",
+    "Illager",
+    "Mansion"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "woodland_mansions_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:woodland_mansions"
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

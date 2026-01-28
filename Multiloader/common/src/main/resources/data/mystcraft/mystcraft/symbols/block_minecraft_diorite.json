@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 2,
+  "instability_cost": 2.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Earth",
+    "Solid"
+  ],
+  "display_name": "Diorite Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:diorite"
+    },
+    {
+      "type": "add_instability",
+      "value": 2.0
+    }
+  ]
+}

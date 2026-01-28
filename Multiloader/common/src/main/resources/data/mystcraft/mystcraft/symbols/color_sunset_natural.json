@@ -1,0 +1,17 @@
+{
+  "category": "visual_effect",
+  "card_rank": 3,
+  "instability_cost": -2.0,
+  "poem": [
+    "Sun",
+    "Image",
+    "Nature",
+    "Fade"
+  ],
+  "logic": [
+    {
+      "type": "set_sunset_color",
+      "value": -1
+    }
+  ]
+}

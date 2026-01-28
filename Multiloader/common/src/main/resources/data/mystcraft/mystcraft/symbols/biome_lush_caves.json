@@ -1,9 +1,21 @@
 {
   "category": "biome",
-  "card_rank": 2,
+  "card_rank": 1,
   "instability_cost": 0.0,
-  "poem": ["Biome", "Life", "Growth", "Cave"],
+  "poem": [
+    "Nature",
+    "Nurture",
+    "Encourage",
+    "Lush"
+  ],
   "logic": [
-    { "type": "add_biome", "biome": "minecraft:lush_caves" }
+    {
+      "type": "add_biome",
+      "biome": "minecraft:lush_caves"
+    },
+    {
+      "type": "set_average_ground_level",
+      "value": 40
+    }
   ]
 }

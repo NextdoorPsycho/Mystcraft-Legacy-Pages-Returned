@@ -1,0 +1,19 @@
+{
+  "category": "visual_effect",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": [
+    "Sky",
+    "Image",
+    "Color",
+    "Void"
+  ],
+  "logic": [
+    {
+      "type": "set_color_from_stack",
+      "target": "night_sky",
+      "palette": "night_sky_random",
+      "random_instability": 2.0
+    }
+  ]
+}

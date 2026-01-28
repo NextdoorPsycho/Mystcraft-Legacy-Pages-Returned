@@ -1,0 +1,22 @@
+{
+  "category": "structure",
+  "card_rank": 3,
+  "instability_cost": 0.0,
+  "poem": [
+    "Civilization",
+    "Society",
+    "Harmony",
+    "Nurture"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "villages_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:villages"
+    }
+  ]
+}

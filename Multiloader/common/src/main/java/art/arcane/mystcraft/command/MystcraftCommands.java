@@ -451,66 +451,130 @@ public class MystcraftCommands {
         // Build pages list - start with link panel
         List<ItemStack> pages = new ArrayList<>();
         pages.add(Page.createLinkPage());
+        java.util.Set<ResourceLocation> seen = new java.util.HashSet<>();
+
+        int budget = symbolCount;
 
         // --- Core symbols: terrain, biome controller, biome ---
 
-        List<IAgeSymbol> terrainSymbols = SymbolRegistry.getByCategory(SymbolCategory.TERRAIN);
-        if (!terrainSymbols.isEmpty()) {
-            IAgeSymbol terrain = terrainSymbols.get(random.nextInt(terrainSymbols.size()));
-            pages.add(Page.createSymbolPage(terrain.getRegistryName()));
+        IAgeSymbol terrain = pickWeightedTerrain(random);
+        if (terrain != null && budget > 0 && addSymbolPage(pages, seen, terrain)) {
+            budget--;
         }
 
-        List<IAgeSymbol> biomeControllers = SymbolRegistry.getByCategory(SymbolCategory.BIOME_CONTROLLER);
-        if (!biomeControllers.isEmpty()) {
-            IAgeSymbol controller = biomeControllers.get(random.nextInt(biomeControllers.size()));
-            pages.add(Page.createSymbolPage(controller.getRegistryName()));
+        IAgeSymbol controller = pickUniformFromCategory(SymbolCategory.BIOME_CONTROLLER, random);
+        if (controller != null && budget > 0 && addSymbolPage(pages, seen, controller)) {
+            budget--;
         }
 
-        List<IAgeSymbol> biomes = SymbolRegistry.getByCategory(SymbolCategory.BIOME);
-        if (!biomes.isEmpty()) {
-            IAgeSymbol biome = biomes.get(random.nextInt(biomes.size()));
-            pages.add(Page.createSymbolPage(biome.getRegistryName()));
+        if (budget > 0) {
+            IAgeSymbol biome = pickWeightedBiome(random);
+            if (biome != null && addSymbolPage(pages, seen, biome)) {
+                budget--;
+            }
+        }
+
+        // Optional second biome for variety (avoid oceans)
+        if (budget > 0 && random.nextFloat() < 0.5f) {
+            IAgeSymbol biome = pickWeightedBiome(random);
+            if (biome != null && addSymbolPage(pages, seen, biome)) {
+                budget--;
+            }
         }
 
         // --- Celestials: pick a sun, moon, and stars variant ---
 
-        addRandomSymbolFromPool(pages, RANDOM_SUN_VARIANTS, random);
-        addRandomSymbolFromPool(pages, RANDOM_MOON_VARIANTS, random);
-        addRandomSymbolFromPool(pages, RANDOM_STAR_VARIANTS, random);
+        if (budget > 0 && addRandomSymbolFromPool(pages, seen, RANDOM_SUN_VARIANTS, random)) budget--;
+        if (budget > 0 && addRandomSymbolFromPool(pages, seen, RANDOM_MOON_VARIANTS, random)) budget--;
+        if (budget > 0 && addRandomSymbolFromPool(pages, seen, RANDOM_STAR_VARIANTS, random)) budget--;
 
         // --- Gradient: 50% chance to include one ---
 
-        if (random.nextFloat() < 0.5f) {
-            addRandomSymbolFromPool(pages, RANDOM_GRADIENT_SYMBOLS, random);
+        if (budget > 0 && random.nextFloat() < 0.35f) {
+            if (addRandomSymbolFromPool(pages, seen, RANDOM_GRADIENT_SYMBOLS, random)) {
+                budget--;
+            }
         }
 
         // --- Cloud modifier: 30% chance ---
 
-        if (random.nextFloat() < 0.3f) {
-            addRandomSymbolFromPool(pages, RANDOM_CLOUD_MODIFIERS, random);
+        if (budget > 0 && random.nextFloat() < 0.35f) {
+            if (addRandomSymbolFromPool(pages, seen, RANDOM_CLOUD_MODIFIERS, random)) {
+                budget--;
+            }
         }
 
         // --- Horizon modifier: 20% chance ---
 
-        if (random.nextFloat() < 0.2f) {
-            addRandomSymbolFromPool(pages, RANDOM_HORIZON_MODIFIERS, random);
+        if (budget > 0 && random.nextFloat() < 0.15f) {
+            if (addRandomSymbolFromPool(pages, seen, RANDOM_HORIZON_MODIFIERS, random)) {
+                budget--;
+            }
         }
 
         // --- Weather: include one ---
 
-        List<IAgeSymbol> weatherSymbols = SymbolRegistry.getByCategory(SymbolCategory.WEATHER);
-        if (!weatherSymbols.isEmpty()) {
-            IAgeSymbol weather = weatherSymbols.get(random.nextInt(weatherSymbols.size()));
-            pages.add(Page.createSymbolPage(weather.getRegistryName()));
+        if (budget > 0) {
+            IAgeSymbol weather = pickUniformFromCategory(SymbolCategory.WEATHER, random);
+            if (weather != null && addSymbolPage(pages, seen, weather)) {
+                budget--;
+            }
+        }
+
+        // --- Lighting: rarely dark, others even ---
+        if (budget > 0) {
+            IAgeSymbol lighting = pickWeightedFromCategory(SymbolCategory.LIGHTING, random, MystcraftCommands::lightingWeight);
+            if (lighting != null && addSymbolPage(pages, seen, lighting)) {
+                budget--;
+            }
+        }
+
+        // --- Big features: 0-3 weighted 0,0,1,1,1,2,2,3,3 ---
+        int featureLargeCount = pickCountWeighted(random, new int[]{0, 0, 1, 1, 1, 2, 2, 3, 3});
+        budget = addCategorySymbols(pages, seen, SymbolCategory.FEATURE_LARGE, random, featureLargeCount, budget, null);
+
+        // --- Medium/Small features: random ---
+        int featureMediumCount = random.nextInt(3);
+        budget = addCategorySymbols(pages, seen, SymbolCategory.FEATURE_MEDIUM, random, featureMediumCount, budget, null);
+        int featureSmallCount = random.nextInt(3);
+        budget = addCategorySymbols(pages, seen, SymbolCategory.FEATURE_SMALL, random, featureSmallCount, budget, null);
+
+        // --- Structures: frequent and random ---
+        int structureCount = pickCountWeighted(random, new int[]{1, 1, 2, 2, 3, 3, 4});
+        budget = addCategorySymbols(pages, seen, SymbolCategory.STRUCTURE, random, structureCount, budget, null);
+
+        // --- Environment: random, low lightning/meteors ---
+        int environmentCount = random.nextInt(3);
+        budget = addCategorySymbols(pages, seen, SymbolCategory.ENVIRONMENT, random, environmentCount, budget, MystcraftCommands::environmentWeight);
+
+        // --- Visual effects: common but not too diverse ---
+        int visualCount = pickCountWeighted(random, new int[]{1, 1, 2});
+        budget = addCategorySymbols(pages, seen, SymbolCategory.VISUAL_EFFECT, random, visualCount, budget, null);
+
+        // --- Ores: random, rarely no ore ---
+        int oreCount = pickCountWeighted(random, new int[]{0, 1, 1, 2});
+        budget = addOreSymbols(pages, seen, random, oreCount, budget);
+
+        // --- Special symbols: random ---
+        int specialCount = random.nextInt(2);
+        budget = addCategorySymbols(pages, seen, SymbolCategory.SPECIAL, random, specialCount, budget, null);
+
+        // --- Terrain block modifier: frequently weird ---
+        if (budget > 0 && random.nextFloat() < 0.6f) {
+            IAgeSymbol modifier = pickRandomTerrainBlock(random);
+            if (modifier != null && addSymbolPage(pages, seen, modifier)) {
+                budget--;
+            }
         }
 
         // --- Fill remaining slots with random weighted symbols ---
 
-        int remaining = symbolCount - (pages.size() - 1); // -1 for link panel
-        for (int i = 0; i < remaining && i < 50; i++) {
+        for (int i = 0; i < budget && i < 50; i++) {
             IAgeSymbol symbol = SymbolRegistry.getRandomWeighted(random);
             if (symbol != null) {
-                pages.add(Page.createSymbolPage(symbol.getRegistryName()));
+                if (addSymbolPage(pages, seen, symbol)) {
+                    budget--;
+                }
             }
         }
 
@@ -551,6 +615,191 @@ public class MystcraftCommands {
         if (SymbolRegistry.get(id) != null) {
             pages.add(Page.createSymbolPage(id));
         }
+    }
+
+    private static boolean addRandomSymbolFromPool(List<ItemStack> pages, java.util.Set<ResourceLocation> seen,
+                                                   String[] pool, RandomSource random) {
+        String chosen = pool[random.nextInt(pool.length)];
+        ResourceLocation id = new ResourceLocation(chosen);
+        IAgeSymbol symbol = SymbolRegistry.get(id);
+        if (symbol == null) return false;
+        return addSymbolPage(pages, seen, symbol);
+    }
+
+    private static boolean addSymbolPage(List<ItemStack> pages, java.util.Set<ResourceLocation> seen, IAgeSymbol symbol) {
+        if (symbol == null) return false;
+        ResourceLocation id = symbol.getRegistryName();
+        if (!symbol.canDuplicate() && seen.contains(id)) return false;
+        pages.add(Page.createSymbolPage(id));
+        seen.add(id);
+        return true;
+    }
+
+    private static IAgeSymbol pickUniformFromCategory(SymbolCategory category, RandomSource random) {
+        List<IAgeSymbol> list = SymbolRegistry.getByCategory(category);
+        List<IAgeSymbol> filtered = new ArrayList<>();
+        for (IAgeSymbol symbol : list) {
+            if (!symbol.allowInRandomGeneration()) continue;
+            if (SymbolRegistry.isBlacklisted(symbol.getRegistryName())) continue;
+            filtered.add(symbol);
+        }
+        if (filtered.isEmpty()) return null;
+        return filtered.get(random.nextInt(filtered.size()));
+    }
+
+    private static IAgeSymbol pickWeightedFromCategory(SymbolCategory category, RandomSource random,
+                                                       java.util.function.ToIntFunction<IAgeSymbol> weightFn) {
+        List<IAgeSymbol> list = SymbolRegistry.getByCategory(category);
+        List<IAgeSymbol> weighted = new ArrayList<>();
+        for (IAgeSymbol symbol : list) {
+            if (!symbol.allowInRandomGeneration()) continue;
+            if (SymbolRegistry.isBlacklisted(symbol.getRegistryName())) continue;
+            int weight = Math.max(0, weightFn.applyAsInt(symbol));
+            for (int i = 0; i < weight; i++) {
+                weighted.add(symbol);
+            }
+        }
+        if (weighted.isEmpty()) return null;
+        return weighted.get(random.nextInt(weighted.size()));
+    }
+
+    private static IAgeSymbol pickWeightedTerrain(RandomSource random) {
+        String[] pool = {
+                "mystcraft:terrain_amplified",
+                "mystcraft:terrain_cave",
+                "mystcraft:terrain_skylands",
+                "mystcraft:terrain_blend",
+                "mystcraft:terrain_checkerboard",
+                "mystcraft:terrain_stripes",
+                "mystcraft:terrain_normal",
+                "mystcraft:terrain_end",
+                "mystcraft:terrain_nether",
+                "mystcraft:terrain_void",
+                "mystcraft:terrain_flat"
+        };
+        int[] weights = {3, 3, 3, 3, 3, 2, 1, 1, 1, 1, 1};
+        return pickFromPool(pool, weights, random);
+    }
+
+    private static IAgeSymbol pickWeightedBiome(RandomSource random) {
+        List<IAgeSymbol> list = SymbolRegistry.getByCategory(SymbolCategory.BIOME);
+        List<IAgeSymbol> weighted = new ArrayList<>();
+        for (IAgeSymbol symbol : list) {
+            if (!symbol.allowInRandomGeneration()) continue;
+            if (SymbolRegistry.isBlacklisted(symbol.getRegistryName())) continue;
+            int weight = biomeWeight(symbol);
+            for (int i = 0; i < weight; i++) {
+                weighted.add(symbol);
+            }
+        }
+        if (weighted.isEmpty()) return null;
+        return weighted.get(random.nextInt(weighted.size()));
+    }
+
+    private static int biomeWeight(IAgeSymbol symbol) {
+        String path = symbol.getRegistryName().getPath();
+        if (path.contains("ocean")) return 1;
+        if (path.contains("beach") || path.contains("river") || path.contains("shore")) return 2;
+        if (path.contains("nether") || path.contains("crimson") || path.contains("warped")
+                || path.contains("basalt") || path.contains("soul")) return 1;
+        if (path.contains("end")) return 1;
+        return 5;
+    }
+
+    private static int lightingWeight(IAgeSymbol symbol) {
+        String path = symbol.getRegistryName().getPath();
+        if (path.contains("dark")) return 1;
+        return 3;
+    }
+
+    private static int environmentWeight(IAgeSymbol symbol) {
+        String path = symbol.getRegistryName().getPath();
+        if (path.contains("lightning") || path.contains("meteors")) return 1;
+        return 3;
+    }
+
+    private static int pickCountWeighted(RandomSource random, int[] options) {
+        return options[random.nextInt(options.length)];
+    }
+
+    private static int addCategorySymbols(List<ItemStack> pages, java.util.Set<ResourceLocation> seen,
+                                          SymbolCategory category, RandomSource random, int count, int budget,
+                                          java.util.function.ToIntFunction<IAgeSymbol> weightFn) {
+        if (count <= 0 || budget <= 0) return budget;
+        List<IAgeSymbol> pool = SymbolRegistry.getByCategory(category);
+        List<IAgeSymbol> candidates = new ArrayList<>();
+        for (IAgeSymbol symbol : pool) {
+            if (!symbol.allowInRandomGeneration()) continue;
+            if (SymbolRegistry.isBlacklisted(symbol.getRegistryName())) continue;
+            candidates.add(symbol);
+        }
+        if (candidates.isEmpty()) return budget;
+        for (int i = 0; i < count && budget > 0; i++) {
+            IAgeSymbol pick = (weightFn == null)
+                    ? candidates.get(random.nextInt(candidates.size()))
+                    : pickWeightedFromCategory(category, random, weightFn);
+            if (pick != null && addSymbolPage(pages, seen, pick)) {
+                budget--;
+            }
+        }
+        return budget;
+    }
+
+    private static int addOreSymbols(List<ItemStack> pages, java.util.Set<ResourceLocation> seen,
+                                     RandomSource random, int count, int budget) {
+        if (count <= 0 || budget <= 0) return budget;
+        List<IAgeSymbol> pool = new ArrayList<>();
+        for (IAgeSymbol symbol : SymbolRegistry.getByCategory(SymbolCategory.FEATURE_MEDIUM)) {
+            String path = symbol.getRegistryName().getPath();
+            if (path.startsWith("extra_") || path.startsWith("no_") || path.equals("dense_ores")) {
+                pool.add(symbol);
+            }
+        }
+        if (pool.isEmpty()) return budget;
+        for (int i = 0; i < count && budget > 0; i++) {
+            IAgeSymbol pick = pickWeightedOre(pool, random);
+            if (pick != null && addSymbolPage(pages, seen, pick)) {
+                budget--;
+            }
+        }
+        return budget;
+    }
+
+    private static IAgeSymbol pickWeightedOre(List<IAgeSymbol> pool, RandomSource random) {
+        List<IAgeSymbol> weighted = new ArrayList<>();
+        for (IAgeSymbol symbol : pool) {
+            String path = symbol.getRegistryName().getPath();
+            int weight = (path.equals("no_ores") || path.startsWith("no_")) ? 1 : 3;
+            for (int i = 0; i < weight; i++) {
+                weighted.add(symbol);
+            }
+        }
+        if (weighted.isEmpty()) return null;
+        return weighted.get(random.nextInt(weighted.size()));
+    }
+
+    private static IAgeSymbol pickFromPool(String[] pool, int[] weights, RandomSource random) {
+        int total = 0;
+        for (int w : weights) total += w;
+        int roll = random.nextInt(total);
+        int cumulative = 0;
+        for (int i = 0; i < pool.length; i++) {
+            cumulative += weights[i];
+            if (roll < cumulative) {
+                return SymbolRegistry.get(new ResourceLocation(pool[i]));
+            }
+        }
+        return SymbolRegistry.get(new ResourceLocation(pool[0]));
+    }
+
+    private static IAgeSymbol pickRandomTerrainBlock(RandomSource random) {
+        List<IAgeSymbol> pool = new ArrayList<>();
+        for (IAgeSymbol symbol : SymbolRegistry.getByCategory(SymbolCategory.MODIFIER)) {
+            if (!symbol.getRegistryName().getPath().startsWith("block_minecraft_")) continue;
+            pool.add(symbol);
+        }
+        if (pool.isEmpty()) return null;
+        return pool.get(random.nextInt(pool.size()));
     }
 
     /**

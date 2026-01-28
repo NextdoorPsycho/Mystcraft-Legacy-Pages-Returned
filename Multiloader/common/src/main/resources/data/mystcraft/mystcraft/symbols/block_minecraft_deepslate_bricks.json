@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 2,
+  "instability_cost": 3.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Earth",
+    "Crafted"
+  ],
+  "display_name": "Deepslate Bricks Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:deepslate_bricks"
+    },
+    {
+      "type": "add_instability",
+      "value": 3.0
+    }
+  ]
+}

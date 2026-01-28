@@ -1,0 +1,21 @@
+{
+  "category": "biome",
+  "card_rank": 3,
+  "instability_cost": 0.0,
+  "poem": [
+    "Nature",
+    "Nurture",
+    "Encourage",
+    "Frozen"
+  ],
+  "logic": [
+    {
+      "type": "add_biome",
+      "biome": "minecraft:frozen_river"
+    },
+    {
+      "type": "set_average_ground_level",
+      "value": 58
+    }
+  ]
+}

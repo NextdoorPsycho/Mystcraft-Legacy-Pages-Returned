@@ -1,0 +1,26 @@
+{
+  "category": "weather",
+  "card_rank": 4,
+  "instability_cost": 10.0,
+  "poem": [
+    "Sustain",
+    "Static",
+    "Power",
+    "Lightning"
+  ],
+  "logic": [
+    {
+      "type": "set_weather_type",
+      "value": "thunder"
+    },
+    {
+      "type": "set_flag",
+      "flag": "lightning_enabled",
+      "value": true
+    },
+    {
+      "type": "add_instability",
+      "value": 10.0
+    }
+  ]
+}

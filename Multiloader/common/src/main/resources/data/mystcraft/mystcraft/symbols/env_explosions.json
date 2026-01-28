@@ -1,18 +1,22 @@
 {
   "category": "environment",
   "card_rank": 3,
-  "instability_cost": 2.0,
+  "instability_cost": 30.0,
   "poem": [
-    "Chaos",
-    "Storm",
-    "Energy",
-    "Change"
+    "Environment",
+    "Sacrifice",
+    "Power",
+    "Entropy"
   ],
   "logic": [
     {
       "type": "set_flag",
       "flag": "explosions_enabled",
       "value": true
+    },
+    {
+      "type": "add_instability",
+      "value": 30.0
     }
   ]
 }

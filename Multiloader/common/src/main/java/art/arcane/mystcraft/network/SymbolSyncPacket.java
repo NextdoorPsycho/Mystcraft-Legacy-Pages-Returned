@@ -27,12 +27,17 @@ public class SymbolSyncPacket {
     public SymbolSyncPacket() {
         this.symbols = new ArrayList<>();
         for (IAgeSymbol symbol : SymbolRegistry.getAll()) {
+            String displayName = null;
+            if (symbol instanceof DataSymbol dataSymbol) {
+                displayName = dataSymbol.getDisplayName();
+            }
             symbols.add(new SymbolData(
                     symbol.getRegistryName(),
                     symbol.getCategory(),
                     symbol.getCardRank() != null ? symbol.getCardRank() : 0,
                     symbol.getInstabilityCost(),
                     symbol.getPoem(),
+                    displayName,
                     symbol.allowInRandomGeneration(),
                     symbol.canDuplicate(),
                     !SymbolRegistry.isStaticSymbol(symbol.getRegistryName()),
@@ -62,6 +67,12 @@ public class SymbolSyncPacket {
             buf.writeBoolean(data.canDuplicate);
             buf.writeBoolean(data.isDatapack);
             buf.writeBoolean(data.isOverride);
+            if (data.displayName == null) {
+                buf.writeBoolean(false);
+            } else {
+                buf.writeBoolean(true);
+                buf.writeUtf(data.displayName);
+            }
             if (data.poem == null) {
                 buf.writeInt(-1);
             } else {
@@ -88,6 +99,10 @@ public class SymbolSyncPacket {
             boolean canDuplicate = buf.readBoolean();
             boolean isDatapack = buf.readBoolean();
             boolean isOverride = buf.readBoolean();
+            String displayName = null;
+            if (buf.readBoolean()) {
+                displayName = buf.readUtf();
+            }
             int poemLength = buf.readInt();
             String[] poem = null;
             if (poemLength >= 0) {
@@ -97,7 +112,7 @@ public class SymbolSyncPacket {
                 }
             }
             symbols.add(new SymbolData(id, category, cardRank, instabilityCost, poem,
-                    allowRandom, canDuplicate, isDatapack, isOverride));
+                    displayName, allowRandom, canDuplicate, isDatapack, isOverride));
         }
         return new SymbolSyncPacket(symbols);
     }
@@ -129,7 +144,8 @@ public class SymbolSyncPacket {
                             GrammarBindingMode.DISABLED,
                             null,
                             null,
-                            List.of()
+                            List.of(),
+                            data.displayName
                     );
                     SymbolRegistry.register(symbol, data.isOverride || !exists);
                 } else if (!exists) {
@@ -155,19 +171,21 @@ public class SymbolSyncPacket {
         public final int cardRank;
         public final float instabilityCost;
         public final String[] poem;
+        public final String displayName;
         public final boolean allowRandom;
         public final boolean canDuplicate;
         public final boolean isDatapack;
         public final boolean isOverride;
 
         public SymbolData(ResourceLocation id, SymbolCategory category, int cardRank, float instabilityCost,
-                          String[] poem, boolean allowRandom, boolean canDuplicate,
+                          String[] poem, String displayName, boolean allowRandom, boolean canDuplicate,
                           boolean isDatapack, boolean isOverride) {
             this.id = id;
             this.category = category;
             this.cardRank = cardRank;
             this.instabilityCost = instabilityCost;
             this.poem = poem;
+            this.displayName = displayName;
             this.allowRandom = allowRandom;
             this.canDuplicate = canDuplicate;
             this.isDatapack = isDatapack;

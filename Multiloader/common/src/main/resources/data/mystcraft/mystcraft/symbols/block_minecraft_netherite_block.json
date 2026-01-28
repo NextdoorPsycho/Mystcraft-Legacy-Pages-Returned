@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 4,
+  "instability_cost": 30.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Fire",
+    "Refined"
+  ],
+  "display_name": "Netherite Block Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:netherite_block"
+    },
+    {
+      "type": "add_instability",
+      "value": 30.0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Form",
+    "Circle"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "spheres_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:spheres"
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

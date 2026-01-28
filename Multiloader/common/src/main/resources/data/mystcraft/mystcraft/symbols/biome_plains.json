@@ -2,8 +2,20 @@
   "category": "biome",
   "card_rank": 1,
   "instability_cost": 0.0,
-  "poem": ["Biome", "Plains", "Grass", "Life"],
+  "poem": [
+    "Nature",
+    "Nurture",
+    "Encourage",
+    "Plains"
+  ],
   "logic": [
-    { "type": "add_biome", "biome": "minecraft:plains" }
+    {
+      "type": "add_biome",
+      "biome": "minecraft:plains"
+    },
+    {
+      "type": "set_average_ground_level",
+      "value": 64
+    }
   ]
 }

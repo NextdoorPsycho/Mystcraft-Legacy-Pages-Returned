@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 1,
+  "instability_cost": 1.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Earth",
+    "Solid"
+  ],
+  "display_name": "Cobblestone Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:cobblestone"
+    },
+    {
+      "type": "add_instability",
+      "value": 1.0
+    }
+  ]
+}

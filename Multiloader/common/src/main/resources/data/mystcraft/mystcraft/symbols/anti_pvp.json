@@ -1,0 +1,18 @@
+{
+  "category": "special",
+  "card_rank": 4,
+  "instability_cost": 0.0,
+  "poem": [
+    "Peace",
+    "Inhibit",
+    "Conflict",
+    "Harmony"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "pvp_enabled",
+      "value": false
+    }
+  ]
+}

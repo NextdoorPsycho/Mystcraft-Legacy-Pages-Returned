@@ -1,0 +1,22 @@
+{
+  "category": "structure",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": [
+    "Civilization",
+    "Constraint",
+    "Chain",
+    "Resurrect"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "dungeons_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:dungeons"
+    }
+  ]
+}

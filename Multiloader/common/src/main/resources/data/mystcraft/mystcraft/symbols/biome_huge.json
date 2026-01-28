@@ -1,0 +1,20 @@
+{
+  "category": "biome_controller",
+  "card_rank": 3,
+  "instability_cost": -2.0,
+  "poem": [
+    "Biome",
+    "Form",
+    "Cycle",
+    "Spur"
+  ],
+  "logic": [
+    {
+      "type": "huge"
+    },
+    {
+      "type": "add_instability",
+      "value": -2.0
+    }
+  ]
+}

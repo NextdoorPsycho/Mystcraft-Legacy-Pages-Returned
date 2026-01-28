@@ -22,6 +22,7 @@ public final class SymbolDefinition {
     public final Integer cardRank;
     public final float instabilityCost;
     public final String[] poem;
+    public final String displayName;
     public final boolean allowRandom;
     public final boolean canDuplicate;
     public final GrammarBindingMode grammarMode;
@@ -35,6 +36,7 @@ public final class SymbolDefinition {
                              Integer cardRank,
                              float instabilityCost,
                              String[] poem,
+                             String displayName,
                              boolean allowRandom,
                              boolean canDuplicate,
                              GrammarBindingMode grammarMode,
@@ -47,6 +49,7 @@ public final class SymbolDefinition {
         this.cardRank = cardRank;
         this.instabilityCost = instabilityCost;
         this.poem = poem;
+        this.displayName = displayName;
         this.allowRandom = allowRandom;
         this.canDuplicate = canDuplicate;
         this.grammarMode = grammarMode;
@@ -78,6 +81,7 @@ public final class SymbolDefinition {
 
         boolean allowRandom = GsonHelper.getAsBoolean(json, "allow_random", true);
         boolean canDuplicate = GsonHelper.getAsBoolean(json, "can_duplicate", false);
+        String displayName = GsonHelper.getAsString(json, "display_name", null);
 
         GrammarBindingMode grammarMode = GrammarBindingMode.DEFAULT;
         ResourceLocation grammarToken = null;
@@ -127,6 +131,7 @@ public final class SymbolDefinition {
                 cardRank,
                 instabilityCost,
                 poem,
+                displayName,
                 allowRandom,
                 canDuplicate,
                 grammarMode,

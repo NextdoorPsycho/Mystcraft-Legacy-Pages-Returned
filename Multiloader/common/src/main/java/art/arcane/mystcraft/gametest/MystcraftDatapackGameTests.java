@@ -116,7 +116,8 @@ public class MystcraftDatapackGameTests {
                 GrammarBindingMode.DISABLED,
                 null,
                 null,
-                List.of()
+                List.of(),
+                null
         );
         SymbolRegistry.register(base, false);
 
@@ -131,7 +132,8 @@ public class MystcraftDatapackGameTests {
                 GrammarBindingMode.DISABLED,
                 null,
                 null,
-                List.of()
+                List.of(),
+                null
         );
         SymbolRegistry.register(replacement, true);
 

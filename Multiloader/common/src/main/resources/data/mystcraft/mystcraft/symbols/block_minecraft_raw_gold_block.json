@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 4,
+  "instability_cost": 20.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Earth",
+    "Vein"
+  ],
+  "display_name": "Raw Gold Block Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:raw_gold_block"
+    },
+    {
+      "type": "add_instability",
+      "value": 20.0
+    }
+  ]
+}

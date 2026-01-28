@@ -1,0 +1,26 @@
+{
+  "category": "feature_large",
+  "card_rank": 4,
+  "instability_cost": -10.0,
+  "poem": [
+    "Link",
+    "Form",
+    "Star",
+    "Escape"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "star_fissure_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:star_fissure"
+    },
+    {
+      "type": "add_instability",
+      "value": -10.0
+    }
+  ]
+}

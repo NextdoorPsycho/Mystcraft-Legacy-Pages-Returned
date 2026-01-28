@@ -22,11 +22,11 @@ public class VerticalTendrilsPopulator implements IPopulate {
     private final long seed;
 
     private static final int TENDRILS_PER_CHUNK = 1;
-    private static final int MIN_LENGTH = 15;
-    private static final int MAX_LENGTH = 45;
-    private static final float CEILING_CHANCE = 0.3f;
-    // ~10% of chunks spawn a vertical tendril
-    private static final float SPAWN_CHANCE = 0.10f;
+    private static final int MIN_LENGTH = 25;
+    private static final int MAX_LENGTH = 80;
+    private static final float CEILING_CHANCE = 0.25f;
+    // ~8% of chunks spawn a creepy pillar
+    private static final float SPAWN_CHANCE = 0.08f;
 
     // Vertical tendrils wobble slightly but can be thick, check nearby chunks
     private static final int NEIGHBOR_RANGE = 2;
@@ -66,11 +66,11 @@ public class VerticalTendrilsPopulator implements IPopulate {
                     BlockState tendrilBlock = getTendrilMaterial(chunkRand);
                     BlockState decorationBlock = getDecorationBlock(tendrilBlock, chunkRand);
                     int length = MIN_LENGTH + chunkRand.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
-                    int baseThickness = 1 + chunkRand.nextInt(4);
+                    int baseThickness = 2 + chunkRand.nextInt(5);
 
                     // Slight wobble parameters
-                    double wobbleX = (chunkRand.nextDouble() - 0.5) * 0.15;
-                    double wobbleZ = (chunkRand.nextDouble() - 0.5) * 0.15;
+                    double wobbleX = (chunkRand.nextDouble() - 0.5) * 0.25;
+                    double wobbleZ = (chunkRand.nextDouble() - 0.5) * 0.25;
                     long pathSeed = chunkRand.nextLong();
                     long decorSeed = chunkRand.nextLong();
 
@@ -136,7 +136,10 @@ public class VerticalTendrilsPopulator implements IPopulate {
             currentY += direction;
             currentZ += wobbleZ;
 
-            int thickness = (int) Math.max(1, baseThickness * (1.0f - progress * 0.7f));
+            long pillarHash = positionHash(pathSeed, (int) currentX, (int) currentY, (int) currentZ);
+            int bulge = (int) ((pillarHash >>> 4) & 0x3) - 1;
+            int thickness = baseThickness + bulge - (int) (progress * 1.4f);
+            thickness = Math.max(1, Math.min(baseThickness + 3, thickness));
 
             int centerBx = (int) Math.floor(currentX);
             int centerBy = (int) Math.floor(currentY);
@@ -156,6 +159,25 @@ public class VerticalTendrilsPopulator implements IPopulate {
                                 world.setBlock(tendrilPos, tendrilBlock, 2);
                             }
                         }
+                    }
+                }
+            }
+
+            // Occasional ribs/spines
+            if ((pillarHash & 0x1F) == 0) {
+                int dir = (int) ((pillarHash >>> 6) & 0x3);
+                int ddx = (dir == 0) ? 1 : (dir == 1) ? -1 : 0;
+                int ddz = (dir == 2) ? 1 : (dir == 3) ? -1 : 0;
+                int spineLen = 1 + (int) ((pillarHash >>> 9) & 0x3);
+                for (int s = 1; s <= spineLen; s++) {
+                    int bx = centerBx + ddx * (thickness + s);
+                    int bz = centerBz + ddz * (thickness + s);
+                    if (bx < chunkMinX || bx > chunkMaxX || bz < chunkMinZ || bz > chunkMaxZ) {
+                        break;
+                    }
+                    BlockPos spinePos = new BlockPos(bx, centerBy, bz);
+                    if (shouldPlaceBlock(world, spinePos)) {
+                        world.setBlock(spinePos, tendrilBlock, 2);
                     }
                 }
             }
@@ -239,12 +261,13 @@ public class VerticalTendrilsPopulator implements IPopulate {
 
     private BlockState getDecorationBlock(BlockState baseBlock, Random random) {
         if (random.nextInt(3) == 0) {
-            int choice = random.nextInt(5);
+            int choice = random.nextInt(6);
             return switch (choice) {
-                case 0 -> Blocks.GLOWSTONE.defaultBlockState();
-                case 1 -> Blocks.SHROOMLIGHT.defaultBlockState();
-                case 2 -> Blocks.SEA_LANTERN.defaultBlockState();
-                case 3 -> Blocks.OCHRE_FROGLIGHT.defaultBlockState();
+                case 0 -> Blocks.GLOW_LICHEN.defaultBlockState();
+                case 1 -> Blocks.SCULK_VEIN.defaultBlockState();
+                case 2 -> Blocks.SHROOMLIGHT.defaultBlockState();
+                case 3 -> Blocks.SOUL_LANTERN.defaultBlockState();
+                case 4 -> Blocks.OCHRE_FROGLIGHT.defaultBlockState();
                 default -> Blocks.LANTERN.defaultBlockState();
             };
         }

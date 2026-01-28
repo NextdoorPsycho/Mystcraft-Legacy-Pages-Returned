@@ -22,17 +22,17 @@ public class PerlinWormsPopulator implements IPopulate {
 
     private final long seed;
 
-    private static final int WORMS_PER_CHUNK = 1;
-    private static final int MIN_LENGTH = 40;
-    private static final int MAX_LENGTH = 120;
-    private static final float SPAWN_CHANCE = 0.2f;
+    private static final int WORMS_PER_CHUNK = 2;
+    private static final int MIN_LENGTH = 80;
+    private static final int MAX_LENGTH = 220;
+    private static final float SPAWN_CHANCE = 0.35f;
 
     // Worms can drift far: heading changes smoothly so max lateral drift is bounded
-    // by segment count * max turn rate. 120 segments * ~1.5 blocks lateral = ~180 blocks = ~12 chunks
-    private static final int NEIGHBOR_RANGE = 12;
+    // by segment count * max turn rate. 220 segments * ~1.5 blocks lateral = ~330 blocks = ~21 chunks
+    private static final int NEIGHBOR_RANGE = 20;
 
     // Noise frequency controls how quickly the worm changes direction
-    private static final double NOISE_FREQUENCY = 0.04;
+    private static final double NOISE_FREQUENCY = 0.03;
 
     // Permutation table for Perlin noise (fixed, deterministic)
     private final int[] perm;
@@ -71,7 +71,7 @@ public class PerlinWormsPopulator implements IPopulate {
 
                     // Worm type determines behavior
                     int wormType = chunkRand.nextInt(4);
-                    int baseRadius = 2 + chunkRand.nextInt(3);
+                    int baseRadius = 3 + chunkRand.nextInt(4);
                     boolean leavesFloor = chunkRand.nextBoolean();
 
                     // Initial heading angles (yaw and pitch in radians)
@@ -154,8 +154,8 @@ public class PerlinWormsPopulator implements IPopulate {
 
             // Occasional widening for chambers
             long chamberHash = positionHash(pathSeed, (int) currentX, (int) currentY, (int) currentZ);
-            if ((chamberHash & 0x1F) == 0) {
-                radius += 2;
+            if ((chamberHash & 0xF) == 0) {
+                radius += 3 + (int) ((chamberHash >>> 4) & 0x3);
             }
 
             int centerBx = (int) Math.floor(currentX);

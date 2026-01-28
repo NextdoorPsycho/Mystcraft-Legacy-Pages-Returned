@@ -1,0 +1,26 @@
+{
+  "category": "feature_large",
+  "card_rank": 3,
+  "instability_cost": 6.0,
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Void",
+    "Serpent"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "perlin_worms_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:perlin_worms"
+    },
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
+  ]
+}

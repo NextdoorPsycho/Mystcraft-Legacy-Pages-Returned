@@ -7,8 +7,13 @@ import art.arcane.mystcraft.grammar.GrammarRules;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,6 +29,8 @@ public final class SymbolDatapackLoader {
         CFGGrammarGenerator.reset();
         GrammarRules.registerBaseRules();
         GrammarDatapackLoader.applyRules(grammarRules);
+
+        registerFluidSeaSymbols();
 
         int applied = 0;
         for (Map.Entry<ResourceLocation, JsonElement> entry : elements.entrySet()) {
@@ -45,7 +52,8 @@ public final class SymbolDatapackLoader {
                     definition.grammarMode,
                     definition.grammarToken,
                     definition.grammarRank,
-                    definition.logic
+                    definition.logic,
+                    definition.displayName
             );
             boolean registered = SymbolRegistry.register(symbol, definition.replace);
             if (registered) {
@@ -57,5 +65,72 @@ public final class SymbolDatapackLoader {
         SymbolRegistry.freeze();
 
         Mystcraft.LOGGER.info("[Datapack] Applied {} symbol definitions", applied);
+    }
+
+    private static void registerFluidSeaSymbols() {
+        int count = 0;
+        for (Fluid fluid : BuiltInRegistries.FLUID) {
+            if (fluid == Fluids.EMPTY) continue;
+            FluidState state = fluid.defaultFluidState();
+            if (!state.isSource()) continue;
+            ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fluid);
+            if (fluidId == null) continue;
+
+            boolean isWater = fluid == Fluids.WATER;
+            boolean isLava = fluid == Fluids.LAVA;
+
+            int cardRank = isWater ? 1 : (isLava ? 4 : 3);
+            float instability = isWater ? 0.0f : (isLava ? 25.0f : 15.0f);
+            String[] poem = isWater
+                    ? new String[]{"Terrain", "Water", "Flow", "Sea"}
+                    : (isLava ? new String[]{"Terrain", "Fire", "Flow", "Chaos"}
+                    : new String[]{"Terrain", "Liquid", "Flow", "Strange"});
+
+            String symbolPath = "sea_" + fluidId.getNamespace() + "_" + fluidId.getPath();
+            ResourceLocation symbolId = SymbolRegistry.mystcraftId(symbolPath);
+            String displayName = formatDisplayName(fluidId.getPath()) + " Sea";
+
+            SymbolLogic logic = (director, seed) -> {
+                director.setSeaBlock(state.createLegacyBlock());
+                if (instability != 0.0f) {
+                    director.addInstability(instability);
+                }
+            };
+
+            DataSymbol symbol = new DataSymbol(
+                    symbolId,
+                    art.arcane.mystcraft.api.symbol.SymbolCategory.SEA,
+                    cardRank,
+                    instability,
+                    poem,
+                    true,
+                    false,
+                    art.arcane.mystcraft.api.symbol.GrammarBindingMode.DEFAULT,
+                    null,
+                    null,
+                    List.of(logic),
+                    displayName
+            );
+            if (SymbolRegistry.register(symbol)) {
+                count++;
+            }
+        }
+        Mystcraft.LOGGER.info("[Datapack] Registered {} fluid sea symbols", count);
+    }
+
+    private static String formatDisplayName(String path) {
+        String[] parts = path.split("_");
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            if (i > 0) builder.append(' ');
+            String part = parts[i];
+            if (!part.isEmpty()) {
+                builder.append(Character.toUpperCase(part.charAt(0)));
+                if (part.length() > 1) {
+                    builder.append(part.substring(1));
+                }
+            }
+        }
+        return builder.toString();
     }
 }

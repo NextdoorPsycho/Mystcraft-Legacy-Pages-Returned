@@ -1,0 +1,26 @@
+{
+  "category": "structure",
+  "card_rank": 3,
+  "instability_cost": 5.0,
+  "poem": [
+    "Civilization",
+    "Chaos",
+    "Conflict",
+    "Watch"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "pillager_outposts_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:pillager_outposts"
+    },
+    {
+      "type": "add_instability",
+      "value": 5.0
+    }
+  ]
+}

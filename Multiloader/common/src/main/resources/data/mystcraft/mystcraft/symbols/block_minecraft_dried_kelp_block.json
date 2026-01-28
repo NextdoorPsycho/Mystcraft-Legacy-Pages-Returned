@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 2,
+  "instability_cost": 3.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Water",
+    "Growth"
+  ],
+  "display_name": "Dried Kelp Block Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:dried_kelp_block"
+    },
+    {
+      "type": "add_instability",
+      "value": 3.0
+    }
+  ]
+}

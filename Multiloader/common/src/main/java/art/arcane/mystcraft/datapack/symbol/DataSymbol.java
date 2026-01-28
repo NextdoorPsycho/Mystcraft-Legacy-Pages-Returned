@@ -15,6 +15,7 @@ import java.util.List;
 public class DataSymbol extends SymbolBase implements IGrammarBinding {
 
     private final boolean allowRandom;
+    private final String displayName;
     private final GrammarBindingMode grammarMode;
     private final ResourceLocation grammarToken;
     private final Integer grammarRank;
@@ -30,9 +31,11 @@ public class DataSymbol extends SymbolBase implements IGrammarBinding {
                       GrammarBindingMode grammarMode,
                       ResourceLocation grammarToken,
                       Integer grammarRank,
-                      List<SymbolLogic> logic) {
+                      List<SymbolLogic> logic,
+                      String displayName) {
         super(id, category);
         this.allowRandom = allowRandom;
+        this.displayName = displayName;
         this.grammarMode = grammarMode;
         this.grammarToken = grammarToken;
         this.grammarRank = grammarRank;
@@ -65,6 +68,18 @@ public class DataSymbol extends SymbolBase implements IGrammarBinding {
     @Override
     public boolean canDuplicate() {
         return duplicatable;
+    }
+
+    @Override
+    public String getLocalizedName() {
+        if (displayName != null && !displayName.isBlank()) {
+            return displayName;
+        }
+        return super.getLocalizedName();
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     @Override

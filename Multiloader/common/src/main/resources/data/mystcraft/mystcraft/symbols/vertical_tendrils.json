@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 4.0,
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Stone",
+    "Column"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "vertical_tendrils_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:vertical_tendrils"
+    },
+    {
+      "type": "add_instability",
+      "value": 4.0
+    }
+  ]
+}

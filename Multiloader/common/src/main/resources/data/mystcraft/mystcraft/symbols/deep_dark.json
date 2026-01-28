@@ -1,0 +1,26 @@
+{
+  "category": "feature_large",
+  "card_rank": 4,
+  "instability_cost": 15.0,
+  "poem": [
+    "Terrain",
+    "Void",
+    "Sculk",
+    "Terror"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "deep_dark_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:deep_dark"
+    },
+    {
+      "type": "add_instability",
+      "value": 15.0
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "category": "special",
+  "card_rank": 2,
+  "instability_cost": 3.0,
+  "poem": [
+    "Horizon",
+    "Void",
+    "Hide",
+    "Mystery"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "horizon_hidden",
+      "value": true
+    },
+    {
+      "type": "add_instability",
+      "value": 3.0
+    }
+  ]
+}

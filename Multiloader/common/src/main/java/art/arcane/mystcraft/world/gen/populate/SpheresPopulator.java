@@ -21,12 +21,20 @@ public class SpheresPopulator implements IPopulate {
 
     private final long seed;
 
+    private enum SphereShape {
+        NORMAL,
+        CRACKED,
+        ERODED
+    }
+
     private static final int SPHERES_PER_CHUNK = 1;
     private static final int MIN_RADIUS = 5;
     private static final int MAX_RADIUS = 15;
     private static final float FLOATING_CHANCE = 0.4f;
     // ~3% of chunks spawn a sphere (~1 per 33 chunks)
     private static final float SPAWN_CHANCE = 0.03f;
+    private static final int CRACK_MIN_PLANES = 2;
+    private static final int CRACK_MAX_PLANES = 4;
 
     // How many neighbor chunks to scan in each direction.
     // Worst case: center at position 15 + radius 15 = 30 blocks = 2 chunks away.
@@ -81,6 +89,10 @@ public class SpheresPopulator implements IPopulate {
                     // Decoration sub-seed - consume regardless of skip
                     long decorSubSeed = chunkRand.nextLong();
 
+                    // Shape selection - consume regardless of skip
+                    SphereShape shape = pickSphereShape(chunkRand);
+                    long shapeSeed = chunkRand.nextLong();
+
                     // Quick AABB check: can this sphere overlap our chunk at all?
                     if (cx + radius < chunkMinX || cx - radius > chunkMaxX ||
                         cz + radius < chunkMinZ || cz - radius > chunkMaxZ) {
@@ -95,7 +107,8 @@ public class SpheresPopulator implements IPopulate {
                     int y = floating ? (baseY + 40 + yOffset) : baseY;
 
                     BlockPos center = new BlockPos(cx, y, cz);
-                    generateSphere(world, irregSeed, decorSubSeed, center, radius, floating,
+                    generateSphere(world, irregSeed, decorSubSeed, shapeSeed, shape,
+                            center, radius, floating,
                             sphereBlock, coreBlock, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
                 }
             }
@@ -115,10 +128,15 @@ public class SpheresPopulator implements IPopulate {
     }
 
     private void generateSphere(WorldGenLevel world, long irregSeed, long decorSubSeed,
+                                long shapeSeed, SphereShape shape,
                                 BlockPos center, int radius,
                                 boolean floating, BlockState sphereBlock, BlockState coreBlock,
                                 int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
         int coreRadius = radius > 8 ? radius / 3 : 0;
+        CrackPlanes crackPlanes = null;
+        if (shape == SphereShape.CRACKED) {
+            crackPlanes = new CrackPlanes(shapeSeed, radius);
+        }
 
         // Only iterate over the intersection of the sphere's AABB and the current chunk
         int startX = Math.max(-radius, chunkMinX - center.getX());
@@ -142,6 +160,15 @@ public class SpheresPopulator implements IPopulate {
                     if (distSq <= effectiveRadius * effectiveRadius) {
                         BlockPos spherePos = new BlockPos(bx, by, bz);
 
+                        if (shape == SphereShape.CRACKED && crackPlanes != null
+                                && crackPlanes.isInCrack(shapeSeed, bx, by, bz, dx, dy, dz)) {
+                            continue;
+                        }
+                        if (shape == SphereShape.ERODED
+                                && shouldErode(shapeSeed, bx, by, bz, distSq, effectiveRadius)) {
+                            continue;
+                        }
+
                         BlockState blockToPlace;
                         if (coreRadius > 0 && distSq <= (double) coreRadius * coreRadius) {
                             blockToPlace = coreBlock;
@@ -164,6 +191,17 @@ public class SpheresPopulator implements IPopulate {
         }
     }
 
+    private SphereShape pickSphereShape(Random random) {
+        int roll = random.nextInt(100);
+        if (roll < 50) {
+            return SphereShape.NORMAL;
+        }
+        if (roll < 75) {
+            return SphereShape.CRACKED;
+        }
+        return SphereShape.ERODED;
+    }
+
     /**
      * Position-deterministic hash for irregularity. Same position always gets the same value
      * regardless of which chunk is being populated.
@@ -175,6 +213,28 @@ public class SpheresPopulator implements IPopulate {
         h ^= (long) z * 83492791L;
         h = h * 6364136223846793005L + 1442695040888963407L;
         return h;
+    }
+
+    private static double positionNoise(long seed, int x, int y, int z, double frequency) {
+        int sx = (int) Math.floor(x * frequency);
+        int sy = (int) Math.floor(y * frequency);
+        int sz = (int) Math.floor(z * frequency);
+        long h = positionHash(seed, sx, sy, sz);
+        return ((h >>> 16) & 0xFFFFL) / 32767.0 - 1.0;
+    }
+
+    private static boolean shouldErode(long shapeSeed, int x, int y, int z,
+                                       double distSq, double effectiveRadius) {
+        double dist = Math.sqrt(distSq) / effectiveRadius;
+        double noise = positionNoise(shapeSeed + 101, x, y, z, 0.25);
+
+        if (dist > 0.8 && noise > -0.5) {
+            return true;
+        }
+        if (dist > 0.6 && noise > 0.1) {
+            return true;
+        }
+        return dist < 0.5 && noise > 0.75;
     }
 
     private boolean shouldPlaceSphereBlock(WorldGenLevel world, BlockPos pos, boolean floating) {
@@ -255,6 +315,46 @@ public class SpheresPopulator implements IPopulate {
                         : Blocks.SEA_LANTERN.defaultBlockState();
                 world.setBlock(decorPos, decoration, 2);
             }
+        }
+    }
+
+    private static class CrackPlanes {
+        private final double[] nx;
+        private final double[] ny;
+        private final double[] nz;
+        private final double[] offset;
+        private final double[] width;
+
+        private CrackPlanes(long seed, int radius) {
+            Random crackRand = new Random(seed);
+            int count = CRACK_MIN_PLANES + crackRand.nextInt(CRACK_MAX_PLANES - CRACK_MIN_PLANES + 1);
+            this.nx = new double[count];
+            this.ny = new double[count];
+            this.nz = new double[count];
+            this.offset = new double[count];
+            this.width = new double[count];
+
+            for (int i = 0; i < count; i++) {
+                double u = crackRand.nextDouble() * 2.0 - 1.0;
+                double theta = crackRand.nextDouble() * Math.PI * 2.0;
+                double sqrt = Math.sqrt(1.0 - u * u);
+                nx[i] = sqrt * Math.cos(theta);
+                ny[i] = u;
+                nz[i] = sqrt * Math.sin(theta);
+                offset[i] = (crackRand.nextDouble() * 2.0 - 1.0) * radius * 0.35;
+                width[i] = 0.7 + crackRand.nextDouble() * 1.8;
+            }
+        }
+
+        private boolean isInCrack(long shapeSeed, int x, int y, int z, int dx, int dy, int dz) {
+            for (int i = 0; i < nx.length; i++) {
+                double planeDist = Math.abs(nx[i] * dx + ny[i] * dy + nz[i] * dz - offset[i]);
+                double rough = positionNoise(shapeSeed + 17L * (i + 1), x, y, z, 0.35) * 0.8;
+                if (planeDist + rough < width[i]) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 

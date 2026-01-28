@@ -2,7 +2,6 @@ package art.arcane.mystcraft.datapack.symbol;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.world.AgeDirector;
-import art.arcane.mystcraft.Mystcraft;
 import com.google.gson.JsonObject;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -10,9 +9,18 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.biome.Biome;
+import art.arcane.mystcraft.api.world.logic.IBiomeController;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerGrid;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerNative;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerNoise;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerSingle;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerTiled;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.BiConsumer;
 
@@ -22,6 +30,37 @@ import java.util.function.BiConsumer;
 public final class SymbolLogicTypes {
 
     private SymbolLogicTypes() {}
+
+    // Color palettes reused by color target symbols (legacy parity).
+    private static final int[] VIBRANT_COLORS = {
+            0x87CEEB, 0x98FB98, 0xFFB6C1, 0xDDA0DD, 0xF0E68C, 0xADD8E6, 0x90EE90, 0xFFDAB9,
+            0xE6E6FA, 0xFFFACD, 0xB0E0E6, 0xE0FFFF, 0x7FFFD4, 0xFFE4B5, 0xFAFAD2, 0xD8BFD8,
+            0xFF7F50, 0x40E0D0, 0xFFD700, 0xDC143C, 0x50C878, 0xFF007F, 0xFFBF00, 0xEE82EE
+    };
+    private static final int[] SKY_COLORS = {
+            0x87CEEB, 0x00BFFF, 0x87CEFA, 0xB0C4DE, 0x6495ED, 0x4169E1, 0xADD8E6, 0xE0FFFF,
+            0xFFB6C1, 0xFFA07A, 0x98FB98, 0xDDA0DD, 0xFF6347, 0xFFD700, 0x8B0000, 0x4B0082,
+            0x191970, 0x00FF88
+    };
+    private static final int[] FOG_COLORS = {
+            0xC0C0C0, 0xD3D3D3, 0xE8E8E8, 0xB0E0E6, 0xE6E6FA, 0xFFFAF0, 0xF5F5DC, 0x98FB98
+    };
+    private static final int[] GRASS_COLORS = {
+            0x7CFC00, 0x90EE90, 0x32CD32, 0x228B22, 0x006400, 0x9ACD32, 0x6B8E23, 0x556B2F,
+            0xADFF2F, 0x98FB98, 0x8B4513, 0xFF8C00, 0xDC143C, 0x4B0082, 0x00CED1, 0xFFD700
+    };
+    private static final int[] FOLIAGE_COLORS = {
+            0x228B22, 0x006400, 0x2E8B57, 0x3CB371, 0x20B2AA, 0x008B8B, 0x556B2F, 0x8B4513,
+            0xFF4500, 0xFFD700
+    };
+    private static final int[] WATER_COLORS = {
+            0x1E90FF, 0x00CED1, 0x40E0D0, 0x48D1CC, 0x00FFFF, 0x5F9EA0, 0x4682B4, 0x6495ED,
+            0x7B68EE, 0x8A2BE2, 0xFF4500, 0x50C878, 0x191970, 0xDC143C, 0x00FF88, 0xFFD700
+    };
+    private static final int[] SUNSET_COLORS = {
+            0xFF4500, 0xFF6347, 0xFF7F50, 0xFFA07A, 0xFFD700, 0xFF8C00, 0xDC143C, 0x8B0000,
+            0xFF69B4, 0xDA70D6, 0x4B0082, 0x00FF88
+    };
 
     public static void registerDefaults() {
         PopulatorRegistry.registerDefaults();
@@ -68,10 +107,13 @@ public final class SymbolLogicTypes {
         SymbolLogicRegistry.register(new SetSeaBlockType());
         SymbolLogicRegistry.register(new RegisterPopulatorType());
         SymbolLogicRegistry.register(new RegisterTerrainAlterationType());
+        SymbolLogicRegistry.register(new RegisterBiomeControllerType());
         SymbolLogicRegistry.register(new AddBiomeType());
         SymbolLogicRegistry.register(new SetOreDisabledType());
         SymbolLogicRegistry.register(new SetOresDisabledType());
         SymbolLogicRegistry.register(new SetOreMultiplierType());
+        SymbolLogicRegistry.register(new SetSecondaryTerrainWeightedType());
+        SymbolLogicRegistry.register(new ColorFromStackType());
     }
 
     private static void registerSimpleString(String id, BiConsumer<AgeDirector, String> setter) {
@@ -244,6 +286,7 @@ public final class SymbolLogicTypes {
                 case "vertical_tendrils_enabled" -> director.setVerticalTendrilsEnabled(value);
                 case "perlin_worms_enabled" -> director.setPerlinWormsEnabled(value);
                 case "crystals_enabled" -> director.setCrystalsEnabled(value);
+                case "horizon_hidden" -> director.setHorizonHidden(value);
                 case "rainbow_enabled" -> director.setRainbowEnabled(value);
                 case "obelisks_enabled" -> director.setObelisksEnabled(value);
                 case "star_fissure_enabled" -> director.setStarFissureEnabled(value);
@@ -365,6 +408,46 @@ public final class SymbolLogicTypes {
         }
     }
 
+    private static class RegisterBiomeControllerType implements SymbolLogicType {
+        private final ResourceLocation id = new ResourceLocation(Mystcraft.MOD_ID, "register_biome_controller");
+
+        @Override
+        public ResourceLocation getId() {
+            return id;
+        }
+
+        @Override
+        public SymbolLogic parse(JsonObject json) {
+            String type = GsonHelper.getAsString(json, "type", "medium").toLowerCase(Locale.ROOT);
+            return (director, seed) -> {
+                List<Holder<Biome>> biomes = collectBiomes(director);
+                IBiomeController controller = switch (type) {
+                    case "single" -> new BiomeControllerSingle(biomes, seed);
+                    case "native" -> new BiomeControllerNative(seed);
+                    case "tiny" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.TINY);
+                    case "small" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.SMALL);
+                    case "medium" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.MEDIUM);
+                    case "large" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.LARGE);
+                    case "huge" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.HUGE);
+                    case "tiled" -> new BiomeControllerTiled(biomes, seed);
+                    case "grid" -> new BiomeControllerGrid(biomes, seed);
+                    default -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.MEDIUM);
+                };
+                director.registerInterface(controller);
+            };
+        }
+
+        private List<Holder<Biome>> collectBiomes(AgeDirector director) {
+            List<Holder<Biome>> biomes = new ArrayList<>();
+            Holder<Biome> biome;
+            while ((biome = director.popBiome()) != null) {
+                biomes.add(biome);
+            }
+            biomes.addAll(director.getBiomes());
+            return biomes;
+        }
+    }
+
     private static class AddBiomeType implements SymbolLogicType {
         private final ResourceLocation id = new ResourceLocation(Mystcraft.MOD_ID, "add_biome");
 
@@ -435,6 +518,126 @@ public final class SymbolLogicTypes {
             String ore = GsonHelper.getAsString(json, "ore");
             float multiplier = GsonHelper.getAsFloat(json, "multiplier", 1.0f);
             return (director, seed) -> director.setOreMultiplier(ore, multiplier);
+        }
+    }
+
+    private static class SetSecondaryTerrainWeightedType implements SymbolLogicType {
+        private final ResourceLocation id = new ResourceLocation(Mystcraft.MOD_ID, "set_secondary_terrain_weighted");
+
+        @Override
+        public ResourceLocation getId() {
+            return id;
+        }
+
+        @Override
+        public SymbolLogic parse(JsonObject json) {
+            List<String> options = new ArrayList<>();
+            if (json.has("options")) {
+                for (var element : GsonHelper.getAsJsonArray(json, "options")) {
+                    options.add(element.getAsString());
+                }
+            }
+            List<Integer> weights = new ArrayList<>();
+            if (json.has("weights")) {
+                for (var element : GsonHelper.getAsJsonArray(json, "weights")) {
+                    weights.add(element.getAsInt());
+                }
+            }
+            long salt = json.has("salt") ? GsonHelper.getAsLong(json, "salt") : 0xDEADBEEFL;
+            return (director, seed) -> {
+                if (options.isEmpty()) return;
+                RandomSource random = RandomSource.create(seed ^ salt);
+                int chosenIndex = pickWeightedIndex(random, options.size(), weights);
+                director.setSecondaryTerrainType(options.get(chosenIndex));
+            };
+        }
+
+        private int pickWeightedIndex(RandomSource random, int size, List<Integer> weights) {
+            if (weights == null || weights.isEmpty()) {
+                return random.nextInt(size);
+            }
+            int total = 0;
+            for (int i = 0; i < size; i++) {
+                int weight = i < weights.size() ? Math.max(0, weights.get(i)) : 0;
+                total += weight;
+            }
+            if (total <= 0) {
+                return random.nextInt(size);
+            }
+            int roll = random.nextInt(total);
+            int cumulative = 0;
+            for (int i = 0; i < size; i++) {
+                int weight = i < weights.size() ? Math.max(0, weights.get(i)) : 0;
+                cumulative += weight;
+                if (roll < cumulative) {
+                    return i;
+                }
+            }
+            return 0;
+        }
+    }
+
+    private static class ColorFromStackType implements SymbolLogicType {
+        private final ResourceLocation id = new ResourceLocation(Mystcraft.MOD_ID, "set_color_from_stack");
+
+        @Override
+        public ResourceLocation getId() {
+            return id;
+        }
+
+        @Override
+        public SymbolLogic parse(JsonObject json) {
+            String target = GsonHelper.getAsString(json, "target", "").toLowerCase(Locale.ROOT);
+            String palette = GsonHelper.getAsString(json, "palette", "vibrant").toLowerCase(Locale.ROOT);
+            float randomInstability = GsonHelper.getAsFloat(json, "random_instability", 0.0f);
+            long salt = json.has("salt") ? GsonHelper.getAsLong(json, "salt") : 0L;
+            return (director, seed) -> {
+                int color = director.popColor();
+                if (color == -1) {
+                    color = pickColor(palette, seed ^ salt);
+                    if (randomInstability != 0.0f) {
+                        director.addInstability(randomInstability);
+                    }
+                }
+                applyTarget(director, target, color, seed ^ salt, randomInstability);
+            };
+        }
+
+        private int pickColor(String palette, long seed) {
+            if ("night_sky_random".equals(palette)) {
+                RandomSource random = RandomSource.create(seed);
+                int r = random.nextInt(40);
+                int g = random.nextInt(40);
+                int b = 20 + random.nextInt(60);
+                return (r << 16) | (g << 8) | b;
+            }
+            int[] values = switch (palette) {
+                case "sky" -> SKY_COLORS;
+                case "fog" -> FOG_COLORS;
+                case "grass" -> GRASS_COLORS;
+                case "foliage" -> FOLIAGE_COLORS;
+                case "water" -> WATER_COLORS;
+                case "sunset" -> SUNSET_COLORS;
+                case "vibrant" -> VIBRANT_COLORS;
+                default -> VIBRANT_COLORS;
+            };
+            RandomSource random = RandomSource.create(seed);
+            return values[random.nextInt(values.length)];
+        }
+
+        private void applyTarget(AgeDirector director, String target, int color, long seed, float randomInstability) {
+            switch (target) {
+                case "sky" -> director.setSkyColor(color);
+                case "fog" -> director.setFogColor(color);
+                case "grass" -> director.setGrassColor(color);
+                case "foliage" -> director.setFoliageColor(color);
+                case "water" -> director.setWaterColor(color);
+                case "cloud" -> director.setCloudColor(color);
+                case "horizon" -> director.setHorizonColor(color);
+                case "sunset" -> director.setSunsetColor(color);
+                case "night_sky" -> director.setNightSkyColor(color);
+                default -> Mystcraft.LOGGER.warn("[SymbolLogic] Unknown color target {}", target);
+            }
         }
     }
 }

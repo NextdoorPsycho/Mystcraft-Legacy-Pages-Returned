@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Fire",
+    "Loose"
+  ],
+  "display_name": "Soul Sand Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:soul_sand"
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

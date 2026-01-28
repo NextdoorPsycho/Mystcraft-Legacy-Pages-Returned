@@ -1,0 +1,26 @@
+{
+  "category": "structure",
+  "card_rank": 4,
+  "instability_cost": 5.0,
+  "poem": [
+    "Civilization",
+    "Water",
+    "Guardian",
+    "Treasure"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "ocean_monuments_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:ocean_monuments"
+    },
+    {
+      "type": "add_instability",
+      "value": 5.0
+    }
+  ]
+}

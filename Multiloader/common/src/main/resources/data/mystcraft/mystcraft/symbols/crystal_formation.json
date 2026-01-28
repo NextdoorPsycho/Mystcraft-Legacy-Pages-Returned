@@ -1,0 +1,22 @@
+{
+  "category": "special",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "poem": [
+    "Crystal",
+    "Form",
+    "Beauty",
+    "Chaos"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "crystals_enabled",
+      "value": true
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

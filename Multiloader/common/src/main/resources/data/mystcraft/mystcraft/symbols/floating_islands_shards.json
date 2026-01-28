@@ -1,0 +1,30 @@
+{
+  "category": "feature_large",
+  "card_rank": 4,
+  "instability_cost": 11.0,
+  "poem": [
+    "Terrain",
+    "Fracture",
+    "Shard",
+    "Sky"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "floating_islands_enabled",
+      "value": true
+    },
+    {
+      "type": "register_terrain_alteration",
+      "id": "mystcraft:floating_islands",
+      "params": {
+        "style": "shards",
+        "density": 12
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 11.0
+    }
+  ]
+}

@@ -38,7 +38,7 @@ public class SurfaceLakesPopulator implements IPopulate {
         for (int i = 0; i < WATER_ATTEMPTS_PER_CHUNK; i++) {
             int x = chunkPos.getX() + random.nextInt(16);
             int z = chunkPos.getZ() + random.nextInt(16);
-            int y = world.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z);
+            int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
 
             // Only 1 in 4 attempts actually generate
             if (random.nextInt(4) == 0) {
@@ -51,7 +51,7 @@ public class SurfaceLakesPopulator implements IPopulate {
             if (random.nextInt(LAVA_RARITY) == 0) {
                 int x = chunkPos.getX() + random.nextInt(16);
                 int z = chunkPos.getZ() + random.nextInt(16);
-                int y = world.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z);
+                int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
 
                 generateSurfaceLake(world, random, new BlockPos(x, y, z), Blocks.LAVA.defaultBlockState(), false);
             }
@@ -91,6 +91,8 @@ public class SurfaceLakesPopulator implements IPopulate {
         }
 
         // Verify the location is suitable for a surface lake
+        int supportCount = 0;
+        int voidCount = 0;
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 for (int y = 4; y < 8; y++) {
@@ -115,6 +117,28 @@ public class SurfaceLakesPopulator implements IPopulate {
                     }
                 }
             }
+        }
+
+        // Ensure the lake isn't floating by requiring solid support below the fluid volume
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                for (int y = 0; y < 4; y++) {
+                    if (!lakeShape[(x * 16 + z) * 8 + y]) continue;
+                    BlockPos lakePos = center.offset(x, y, z);
+                    if (!isInWritableArea(lakePos, currentChunkPos)) continue;
+                    BlockState state = world.getBlockState(lakePos);
+                    BlockState below = world.getBlockState(lakePos.below());
+                    boolean supported = state.isSolid() || below.isSolid();
+                    if (supported) {
+                        supportCount++;
+                    } else if (state.isAir() && below.isAir()) {
+                        voidCount++;
+                    }
+                }
+            }
+        }
+        if (voidCount > supportCount) {
+            return false;
         }
 
         // Generate the lake

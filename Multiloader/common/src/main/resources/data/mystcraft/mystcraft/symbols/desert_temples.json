@@ -1,0 +1,26 @@
+{
+  "category": "structure",
+  "card_rank": 3,
+  "instability_cost": 3.0,
+  "poem": [
+    "Civilization",
+    "Sand",
+    "Treasure",
+    "Trap"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "desert_temples_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:desert_temples"
+    },
+    {
+      "type": "add_instability",
+      "value": 3.0
+    }
+  ]
+}

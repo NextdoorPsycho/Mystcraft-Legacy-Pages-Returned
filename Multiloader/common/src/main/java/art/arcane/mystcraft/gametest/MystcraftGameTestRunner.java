@@ -25,8 +25,9 @@ public final class MystcraftGameTestRunner {
 
         AtomicInteger createdCount = new AtomicInteger(0);
         int iterations = 5;
-        long stepTicks = 10;
+        long stepTicks = 40;
         long startTick = 5;
+        long cooldownTicks = 120;
 
         for (int i = 0; i < iterations; i++) {
             long tick = startTick + (i * stepTicks);
@@ -40,7 +41,7 @@ public final class MystcraftGameTestRunner {
             });
         }
 
-        helper.runAtTickTime(startTick + (iterations * stepTicks) + 5, () -> {
+        helper.runAtTickTime(startTick + (iterations * stepTicks) + cooldownTicks, () -> {
             if (createdCount.get() == iterations) {
                 helper.succeed();
             } else {

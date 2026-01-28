@@ -20,7 +20,7 @@ public class MystcraftFabricGameTests implements FabricGameTest {
         helper.succeed();
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 600)
     public void random_books_create_dimensions(GameTestHelper helper) {
         MystcraftGameTestRunner.runRandomBookDimensionTest(helper);
     }

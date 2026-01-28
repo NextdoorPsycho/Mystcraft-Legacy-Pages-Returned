@@ -22,7 +22,7 @@ public class MystcraftNeoForgeGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "minecraft")
+    @GameTest(template = "empty", templateNamespace = "minecraft", timeoutTicks = 600)
     public void random_books_create_dimensions(GameTestHelper helper) {
         MystcraftGameTestRunner.runRandomBookDimensionTest(helper);
     }

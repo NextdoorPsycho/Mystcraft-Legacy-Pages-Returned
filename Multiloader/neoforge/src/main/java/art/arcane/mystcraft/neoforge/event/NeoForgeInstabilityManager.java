@@ -3,7 +3,7 @@ package art.arcane.mystcraft.neoforge.event;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.instability.InstabilityManager;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.event.TickEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 

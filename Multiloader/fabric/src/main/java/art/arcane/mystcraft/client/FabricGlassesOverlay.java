@@ -47,12 +47,12 @@ public final class FabricGlassesOverlay {
             if (entityHit.getEntity() instanceof ItemFrame frame) {
                 ItemStack framedItem = frame.getItem();
                 if (!framedItem.isEmpty() && framedItem.getItem() instanceof PageItem) {
-                    String symbolId = Page.getSymbolId(framedItem);
+                    var symbolId = Page.getSymbol(framedItem);
                     if (symbolId != null) {
                         IAgeSymbol symbol = SymbolRegistry.get(symbolId);
                         if (symbol != null) {
-                            lines.add(Component.literal("Symbol: " + symbol.getDisplayName()));
-                            lines.add(Component.literal("Category: " + symbol.getCategory().getDisplayName()));
+                            lines.add(Component.literal("Symbol: " + symbol.getLocalizedName()));
+                            lines.add(Component.literal("Category: " + symbol.getCategory().getName()));
                             if (symbol.getCardRank() != null) {
                                 lines.add(Component.literal("Rank: " + symbol.getCardRank()));
                             }

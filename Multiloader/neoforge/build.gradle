@@ -1,32 +1,69 @@
-plugins {
-    id 'net.neoforged.gradle.userdev' version '7.0.41'
+buildscript {
+    repositories {
+        maven { url = 'https://maven.neoforged.net/releases' }
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath "net.neoforged.gradle:userdev:7.0.41"
+    }
+}
+
+def hasTasks = !gradle.startParameter.taskNames.isEmpty()
+def ideaEnv =
+        System.getProperty("idea.sync.active") == "true" ||
+        System.getProperty("idea.active") == "true" ||
+        System.getenv("IDEA_INITIAL_DIRECTORY") != null ||
+        System.getenv("IDEA_GRADLE_SYNC") != null
+def isIdeaSync = ideaEnv || !hasTasks
+def forceEnableUserdev = (project.findProperty("enableNeoForgeUserdev") ?: "false").toString().toBoolean()
+def forceDisableUserdev = (project.findProperty("disableNeoForgeUserdev") ?: "false").toString().toBoolean()
+
+if (forceEnableUserdev) {
+    isIdeaSync = false
+}
+if (forceDisableUserdev) {
+    isIdeaSync = true
+}
+
+if (!isIdeaSync) {
+    apply plugin: 'net.neoforged.gradle.userdev'
+} else {
+    logger.lifecycle("[neoforge] Skipping NeoForge userdev plugin during IntelliJ sync to avoid idea-ext conflict.")
+}
+
+// IntelliJ may invoke this task during sync; provide a no-op when userdev is skipped.
+tasks.register("idePostSync") {
+    group = "ide"
+    description = "No-op placeholder for IntelliJ sync when NeoForge userdev is not applied."
 }
 
 base {
     archivesName = "${mod_id}-neoforge-${minecraft_version}"
 }
 
-minecraft {
-    def at = project(':common').file('src/main/resources/META-INF/accesstransformer.cfg')
-    if (at.exists()) {
-        accessTransformers.file at
+if (!isIdeaSync) {
+    minecraft {
+        def at = project(':common').file('src/main/resources/META-INF/accesstransformer.cfg')
+        if (at.exists()) {
+            accessTransformers.file at
+        }
     }
-}
 
-runs {
-    configureEach {
-        modSource project.sourceSets.main
-        modSource project(':common').sourceSets.main
-    }
-    client {
-        systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
-    }
-    server {
-        systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
-        programArgument '--nogui'
-    }
-    data {
-        programArguments.addAll '--mod', mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+    runs {
+        configureEach {
+            modSource project.sourceSets.main
+            modSource project(':common').sourceSets.main
+        }
+        client {
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        }
+        server {
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+            programArgument '--nogui'
+        }
+        data {
+            programArguments.addAll '--mod', mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
     }
 }
 
@@ -46,6 +83,7 @@ tasks.named('processResources', ProcessResources) {
 }
 
 tasks.named('sourcesJar', Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
 }

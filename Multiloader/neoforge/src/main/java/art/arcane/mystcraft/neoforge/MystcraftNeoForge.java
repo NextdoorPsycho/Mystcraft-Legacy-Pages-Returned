@@ -29,9 +29,9 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 import java.io.File;
 import java.io.IOException;
@@ -83,8 +83,8 @@ public class MystcraftNeoForge {
     }
 
     /**
-     * Populates common registry stubs from NeoForge RegistryObjects.
-     * RegistryObject implements Supplier, so direct assignment works.
+     * Populates common registry stubs from NeoForge DeferredHolders.
+     * DeferredHolder implements Supplier, so direct assignment works.
      */
     private static void populateCommonRegistries() {
         // Blocks
@@ -321,7 +321,7 @@ public class MystcraftNeoForge {
         }
 
         @SubscribeEvent
-        public static void onRegisterLayerDefinitions(net.minecraftforge.client.event.EntityRenderersEvent.RegisterLayerDefinitions event) {
+        public static void onRegisterLayerDefinitions(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterLayerDefinitions event) {
             Mystcraft.LOGGER.info("[Mystcraft] Registering model layers");
 
             event.registerLayerDefinition(art.arcane.mystcraft.client.model.BookstandModel.LAYER_LOCATION,
@@ -331,7 +331,7 @@ public class MystcraftNeoForge {
         }
 
         @SubscribeEvent
-        public static void onRegisterRenderers(net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+        public static void onRegisterRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
             Mystcraft.LOGGER.info("[Mystcraft] Registering renderers");
 
             event.registerBlockEntityRenderer(NeoForgeModBlockEntities.BOOKSTAND.get(),
@@ -356,7 +356,7 @@ public class MystcraftNeoForge {
         }
 
         @SubscribeEvent
-        public static void onRegisterItemColors(net.minecraftforge.client.event.RegisterColorHandlersEvent.Item event) {
+        public static void onRegisterItemColors(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item event) {
             event.register((stack, tintIndex) -> 0xFF303030, NeoForgeModItems.GUIDEBOOK.get());
             event.register((stack, tintIndex) -> tintIndex == 1 ? 0xFF1A1A1A : 0xFFFFFFFF, NeoForgeModItems.INK_BUCKET.get());
         }

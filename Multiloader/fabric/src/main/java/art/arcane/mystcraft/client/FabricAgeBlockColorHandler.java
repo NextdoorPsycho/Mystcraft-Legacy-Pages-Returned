@@ -20,7 +20,7 @@ public final class FabricAgeBlockColorHandler {
             int ageUID = getAgeUID();
             if (ageUID < 0) return 0xFFFFFF;
 
-            int baseColor = ClientAgeDataCache.getCrystalColor(ageUID);
+            int baseColor = ClientAgeDataCache.getSkyColor(ageUID);
             if (baseColor == -1) return 0xFFFFFF;
             return baseColor;
         };

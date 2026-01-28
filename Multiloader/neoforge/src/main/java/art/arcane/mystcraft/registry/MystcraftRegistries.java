@@ -13,10 +13,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
 import com.mojang.serialization.Codec;
-import net.minecraftforge.common.loot.IGlobalLootModifier;
-import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.neoforged.bus.api.IEventBus;
 
 /**
@@ -26,40 +26,40 @@ import net.neoforged.bus.api.IEventBus;
 public final class MystcraftRegistries {
 
     public static final DeferredRegister<Block> BLOCKS =
-            DeferredRegister.create(ForgeRegistries.BLOCKS, Mystcraft.MOD_ID);
+            DeferredRegister.create(Registries.BLOCK, Mystcraft.MOD_ID);
 
     public static final DeferredRegister<Item> ITEMS =
-            DeferredRegister.create(ForgeRegistries.ITEMS, Mystcraft.MOD_ID);
+            DeferredRegister.create(Registries.ITEM, Mystcraft.MOD_ID);
 
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
-            DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, Mystcraft.MOD_ID);
+            DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, Mystcraft.MOD_ID);
 
     public static final DeferredRegister<EntityType<?>> ENTITIES =
-            DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Mystcraft.MOD_ID);
+            DeferredRegister.create(Registries.ENTITY_TYPE, Mystcraft.MOD_ID);
 
     public static final DeferredRegister<Fluid> FLUIDS =
-            DeferredRegister.create(ForgeRegistries.FLUIDS, Mystcraft.MOD_ID);
+            DeferredRegister.create(Registries.FLUID, Mystcraft.MOD_ID);
 
     public static final DeferredRegister<FluidType> FLUID_TYPES =
-            DeferredRegister.create(ForgeRegistries.Keys.FLUID_TYPES, Mystcraft.MOD_ID);
+            DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, Mystcraft.MOD_ID);
 
     public static final DeferredRegister<SoundEvent> SOUNDS =
-            DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, Mystcraft.MOD_ID);
+            DeferredRegister.create(Registries.SOUND_EVENT, Mystcraft.MOD_ID);
 
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Mystcraft.MOD_ID);
 
     public static final DeferredRegister<MenuType<?>> MENUS =
-            DeferredRegister.create(ForgeRegistries.MENU_TYPES, Mystcraft.MOD_ID);
+            DeferredRegister.create(Registries.MENU, Mystcraft.MOD_ID);
 
     public static final DeferredRegister<Codec<? extends IGlobalLootModifier>> LOOT_MODIFIERS =
-            DeferredRegister.create(ForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, Mystcraft.MOD_ID);
+            DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, Mystcraft.MOD_ID);
 
     public static final DeferredRegister<PoiType> POI_TYPES =
-            DeferredRegister.create(ForgeRegistries.POI_TYPES, Mystcraft.MOD_ID);
+            DeferredRegister.create(Registries.POINT_OF_INTEREST_TYPE, Mystcraft.MOD_ID);
 
     public static final DeferredRegister<VillagerProfession> VILLAGER_PROFESSIONS =
-            DeferredRegister.create(ForgeRegistries.VILLAGER_PROFESSIONS, Mystcraft.MOD_ID);
+            DeferredRegister.create(Registries.VILLAGER_PROFESSION, Mystcraft.MOD_ID);
 
     private MystcraftRegistries() {
     }

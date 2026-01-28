@@ -2,7 +2,7 @@ package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 

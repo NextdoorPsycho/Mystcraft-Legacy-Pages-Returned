@@ -2,7 +2,7 @@ package art.arcane.mystcraft.neoforge.event;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.command.MystcraftCommands;
-import net.minecraftforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 

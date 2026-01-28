@@ -25,10 +25,8 @@ public final class FabricEventRegistration {
 
         // World tick: instability and age effects processing
         ServerTickEvents.END_WORLD_TICK.register(level -> {
-            if (level instanceof ServerLevel serverLevel) {
-                InstabilityManager.onLevelTick(serverLevel);
-                AgeEffectsHandler.onLevelTick(serverLevel);
-            }
+            InstabilityManager.onLevelTick(level);
+            AgeEffectsHandler.onLevelTick(level);
         });
 
         // Command registration

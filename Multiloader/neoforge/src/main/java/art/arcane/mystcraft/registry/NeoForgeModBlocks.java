@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 /**
  * Block registrations for Mystcraft.
@@ -25,49 +25,49 @@ import net.minecraftforge.registries.RegistryObject;
 public final class NeoForgeModBlocks {
 
     // Workstation blocks
-    public static final RegistryObject<Block> INK_MIXER =
+    public static final DeferredHolder<Block, Block> INK_MIXER =
             MystcraftRegistries.BLOCKS.register("blockinkmixer",
                     () -> new InkMixerBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.WOOD)
                             .strength(2.5F)
                             .requiresCorrectToolForDrops()));
 
-    public static final RegistryObject<Block> BOOK_BINDER =
+    public static final DeferredHolder<Block, Block> BOOK_BINDER =
             MystcraftRegistries.BLOCKS.register("blockbookbinder",
                     () -> new BookBinderBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.WOOD)
                             .strength(2.5F)
                             .requiresCorrectToolForDrops()));
 
-    public static final RegistryObject<Block> BOOK_RECEPTACLE =
+    public static final DeferredHolder<Block, Block> BOOK_RECEPTACLE =
             MystcraftRegistries.BLOCKS.register("blockbookreceptacle",
                     () -> new BookReceptacleBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.STONE)
                             .strength(3.5F)
                             .requiresCorrectToolForDrops()));
 
-    public static final RegistryObject<Block> BOOKSTAND =
+    public static final DeferredHolder<Block, Block> BOOKSTAND =
             MystcraftRegistries.BLOCKS.register("blockbookstand",
                     () -> new BookstandBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.WOOD)
                             .strength(2.0F)
                             .requiresCorrectToolForDrops()));
 
-    public static final RegistryObject<Block> LECTERN =
+    public static final DeferredHolder<Block, Block> LECTERN =
             MystcraftRegistries.BLOCKS.register("blocklectern",
                     () -> new MystcraftLecternBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.WOOD)
                             .strength(2.0F)
                             .requiresCorrectToolForDrops()));
 
-    public static final RegistryObject<Block> LINK_MODIFIER =
+    public static final DeferredHolder<Block, Block> LINK_MODIFIER =
             MystcraftRegistries.BLOCKS.register("blocklinkmodifier",
                     () -> new LinkModifierBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.STONE)
                             .strength(3.0F)
                             .requiresCorrectToolForDrops()));
 
-    public static final RegistryObject<Block> WRITING_DESK =
+    public static final DeferredHolder<Block, Block> WRITING_DESK =
             MystcraftRegistries.BLOCKS.register("writingdesk",
                     () -> new WritingDeskBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.WOOD)
@@ -75,7 +75,7 @@ public final class NeoForgeModBlocks {
                             .requiresCorrectToolForDrops()));
 
     // Special blocks
-    public static final RegistryObject<Block> CRYSTAL =
+    public static final DeferredHolder<Block, Block> CRYSTAL =
             MystcraftRegistries.BLOCKS.register("blockcrystal",
                     () -> new CrystalBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.COLOR_LIGHT_BLUE)
@@ -83,7 +83,7 @@ public final class NeoForgeModBlocks {
                             .lightLevel(CrystalBlock::getLightLevel)
                             .noOcclusion()));
 
-    public static final RegistryObject<Block> DECAY =
+    public static final DeferredHolder<Block, Block> DECAY =
             MystcraftRegistries.BLOCKS.register("blockdecay",
                     () -> new DecayBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.COLOR_BLACK)
@@ -91,7 +91,7 @@ public final class NeoForgeModBlocks {
                             .noLootTable()
                             .randomTicks()));
 
-    public static final RegistryObject<Block> LINK_PORTAL =
+    public static final DeferredHolder<Block, Block> LINK_PORTAL =
             MystcraftRegistries.BLOCKS.register("linkportal",
                     () -> new LinkPortalBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.COLOR_BLACK)
@@ -101,7 +101,7 @@ public final class NeoForgeModBlocks {
                             .lightLevel(state -> 11)
                             .pushReaction(PushReaction.BLOCK)));
 
-    public static final RegistryObject<Block> STAR_FISSURE =
+    public static final DeferredHolder<Block, Block> STAR_FISSURE =
             MystcraftRegistries.BLOCKS.register("blockstarfissure",
                     () -> new StarFissureBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.COLOR_BLACK)
@@ -112,7 +112,7 @@ public final class NeoForgeModBlocks {
                             .pushReaction(PushReaction.BLOCK)));
 
     // Fluid block
-    public static final RegistryObject<LiquidBlock> FLUID_INK =
+    public static final DeferredHolder<Block, LiquidBlock> FLUID_INK =
             MystcraftRegistries.BLOCKS.register("fluidblockblackink",
                     () -> new LiquidBlock(NeoForgeModFluids.BLACK_INK_SOURCE, BlockBehaviour.Properties.copy(Blocks.WATER)
                             .mapColor(MapColor.COLOR_BLACK)

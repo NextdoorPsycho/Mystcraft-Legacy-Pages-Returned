@@ -1,6 +1,6 @@
 package art.arcane.mystcraft.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.config.ModConfig;
 
@@ -15,34 +15,34 @@ import net.neoforged.fml.config.ModConfig;
  */
 public class NeoForgeMystcraftConfig {
 
-    private static final ForgeConfigSpec.Builder COMMON_BUILDER = new ForgeConfigSpec.Builder();
-    public static final ForgeConfigSpec COMMON_SPEC;
+    private static final ModConfigSpec.Builder COMMON_BUILDER = new ModConfigSpec.Builder();
+    public static final ModConfigSpec COMMON_SPEC;
 
     // General settings
-    public static final ForgeConfigSpec.BooleanValue giveGuidebookOnFirstSpawn;
-    public static final ForgeConfigSpec.IntValue maxSymbolsPerBook;
-    public static final ForgeConfigSpec.BooleanValue deleteAgesOnStartup;
+    public static final ModConfigSpec.BooleanValue giveGuidebookOnFirstSpawn;
+    public static final ModConfigSpec.IntValue maxSymbolsPerBook;
+    public static final ModConfigSpec.BooleanValue deleteAgesOnStartup;
     // Instability settings
-    public static final ForgeConfigSpec.BooleanValue instabilityEnabled;
-    public static final ForgeConfigSpec.BooleanValue deathEffectsEnabled;
-    public static final ForgeConfigSpec.BooleanValue allowUnstableAges;
-    public static final ForgeConfigSpec.DoubleValue instabilityMultiplier;
-    public static final ForgeConfigSpec.DoubleValue maxAllowedInstability;
+    public static final ModConfigSpec.BooleanValue instabilityEnabled;
+    public static final ModConfigSpec.BooleanValue deathEffectsEnabled;
+    public static final ModConfigSpec.BooleanValue allowUnstableAges;
+    public static final ModConfigSpec.DoubleValue instabilityMultiplier;
+    public static final ModConfigSpec.DoubleValue maxAllowedInstability;
 
     // Instability thresholds (instability level required to trigger each effect tier)
-    public static final ForgeConfigSpec.DoubleValue thresholdDecay;
-    public static final ForgeConfigSpec.DoubleValue thresholdTransmute;
-    public static final ForgeConfigSpec.DoubleValue thresholdLightning;
-    public static final ForgeConfigSpec.DoubleValue thresholdMeteor;
-    public static final ForgeConfigSpec.DoubleValue thresholdPoison;
-    public static final ForgeConfigSpec.DoubleValue thresholdWither;
+    public static final ModConfigSpec.DoubleValue thresholdDecay;
+    public static final ModConfigSpec.DoubleValue thresholdTransmute;
+    public static final ModConfigSpec.DoubleValue thresholdLightning;
+    public static final ModConfigSpec.DoubleValue thresholdMeteor;
+    public static final ModConfigSpec.DoubleValue thresholdPoison;
+    public static final ModConfigSpec.DoubleValue thresholdWither;
 
     // Effect chances (base chance per tick, scaled by instability)
-    public static final ForgeConfigSpec.DoubleValue chanceDecay;
-    public static final ForgeConfigSpec.DoubleValue chanceTransmute;
-    public static final ForgeConfigSpec.DoubleValue chanceLightning;
-    public static final ForgeConfigSpec.DoubleValue chanceMeteor;
-    public static final ForgeConfigSpec.DoubleValue chancePlayerEffect;
+    public static final ModConfigSpec.DoubleValue chanceDecay;
+    public static final ModConfigSpec.DoubleValue chanceTransmute;
+    public static final ModConfigSpec.DoubleValue chanceLightning;
+    public static final ModConfigSpec.DoubleValue chanceMeteor;
+    public static final ModConfigSpec.DoubleValue chancePlayerEffect;
 
     static {
         COMMON_BUILDER.comment("Mystcraft Common Configuration");

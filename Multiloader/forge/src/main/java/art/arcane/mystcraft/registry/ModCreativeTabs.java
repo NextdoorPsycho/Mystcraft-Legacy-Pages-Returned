@@ -23,7 +23,7 @@ public final class ModCreativeTabs {
      */
     public static final RegistryObject<CreativeModeTab> MYSTCRAFT_TAB =
             MystcraftRegistries.CREATIVE_TABS.register("mystcraft",
-                    () -> CreativeModeTab.builder()
+                    () -> CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
                             .title(Component.translatable("itemGroup." + Mystcraft.MOD_ID))
                             .icon(() -> new ItemStack(ForgeModItems.AGEBOOK.get()))
                             .displayItems((params, output) -> {
@@ -71,7 +71,7 @@ public final class ModCreativeTabs {
      */
     public static final RegistryObject<CreativeModeTab> MYSTCRAFT_PAGES_TAB =
             MystcraftRegistries.CREATIVE_TABS.register("mystcraft_pages",
-                    () -> CreativeModeTab.builder()
+                    () -> CreativeModeTab.builder(CreativeModeTab.Row.TOP, 1)
                             .title(Component.translatable("itemGroup." + Mystcraft.MOD_ID + "_pages"))
                             .icon(() -> Page.createLinkPage())
                             .displayItems((params, output) -> {

@@ -8,14 +8,14 @@ import art.arcane.mystcraft.entity.MystcraftFallingBlockEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 /**
  * Entity registrations for Mystcraft.
  */
 public final class NeoForgeModEntities {
 
-    public static final RegistryObject<EntityType<LinkbookEntity>> LINKBOOK =
+    public static final DeferredHolder<EntityType<?>, EntityType<LinkbookEntity>> LINKBOOK =
             MystcraftRegistries.ENTITIES.register("linkbook",
                     () -> EntityType.Builder.<LinkbookEntity>of(LinkbookEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
@@ -23,7 +23,7 @@ public final class NeoForgeModEntities {
                             .updateInterval(20)
                             .build(new ResourceLocation(Mystcraft.MOD_ID, "linkbook").toString()));
 
-    public static final RegistryObject<EntityType<MystcraftFallingBlockEntity>> FALLING_BLOCK =
+    public static final DeferredHolder<EntityType<?>, EntityType<MystcraftFallingBlockEntity>> FALLING_BLOCK =
             MystcraftRegistries.ENTITIES.register("falling_block",
                     () -> EntityType.Builder.<MystcraftFallingBlockEntity>of(MystcraftFallingBlockEntity::new, MobCategory.MISC)
                             .sized(0.98F, 0.98F)
@@ -31,7 +31,7 @@ public final class NeoForgeModEntities {
                             .updateInterval(20)
                             .build(new ResourceLocation(Mystcraft.MOD_ID, "falling_block").toString()));
 
-    public static final RegistryObject<EntityType<MeteorEntity>> METEOR =
+    public static final DeferredHolder<EntityType<?>, EntityType<MeteorEntity>> METEOR =
             MystcraftRegistries.ENTITIES.register("meteor",
                     () -> EntityType.Builder.<MeteorEntity>of(MeteorEntity::new, MobCategory.MISC)
                             .sized(2.0F, 2.0F)
@@ -40,7 +40,7 @@ public final class NeoForgeModEntities {
                             .fireImmune()
                             .build(new ResourceLocation(Mystcraft.MOD_ID, "meteor").toString()));
 
-    public static final RegistryObject<EntityType<ColoredLightningEntity>> COLORED_LIGHTNING =
+    public static final DeferredHolder<EntityType<?>, EntityType<ColoredLightningEntity>> COLORED_LIGHTNING =
             MystcraftRegistries.ENTITIES.register("colored_lightning",
                     () -> EntityType.Builder.<ColoredLightningEntity>of(ColoredLightningEntity::new, MobCategory.MISC)
                             .sized(0.0F, 0.0F)

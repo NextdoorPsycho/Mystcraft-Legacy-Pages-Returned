@@ -2,8 +2,8 @@ package art.arcane.mystcraft.fluid;
 
 import art.arcane.mystcraft.Mystcraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.FluidType;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.fluids.FluidType;
 
 import java.util.function.Consumer;
 

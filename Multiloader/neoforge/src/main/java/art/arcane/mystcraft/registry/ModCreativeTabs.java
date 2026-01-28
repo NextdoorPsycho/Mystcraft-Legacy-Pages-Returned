@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.List;
 
@@ -21,9 +21,9 @@ public final class ModCreativeTabs {
     /**
      * Main Mystcraft tab - blocks, items, tools
      */
-    public static final RegistryObject<CreativeModeTab> MYSTCRAFT_TAB =
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MYSTCRAFT_TAB =
             MystcraftRegistries.CREATIVE_TABS.register("mystcraft",
-                    () -> CreativeModeTab.builder()
+                    () -> CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
                             .title(Component.translatable("itemGroup." + Mystcraft.MOD_ID))
                             .icon(() -> new ItemStack(NeoForgeModItems.AGEBOOK.get()))
                             .displayItems((params, output) -> {
@@ -69,9 +69,9 @@ public final class ModCreativeTabs {
      * Symbol pages are added via BuildCreativeModeTabContentsEvent which fires
      * when the creative inventory is opened, after all symbols are registered.
      */
-    public static final RegistryObject<CreativeModeTab> MYSTCRAFT_PAGES_TAB =
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MYSTCRAFT_PAGES_TAB =
             MystcraftRegistries.CREATIVE_TABS.register("mystcraft_pages",
-                    () -> CreativeModeTab.builder()
+                    () -> CreativeModeTab.builder(CreativeModeTab.Row.TOP, 1)
                             .title(Component.translatable("itemGroup." + Mystcraft.MOD_ID + "_pages"))
                             .icon(() -> Page.createLinkPage())
                             .displayItems((params, output) -> {

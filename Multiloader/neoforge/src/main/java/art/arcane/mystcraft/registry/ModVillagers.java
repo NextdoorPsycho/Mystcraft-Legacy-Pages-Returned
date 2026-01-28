@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 /**
  * Registers Mystcraft villager professions and POI types.
@@ -17,7 +17,7 @@ public final class ModVillagers {
      * POI type for the Archivist workstation (Lectern).
      * Villagers will claim this block as their workstation.
      */
-    public static final RegistryObject<PoiType> ARCHIVIST_POI = MystcraftRegistries.POI_TYPES.register(
+    public static final DeferredHolder<PoiType, PoiType> ARCHIVIST_POI = MystcraftRegistries.POI_TYPES.register(
             "archivist",
             () -> new PoiType(
                     ImmutableSet.copyOf(NeoForgeModBlocks.LECTERN.get().getStateDefinition().getPossibleStates()),
@@ -30,7 +30,7 @@ public final class ModVillagers {
      * The Archivist villager profession.
      * Archivists trade Mystcraft items like pages, ink, and books.
      */
-    public static final RegistryObject<VillagerProfession> ARCHIVIST = MystcraftRegistries.VILLAGER_PROFESSIONS.register(
+    public static final DeferredHolder<VillagerProfession, VillagerProfession> ARCHIVIST = MystcraftRegistries.VILLAGER_PROFESSIONS.register(
             "archivist",
             () -> new VillagerProfession(
                     "archivist",

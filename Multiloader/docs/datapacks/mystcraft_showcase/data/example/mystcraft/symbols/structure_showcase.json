@@ -1,0 +1,17 @@
+{
+  "category": "structure",
+  "card_rank": 3,
+  "instability_cost": 0.4,
+  "poem": [
+    "Village",
+    "Road",
+    "Home",
+    "Light"
+  ],
+  "logic": [
+    {
+      "type": "register_populator",
+      "id": "mystcraft:villages"
+    }
+  ]
+}

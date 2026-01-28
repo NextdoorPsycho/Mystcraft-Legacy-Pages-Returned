@@ -35,6 +35,40 @@ public final class CFGGrammarGenerator {
     private CFGGrammarGenerator() {}
 
     /**
+     * Clears all grammar data to allow a full rebuild (datapack reload).
+     */
+    public static void reset() {
+        ranks.clear();
+        mappings.clear();
+        reverseLookup.clear();
+        shortestPaths = null;
+        isFinalized = false;
+    }
+
+    /**
+     * Removes all rules for a specific parent token.
+     * Intended for datapack-driven overrides before grammar finalization.
+     */
+    public static void removeRulesForParent(ResourceLocation parent) {
+        List<CFGRule> rules = mappings.remove(parent);
+        if (rules == null || rules.isEmpty()) {
+            return;
+        }
+        ranks.remove(parent);
+        for (CFGRule rule : rules) {
+            for (ResourceLocation value : rule.getValues()) {
+                List<CFGRule> reverseRules = reverseLookup.get(value);
+                if (reverseRules != null) {
+                    reverseRules.remove(rule);
+                    if (reverseRules.isEmpty()) {
+                        reverseLookup.remove(value);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Registers a grammar rule. Must be called before finalization.
      *
      * @param rule The rule to register
@@ -396,14 +430,4 @@ public final class CFGGrammarGenerator {
         return isFinalized;
     }
 
-    /**
-     * Resets the grammar system (for testing only).
-     */
-    public static void reset() {
-        ranks.clear();
-        mappings.clear();
-        reverseLookup.clear();
-        shortestPaths = null;
-        isFinalized = false;
-    }
 }

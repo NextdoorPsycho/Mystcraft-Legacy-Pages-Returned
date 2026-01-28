@@ -1,0 +1,17 @@
+{
+  "category": "phase",
+  "card_rank": 1,
+  "instability_cost": 0.0,
+  "poem": [
+    "Phase",
+    "Rise",
+    "Arc",
+    "Flow"
+  ],
+  "logic": [
+    {
+      "type": "push_phase",
+      "value": 0.5
+    }
+  ]
+}

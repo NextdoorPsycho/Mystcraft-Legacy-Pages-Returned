@@ -1,0 +1,22 @@
+{
+  "category": "color",
+  "card_rank": 2,
+  "instability_cost": 0.1,
+  "poem": [
+    "Hue",
+    "Layer",
+    "Shift",
+    "Pulse"
+  ],
+  "can_duplicate": true,
+  "logic": [
+    {
+      "type": "push_color",
+      "value": 16755251
+    },
+    {
+      "type": "push_gradient",
+      "value": 16733695
+    }
+  ]
+}

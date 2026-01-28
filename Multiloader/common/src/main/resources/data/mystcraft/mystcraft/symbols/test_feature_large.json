@@ -1,0 +1,14 @@
+{
+  "category": "feature_large",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": ["Terrain", "Transform", "Void", "Flow"],
+  "logic": [
+    { "type": "set_flag", "flag": "caves_enabled", "value": true },
+    {
+      "type": "register_terrain_alteration",
+      "id": "mystcraft:caves",
+      "params": { "rate": 15, "size": 40, "fill_block": "minecraft:air" }
+    }
+  ]
+}

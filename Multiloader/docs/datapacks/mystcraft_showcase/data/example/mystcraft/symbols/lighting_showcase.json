@@ -1,0 +1,17 @@
+{
+  "category": "lighting",
+  "card_rank": 1,
+  "instability_cost": 0.0,
+  "poem": [
+    "Light",
+    "Balance",
+    "Glow",
+    "Soft"
+  ],
+  "logic": [
+    {
+      "type": "set_lighting_type",
+      "value": "normal"
+    }
+  ]
+}

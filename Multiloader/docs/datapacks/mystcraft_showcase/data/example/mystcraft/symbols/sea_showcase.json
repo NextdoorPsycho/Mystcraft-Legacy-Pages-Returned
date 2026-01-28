@@ -1,0 +1,25 @@
+{
+  "category": "sea",
+  "card_rank": 1,
+  "instability_cost": 0.0,
+  "poem": [
+    "Sea",
+    "Blue",
+    "Level",
+    "Still"
+  ],
+  "logic": [
+    {
+      "type": "set_has_sea",
+      "value": true
+    },
+    {
+      "type": "set_sea_level",
+      "value": 62
+    },
+    {
+      "type": "set_sea_block",
+      "block": "minecraft:water"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "category": "environment",
+  "card_rank": 2,
+  "instability_cost": 1.0,
+  "poem": [
+    "Storm",
+    "Pulse",
+    "Shift",
+    "Charge"
+  ],
+  "logic": [
+    {
+      "type": "set_timescale",
+      "value": 1.5
+    },
+    {
+      "type": "set_flag",
+      "flag": "lightning_enabled",
+      "value": true
+    },
+    {
+      "type": "set_flag",
+      "flag": "meteors_enabled",
+      "value": true
+    },
+    {
+      "type": "add_instability",
+      "value": 2.0
+    }
+  ]
+}

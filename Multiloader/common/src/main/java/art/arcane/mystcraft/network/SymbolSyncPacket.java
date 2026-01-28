@@ -1,8 +1,10 @@
 package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.api.symbol.GrammarBindingMode;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
+import art.arcane.mystcraft.datapack.symbol.DataSymbol;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -29,7 +31,12 @@ public class SymbolSyncPacket {
                     symbol.getRegistryName(),
                     symbol.getCategory(),
                     symbol.getCardRank() != null ? symbol.getCardRank() : 0,
-                    symbol.getInstabilityCost()
+                    symbol.getInstabilityCost(),
+                    symbol.getPoem(),
+                    symbol.allowInRandomGeneration(),
+                    symbol.canDuplicate(),
+                    !SymbolRegistry.isStaticSymbol(symbol.getRegistryName()),
+                    SymbolRegistry.isOverridden(symbol.getRegistryName())
             ));
         }
     }
@@ -51,6 +58,18 @@ public class SymbolSyncPacket {
             buf.writeEnum(data.category);
             buf.writeInt(data.cardRank);
             buf.writeFloat(data.instabilityCost);
+            buf.writeBoolean(data.allowRandom);
+            buf.writeBoolean(data.canDuplicate);
+            buf.writeBoolean(data.isDatapack);
+            buf.writeBoolean(data.isOverride);
+            if (data.poem == null) {
+                buf.writeInt(-1);
+            } else {
+                buf.writeInt(data.poem.length);
+                for (String word : data.poem) {
+                    buf.writeUtf(word);
+                }
+            }
         }
     }
 
@@ -65,7 +84,20 @@ public class SymbolSyncPacket {
             SymbolCategory category = buf.readEnum(SymbolCategory.class);
             int cardRank = buf.readInt();
             float instabilityCost = buf.readFloat();
-            symbols.add(new SymbolData(id, category, cardRank, instabilityCost));
+            boolean allowRandom = buf.readBoolean();
+            boolean canDuplicate = buf.readBoolean();
+            boolean isDatapack = buf.readBoolean();
+            boolean isOverride = buf.readBoolean();
+            int poemLength = buf.readInt();
+            String[] poem = null;
+            if (poemLength >= 0) {
+                poem = new String[poemLength];
+                for (int j = 0; j < poemLength; j++) {
+                    poem[j] = buf.readUtf();
+                }
+            }
+            symbols.add(new SymbolData(id, category, cardRank, instabilityCost, poem,
+                    allowRandom, canDuplicate, isDatapack, isOverride));
         }
         return new SymbolSyncPacket(symbols);
     }
@@ -83,8 +115,24 @@ public class SymbolSyncPacket {
             // This packet is primarily for future extensibility (datapacks, custom symbols)
 
             for (SymbolData data : symbols) {
-                // Verify the symbol exists on the client
-                if (!SymbolRegistry.contains(data.id)) {
+                boolean exists = SymbolRegistry.contains(data.id);
+                boolean shouldRegister = data.isDatapack || data.isOverride || !exists;
+                if (shouldRegister) {
+                    DataSymbol symbol = new DataSymbol(
+                            data.id,
+                            data.category,
+                            data.cardRank,
+                            data.instabilityCost,
+                            data.poem,
+                            data.allowRandom,
+                            data.canDuplicate,
+                            GrammarBindingMode.DISABLED,
+                            null,
+                            null,
+                            List.of()
+                    );
+                    SymbolRegistry.register(symbol, data.isOverride || !exists);
+                } else if (!exists) {
                     Mystcraft.LOGGER.warn("Server has symbol {} that client doesn't know about", data.id);
                 }
             }
@@ -106,12 +154,24 @@ public class SymbolSyncPacket {
         public final SymbolCategory category;
         public final int cardRank;
         public final float instabilityCost;
+        public final String[] poem;
+        public final boolean allowRandom;
+        public final boolean canDuplicate;
+        public final boolean isDatapack;
+        public final boolean isOverride;
 
-        public SymbolData(ResourceLocation id, SymbolCategory category, int cardRank, float instabilityCost) {
+        public SymbolData(ResourceLocation id, SymbolCategory category, int cardRank, float instabilityCost,
+                          String[] poem, boolean allowRandom, boolean canDuplicate,
+                          boolean isDatapack, boolean isOverride) {
             this.id = id;
             this.category = category;
             this.cardRank = cardRank;
             this.instabilityCost = instabilityCost;
+            this.poem = poem;
+            this.allowRandom = allowRandom;
+            this.canDuplicate = canDuplicate;
+            this.isDatapack = isDatapack;
+            this.isOverride = isOverride;
         }
     }
 }

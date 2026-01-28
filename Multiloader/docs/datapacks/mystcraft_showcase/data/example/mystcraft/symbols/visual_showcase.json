@@ -1,0 +1,58 @@
+{
+  "category": "visual_effect",
+  "card_rank": 2,
+  "instability_cost": 0.3,
+  "poem": [
+    "Sky",
+    "Fog",
+    "Water",
+    "Haze"
+  ],
+  "logic": [
+    {
+      "type": "set_sky_color",
+      "value": 7896319,
+      "natural": false
+    },
+    {
+      "type": "set_fog_color",
+      "value": 2236962
+    },
+    {
+      "type": "set_grass_color",
+      "value": 5763719
+    },
+    {
+      "type": "set_foliage_color",
+      "value": 4572600
+    },
+    {
+      "type": "set_water_color",
+      "value": 4159204
+    },
+    {
+      "type": "set_cloud_color",
+      "value": 12369084
+    },
+    {
+      "type": "set_horizon_color",
+      "value": 11184810
+    },
+    {
+      "type": "set_night_sky_color",
+      "value": 854020
+    },
+    {
+      "type": "set_sunset_color",
+      "value": 16747629
+    },
+    {
+      "type": "set_cloud_height",
+      "value": 160.0
+    },
+    {
+      "type": "set_horizon_height",
+      "value": 2.5
+    }
+  ]
+}

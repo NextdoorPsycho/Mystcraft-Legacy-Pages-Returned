@@ -1,0 +1,22 @@
+{
+  "category": "feature_large",
+  "card_rank": 2,
+  "instability_cost": 0.5,
+  "poem": [
+    "Caves",
+    "Hollow",
+    "Depth",
+    "Echo"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_alteration",
+      "id": "mystcraft:caves",
+      "params": {
+        "rate": 12,
+        "size": 40,
+        "fill_block": "minecraft:air"
+      }
+    }
+  ]
+}

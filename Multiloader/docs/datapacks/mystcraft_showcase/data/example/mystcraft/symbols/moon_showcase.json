@@ -1,0 +1,17 @@
+{
+  "category": "moon",
+  "card_rank": 1,
+  "instability_cost": 0.0,
+  "poem": [
+    "Moon",
+    "Soft",
+    "Silver",
+    "Quiet"
+  ],
+  "logic": [
+    {
+      "type": "set_moon_visible",
+      "value": true
+    }
+  ]
+}

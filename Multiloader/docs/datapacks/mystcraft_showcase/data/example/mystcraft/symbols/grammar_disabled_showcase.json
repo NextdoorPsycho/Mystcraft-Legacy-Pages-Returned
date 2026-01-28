@@ -1,0 +1,19 @@
+{
+  "category": "modifier",
+  "card_rank": 1,
+  "instability_cost": 0.0,
+  "poem": [
+    "Silent",
+    "Symbol",
+    "No",
+    "Rule"
+  ],
+  "grammar": false,
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "villages_enabled",
+      "value": false
+    }
+  ]
+}

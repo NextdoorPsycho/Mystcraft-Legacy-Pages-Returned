@@ -19,8 +19,10 @@ import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
+import net.minecraft.server.packs.PackType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.LiquidBlock;
@@ -69,6 +71,7 @@ public class MystcraftFabric implements ModInitializer {
         // Common setup (equivalent to FMLCommonSetupEvent)
         art.arcane.mystcraft.advancements.ModAdvancements.register();
         Mystcraft.commonSetup();
+        Mystcraft.finishSymbolRegistration();
 
         // Server lifecycle events
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
@@ -87,6 +90,12 @@ public class MystcraftFabric implements ModInitializer {
 
         // Level load event for Age director reconstruction
         ServerWorldEvents.LOAD.register((server, level) -> onLevelLoad(level));
+
+        // Datapack reload listeners
+        ResourceManagerHelper.get(PackType.SERVER_DATA)
+                .registerReloadListener(new art.arcane.mystcraft.fabric.resource.FabricGrammarReloadListener());
+        ResourceManagerHelper.get(PackType.SERVER_DATA)
+                .registerReloadListener(new art.arcane.mystcraft.fabric.resource.FabricSymbolReloadListener());
 
         // Register all Fabric event callbacks
         FabricEventRegistration.registerAll();

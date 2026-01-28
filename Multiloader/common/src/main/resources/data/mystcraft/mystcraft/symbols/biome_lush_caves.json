@@ -1,0 +1,9 @@
+{
+  "category": "biome",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": ["Biome", "Life", "Growth", "Cave"],
+  "logic": [
+    { "type": "add_biome", "biome": "minecraft:lush_caves" }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "category": "biome",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": ["Biome", "Stone", "Spikes", "Cave"],
+  "logic": [
+    { "type": "add_biome", "biome": "minecraft:dripstone_caves" }
+  ]
+}

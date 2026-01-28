@@ -1,7 +1,9 @@
 package art.arcane.mystcraft.symbol;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.api.symbol.GrammarBindingMode;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.api.symbol.IGrammarBinding;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.grammar.CFGGrammarGenerator;
 import art.arcane.mystcraft.grammar.CFGRule;
@@ -27,8 +29,10 @@ public final class SymbolRegistry {
     private static final Map<SymbolCategory, List<IAgeSymbol>> BY_CATEGORY = new EnumMap<>(SymbolCategory.class);
     private static final Map<Integer, List<IAgeSymbol>> BY_CARD_RANK = new HashMap<>();
     private static final Set<ResourceLocation> BLACKLIST = new HashSet<>();
+    private static final Map<ResourceLocation, IAgeSymbol> STATIC_SYMBOLS = new HashMap<>();
 
     private static boolean frozen = false;
+    private static boolean staticRegistrationOpen = true;
 
     private SymbolRegistry() {}
 
@@ -38,6 +42,13 @@ public final class SymbolRegistry {
      * @return true if registration succeeded
      */
     public static boolean register(IAgeSymbol symbol) {
+        return register(symbol, false);
+    }
+
+    /**
+     * Registers a symbol, optionally replacing an existing entry.
+     */
+    public static boolean register(IAgeSymbol symbol, boolean replace) {
         if (frozen) {
             LOGGER.error("Cannot register symbol {} - registry is frozen", symbol.getRegistryName());
             return false;
@@ -50,29 +61,24 @@ public final class SymbolRegistry {
             return false;
         }
 
-        if (SYMBOLS.containsKey(id)) {
-            LOGGER.error("Symbol {} is already registered", id);
-            return false;
-        }
-
         if (BLACKLIST.contains(id)) {
             LOGGER.info("Symbol {} is blacklisted, skipping registration", id);
             return false;
         }
 
-        SYMBOLS.put(id, symbol);
-
-        // Add to category index
-        BY_CATEGORY.computeIfAbsent(symbol.getCategory(), k -> new ArrayList<>()).add(symbol);
-
-        // Add to card rank index
-        Integer rank = symbol.getCardRank();
-        if (rank != null) {
-            BY_CARD_RANK.computeIfAbsent(rank, k -> new ArrayList<>()).add(symbol);
+        if (SYMBOLS.containsKey(id)) {
+            if (!replace) {
+                LOGGER.error("Symbol {} is already registered", id);
+                return false;
+            }
+            removeInternal(id);
         }
 
-        // Register with CFG grammar so this symbol can be generated
-        registerWithGrammar(symbol);
+        registerInternal(symbol);
+
+        if (staticRegistrationOpen) {
+            STATIC_SYMBOLS.put(id, symbol);
+        }
 
         LOGGER.debug("Registered symbol: {}", id);
         return true;
@@ -83,14 +89,34 @@ public final class SymbolRegistry {
      * Creates a rule that maps the category's grammar token to this symbol.
      */
     private static void registerWithGrammar(IAgeSymbol symbol) {
-        ResourceLocation grammarToken = getCategoryGrammarToken(symbol.getCategory());
+        ResourceLocation grammarToken;
+        Integer rank = symbol.getCardRank();
+        if (symbol instanceof IGrammarBinding binding) {
+            GrammarBindingMode mode = binding.getGrammarBindingMode();
+            if (mode == GrammarBindingMode.DISABLED) {
+                return;
+            }
+            if (mode == GrammarBindingMode.CUSTOM) {
+                grammarToken = binding.getGrammarToken();
+                if (grammarToken == null) {
+                    LOGGER.warn("Symbol {} requested CUSTOM grammar binding with null token", symbol.getRegistryName());
+                    return;
+                }
+                if (binding.getGrammarRank() != null) {
+                    rank = binding.getGrammarRank();
+                }
+            } else {
+                grammarToken = getCategoryGrammarToken(symbol.getCategory());
+            }
+        } else {
+            grammarToken = getCategoryGrammarToken(symbol.getCategory());
+        }
+
         if (grammarToken == null) {
-            // Category doesn't have a grammar token (e.g., modifiers are handled differently)
             return;
         }
 
         // Create a rule: GRAMMAR_TOKEN -> symbol_id [rank]
-        Integer rank = symbol.getCardRank();
         CFGRule rule = new CFGRule(grammarToken, Collections.singletonList(symbol.getRegistryName()), rank);
 
         try {
@@ -128,6 +154,36 @@ public final class SymbolRegistry {
             case COLOR, ANGLE, PHASE, LENGTH, MODIFIER, SPECIAL -> null;
             default -> null;
         };
+    }
+
+    private static void registerInternal(IAgeSymbol symbol) {
+        ResourceLocation id = symbol.getRegistryName();
+        SYMBOLS.put(id, symbol);
+
+        BY_CATEGORY.computeIfAbsent(symbol.getCategory(), k -> new ArrayList<>()).add(symbol);
+
+        Integer rank = symbol.getCardRank();
+        if (rank != null) {
+            BY_CARD_RANK.computeIfAbsent(rank, k -> new ArrayList<>()).add(symbol);
+        }
+
+        registerWithGrammar(symbol);
+    }
+
+    private static void removeInternal(ResourceLocation id) {
+        IAgeSymbol existing = SYMBOLS.remove(id);
+        if (existing == null) return;
+        List<IAgeSymbol> categoryList = BY_CATEGORY.get(existing.getCategory());
+        if (categoryList != null) {
+            categoryList.remove(existing);
+        }
+        Integer rank = existing.getCardRank();
+        if (rank != null) {
+            List<IAgeSymbol> rankList = BY_CARD_RANK.get(rank);
+            if (rankList != null) {
+                rankList.remove(existing);
+            }
+        }
     }
 
     /**
@@ -269,6 +325,45 @@ public final class SymbolRegistry {
      */
     public static boolean isFrozen() {
         return frozen;
+    }
+
+    /**
+     * Checks whether the current symbol entry originates from static (code) registration.
+     */
+    public static boolean isStaticSymbol(ResourceLocation id) {
+        return STATIC_SYMBOLS.containsKey(id);
+    }
+
+    /**
+     * Checks whether a static symbol has been overridden by a non-static symbol.
+     */
+    public static boolean isOverridden(ResourceLocation id) {
+        if (!STATIC_SYMBOLS.containsKey(id)) return false;
+        IAgeSymbol current = SYMBOLS.get(id);
+        return current != null && current != STATIC_SYMBOLS.get(id);
+    }
+
+    /**
+     * Prevents additional symbols from being marked as static.
+     * Call after all code-based symbol registration completes.
+     */
+    public static void sealStaticRegistration() {
+        staticRegistrationOpen = false;
+    }
+
+    /**
+     * Resets the registry back to code-registered static symbols.
+     * Used before applying datapack symbols.
+     */
+    public static void resetToStatic() {
+        SYMBOLS.clear();
+        BY_CATEGORY.clear();
+        BY_CARD_RANK.clear();
+        frozen = false;
+
+        for (IAgeSymbol symbol : STATIC_SYMBOLS.values()) {
+            registerInternal(symbol);
+        }
     }
 
     /**

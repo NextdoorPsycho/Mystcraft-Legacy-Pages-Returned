@@ -1,0 +1,10 @@
+{
+  "category": "feature_small",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": ["Life", "Growth", "Cave", "Water"],
+  "logic": [
+    { "type": "set_flag", "flag": "lush_caves_enabled", "value": true },
+    { "type": "register_populator", "id": "mystcraft:lush_caves" }
+  ]
+}

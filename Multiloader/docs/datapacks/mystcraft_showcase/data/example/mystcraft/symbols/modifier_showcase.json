@@ -1,0 +1,24 @@
+{
+  "category": "modifier",
+  "card_rank": 2,
+  "instability_cost": 0.4,
+  "poem": [
+    "Rules",
+    "Shift",
+    "Bind",
+    "Break"
+  ],
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "pvp_enabled",
+      "value": false
+    },
+    {
+      "type": "set_flag",
+      "flag": "rainbow_enabled",
+      "value": true
+    }
+  ]
+}

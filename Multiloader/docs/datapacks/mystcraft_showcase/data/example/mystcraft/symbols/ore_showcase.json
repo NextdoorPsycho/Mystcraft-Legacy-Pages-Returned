@@ -1,0 +1,27 @@
+{
+  "category": "feature_medium",
+  "card_rank": 2,
+  "instability_cost": 0.3,
+  "poem": [
+    "Ore",
+    "Dense",
+    "Deep",
+    "Bright"
+  ],
+  "logic": [
+    {
+      "type": "set_ore_multiplier",
+      "ore": "iron",
+      "multiplier": 2.0
+    },
+    {
+      "type": "set_ore_disabled",
+      "ore": "diamond",
+      "disabled": true
+    },
+    {
+      "type": "set_ores_disabled",
+      "disabled": false
+    }
+  ]
+}

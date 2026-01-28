@@ -8,20 +8,10 @@ import net.minecraft.resources.ResourceLocation;
  * Public API for interacting with the Mystcraft mod.
  * Third-party mods should use this class to register symbols and query the registry.
  *
- * Symbol registration should be done during the {@link RegisterSymbolsEvent},
- * which fires on the Forge mod event bus during common setup.
- *
- * Example usage in a third-party mod:
- * <pre>{@code
- * @Mod.EventBusSubscriber(modid = "mymod", bus = Mod.EventBusSubscriber.Bus.MOD)
- * public class MyModSymbols {
- *     @SubscribeEvent
- *     public static void onRegisterSymbols(RegisterSymbolsEvent event) {
- *         event.register(new MyCustomTerrainSymbol());
- *         event.register(new MyCustomBiomeSymbol());
- *     }
- * }
- * }</pre>
+ * Symbol definitions are now data-driven and loaded from datapacks under
+ * {@code data/<namespace>/mystcraft/symbols/*.json}. Mods that want to add new
+ * behavior types should register custom logic types via
+ * {@link art.arcane.mystcraft.datapack.symbol.SymbolLogicRegistry}.
  */
 public final class MystcraftAPI {
 

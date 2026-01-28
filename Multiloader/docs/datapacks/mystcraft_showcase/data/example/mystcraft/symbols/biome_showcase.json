@@ -1,0 +1,17 @@
+{
+  "category": "biome",
+  "card_rank": 1,
+  "instability_cost": 0.2,
+  "poem": [
+    "Plains",
+    "Breath",
+    "Green",
+    "Open"
+  ],
+  "logic": [
+    {
+      "type": "add_biome",
+      "biome": "minecraft:plains"
+    }
+  ]
+}

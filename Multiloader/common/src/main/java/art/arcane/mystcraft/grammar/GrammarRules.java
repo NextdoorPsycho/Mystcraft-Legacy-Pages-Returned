@@ -74,6 +74,17 @@ public final class GrammarRules {
      */
     public static void initialize() {
         LOGGER.info("Initializing Mystcraft grammar rules");
+        registerBaseRules();
+        CFGGrammarGenerator.buildGrammar();
+        LOGGER.info("Grammar rules initialized and built");
+    }
+
+    /**
+     * Registers base grammar rules without finalizing the grammar.
+     * Use this for datapack reloads where additional rules are added later.
+     */
+    public static void registerBaseRules() {
+        LOGGER.info("Registering Mystcraft base grammar rules");
 
         // Root rule: Age expands to all required components
         registerRule(buildRule(0, ROOT,
@@ -246,10 +257,7 @@ public final class GrammarRules {
         registerRule(buildRule(1, BLOCK_NONSOLID, GrammarData.BLOCK_FLUID));
         registerRule(buildRule(2, BLOCK_NONSOLID, GrammarData.BLOCK_GAS));
 
-        // Build the grammar (calculates shortest paths and rank weights)
-        CFGGrammarGenerator.buildGrammar();
-
-        LOGGER.info("Grammar rules initialized and built");
+        // Grammar is built after symbols (and optional datapack rules) are registered
     }
 
     /**

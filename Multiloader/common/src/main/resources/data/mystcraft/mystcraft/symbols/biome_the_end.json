@@ -1,0 +1,9 @@
+{
+  "category": "biome",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": ["Biome", "Void", "End", "Silence"],
+  "logic": [
+    { "type": "add_biome", "biome": "minecraft:the_end" }
+  ]
+}

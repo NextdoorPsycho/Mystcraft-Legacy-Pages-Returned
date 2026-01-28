@@ -79,6 +79,21 @@ public enum SymbolCategory {
         return name;
     }
 
+    /**
+     * Resolves a category from its string name (case-insensitive).
+     * Returns null if no category matches.
+     */
+    public static SymbolCategory fromName(String name) {
+        if (name == null) return null;
+        String needle = name.trim().toLowerCase();
+        for (SymbolCategory category : values()) {
+            if (category.name.equals(needle)) {
+                return category;
+            }
+        }
+        return null;
+    }
+
     @Override
     public String toString() {
         return name;

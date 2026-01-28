@@ -1,0 +1,33 @@
+{
+  "category": "terrain",
+  "card_rank": 0,
+  "instability_cost": 0.5,
+  "poem": [
+    "Terrain",
+    "Blend",
+    "Second",
+    "Rise"
+  ],
+  "logic": [
+    {
+      "type": "set_terrain_type",
+      "value": "normal"
+    },
+    {
+      "type": "set_terrain_mix_mode",
+      "value": "blend"
+    },
+    {
+      "type": "set_secondary_terrain_type",
+      "value": "cave"
+    },
+    {
+      "type": "set_average_ground_level",
+      "value": 72
+    },
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:stone"
+    }
+  ]
+}

@@ -203,13 +203,7 @@ public class MystcraftNeoForge {
 
             Mystcraft.commonSetup();
 
-            art.arcane.mystcraft.api.RegisterSymbolsEvent symbolEvent =
-                    new art.arcane.mystcraft.api.RegisterSymbolsEvent();
-            modEventBus.post(symbolEvent);
-            if (symbolEvent.getRegisteredCount() > 0) {
-                Mystcraft.LOGGER.info("[Mystcraft] Third-party mods registered {} additional symbols",
-                        symbolEvent.getRegisteredCount());
-            }
+            Mystcraft.finishSymbolRegistration();
         });
     }
 

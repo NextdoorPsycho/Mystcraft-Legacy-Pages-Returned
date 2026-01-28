@@ -1,0 +1,9 @@
+{
+  "category": "environment",
+  "card_rank": 2,
+  "instability_cost": 1.0,
+  "poem": ["Time", "Flow", "Change", "Energy"],
+  "logic": [
+    { "type": "set_timescale", "value": 1.0 }
+  ]
+}

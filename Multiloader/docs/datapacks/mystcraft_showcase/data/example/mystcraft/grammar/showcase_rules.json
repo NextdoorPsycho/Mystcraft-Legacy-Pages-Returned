@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "rules": [
+    {
+      "parent": "example:angle_token",
+      "children": [
+        "example:angle_showcase",
+        "example:phase_showcase",
+        "example:length_showcase"
+      ],
+      "rank": 2
+    }
+  ]
+}

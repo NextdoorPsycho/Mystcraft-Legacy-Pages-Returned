@@ -45,16 +45,17 @@ public final class Mystcraft {
         // Initialize ink effects registry
         art.arcane.mystcraft.data.InkEffects.init();
 
-        // Register all built-in symbols
-        art.arcane.mystcraft.symbol.ModSymbols.registerAll();
-
-        // Freeze symbol registry to prevent late registration
-        art.arcane.mystcraft.symbol.SymbolRegistry.freeze();
-
-        // Initialize grammar rules for CFG-based Age generation
-        art.arcane.mystcraft.grammar.GrammarRules.initialize();
+        // Register built-in datapack logic types
+        art.arcane.mystcraft.datapack.symbol.SymbolLogicTypes.registerDefaults();
 
         // Initialize instability providers and decks
         art.arcane.mystcraft.instability.InstabilityData.initialize();
+    }
+
+    /**
+     * Called after all code-based symbol registration is complete.
+     */
+    public static void finishSymbolRegistration() {
+        art.arcane.mystcraft.symbol.SymbolRegistry.sealStaticRegistration();
     }
 }

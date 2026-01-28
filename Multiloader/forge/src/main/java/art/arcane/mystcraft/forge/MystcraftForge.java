@@ -202,13 +202,7 @@ public class MystcraftForge {
 
             Mystcraft.commonSetup();
 
-            art.arcane.mystcraft.api.RegisterSymbolsEvent symbolEvent =
-                    new art.arcane.mystcraft.api.RegisterSymbolsEvent();
-            FMLJavaModLoadingContext.get().getModEventBus().post(symbolEvent);
-            if (symbolEvent.getRegisteredCount() > 0) {
-                Mystcraft.LOGGER.info("[Mystcraft] Third-party mods registered {} additional symbols",
-                        symbolEvent.getRegisteredCount());
-            }
+            Mystcraft.finishSymbolRegistration();
         });
     }
 

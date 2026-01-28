@@ -1,0 +1,18 @@
+{
+  "category": "environment",
+  "card_rank": 3,
+  "instability_cost": 2.0,
+  "poem": [
+    "Chaos",
+    "Storm",
+    "Energy",
+    "Change"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "accelerated_enabled",
+      "value": true
+    }
+  ]
+}

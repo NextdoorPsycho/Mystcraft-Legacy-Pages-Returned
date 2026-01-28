@@ -1,0 +1,17 @@
+{
+  "category": "feature_medium",
+  "card_rank": 2,
+  "instability_cost": 0.2,
+  "poem": [
+    "Spikes",
+    "Stone",
+    "Rise",
+    "Line"
+  ],
+  "logic": [
+    {
+      "type": "register_populator",
+      "id": "mystcraft:spikes"
+    }
+  ]
+}

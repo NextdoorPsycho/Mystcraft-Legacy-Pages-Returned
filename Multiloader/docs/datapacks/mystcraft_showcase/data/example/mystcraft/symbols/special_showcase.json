@@ -1,0 +1,23 @@
+{
+  "category": "special",
+  "card_rank": 3,
+  "instability_cost": 1.0,
+  "poem": [
+    "Fissure",
+    "Star",
+    "Rift",
+    "Call"
+  ],
+  "grammar": false,
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "star_fissure_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:star_fissure"
+    }
+  ]
+}

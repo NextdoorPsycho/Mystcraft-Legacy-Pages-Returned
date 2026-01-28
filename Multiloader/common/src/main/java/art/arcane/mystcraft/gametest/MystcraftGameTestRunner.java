@@ -9,12 +9,18 @@ import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.registry.ModItems;
+import com.mojang.authlib.GameProfile;
+import io.netty.channel.embedded.EmbeddedChannel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.Connection;
+import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -24,6 +30,7 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,7 +42,7 @@ public final class MystcraftGameTestRunner {
     public static void runRandomBookDimensionTest(net.minecraft.gametest.framework.GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         MinecraftServer server = level.getServer();
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = createMockServerPlayer(helper);
 
         AtomicInteger createdCount = new AtomicInteger(0);
         int iterations = 5;
@@ -67,7 +74,7 @@ public final class MystcraftGameTestRunner {
     public static void runPresetBookDimensionTest(net.minecraft.gametest.framework.GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         MinecraftServer server = level.getServer();
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = createMockServerPlayer(helper);
 
         Mystcraft.LOGGER.info("GameTest: starting preset cave book test");
         AtomicBoolean created = new AtomicBoolean(false);
@@ -292,6 +299,28 @@ public final class MystcraftGameTestRunner {
             helper.fail("Preset symbol not registered: " + id);
         }
         pages.add(Page.createSymbolPage(id));
+    }
+
+    private static ServerPlayer createMockServerPlayer(net.minecraft.gametest.framework.GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-mock-player"));
+        ServerPlayer player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation()) {
+            @Override
+            public boolean isSpectator() {
+                return false;
+            }
+
+            @Override
+            public boolean isCreative() {
+                return true;
+            }
+        };
+
+        Connection connection = new Connection(PacketFlow.SERVERBOUND);
+        EmbeddedChannel channel = new EmbeddedChannel(connection);
+        channel.attr(Connection.ATTRIBUTE_SERVERBOUND_PROTOCOL).set(ConnectionProtocol.PLAY.codec(PacketFlow.SERVERBOUND));
+        level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+        return player;
     }
 
     private static ItemStack findUnlinkedAgebook(ServerPlayer player) {

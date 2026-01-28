@@ -38,7 +38,7 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = Mystcraft.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class GlassesOverlay {
 
-    private static final String OVERLAY_ID = "glasses_overlay";
+    private static final ResourceLocation OVERLAY_ID = new ResourceLocation(Mystcraft.MOD_ID, "glasses_overlay");
 
     @SubscribeEvent
     public static void onRegisterOverlays(RegisterGuiOverlaysEvent event) {

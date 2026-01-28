@@ -26,12 +26,12 @@ import art.arcane.mystcraft.registry.FabricModItems;
 import art.arcane.mystcraft.network.FabricMystcraftNetwork;
 import art.arcane.mystcraft.registry.FabricModMenuTypes;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 
 /** Fabric client entry point. */
 public class MystcraftFabricClient implements ClientModInitializer {
@@ -56,11 +56,11 @@ public class MystcraftFabricClient implements ClientModInitializer {
         MenuScreens.register(FabricModMenuTypes.PORTFOLIO.get(), PortfolioScreen::new);
 
         // Register block entity renderers
-        BlockEntityRenderers.register(FabricModBlockEntities.BOOKSTAND.get(), BookstandRenderer::new);
-        BlockEntityRenderers.register(FabricModBlockEntities.LECTERN.get(), LecternRenderer::new);
-        BlockEntityRenderers.register(FabricModBlockEntities.STAR_FISSURE.get(), StarFissureRenderer::new);
-        BlockEntityRenderers.register(FabricModBlockEntities.WRITING_DESK.get(), WritingDeskRenderer::new);
-        BlockEntityRenderers.register(FabricModBlockEntities.BOOK_RECEPTACLE.get(), BookReceptacleRenderer::new);
+        BlockEntityRendererRegistry.register(FabricModBlockEntities.BOOKSTAND.get(), BookstandRenderer::new);
+        BlockEntityRendererRegistry.register(FabricModBlockEntities.LECTERN.get(), LecternRenderer::new);
+        BlockEntityRendererRegistry.register(FabricModBlockEntities.STAR_FISSURE.get(), StarFissureRenderer::new);
+        BlockEntityRendererRegistry.register(FabricModBlockEntities.WRITING_DESK.get(), WritingDeskRenderer::new);
+        BlockEntityRendererRegistry.register(FabricModBlockEntities.BOOK_RECEPTACLE.get(), BookReceptacleRenderer::new);
 
         // Register entity renderers
         EntityRendererRegistry.register(FabricModEntities.LINKBOOK.get(), LinkbookEntityRenderer::new);

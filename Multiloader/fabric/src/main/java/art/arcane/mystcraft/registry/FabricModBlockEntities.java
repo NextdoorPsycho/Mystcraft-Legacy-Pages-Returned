@@ -9,9 +9,11 @@ import art.arcane.mystcraft.blockentity.LecternBlockEntity;
 import art.arcane.mystcraft.blockentity.LinkModifierBlockEntity;
 import art.arcane.mystcraft.blockentity.StarFissureBlockEntity;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
 import java.util.function.Supplier;
@@ -23,35 +25,35 @@ public final class FabricModBlockEntities {
 
     public static final Supplier<BlockEntityType<InkMixerBlockEntity>> INK_MIXER =
             registerBlockEntity("ink_mixer",
-                    BlockEntityType.Builder.of(InkMixerBlockEntity::new, FabricModBlocks.INK_MIXER.get()).build(null));
+                    FabricBlockEntityTypeBuilder.create(InkMixerBlockEntity::new, FabricModBlocks.INK_MIXER.get()).build());
 
     public static final Supplier<BlockEntityType<BookBinderBlockEntity>> BOOK_BINDER =
             registerBlockEntity("book_binder",
-                    BlockEntityType.Builder.of(BookBinderBlockEntity::new, FabricModBlocks.BOOK_BINDER.get()).build(null));
+                    FabricBlockEntityTypeBuilder.create(BookBinderBlockEntity::new, FabricModBlocks.BOOK_BINDER.get()).build());
 
     public static final Supplier<BlockEntityType<BookReceptacleBlockEntity>> BOOK_RECEPTACLE =
             registerBlockEntity("book_receptacle",
-                    BlockEntityType.Builder.of(BookReceptacleBlockEntity::new, FabricModBlocks.BOOK_RECEPTACLE.get()).build(null));
+                    FabricBlockEntityTypeBuilder.create(BookReceptacleBlockEntity::new, FabricModBlocks.BOOK_RECEPTACLE.get()).build());
 
     public static final Supplier<BlockEntityType<BookstandBlockEntity>> BOOKSTAND =
             registerBlockEntity("bookstand",
-                    BlockEntityType.Builder.of(BookstandBlockEntity::new, FabricModBlocks.BOOKSTAND.get()).build(null));
+                    FabricBlockEntityTypeBuilder.create(BookstandBlockEntity::new, FabricModBlocks.BOOKSTAND.get()).build());
 
     public static final Supplier<BlockEntityType<LecternBlockEntity>> LECTERN =
             registerBlockEntity("lectern",
-                    BlockEntityType.Builder.of(LecternBlockEntity::new, FabricModBlocks.LECTERN.get()).build(null));
+                    FabricBlockEntityTypeBuilder.create(LecternBlockEntity::new, FabricModBlocks.LECTERN.get()).build());
 
     public static final Supplier<BlockEntityType<WritingDeskBlockEntity>> WRITING_DESK =
             registerBlockEntity("writing_desk",
-                    BlockEntityType.Builder.of(WritingDeskBlockEntity::new, FabricModBlocks.WRITING_DESK.get()).build(null));
+                    FabricBlockEntityTypeBuilder.create(WritingDeskBlockEntity::new, FabricModBlocks.WRITING_DESK.get()).build());
 
     public static final Supplier<BlockEntityType<StarFissureBlockEntity>> STAR_FISSURE =
             registerBlockEntity("star_fissure",
-                    BlockEntityType.Builder.of(StarFissureBlockEntity::new, FabricModBlocks.STAR_FISSURE.get()).build(null));
+                    FabricBlockEntityTypeBuilder.create(StarFissureBlockEntity::new, FabricModBlocks.STAR_FISSURE.get()).build());
 
     public static final Supplier<BlockEntityType<LinkModifierBlockEntity>> LINK_MODIFIER =
             registerBlockEntity("link_modifier",
-                    BlockEntityType.Builder.of(LinkModifierBlockEntity::new, FabricModBlocks.LINK_MODIFIER.get()).build(null));
+                    FabricBlockEntityTypeBuilder.create(LinkModifierBlockEntity::new, FabricModBlocks.LINK_MODIFIER.get()).build());
 
     private FabricModBlockEntities() {
     }

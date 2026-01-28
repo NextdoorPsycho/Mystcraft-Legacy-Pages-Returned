@@ -19,19 +19,17 @@ public final class FabricLootModifiers {
         LootTableEvents.MODIFY.register((resourceManager, lootManager, id, tableBuilder, source) -> {
             if (source.isBuiltin()) {
                 if (id.equals(DUNGEON) || id.equals(MINESHAFT) || id.equals(STRONGHOLD_CORRIDOR)) {
-                    tableBuilder.pool(LootPool.lootPool()
+                    tableBuilder.withPool(LootPool.lootPool()
                             .setRolls(UniformGenerator.between(1, 3))
                             .when(LootItemRandomChanceCondition.randomChance(0.5f))
-                            .add(LootItem.lootTableItem(FabricModItems.PAGE.get()))
-                            .build());
+                            .add(LootItem.lootTableItem(FabricModItems.PAGE.get())));
                 }
 
                 if (id.equals(STRONGHOLD_LIBRARY)) {
-                    tableBuilder.pool(LootPool.lootPool()
+                    tableBuilder.withPool(LootPool.lootPool()
                             .setRolls(UniformGenerator.between(1, 1))
                             .when(LootItemRandomChanceCondition.randomChance(0.25f))
-                            .add(LootItem.lootTableItem(FabricModItems.GUIDEBOOK.get()))
-                            .build());
+                            .add(LootItem.lootTableItem(FabricModItems.GUIDEBOOK.get())));
                 }
             }
         });

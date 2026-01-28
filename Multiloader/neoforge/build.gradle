@@ -17,6 +17,7 @@ apply from: 'gradle/run-base.gradle'
 apply from: 'gradle/run-client.gradle'
 apply from: 'gradle/run-server.gradle'
 apply from: 'gradle/run-data.gradle'
+apply from: 'gradle/run-gametest.gradle'
 
 apply from: 'gradle/sources.gradle'
 apply from: 'gradle/tasks.gradle'

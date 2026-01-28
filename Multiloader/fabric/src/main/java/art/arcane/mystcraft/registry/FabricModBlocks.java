@@ -111,7 +111,7 @@ public final class FabricModBlocks {
     static {
         LiquidBlock fluidInkBlock = new LiquidBlock(FabricModFluids.BLACK_INK_SOURCE_FLUID, BlockBehaviour.Properties.copy(Blocks.WATER)
                 .mapColor(MapColor.COLOR_BLACK)
-                .noLootTable());
+                .noLootTable()) {};
         FLUID_INK = () -> fluidInkBlock;
     }
 

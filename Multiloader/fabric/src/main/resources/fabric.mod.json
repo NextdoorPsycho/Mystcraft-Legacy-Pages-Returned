@@ -27,6 +27,7 @@
     "mixins": [
         "mystcraft.mixins.json"
     ],
+    "accessWidener": "mystcraft.accesswidener",
     "depends": {
         "fabricloader": ">=${fabric_loader_version}",
         "fabric-api": "*",

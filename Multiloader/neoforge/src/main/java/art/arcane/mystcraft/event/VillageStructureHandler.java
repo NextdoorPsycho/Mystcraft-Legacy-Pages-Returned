@@ -16,7 +16,6 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProc
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.util.ObfuscationReflectionHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,11 +66,23 @@ public class VillageStructureHandler {
                         ARCHIVIST_HOUSE_TEMPLATE, emptyProcessor
                 ).apply(StructureTemplatePool.Projection.RIGID);
 
-                // Use reflection to access the private fields
-                Field rawTemplatesField = ObfuscationReflectionHelper.findField(
-                        StructureTemplatePool.class, "f_210560_"); // rawTemplates
-                Field templatesField = ObfuscationReflectionHelper.findField(
-                        StructureTemplatePool.class, "f_210561_"); // templates
+                // Find fields by type since mapping names vary between loaders
+                Field rawTemplatesField = null;
+                Field templatesField = null;
+                for (Field field : StructureTemplatePool.class.getDeclaredFields()) {
+                    field.setAccessible(true);
+                    Object value = field.get(pool);
+                    if (value instanceof ObjectArrayList) {
+                        templatesField = field;
+                    } else if (value instanceof List && !(value instanceof ObjectArrayList)) {
+                        rawTemplatesField = field;
+                    }
+                }
+
+                if (rawTemplatesField == null || templatesField == null) {
+                    LOGGER.warn("[Mystcraft] Could not find pool fields for {}", poolId);
+                    continue;
+                }
 
                 @SuppressWarnings("unchecked")
                 List<Pair<StructurePoolElement, Integer>> rawTemplates =
@@ -80,7 +91,6 @@ public class VillageStructureHandler {
                 ObjectArrayList<StructurePoolElement> templates =
                         (ObjectArrayList<StructurePoolElement>) templatesField.get(pool);
 
-                // Create mutable copies if needed
                 List<Pair<StructurePoolElement, Integer>> newRawTemplates = new ArrayList<>(rawTemplates);
                 newRawTemplates.add(Pair.of(element, 2));
                 rawTemplatesField.set(pool, newRawTemplates);

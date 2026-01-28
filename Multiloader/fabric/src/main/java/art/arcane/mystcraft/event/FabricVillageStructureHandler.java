@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.event;
 
 import art.arcane.mystcraft.Mystcraft;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -43,13 +44,24 @@ public final class FabricVillageStructureHandler {
         StructurePoolElement element = StructurePoolElement.legacy(pieceId).apply(StructureTemplatePool.Projection.RIGID);
 
         try {
-            // Access the templates list via reflection (it's normally immutable)
-            Field templatesField = StructureTemplatePool.class.getDeclaredField("templates");
-            templatesField.setAccessible(true);
+            // Find templates field by type since field names differ across mappings
+            Field templatesField = null;
+            for (Field field : StructureTemplatePool.class.getDeclaredFields()) {
+                field.setAccessible(true);
+                Object value = field.get(pool);
+                if (value instanceof ObjectArrayList) {
+                    templatesField = field;
+                    break;
+                }
+            }
+
+            if (templatesField == null) {
+                Mystcraft.LOGGER.warn("[Mystcraft] Could not find templates field for pool {}", poolId);
+                return;
+            }
+
             @SuppressWarnings("unchecked")
             List<StructurePoolElement> templates = (List<StructurePoolElement>) templatesField.get(pool);
-
-            // The list might be immutable, so create a mutable copy
             List<StructurePoolElement> mutableTemplates = new ArrayList<>(templates);
             for (int i = 0; i < weight; i++) {
                 mutableTemplates.add(element);

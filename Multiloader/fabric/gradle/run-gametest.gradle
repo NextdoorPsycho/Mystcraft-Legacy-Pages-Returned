@@ -10,3 +10,16 @@ loom {
         }
     }
 }
+
+tasks.register('prepareFabricGametestFiles') {
+    doLast {
+        def runDir = file('runs/gametest')
+        runDir.mkdirs()
+        file("${runDir}/eula.txt").text = "eula=true\n"
+        file("${runDir}/server.properties").text = ""
+    }
+}
+
+tasks.named('runGametest') {
+    dependsOn('prepareFabricGametestFiles')
+}

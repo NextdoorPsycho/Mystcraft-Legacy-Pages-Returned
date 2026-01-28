@@ -2,7 +2,7 @@ package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.entity.ColoredLightningEntity;
 import art.arcane.mystcraft.registry.ModEntities;
-import net.minecraft.client.Minecraft;
+import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
 
@@ -38,9 +38,11 @@ public record SpawnLightningPacket(
     }
 
     public static void handle(SpawnLightningPacket packet, PacketContext ctx) {
+        if (!ctx.isClientSide()) {
+            return;
+        }
         ctx.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            Level level = mc.level;
+            Level level = (Level) ClientAccess.getClientLevel();
             if (level == null) return;
 
             // Create the colored lightning entity on client

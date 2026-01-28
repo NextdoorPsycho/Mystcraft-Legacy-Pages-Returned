@@ -1,6 +1,6 @@
 package art.arcane.mystcraft.network;
 
-import net.minecraft.client.Minecraft;
+import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
@@ -30,9 +30,11 @@ public record LinkEffectPacket(BlockPos pos, LinkEffectType type) {
     }
 
     public static void handle(LinkEffectPacket packet, PacketContext ctx) {
+        if (!ctx.isClientSide()) {
+            return;
+        }
         ctx.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            Level level = mc.level;
+            Level level = (Level) ClientAccess.getClientLevel();
             if (level == null) return;
 
             spawnLinkParticles(level, packet.pos, packet.type);

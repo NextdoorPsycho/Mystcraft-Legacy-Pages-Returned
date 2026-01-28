@@ -1,7 +1,7 @@
 package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
-import net.minecraft.client.Minecraft;
+import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 
@@ -47,9 +47,11 @@ public class DimensionSyncPacket {
     }
 
     public static void handle(DimensionSyncPacket packet, PacketContext ctx) {
+        if (!ctx.isClientSide()) {
+            return;
+        }
         ctx.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.level == null) return;
+            if (ClientAccess.getClientLevel() == null) return;
 
             ClientDimensionCache.clear();
             for (DimensionEntry entry : packet.dimensions) {

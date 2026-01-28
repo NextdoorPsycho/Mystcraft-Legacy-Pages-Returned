@@ -24,9 +24,30 @@ idea {
                 "NeoForge Server"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':neoforge:runServer']
                 }
+                "All Clients"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':runAllClients']
+                }
+                "All Servers"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':runAllServers']
+                }
+                "All GameTests"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':runAllGameTests']
+                }
             }
         }
     }
+}
+
+tasks.register('runAllClients', Exec) {
+    commandLine 'bash', 'scripts/run-all-clients.sh'
+}
+
+tasks.register('runAllServers', Exec) {
+    commandLine 'bash', 'scripts/run-all-servers.sh'
+}
+
+tasks.register('runAllGameTests', Exec) {
+    commandLine 'bash', 'scripts/run-all-gametests.sh'
 }
 
 subprojects {

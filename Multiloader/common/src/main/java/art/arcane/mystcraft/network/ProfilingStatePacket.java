@@ -1,7 +1,7 @@
 package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
-import net.minecraft.client.Minecraft;
+import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.network.FriendlyByteBuf;
 
 /**
@@ -25,9 +25,11 @@ public record ProfilingStatePacket(boolean profilingEnabled, boolean debugOverla
     }
 
     public static void handle(ProfilingStatePacket packet, PacketContext ctx) {
+        if (!ctx.isClientSide()) {
+            return;
+        }
         ctx.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.level == null) return;
+            if (ClientAccess.getClientLevel() == null) return;
 
             ProfilingState.setProfilingEnabled(packet.profilingEnabled);
             ProfilingState.setDebugOverlayEnabled(packet.debugOverlayEnabled);

@@ -31,7 +31,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.minecraft.client.gui.screens.MenuScreens;
+import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
 
 /** Fabric client entry point. */
 public class MystcraftFabricClient implements ClientModInitializer {
@@ -48,12 +48,12 @@ public class MystcraftFabricClient implements ClientModInitializer {
         PageItemRendererBEWLR.prewarmCache();
 
         // Register menu screens
-        MenuScreens.register(FabricModMenuTypes.INK_MIXER.get(), InkMixerScreen::new);
-        MenuScreens.register(FabricModMenuTypes.BOOK_BINDER.get(), BookBinderScreen::new);
-        MenuScreens.register(FabricModMenuTypes.LINK_MODIFIER.get(), LinkModifierScreen::new);
-        MenuScreens.register(FabricModMenuTypes.WRITING_DESK.get(), WritingDeskScreen::new);
-        MenuScreens.register(FabricModMenuTypes.FOLDER.get(), FolderScreen::new);
-        MenuScreens.register(FabricModMenuTypes.PORTFOLIO.get(), PortfolioScreen::new);
+        ScreenRegistry.register(FabricModMenuTypes.INK_MIXER.get(), InkMixerScreen::new);
+        ScreenRegistry.register(FabricModMenuTypes.BOOK_BINDER.get(), BookBinderScreen::new);
+        ScreenRegistry.register(FabricModMenuTypes.LINK_MODIFIER.get(), LinkModifierScreen::new);
+        ScreenRegistry.register(FabricModMenuTypes.WRITING_DESK.get(), WritingDeskScreen::new);
+        ScreenRegistry.register(FabricModMenuTypes.FOLDER.get(), FolderScreen::new);
+        ScreenRegistry.register(FabricModMenuTypes.PORTFOLIO.get(), PortfolioScreen::new);
 
         // Register block entity renderers
         BlockEntityRendererRegistry.register(FabricModBlockEntities.BOOKSTAND.get(), BookstandRenderer::new);

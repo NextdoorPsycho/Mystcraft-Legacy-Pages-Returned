@@ -3,7 +3,6 @@ minecraft {
         gameTestServer {
             workingDirectory file('runs/gametest')
             ideaModule "${rootProject.name}.${project.name}.main"
-            taskName 'GameTestServer'
             property 'forge.enabledGameTestNamespaces', mod_id
             args '--nogui'
             mods {

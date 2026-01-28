@@ -1,7 +1,5 @@
 package art.arcane.mystcraft.item;
 
-import art.arcane.mystcraft.client.screen.GuidebookScreen;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -35,6 +33,14 @@ public class GuidebookItem extends Item {
     }
 
     private void openGuidebook() {
-        Minecraft.getInstance().setScreen(new GuidebookScreen());
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
+            Class<?> screenClass = Class.forName("art.arcane.mystcraft.client.screen.GuidebookScreen");
+            Object screen = screenClass.getConstructor().newInstance();
+            minecraftClass.getMethod("setScreen", screenClass).invoke(minecraft, screen);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to open Mystcraft guidebook screen", e);
+        }
     }
 }

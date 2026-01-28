@@ -1,6 +1,6 @@
 package art.arcane.mystcraft.network;
 
-import net.minecraft.client.Minecraft;
+import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.sounds.SoundEvents;
@@ -51,9 +51,11 @@ public record ExplosionPacket(
     }
 
     public static void handle(ExplosionPacket packet, PacketContext ctx) {
+        if (!ctx.isClientSide()) {
+            return;
+        }
         ctx.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            Level level = mc.level;
+            Level level = (Level) ClientAccess.getClientLevel();
             if (level == null) return;
 
             spawnExplosionParticles(level, packet);

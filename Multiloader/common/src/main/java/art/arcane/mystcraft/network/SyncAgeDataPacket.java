@@ -2,7 +2,7 @@ package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.world.logic.ICelestial;
-import net.minecraft.client.Minecraft;
+import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 
@@ -27,10 +27,12 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
     }
 
     public static void handle(SyncAgeDataPacket packet, PacketContext ctx) {
+        if (!ctx.isClientSide()) {
+            return;
+        }
         ctx.enqueueWork(() -> {
             // Handle on client
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.level == null) return;
+            if (ClientAccess.getClientLevel() == null) return;
 
             // Store the age data in client-side cache
             ClientAgeDataCache.setAgeData(packet.ageUID, packet.data);

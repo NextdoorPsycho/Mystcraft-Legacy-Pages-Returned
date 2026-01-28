@@ -1,7 +1,7 @@
 package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
-import net.minecraft.client.Minecraft;
+import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 
@@ -20,9 +20,11 @@ public record ConfigSyncPacket(CompoundTag configData) {
     }
 
     public static void handle(ConfigSyncPacket packet, PacketContext ctx) {
+        if (!ctx.isClientSide()) {
+            return;
+        }
         ctx.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.level == null) return;
+            if (ClientAccess.getClientLevel() == null) return;
 
             ClientConfigCache.setConfig(packet.configData);
             Mystcraft.LOGGER.info("Received server config sync with {} keys",

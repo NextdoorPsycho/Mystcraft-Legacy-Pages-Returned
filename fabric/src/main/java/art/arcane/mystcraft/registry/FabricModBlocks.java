@@ -9,7 +9,6 @@ import art.arcane.mystcraft.block.DecayBlock;
 import art.arcane.mystcraft.block.InkMixerBlock;
 import art.arcane.mystcraft.block.LinkModifierBlock;
 import art.arcane.mystcraft.block.LinkPortalBlock;
-import art.arcane.mystcraft.block.MystcraftLecternBlock;
 import art.arcane.mystcraft.block.StarFissureBlock;
 import art.arcane.mystcraft.block.WritingDeskBlock;
 import net.minecraft.core.Registry;
@@ -50,12 +49,6 @@ public final class FabricModBlocks {
 
     public static final Supplier<Block> BOOKSTAND = registerBlock("blockbookstand",
             new BookstandBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.WOOD)
-                    .strength(2.0F)
-                    .requiresCorrectToolForDrops()));
-
-    public static final Supplier<Block> LECTERN = registerBlock("blocklectern",
-            new MystcraftLecternBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WOOD)
                     .strength(2.0F)
                     .requiresCorrectToolForDrops()));

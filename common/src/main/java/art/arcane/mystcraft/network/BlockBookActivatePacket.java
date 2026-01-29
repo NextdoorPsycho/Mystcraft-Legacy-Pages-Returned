@@ -8,9 +8,10 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.LecternBlockEntity;
 
 /**
- * Packet sent from client to server to activate a book on a block entity (bookstand or lectern).
+ * Packet sent from client to server to activate a book on a block entity (bookstand or vanilla lectern).
  * This is sent when the player clicks the "Link" button in the book GUI
  * that was opened from a bookstand or lectern.
  */
@@ -46,13 +47,18 @@ public class BlockBookActivatePacket {
         return;
       }
 
-      // Get the block entity (LecternBlockEntity extends BookstandBlockEntity)
+      // Get the block entity - can be BookstandBlockEntity or vanilla LecternBlockEntity
       BlockEntity be = player.level().getBlockEntity(packet.blockPos);
-      if (!(be instanceof BookstandBlockEntity bookstand)) {
+      ItemStack book;
+
+      if (be instanceof BookstandBlockEntity bookstand) {
+        book = bookstand.getBook();
+      } else if (be instanceof LecternBlockEntity lectern) {
+        book = lectern.getBook();
+      } else {
         return;
       }
 
-      ItemStack book = bookstand.getBook();
       if (book.isEmpty()) {
         return;
       }

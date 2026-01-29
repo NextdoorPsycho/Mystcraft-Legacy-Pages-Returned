@@ -26,7 +26,6 @@ public final class MystcraftConstants {
     public static final String BOOK_BINDER = "blockbookbinder";
     public static final String BOOK_RECEPTACLE = "blockbookreceptacle";
     public static final String BOOKSTAND = "blockbookstand";
-    public static final String LECTERN = "blocklectern";
     public static final String DECAY = "blockdecay";
     public static final String LINK_MODIFIER = "blocklinkmodifier";
     public static final String CRYSTAL = "blockcrystal";
@@ -66,7 +65,6 @@ public final class MystcraftConstants {
     public static final String BOOK_BINDER = "book_binder";
     public static final String BOOK_RECEPTACLE = "book_receptacle";
     public static final String BOOKSTAND = "bookstand";
-    public static final String LECTERN = "lectern";
     public static final String WRITING_DESK = "writing_desk";
     public static final String STAR_FISSURE = "star_fissure";
     public static final String LINK_MODIFIER = "link_modifier";

@@ -91,7 +91,6 @@ public class MystcraftForge {
         art.arcane.mystcraft.registry.ModBlocks.BOOK_BINDER = ForgeModBlocks.BOOK_BINDER;
         art.arcane.mystcraft.registry.ModBlocks.BOOK_RECEPTACLE = ForgeModBlocks.BOOK_RECEPTACLE;
         art.arcane.mystcraft.registry.ModBlocks.BOOKSTAND = ForgeModBlocks.BOOKSTAND;
-        art.arcane.mystcraft.registry.ModBlocks.LECTERN = ForgeModBlocks.LECTERN;
         art.arcane.mystcraft.registry.ModBlocks.LINK_MODIFIER = ForgeModBlocks.LINK_MODIFIER;
         art.arcane.mystcraft.registry.ModBlocks.WRITING_DESK = ForgeModBlocks.WRITING_DESK;
         art.arcane.mystcraft.registry.ModBlocks.CRYSTAL = ForgeModBlocks.CRYSTAL;
@@ -116,7 +115,6 @@ public class MystcraftForge {
         art.arcane.mystcraft.registry.ModItems.BOOK_BINDER_ITEM = ForgeModItems.BOOK_BINDER_ITEM;
         art.arcane.mystcraft.registry.ModItems.BOOK_RECEPTACLE_ITEM = ForgeModItems.BOOK_RECEPTACLE_ITEM;
         art.arcane.mystcraft.registry.ModItems.BOOKSTAND_ITEM = ForgeModItems.BOOKSTAND_ITEM;
-        art.arcane.mystcraft.registry.ModItems.LECTERN_ITEM = ForgeModItems.LECTERN_ITEM;
         art.arcane.mystcraft.registry.ModItems.LINK_MODIFIER_ITEM = ForgeModItems.LINK_MODIFIER_ITEM;
         art.arcane.mystcraft.registry.ModItems.WRITING_DESK_ITEM = ForgeModItems.WRITING_DESK_ITEM;
         art.arcane.mystcraft.registry.ModItems.CRYSTAL_ITEM = ForgeModItems.CRYSTAL_ITEM;
@@ -133,7 +131,6 @@ public class MystcraftForge {
         art.arcane.mystcraft.registry.ModBlockEntities.BOOK_BINDER = ForgeModBlockEntities.BOOK_BINDER;
         art.arcane.mystcraft.registry.ModBlockEntities.BOOK_RECEPTACLE = ForgeModBlockEntities.BOOK_RECEPTACLE;
         art.arcane.mystcraft.registry.ModBlockEntities.BOOKSTAND = ForgeModBlockEntities.BOOKSTAND;
-        art.arcane.mystcraft.registry.ModBlockEntities.LECTERN = ForgeModBlockEntities.LECTERN;
         art.arcane.mystcraft.registry.ModBlockEntities.WRITING_DESK = ForgeModBlockEntities.WRITING_DESK;
         art.arcane.mystcraft.registry.ModBlockEntities.STAR_FISSURE = ForgeModBlockEntities.STAR_FISSURE;
         art.arcane.mystcraft.registry.ModBlockEntities.LINK_MODIFIER = ForgeModBlockEntities.LINK_MODIFIER;
@@ -208,6 +205,7 @@ public class MystcraftForge {
         art.arcane.mystcraft.network.MystcraftNetwork.sendToPlayerHandler = ForgeMystcraftNetwork::sendToPlayer;
         art.arcane.mystcraft.network.MystcraftNetwork.sendToAllHandler = ForgeMystcraftNetwork::sendToAll;
         art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingHandler = ForgeMystcraftNetwork::sendToTracking;
+        art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingBlockHandler = ForgeMystcraftNetwork::sendToTrackingBlock;
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
@@ -345,8 +343,6 @@ public class MystcraftForge {
 
             event.registerBlockEntityRenderer(ForgeModBlockEntities.BOOKSTAND.get(),
                     art.arcane.mystcraft.client.renderer.BookstandRenderer::new);
-            event.registerBlockEntityRenderer(ForgeModBlockEntities.LECTERN.get(),
-                    art.arcane.mystcraft.client.renderer.LecternRenderer::new);
             event.registerBlockEntityRenderer(ForgeModBlockEntities.STAR_FISSURE.get(),
                     art.arcane.mystcraft.client.renderer.StarFissureRenderer::new);
             event.registerBlockEntityRenderer(ForgeModBlockEntities.WRITING_DESK.get(),

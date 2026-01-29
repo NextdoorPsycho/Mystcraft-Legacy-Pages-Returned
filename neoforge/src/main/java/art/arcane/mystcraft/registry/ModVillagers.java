@@ -14,13 +14,13 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 public final class ModVillagers {
 
     /**
-     * POI type for the Archivist workstation (Lectern).
+     * POI type for the Archivist workstation (Bookstand).
      * Villagers will claim this block as their workstation.
      */
     public static final DeferredHolder<PoiType, PoiType> ARCHIVIST_POI = MystcraftRegistries.POI_TYPES.register(
             "archivist",
             () -> new PoiType(
-                    ImmutableSet.copyOf(NeoForgeModBlocks.LECTERN.get().getStateDefinition().getPossibleStates()),
+                    ImmutableSet.copyOf(NeoForgeModBlocks.BOOKSTAND.get().getStateDefinition().getPossibleStates()),
                     1,  // Max tickets (how many villagers can use this)
                     1   // Valid range
             )

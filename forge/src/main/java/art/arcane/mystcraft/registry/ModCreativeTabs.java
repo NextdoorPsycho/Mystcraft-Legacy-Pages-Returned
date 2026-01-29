@@ -55,7 +55,6 @@ public final class ModCreativeTabs {
                                 output.accept(ForgeModItems.BOOK_BINDER_ITEM.get());
                                 output.accept(ForgeModItems.LINK_MODIFIER_ITEM.get());
                                 output.accept(ForgeModItems.BOOKSTAND_ITEM.get());
-                                output.accept(ForgeModItems.LECTERN_ITEM.get());
 
                                 // Portal blocks
                                 output.accept(ForgeModItems.BOOK_RECEPTACLE_ITEM.get());

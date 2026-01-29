@@ -5,7 +5,6 @@ import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
 import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
 import art.arcane.mystcraft.blockentity.BookstandBlockEntity;
 import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
-import art.arcane.mystcraft.blockentity.LecternBlockEntity;
 import art.arcane.mystcraft.blockentity.LinkModifierBlockEntity;
 import art.arcane.mystcraft.blockentity.StarFissureBlockEntity;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
@@ -38,10 +37,6 @@ public final class FabricModBlockEntities {
     public static final Supplier<BlockEntityType<BookstandBlockEntity>> BOOKSTAND =
             registerBlockEntity("bookstand",
                     FabricBlockEntityTypeBuilder.create(BookstandBlockEntity::new, FabricModBlocks.BOOKSTAND.get()).build());
-
-    public static final Supplier<BlockEntityType<LecternBlockEntity>> LECTERN =
-            registerBlockEntity("lectern",
-                    FabricBlockEntityTypeBuilder.create(LecternBlockEntity::new, FabricModBlocks.LECTERN.get()).build());
 
     public static final Supplier<BlockEntityType<WritingDeskBlockEntity>> WRITING_DESK =
             registerBlockEntity("writing_desk",

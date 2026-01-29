@@ -4,7 +4,6 @@ import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
 import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
 import art.arcane.mystcraft.blockentity.BookstandBlockEntity;
 import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
-import art.arcane.mystcraft.blockentity.LecternBlockEntity;
 import art.arcane.mystcraft.blockentity.LinkModifierBlockEntity;
 import art.arcane.mystcraft.blockentity.StarFissureBlockEntity;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
@@ -31,10 +30,6 @@ public final class ForgeModBlockEntities {
     public static final RegistryObject<BlockEntityType<BookstandBlockEntity>> BOOKSTAND =
             MystcraftRegistries.BLOCK_ENTITIES.register("bookstand",
                     () -> BlockEntityType.Builder.of(BookstandBlockEntity::new, ForgeModBlocks.BOOKSTAND.get()).build(null));
-
-    public static final RegistryObject<BlockEntityType<LecternBlockEntity>> LECTERN =
-            MystcraftRegistries.BLOCK_ENTITIES.register("lectern",
-                    () -> BlockEntityType.Builder.of(LecternBlockEntity::new, ForgeModBlocks.LECTERN.get()).build(null));
 
     public static final RegistryObject<BlockEntityType<WritingDeskBlockEntity>> WRITING_DESK =
             MystcraftRegistries.BLOCK_ENTITIES.register("writing_desk",

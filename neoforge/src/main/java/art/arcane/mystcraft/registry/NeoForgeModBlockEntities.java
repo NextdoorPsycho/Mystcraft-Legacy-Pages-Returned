@@ -4,7 +4,6 @@ import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
 import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
 import art.arcane.mystcraft.blockentity.BookstandBlockEntity;
 import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
-import art.arcane.mystcraft.blockentity.LecternBlockEntity;
 import art.arcane.mystcraft.blockentity.LinkModifierBlockEntity;
 import art.arcane.mystcraft.blockentity.StarFissureBlockEntity;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
@@ -31,10 +30,6 @@ public final class NeoForgeModBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BookstandBlockEntity>> BOOKSTAND =
             MystcraftRegistries.BLOCK_ENTITIES.register("bookstand",
                     () -> BlockEntityType.Builder.of(BookstandBlockEntity::new, NeoForgeModBlocks.BOOKSTAND.get()).build(null));
-
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<LecternBlockEntity>> LECTERN =
-            MystcraftRegistries.BLOCK_ENTITIES.register("lectern",
-                    () -> BlockEntityType.Builder.of(LecternBlockEntity::new, NeoForgeModBlocks.LECTERN.get()).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<WritingDeskBlockEntity>> WRITING_DESK =
             MystcraftRegistries.BLOCK_ENTITIES.register("writing_desk",

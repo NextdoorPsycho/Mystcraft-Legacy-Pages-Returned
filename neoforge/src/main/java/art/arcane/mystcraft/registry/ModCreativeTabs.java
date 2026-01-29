@@ -52,7 +52,6 @@ public final class ModCreativeTabs {
                                 output.accept(NeoForgeModItems.BOOK_BINDER_ITEM.get());
                                 output.accept(NeoForgeModItems.LINK_MODIFIER_ITEM.get());
                                 output.accept(NeoForgeModItems.BOOKSTAND_ITEM.get());
-                                output.accept(NeoForgeModItems.LECTERN_ITEM.get());
 
                                 // Portal blocks
                                 output.accept(NeoForgeModItems.BOOK_RECEPTACLE_ITEM.get());

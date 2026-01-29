@@ -100,6 +100,9 @@ public class MystcraftFabric implements ModInitializer {
         // Register all Fabric event callbacks
         FabricEventRegistration.registerAll();
 
+        // Register lectern interaction handler for Mystcraft books
+        art.arcane.mystcraft.fabric.event.LecternInteractionHandler.register();
+
         Mystcraft.LOGGER.info("[Mystcraft] Fabric registration complete");
     }
 
@@ -110,7 +113,6 @@ public class MystcraftFabric implements ModInitializer {
         art.arcane.mystcraft.registry.ModBlocks.BOOK_BINDER = FabricModBlocks.BOOK_BINDER;
         art.arcane.mystcraft.registry.ModBlocks.BOOK_RECEPTACLE = FabricModBlocks.BOOK_RECEPTACLE;
         art.arcane.mystcraft.registry.ModBlocks.BOOKSTAND = FabricModBlocks.BOOKSTAND;
-        art.arcane.mystcraft.registry.ModBlocks.LECTERN = FabricModBlocks.LECTERN;
         art.arcane.mystcraft.registry.ModBlocks.LINK_MODIFIER = FabricModBlocks.LINK_MODIFIER;
         art.arcane.mystcraft.registry.ModBlocks.WRITING_DESK = FabricModBlocks.WRITING_DESK;
         art.arcane.mystcraft.registry.ModBlocks.CRYSTAL = FabricModBlocks.CRYSTAL;
@@ -135,7 +137,6 @@ public class MystcraftFabric implements ModInitializer {
         art.arcane.mystcraft.registry.ModItems.BOOK_BINDER_ITEM = FabricModItems.BOOK_BINDER_ITEM;
         art.arcane.mystcraft.registry.ModItems.BOOK_RECEPTACLE_ITEM = FabricModItems.BOOK_RECEPTACLE_ITEM;
         art.arcane.mystcraft.registry.ModItems.BOOKSTAND_ITEM = FabricModItems.BOOKSTAND_ITEM;
-        art.arcane.mystcraft.registry.ModItems.LECTERN_ITEM = FabricModItems.LECTERN_ITEM;
         art.arcane.mystcraft.registry.ModItems.LINK_MODIFIER_ITEM = FabricModItems.LINK_MODIFIER_ITEM;
         art.arcane.mystcraft.registry.ModItems.WRITING_DESK_ITEM = FabricModItems.WRITING_DESK_ITEM;
         art.arcane.mystcraft.registry.ModItems.CRYSTAL_ITEM = FabricModItems.CRYSTAL_ITEM;
@@ -146,7 +147,6 @@ public class MystcraftFabric implements ModInitializer {
         art.arcane.mystcraft.registry.ModBlockEntities.BOOK_BINDER = FabricModBlockEntities.BOOK_BINDER;
         art.arcane.mystcraft.registry.ModBlockEntities.BOOK_RECEPTACLE = FabricModBlockEntities.BOOK_RECEPTACLE;
         art.arcane.mystcraft.registry.ModBlockEntities.BOOKSTAND = FabricModBlockEntities.BOOKSTAND;
-        art.arcane.mystcraft.registry.ModBlockEntities.LECTERN = FabricModBlockEntities.LECTERN;
         art.arcane.mystcraft.registry.ModBlockEntities.WRITING_DESK = FabricModBlockEntities.WRITING_DESK;
         art.arcane.mystcraft.registry.ModBlockEntities.STAR_FISSURE = FabricModBlockEntities.STAR_FISSURE;
         art.arcane.mystcraft.registry.ModBlockEntities.LINK_MODIFIER = FabricModBlockEntities.LINK_MODIFIER;
@@ -232,6 +232,7 @@ public class MystcraftFabric implements ModInitializer {
         art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingHandler = (packet, player) -> {
             FabricMystcraftNetwork.sendToTracking(packet, player);
         };
+        art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingBlockHandler = FabricMystcraftNetwork::sendToTrackingBlock;
 
         // Structure types
         art.arcane.mystcraft.world.structure.ModStructures.ABANDONED_LIBRARY = FabricModStructures.ABANDONED_LIBRARY;

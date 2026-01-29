@@ -14,13 +14,13 @@ import net.minecraftforge.registries.RegistryObject;
 public final class ModVillagers {
 
     /**
-     * POI type for the Archivist workstation (Lectern).
+     * POI type for the Archivist workstation (Bookstand).
      * Villagers will claim this block as their workstation.
      */
     public static final RegistryObject<PoiType> ARCHIVIST_POI = MystcraftRegistries.POI_TYPES.register(
             "archivist",
             () -> new PoiType(
-                    ImmutableSet.copyOf(ForgeModBlocks.LECTERN.get().getStateDefinition().getPossibleStates()),
+                    ImmutableSet.copyOf(ForgeModBlocks.BOOKSTAND.get().getStateDefinition().getPossibleStates()),
                     1,  // Max tickets (how many villagers can use this)
                     1   // Valid range
             )

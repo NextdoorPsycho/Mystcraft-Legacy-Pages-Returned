@@ -8,7 +8,6 @@ import art.arcane.mystcraft.client.render.PageItemRendererBEWLR;
 import art.arcane.mystcraft.client.renderer.BookReceptacleRenderer;
 import art.arcane.mystcraft.client.renderer.BookstandRenderer;
 import art.arcane.mystcraft.client.renderer.ColoredLightningRenderer;
-import art.arcane.mystcraft.client.renderer.LecternRenderer;
 import art.arcane.mystcraft.client.renderer.LinkbookEntityRenderer;
 import art.arcane.mystcraft.client.renderer.MeteorEntityRenderer;
 import art.arcane.mystcraft.client.renderer.MystcraftFallingBlockRenderer;
@@ -57,7 +56,6 @@ public class MystcraftFabricClient implements ClientModInitializer {
 
         // Register block entity renderers
         BlockEntityRendererRegistry.register(FabricModBlockEntities.BOOKSTAND.get(), BookstandRenderer::new);
-        BlockEntityRendererRegistry.register(FabricModBlockEntities.LECTERN.get(), LecternRenderer::new);
         BlockEntityRendererRegistry.register(FabricModBlockEntities.STAR_FISSURE.get(), StarFissureRenderer::new);
         BlockEntityRendererRegistry.register(FabricModBlockEntities.WRITING_DESK.get(), WritingDeskRenderer::new);
         BlockEntityRendererRegistry.register(FabricModBlockEntities.BOOK_RECEPTACLE.get(), BookReceptacleRenderer::new);

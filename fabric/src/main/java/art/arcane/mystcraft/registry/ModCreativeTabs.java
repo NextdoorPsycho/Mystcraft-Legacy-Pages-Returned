@@ -73,7 +73,6 @@ public final class ModCreativeTabs {
                     output.accept(FabricModItems.BOOK_BINDER_ITEM.get());
                     output.accept(FabricModItems.LINK_MODIFIER_ITEM.get());
                     output.accept(FabricModItems.BOOKSTAND_ITEM.get());
-                    output.accept(FabricModItems.LECTERN_ITEM.get());
 
                     // Portal blocks
                     output.accept(FabricModItems.BOOK_RECEPTACLE_ITEM.get());

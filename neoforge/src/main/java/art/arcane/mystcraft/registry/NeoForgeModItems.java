@@ -78,7 +78,6 @@ public final class NeoForgeModItems {
     public static final DeferredHolder<Item, Item> BOOK_BINDER_ITEM = blockItem("blockbookbinder", NeoForgeModBlocks.BOOK_BINDER);
     public static final DeferredHolder<Item, Item> BOOK_RECEPTACLE_ITEM = blockItem("blockbookreceptacle", NeoForgeModBlocks.BOOK_RECEPTACLE);
     public static final DeferredHolder<Item, Item> BOOKSTAND_ITEM = blockItem("blockbookstand", NeoForgeModBlocks.BOOKSTAND);
-    public static final DeferredHolder<Item, Item> LECTERN_ITEM = blockItem("blocklectern", NeoForgeModBlocks.LECTERN);
     public static final DeferredHolder<Item, Item> LINK_MODIFIER_ITEM = blockItem("blocklinkmodifier", NeoForgeModBlocks.LINK_MODIFIER);
     public static final DeferredHolder<Item, Item> WRITING_DESK_ITEM = blockItem("writingdesk", NeoForgeModBlocks.WRITING_DESK);
     public static final DeferredHolder<Item, Item> CRYSTAL_ITEM = blockItem("blockcrystal", NeoForgeModBlocks.CRYSTAL);

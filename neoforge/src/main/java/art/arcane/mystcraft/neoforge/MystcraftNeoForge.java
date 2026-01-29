@@ -92,7 +92,6 @@ public class MystcraftNeoForge {
         art.arcane.mystcraft.registry.ModBlocks.BOOK_BINDER = NeoForgeModBlocks.BOOK_BINDER;
         art.arcane.mystcraft.registry.ModBlocks.BOOK_RECEPTACLE = NeoForgeModBlocks.BOOK_RECEPTACLE;
         art.arcane.mystcraft.registry.ModBlocks.BOOKSTAND = NeoForgeModBlocks.BOOKSTAND;
-        art.arcane.mystcraft.registry.ModBlocks.LECTERN = NeoForgeModBlocks.LECTERN;
         art.arcane.mystcraft.registry.ModBlocks.LINK_MODIFIER = NeoForgeModBlocks.LINK_MODIFIER;
         art.arcane.mystcraft.registry.ModBlocks.WRITING_DESK = NeoForgeModBlocks.WRITING_DESK;
         art.arcane.mystcraft.registry.ModBlocks.CRYSTAL = NeoForgeModBlocks.CRYSTAL;
@@ -117,7 +116,6 @@ public class MystcraftNeoForge {
         art.arcane.mystcraft.registry.ModItems.BOOK_BINDER_ITEM = NeoForgeModItems.BOOK_BINDER_ITEM;
         art.arcane.mystcraft.registry.ModItems.BOOK_RECEPTACLE_ITEM = NeoForgeModItems.BOOK_RECEPTACLE_ITEM;
         art.arcane.mystcraft.registry.ModItems.BOOKSTAND_ITEM = NeoForgeModItems.BOOKSTAND_ITEM;
-        art.arcane.mystcraft.registry.ModItems.LECTERN_ITEM = NeoForgeModItems.LECTERN_ITEM;
         art.arcane.mystcraft.registry.ModItems.LINK_MODIFIER_ITEM = NeoForgeModItems.LINK_MODIFIER_ITEM;
         art.arcane.mystcraft.registry.ModItems.WRITING_DESK_ITEM = NeoForgeModItems.WRITING_DESK_ITEM;
         art.arcane.mystcraft.registry.ModItems.CRYSTAL_ITEM = NeoForgeModItems.CRYSTAL_ITEM;
@@ -134,7 +132,6 @@ public class MystcraftNeoForge {
         art.arcane.mystcraft.registry.ModBlockEntities.BOOK_BINDER = NeoForgeModBlockEntities.BOOK_BINDER;
         art.arcane.mystcraft.registry.ModBlockEntities.BOOK_RECEPTACLE = NeoForgeModBlockEntities.BOOK_RECEPTACLE;
         art.arcane.mystcraft.registry.ModBlockEntities.BOOKSTAND = NeoForgeModBlockEntities.BOOKSTAND;
-        art.arcane.mystcraft.registry.ModBlockEntities.LECTERN = NeoForgeModBlockEntities.LECTERN;
         art.arcane.mystcraft.registry.ModBlockEntities.WRITING_DESK = NeoForgeModBlockEntities.WRITING_DESK;
         art.arcane.mystcraft.registry.ModBlockEntities.STAR_FISSURE = NeoForgeModBlockEntities.STAR_FISSURE;
         art.arcane.mystcraft.registry.ModBlockEntities.LINK_MODIFIER = NeoForgeModBlockEntities.LINK_MODIFIER;
@@ -206,6 +203,7 @@ public class MystcraftNeoForge {
         art.arcane.mystcraft.network.MystcraftNetwork.sendToPlayerHandler = NeoForgeMystcraftNetwork::sendToPlayer;
         art.arcane.mystcraft.network.MystcraftNetwork.sendToAllHandler = NeoForgeMystcraftNetwork::sendToAll;
         art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingHandler = NeoForgeMystcraftNetwork::sendToTracking;
+        art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingBlockHandler = NeoForgeMystcraftNetwork::sendToTrackingBlock;
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
@@ -343,8 +341,6 @@ public class MystcraftNeoForge {
 
             event.registerBlockEntityRenderer(NeoForgeModBlockEntities.BOOKSTAND.get(),
                     art.arcane.mystcraft.client.renderer.BookstandRenderer::new);
-            event.registerBlockEntityRenderer(NeoForgeModBlockEntities.LECTERN.get(),
-                    art.arcane.mystcraft.client.renderer.LecternRenderer::new);
             event.registerBlockEntityRenderer(NeoForgeModBlockEntities.STAR_FISSURE.get(),
                     art.arcane.mystcraft.client.renderer.StarFissureRenderer::new);
             event.registerBlockEntityRenderer(NeoForgeModBlockEntities.WRITING_DESK.get(),

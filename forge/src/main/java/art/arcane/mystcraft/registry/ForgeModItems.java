@@ -78,7 +78,6 @@ public final class ForgeModItems {
     public static final RegistryObject<Item> BOOK_BINDER_ITEM = blockItem("blockbookbinder", ForgeModBlocks.BOOK_BINDER);
     public static final RegistryObject<Item> BOOK_RECEPTACLE_ITEM = blockItem("blockbookreceptacle", ForgeModBlocks.BOOK_RECEPTACLE);
     public static final RegistryObject<Item> BOOKSTAND_ITEM = blockItem("blockbookstand", ForgeModBlocks.BOOKSTAND);
-    public static final RegistryObject<Item> LECTERN_ITEM = blockItem("blocklectern", ForgeModBlocks.LECTERN);
     public static final RegistryObject<Item> LINK_MODIFIER_ITEM = blockItem("blocklinkmodifier", ForgeModBlocks.LINK_MODIFIER);
     public static final RegistryObject<Item> WRITING_DESK_ITEM = blockItem("writingdesk", ForgeModBlocks.WRITING_DESK);
     public static final RegistryObject<Item> CRYSTAL_ITEM = blockItem("blockcrystal", ForgeModBlocks.CRYSTAL);

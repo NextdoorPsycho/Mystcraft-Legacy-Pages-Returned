@@ -15,7 +15,6 @@ public final class ModBlocks {
   public static Supplier<Block> BOOK_BINDER;
   public static Supplier<Block> BOOK_RECEPTACLE;
   public static Supplier<Block> BOOKSTAND;
-  public static Supplier<Block> LECTERN;
   public static Supplier<Block> LINK_MODIFIER;
   public static Supplier<Block> WRITING_DESK;
   public static Supplier<Block> CRYSTAL;

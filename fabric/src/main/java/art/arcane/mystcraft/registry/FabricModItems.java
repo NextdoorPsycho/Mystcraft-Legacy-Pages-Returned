@@ -69,7 +69,6 @@ public final class FabricModItems {
     public static final Supplier<Item> BOOK_BINDER_ITEM = registerBlockItem("blockbookbinder", FabricModBlocks.BOOK_BINDER);
     public static final Supplier<Item> BOOK_RECEPTACLE_ITEM = registerBlockItem("blockbookreceptacle", FabricModBlocks.BOOK_RECEPTACLE);
     public static final Supplier<Item> BOOKSTAND_ITEM = registerBlockItem("blockbookstand", FabricModBlocks.BOOKSTAND);
-    public static final Supplier<Item> LECTERN_ITEM = registerBlockItem("blocklectern", FabricModBlocks.LECTERN);
     public static final Supplier<Item> LINK_MODIFIER_ITEM = registerBlockItem("blocklinkmodifier", FabricModBlocks.LINK_MODIFIER);
     public static final Supplier<Item> WRITING_DESK_ITEM = registerBlockItem("writingdesk", FabricModBlocks.WRITING_DESK);
     public static final Supplier<Item> CRYSTAL_ITEM = registerBlockItem("blockcrystal", FabricModBlocks.CRYSTAL);

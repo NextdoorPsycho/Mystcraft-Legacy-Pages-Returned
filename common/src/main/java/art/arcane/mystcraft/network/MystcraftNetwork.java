@@ -1,5 +1,7 @@
 package art.arcane.mystcraft.network;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.function.BiConsumer;
@@ -15,6 +17,17 @@ public final class MystcraftNetwork {
   public static BiConsumer<Object, ServerPlayer> sendToPlayerHandler;
   public static Consumer<Object> sendToAllHandler;
   public static BiConsumer<Object, ServerPlayer> sendToTrackingHandler;
+
+  /**
+   * Platform-specific handler for sending packets to players tracking a block position.
+   * BiConsumer takes (packet, level, pos).
+   */
+  @FunctionalInterface
+  public interface TrackingBlockSender {
+    void send(Object packet, ServerLevel level, BlockPos pos);
+  }
+
+  public static TrackingBlockSender sendToTrackingBlockHandler;
 
   private MystcraftNetwork() {
   }
@@ -45,5 +58,14 @@ public final class MystcraftNetwork {
    */
   public static void sendToTracking(Object packet, ServerPlayer player) {
     sendToTrackingHandler.accept(packet, player);
+  }
+
+  /**
+   * Sends a packet to all players tracking a block position (server -> client).
+   */
+  public static void sendToTrackingBlock(Object packet, ServerLevel level, BlockPos pos) {
+    if (sendToTrackingBlockHandler != null) {
+      sendToTrackingBlockHandler.send(packet, level, pos);
+    }
   }
 }

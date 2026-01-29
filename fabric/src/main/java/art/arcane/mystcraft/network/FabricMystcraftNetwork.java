@@ -5,9 +5,11 @@ import io.netty.buffer.Unpooled;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
@@ -35,6 +37,8 @@ public final class FabricMystcraftNetwork {
     public static final ResourceLocation PROFILING_STATE = new ResourceLocation(Mystcraft.MOD_ID, "profiling_state");
     public static final ResourceLocation EXPLOSION = new ResourceLocation(Mystcraft.MOD_ID, "explosion");
     public static final ResourceLocation SPAWN_LIGHTNING = new ResourceLocation(Mystcraft.MOD_ID, "spawn_lightning");
+    public static final ResourceLocation LECTERN_BOOK_SYNC = new ResourceLocation(Mystcraft.MOD_ID, "lectern_book_sync");
+    public static final ResourceLocation OPEN_LECTERN_BOOK = new ResourceLocation(Mystcraft.MOD_ID, "open_lectern_book");
 
     private FabricMystcraftNetwork() {}
 
@@ -122,6 +126,18 @@ public final class FabricMystcraftNetwork {
             SpawnLightningPacket packet = SpawnLightningPacket.decode(buf);
             PacketContext ctx = createClientContext();
             SpawnLightningPacket.handle(packet, ctx);
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(LECTERN_BOOK_SYNC, (client, handler, buf, responseSender) -> {
+            LecternBookSyncPacket packet = LecternBookSyncPacket.decode(buf);
+            PacketContext ctx = createClientContext();
+            LecternBookSyncPacket.handle(packet, ctx);
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(OPEN_LECTERN_BOOK, (client, handler, buf, responseSender) -> {
+            OpenLecternBookPacket packet = OpenLecternBookPacket.decode(buf);
+            PacketContext ctx = createClientContext();
+            OpenLecternBookPacket.handle(packet, ctx);
         });
     }
 
@@ -218,6 +234,27 @@ public final class FabricMystcraftNetwork {
         ServerPlayNetworking.send(player, SPAWN_LIGHTNING, buf);
     }
 
+    /** Sends a LecternBookSyncPacket to a specific player. */
+    public static void sendToPlayer(LecternBookSyncPacket packet, ServerPlayer player) {
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        LecternBookSyncPacket.encode(packet, buf);
+        ServerPlayNetworking.send(player, LECTERN_BOOK_SYNC, buf);
+    }
+
+    /** Sends an OpenLecternBookPacket to a specific player. */
+    public static void sendToPlayer(OpenLecternBookPacket packet, ServerPlayer player) {
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        OpenLecternBookPacket.encode(packet, buf);
+        ServerPlayNetworking.send(player, OPEN_LECTERN_BOOK, buf);
+    }
+
+    /** Sends a packet to all players tracking a block position. */
+    public static void sendToTrackingBlock(Object packet, ServerLevel level, BlockPos pos) {
+        for (ServerPlayer player : PlayerLookup.tracking(level, pos)) {
+            sendToPlayerGeneric(packet, player);
+        }
+    }
+
     /** Sends a packet to all connected players. */
     public static void sendToAll(Object packet, MinecraftServer server) {
         for (ServerPlayer player : PlayerLookup.all(server)) {
@@ -258,6 +295,8 @@ public final class FabricMystcraftNetwork {
         else if (packet instanceof ProfilingStatePacket p) sendToPlayer(p, player);
         else if (packet instanceof ExplosionPacket p) sendToPlayer(p, player);
         else if (packet instanceof SpawnLightningPacket p) sendToPlayer(p, player);
+        else if (packet instanceof LecternBookSyncPacket p) sendToPlayer(p, player);
+        else if (packet instanceof OpenLecternBookPacket p) sendToPlayer(p, player);
         else {
             Mystcraft.LOGGER.warn("[FabricMystcraftNetwork] Unknown packet type: {}", packet.getClass().getName());
         }

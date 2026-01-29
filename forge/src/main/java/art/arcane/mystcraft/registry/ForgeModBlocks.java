@@ -8,7 +8,6 @@ import art.arcane.mystcraft.block.DecayBlock;
 import art.arcane.mystcraft.block.InkMixerBlock;
 import art.arcane.mystcraft.block.LinkModifierBlock;
 import art.arcane.mystcraft.block.LinkPortalBlock;
-import art.arcane.mystcraft.block.MystcraftLecternBlock;
 import art.arcane.mystcraft.block.StarFissureBlock;
 import art.arcane.mystcraft.block.WritingDeskBlock;
 import net.minecraft.world.level.block.Block;
@@ -49,13 +48,6 @@ public final class ForgeModBlocks {
     public static final RegistryObject<Block> BOOKSTAND =
             MystcraftRegistries.BLOCKS.register("blockbookstand",
                     () -> new BookstandBlock(BlockBehaviour.Properties.of()
-                            .mapColor(MapColor.WOOD)
-                            .strength(2.0F)
-                            .requiresCorrectToolForDrops()));
-
-    public static final RegistryObject<Block> LECTERN =
-            MystcraftRegistries.BLOCKS.register("blocklectern",
-                    () -> new MystcraftLecternBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.WOOD)
                             .strength(2.0F)
                             .requiresCorrectToolForDrops()));

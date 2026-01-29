@@ -12,5 +12,5 @@
   "injectors": {
     "defaultRequire": 1
   },
-  "refmap": "mystcraft.refmap.json"
+  "refmap": "mixin.refmap.json"
 }

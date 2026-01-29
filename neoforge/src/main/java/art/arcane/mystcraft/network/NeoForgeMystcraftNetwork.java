@@ -1,7 +1,9 @@
 package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.NetworkRegistry;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -127,6 +129,20 @@ public final class NeoForgeMystcraftNetwork {
                 .consumerMainThread(wrap(BlockBookActivatePacket::handle))
                 .add();
 
+        // Server -> Client: Sync Mystcraft book in vanilla lectern
+        CHANNEL.messageBuilder(LecternBookSyncPacket.class, packetId++, PlayNetworkDirection.PLAY_TO_CLIENT)
+                .encoder(LecternBookSyncPacket::encode)
+                .decoder(LecternBookSyncPacket::decode)
+                .consumerMainThread(wrap(LecternBookSyncPacket::handle))
+                .add();
+
+        // Server -> Client: Open book screen for lectern
+        CHANNEL.messageBuilder(OpenLecternBookPacket.class, packetId++, PlayNetworkDirection.PLAY_TO_CLIENT)
+                .encoder(OpenLecternBookPacket::encode)
+                .decoder(OpenLecternBookPacket::decode)
+                .consumerMainThread(wrap(OpenLecternBookPacket::handle))
+                .add();
+
         Mystcraft.LOGGER.info("Registered {} network packets", packetId);
     }
 
@@ -148,5 +164,10 @@ public final class NeoForgeMystcraftNetwork {
     /** Sends a packet to all players tracking a position. */
     public static void sendToTracking(Object packet, ServerPlayer player) {
         CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player), packet);
+    }
+
+    /** Sends a packet to all players tracking a block position. */
+    public static void sendToTrackingBlock(Object packet, ServerLevel level, BlockPos pos) {
+        CHANNEL.send(PacketDistributor.TRACKING_CHUNK.with(() -> level.getChunkAt(pos)), packet);
     }
 }

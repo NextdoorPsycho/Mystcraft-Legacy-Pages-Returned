@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 public final class ModVillagers {
 
     /**
-     * POI type for the Archivist workstation (Lectern).
+     * POI type for the Archivist workstation (Bookstand).
      * Registered via Fabric's PointOfInterestHelper which handles the registry and tag setup.
      */
     public static final Supplier<PoiType> ARCHIVIST_POI;
@@ -35,7 +35,7 @@ public final class ModVillagers {
                 new ResourceLocation(Mystcraft.MOD_ID, "archivist"),
                 1, // Max tickets
                 1, // Valid range
-                FabricModBlocks.LECTERN.get());
+                FabricModBlocks.BOOKSTAND.get());
         ARCHIVIST_POI = () -> poiType;
 
         VillagerProfession profession = new VillagerProfession(

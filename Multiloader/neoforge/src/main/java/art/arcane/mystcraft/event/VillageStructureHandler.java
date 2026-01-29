@@ -23,7 +23,10 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Injects the Mystcraft archivist house into vanilla village jigsaw pools at server start. */
+/**
+ * Injects the Mystcraft archivist house into vanilla village jigsaw pools at server start.
+ * Uses reflection to access private fields (AT ensures this works at runtime).
+ */
 @Mod.EventBusSubscriber(modid = Mystcraft.MOD_ID)
 public class VillageStructureHandler {
 
@@ -66,23 +69,17 @@ public class VillageStructureHandler {
                         ARCHIVIST_HOUSE_TEMPLATE, emptyProcessor
                 ).apply(StructureTemplatePool.Projection.RIGID);
 
-                // Find fields by type since mapping names vary between loaders
-                Field rawTemplatesField = null;
-                Field templatesField = null;
-                for (Field field : StructureTemplatePool.class.getDeclaredFields()) {
-                    field.setAccessible(true);
-                    Object value = field.get(pool);
-                    if (value instanceof ObjectArrayList) {
-                        templatesField = field;
-                    } else if (value instanceof List && !(value instanceof ObjectArrayList)) {
-                        rawTemplatesField = field;
-                    }
-                }
+                // Access fields via reflection (AT makes this work at runtime)
+                Field rawTemplatesField = findField(StructureTemplatePool.class, "rawTemplates");
+                Field templatesField = findField(StructureTemplatePool.class, "templates");
 
                 if (rawTemplatesField == null || templatesField == null) {
                     LOGGER.warn("[Mystcraft] Could not find pool fields for {}", poolId);
                     continue;
                 }
+
+                rawTemplatesField.setAccessible(true);
+                templatesField.setAccessible(true);
 
                 @SuppressWarnings("unchecked")
                 List<Pair<StructurePoolElement, Integer>> rawTemplates =
@@ -111,5 +108,23 @@ public class VillageStructureHandler {
         if (injected > 0) {
             LOGGER.info("[Mystcraft] Injected archivist house into {} village pools", injected);
         }
+    }
+
+    private static Field findField(Class<?> clazz, String name) {
+        for (Field field : clazz.getDeclaredFields()) {
+            if (field.getName().equals(name)) {
+                return field;
+            }
+        }
+        // Fallback: search by type for obfuscated environments
+        for (Field field : clazz.getDeclaredFields()) {
+            if (field.getType() == List.class && name.equals("rawTemplates")) {
+                return field;
+            }
+            if (field.getType() == ObjectArrayList.class && name.equals("templates")) {
+                return field;
+            }
+        }
+        return null;
     }
 }

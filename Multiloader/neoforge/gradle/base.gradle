@@ -1,7 +1,7 @@
 jar {
-    archiveFileName = "Mystcraft Legacy - ${version} - NeoForge.jar"
+    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version}-neoforge-${neoforge_version}.jar"
 }
 
 sourcesJar {
-    archiveFileName = "Mystcraft Legacy - ${version} - NeoForge-sources.jar"
+    archiveFileName = "Mystcrafy Legacy - ${version} - NeoForge-sources.jar"
 }

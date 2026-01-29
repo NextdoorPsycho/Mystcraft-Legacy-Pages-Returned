@@ -21,3 +21,8 @@ apply from: 'gradle/run-gametest.gradle'
 
 apply from: 'gradle/sources.gradle'
 apply from: 'gradle/tasks.gradle'
+
+// Disable NeoForge IDE post-sync task; keep build tasks intact.
+tasks.matching { it.name == 'idePostSync' }.configureEach {
+    enabled = false
+}

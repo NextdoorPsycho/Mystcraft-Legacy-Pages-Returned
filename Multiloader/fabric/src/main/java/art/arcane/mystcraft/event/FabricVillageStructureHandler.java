@@ -13,7 +13,10 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Injects Mystcraft structures into village jigsaw pools. */
+/**
+ * Injects Mystcraft structures into village jigsaw pools.
+ * Uses reflection to access private fields (AW ensures this works at runtime).
+ */
 public final class FabricVillageStructureHandler {
 
     public static void onServerStarting(MinecraftServer server) {
@@ -44,34 +47,44 @@ public final class FabricVillageStructureHandler {
         StructurePoolElement element = StructurePoolElement.legacy(pieceId).apply(StructureTemplatePool.Projection.RIGID);
 
         try {
-            // Find templates field by type since field names differ across mappings
-            Field templatesField = null;
-            for (Field field : StructureTemplatePool.class.getDeclaredFields()) {
-                field.setAccessible(true);
-                Object value = field.get(pool);
-                if (value instanceof ObjectArrayList) {
-                    templatesField = field;
-                    break;
-                }
-            }
-
+            // Access fields via reflection (AW makes this work at runtime)
+            Field templatesField = findField(StructureTemplatePool.class, "templates");
             if (templatesField == null) {
                 Mystcraft.LOGGER.warn("[Mystcraft] Could not find templates field for pool {}", poolId);
                 return;
             }
 
+            templatesField.setAccessible(true);
+
             @SuppressWarnings("unchecked")
-            List<StructurePoolElement> templates = (List<StructurePoolElement>) templatesField.get(pool);
-            List<StructurePoolElement> mutableTemplates = new ArrayList<>(templates);
+            ObjectArrayList<StructurePoolElement> templates =
+                    (ObjectArrayList<StructurePoolElement>) templatesField.get(pool);
+
+            ObjectArrayList<StructurePoolElement> newTemplates = new ObjectArrayList<>(templates);
             for (int i = 0; i < weight; i++) {
-                mutableTemplates.add(element);
+                newTemplates.add(element);
             }
-            templatesField.set(pool, mutableTemplates);
+            templatesField.set(pool, newTemplates);
 
             Mystcraft.LOGGER.debug("[Mystcraft] Added {} to pool {} with weight {}", pieceId, poolId, weight);
         } catch (Exception e) {
             Mystcraft.LOGGER.warn("[Mystcraft] Failed to add {} to pool {}: {}", pieceId, poolId, e.getMessage());
         }
+    }
+
+    private static Field findField(Class<?> clazz, String name) {
+        for (Field field : clazz.getDeclaredFields()) {
+            if (field.getName().equals(name)) {
+                return field;
+            }
+        }
+        // Fallback: search by type for obfuscated environments
+        for (Field field : clazz.getDeclaredFields()) {
+            if (field.getType() == ObjectArrayList.class && name.equals("templates")) {
+                return field;
+            }
+        }
+        return null;
     }
 
     private FabricVillageStructureHandler() {}

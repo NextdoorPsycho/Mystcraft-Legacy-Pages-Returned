@@ -1,17 +1,17 @@
 jar {
-    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-dev.jar"
+    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version}-fabric-${fabric_loader_version}-dev.jar"
 }
 
 remapJar {
-    archiveFileName = "Mystcraft Legacy - ${version} - Fabric.jar"
+    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version}-fabric-${fabric_loader_version}.jar"
 }
 
 sourcesJar {
-    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-sources-dev.jar"
+    archiveFileName = "Mystcrafy Legacy - ${version} - Fabric-sources-dev.jar"
 }
 
 remapSourcesJar {
-    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-sources.jar"
+    archiveFileName = "Mystcrafy Legacy - ${version} - Fabric-sources.jar"
 }
 
 dependencies {

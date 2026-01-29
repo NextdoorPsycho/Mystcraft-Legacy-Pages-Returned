@@ -9,6 +9,7 @@ tasks.named('compileJava', JavaCompile) {
 }
 
 tasks.named('processResources', ProcessResources) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.resources
 }
 

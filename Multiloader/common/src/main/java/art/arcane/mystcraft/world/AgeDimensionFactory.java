@@ -31,7 +31,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -39,7 +38,8 @@ import java.util.concurrent.Executor;
 
 /**
  * Factory for dynamically creating Mystcraft Age dimensions at runtime.
- * Uses reflection to access private MinecraftServer internals for dimension registration.
+ * Uses reflection to access MinecraftServer internals for dimension registration.
+ * Access Transformers/Wideners ensure the reflection works at runtime.
  */
 public class AgeDimensionFactory {
 
@@ -63,55 +63,60 @@ public class AgeDimensionFactory {
   private static final ResourceKey<DimensionType> DIM_TYPE_PERSONAL =
       ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_personal"));
 
-  // Cached reflection fields
-  private static final Field executorField;
-  private static final Field levelsField;
-  private static final Field storageSourceField;
-  private static final Method markWorldsDirtyMethod;
-
-  static {
-    // MinecraftServer private field access
-    Class<?> serverClass = MinecraftServer.class;
-
-    executorField = findField(serverClass, "executor", Executor.class);
-    levelsField = findField(serverClass, "levels", Map.class);
-    storageSourceField = findField(serverClass, "storageSource", LevelStorageSource.LevelStorageAccess.class);
-    markWorldsDirtyMethod = findNoArgMethod(serverClass, "markWorldsDirty");
-    if (markWorldsDirtyMethod == null) {
-      Mystcraft.LOGGER.debug("MinecraftServer.markWorldsDirty() not found; skipping world dirty mark.");
-    }
-  }
+  // Field names as they appear in the decompiled MC source (official mappings)
+  private static final String FIELD_EXECUTOR = "executor";
+  private static final String FIELD_LEVELS = "levels";
+  private static final String FIELD_STORAGE_SOURCE = "storageSource";
+  private static final String FIELD_FROZEN = "frozen";
 
   /**
-   * Finds a field by name or type in a class hierarchy.
+   * Gets a field value using reflection, trying the field name first.
    */
-  private static Field findField(Class<?> clazz, String name, Class<?> type) {
-    for (Field field : clazz.getDeclaredFields()) {
-      if (field.getType().equals(type) || field.getName().equals(name)) {
+  @SuppressWarnings("unchecked")
+  private static <T> T getFieldValue(Object obj, String fieldName, Class<T> type) {
+    try {
+      Field field = findField(obj.getClass(), fieldName, type);
+      if (field != null) {
         field.setAccessible(true);
-        return field;
+        return (T) field.get(obj);
       }
-    }
-    // Check superclass
-    if (clazz.getSuperclass() != null) {
-      return findField(clazz.getSuperclass(), name, type);
+    } catch (Exception e) {
+      Mystcraft.LOGGER.error("Failed to get field {} from {}: {}", fieldName, obj.getClass().getName(), e.getMessage());
     }
     return null;
   }
 
   /**
-   * Finds a no-arg method by name in a class hierarchy.
+   * Sets a field value using reflection.
    */
-  @Nullable
-  private static Method findNoArgMethod(Class<?> clazz, String name) {
-    for (Method method : clazz.getDeclaredMethods()) {
-      if (method.getName().equals(name) && method.getParameterCount() == 0) {
-        method.setAccessible(true);
-        return method;
+  private static void setFieldValue(Object obj, String fieldName, Object value) {
+    try {
+      Field field = findField(obj.getClass(), fieldName, value.getClass());
+      if (field != null) {
+        field.setAccessible(true);
+        field.set(obj, value);
       }
+    } catch (Exception e) {
+      Mystcraft.LOGGER.error("Failed to set field {} on {}: {}", fieldName, obj.getClass().getName(), e.getMessage());
     }
-    if (clazz.getSuperclass() != null) {
-      return findNoArgMethod(clazz.getSuperclass(), name);
+  }
+
+  /**
+   * Finds a field by name in a class hierarchy.
+   */
+  private static Field findField(Class<?> clazz, String name, Class<?> type) {
+    Class<?> current = clazz;
+    while (current != null) {
+      for (Field field : current.getDeclaredFields()) {
+        if (field.getName().equals(name)) {
+          return field;
+        }
+        // Fallback: match by type if name doesn't match (for obfuscated environments)
+        if (type != null && type.isAssignableFrom(field.getType())) {
+          return field;
+        }
+      }
+      current = current.getSuperclass();
     }
     return null;
   }
@@ -201,17 +206,17 @@ public class AgeDimensionFactory {
       @NotNull UUID ageUUID,
       @Nullable AgeDirectorImpl director
   ) {
-    if (executorField == null || levelsField == null || storageSourceField == null) {
-      Mystcraft.LOGGER.error("Reflection fields not initialized");
-      return null;
-    }
-
     try {
-      // Get private fields via reflection
-      Executor executor = (Executor) executorField.get(server);
-      Map<ResourceKey<Level>, ServerLevel> levels = (Map<ResourceKey<Level>, ServerLevel>) levelsField.get(server);
-      LevelStorageSource.LevelStorageAccess storageSource =
-          (LevelStorageSource.LevelStorageAccess) storageSourceField.get(server);
+      // Access server internals via reflection (AT/AW ensures this works at runtime)
+      Executor executor = getFieldValue(server, FIELD_EXECUTOR, Executor.class);
+      Map<ResourceKey<Level>, ServerLevel> levels = getFieldValue(server, FIELD_LEVELS, Map.class);
+      LevelStorageSource.LevelStorageAccess storageSource = getFieldValue(server, FIELD_STORAGE_SOURCE,
+          LevelStorageSource.LevelStorageAccess.class);
+
+      if (executor == null || levels == null || storageSource == null) {
+        Mystcraft.LOGGER.error("Failed to access MinecraftServer internals for dimension creation");
+        return null;
+      }
 
       // Get overworld for reference
       ServerLevel overworld = server.overworld();
@@ -307,9 +312,15 @@ public class AgeDimensionFactory {
       // Register the level with the server
       levels.put(dimensionKey, newLevel);
 
-      // Mark worlds as dirty
-      if (markWorldsDirtyMethod != null) {
-        markWorldsDirtyMethod.invoke(server);
+      // Mark worlds as dirty (method is public, call directly)
+      try {
+        java.lang.reflect.Method markDirty = MinecraftServer.class.getMethod("markWorldsDirty");
+        markDirty.invoke(server);
+      } catch (NoSuchMethodException e) {
+        // Method may not exist in all versions, ignore
+        Mystcraft.LOGGER.debug("markWorldsDirty() not available");
+      } catch (Exception e) {
+        Mystcraft.LOGGER.warn("Failed to mark worlds dirty: {}", e.getMessage());
       }
 
       // Disable vanilla death messages in Mystcraft Ages (custom messages only).
@@ -551,40 +562,29 @@ public class AgeDimensionFactory {
   }
 
   /**
-   * Registers a dimension stem in the registry using reflection.
+   * Registers a dimension stem in the registry.
+   * Uses reflection with AT/AW ensuring access at runtime.
    */
-  @SuppressWarnings("unchecked")
   private static void registerDimensionStem(
       MappedRegistry<LevelStem> registry,
       ResourceKey<LevelStem> key,
       LevelStem stem
   ) {
     try {
-      // The registry may be frozen, need to unfreeze it
-      Field frozenField = MappedRegistry.class.getDeclaredField("frozen");
-      frozenField.setAccessible(true);
-      frozenField.set(registry, false);
+      // Find and unfreeze the registry
+      Field frozenField = findField(MappedRegistry.class, FIELD_FROZEN, boolean.class);
+      if (frozenField != null) {
+        frozenField.setAccessible(true);
+        frozenField.set(registry, false);
+      }
 
       // Register the stem
-      // Use internal register method
-      Method registerMethod = null;
-      for (Method m : MappedRegistry.class.getDeclaredMethods()) {
-        if (m.getName().equals("register") && m.getParameterCount() == 3) {
-          registerMethod = m;
-          break;
-        }
-      }
-
-      if (registerMethod != null) {
-        registerMethod.setAccessible(true);
-        registerMethod.invoke(registry, key, stem, Lifecycle.stable());
-      } else {
-        // Fallback: try direct registration
-        registry.register(key, stem, Lifecycle.stable());
-      }
+      registry.register(key, stem, Lifecycle.stable());
 
       // Re-freeze the registry
-      frozenField.set(registry, true);
+      if (frozenField != null) {
+        frozenField.set(registry, true);
+      }
 
     } catch (Exception e) {
       Mystcraft.LOGGER.error("Failed to register dimension stem", e);

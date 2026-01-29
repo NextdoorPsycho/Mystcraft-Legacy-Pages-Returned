@@ -55,7 +55,6 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version_1_20_1}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_1}"
     compileOnly project(':common')
-    compileOnly project(':fabric')
 
     // TOML config library (same as Forge/NeoForge use)
     implementation "com.electronwill.night-config:core:3.6.7"
@@ -66,25 +65,20 @@ dependencies {
 
 tasks.named('compileJava', JavaCompile) {
     source(project(':common').sourceSets.main.allSource)
-    source(project(':fabric').sourceSets.main.allSource)
-    // Exclude 1.20.2-specific classes from compilation (different API signatures)
+    // Exclude 1.20.2-specific classes from common (different API signatures)
     exclude '**/gametest/**'
     exclude '**/client/screen/**'
     exclude '**/client/gui/element/**'
-    // Exclude 1.20.2 advancement triggers (use version-specific ones)
+    // Exclude 1.20.2 advancement triggers (use version-specific ones in fabric/1.20.1)
     exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
     exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
     exclude '**/advancements/WritingDeskWriteTrigger.java'
-    // Exclude base client helper (use version-specific one with 1.20.1 API)
-    exclude '**/platform/FabricClientHelper.java'
 }
 
 tasks.named('processResources', ProcessResources) {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    // Version-specific resources last to override base
+    // Common resources first, then own resources to override
     from project(':common').sourceSets.main.resources
-    from project(':fabric').sourceSets.main.resources
-    // Own resources processed last for service file overrides
     from sourceSets.main.resources
 
     def expandProps = [
@@ -114,8 +108,6 @@ tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
-    from project(':fabric').sourceSets.main.allSource
-    from project(':fabric').sourceSets.main.resources
 }
 
 jar {

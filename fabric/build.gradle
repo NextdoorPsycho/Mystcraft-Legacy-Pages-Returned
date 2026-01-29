@@ -1,10 +1,18 @@
+// Base Fabric adapter module - contains shared code compiled by version subprojects
+// No JAR is produced from this module directly
+
 plugins {
-    id 'fabric-loom' version '1.4-SNAPSHOT'
+    id 'java'
 }
 
-apply from: 'gradle/base.gradle'
-apply from: 'gradle/loom.gradle'
-apply from: 'gradle/run-client.gradle'
-apply from: 'gradle/run-server.gradle'
-apply from: 'gradle/run-gametest.gradle'
-apply from: 'gradle/tasks.gradle'
+// Minimal setup so version subprojects can reference this module's source
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+}
+
+// Skip compilation - source is compiled by version subprojects
+tasks.named('compileJava') { enabled = false }
+tasks.named('processResources') { enabled = false }
+tasks.named('classes') { enabled = false }
+tasks.named('jar') { enabled = false }
+tasks.named('sourcesJar') { enabled = false }

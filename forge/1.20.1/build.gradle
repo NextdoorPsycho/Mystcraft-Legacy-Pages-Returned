@@ -20,7 +20,7 @@ minecraft {
 
     copyIdeResources = true
 
-    def at = project(':forge').file('src/main/resources/META-INF/accesstransformer.cfg')
+    def at = file('src/main/resources/META-INF/accesstransformer.cfg')
     if (at.exists()) {
         accessTransformer = at
     }
@@ -35,7 +35,6 @@ minecraft {
                 mystcraft {
                     source sourceSets.main
                     source project(':common').sourceSets.main
-                    source project(':forge').sourceSets.main
                 }
             }
         }
@@ -72,14 +71,12 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version_1_20_1}-${forge_version_1_20_1}"
     compileOnly project(':common')
-    compileOnly project(':forge')
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
 }
 
 tasks.named('compileJava', JavaCompile) {
     source(project(':common').sourceSets.main.allSource)
-    source(project(':forge').sourceSets.main.allSource)
-    // Exclude 1.20.2-specific classes from compilation (different API signatures)
+    // Exclude 1.20.2-specific classes from common (different API signatures)
     exclude '**/gametest/**'
     exclude '**/client/screen/**'
     exclude '**/client/gui/element/**'
@@ -87,22 +84,11 @@ tasks.named('compileJava', JavaCompile) {
     exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
     exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
     exclude '**/advancements/WritingDeskWriteTrigger.java'
-    // Exclude base client helper (use version-specific one with 1.20.1 API)
-    exclude '**/platform/ForgeClientHelper.java'
-    // Exclude base platform helper (use version-specific one with 1.20.1 API)
-    exclude '**/platform/ForgePlatformHelper.java'
-    // Exclude 1.20.2 network classes (use version-specific ones with 1.20.1 API)
-    exclude '**/network/ForgeMystcraftNetwork.java'
-    exclude '**/network/ForgePacketContext.java'
-    exclude '**/network/NetworkEvents.java'
 }
 
 tasks.named('processResources', ProcessResources) {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    // Version-specific resources last to override base
     from project(':common').sourceSets.main.resources
-    from project(':forge').sourceSets.main.resources
-    // Own resources processed last for service file overrides
     from sourceSets.main.resources
 
     def expandProps = [
@@ -132,8 +118,6 @@ tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
-    from project(':forge').sourceSets.main.allSource
-    from project(':forge').sourceSets.main.resources
 }
 
 jar {

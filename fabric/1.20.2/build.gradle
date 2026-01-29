@@ -54,7 +54,6 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version_1_20_2}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_2}"
     compileOnly project(':common')
-    compileOnly project(':fabric')
 
     // TOML config library (same as Forge/NeoForge use)
     implementation "com.electronwill.night-config:core:3.6.7"
@@ -65,15 +64,11 @@ dependencies {
 
 tasks.named('compileJava', JavaCompile) {
     source(project(':common').sourceSets.main.allSource)
-    source(project(':fabric').sourceSets.main.allSource)
 }
 
 tasks.named('processResources', ProcessResources) {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    // Version-specific resources last to override base
     from project(':common').sourceSets.main.resources
-    from project(':fabric').sourceSets.main.resources
-    // Own resources processed last for service file overrides
     from sourceSets.main.resources
 
     def expandProps = [
@@ -103,8 +98,6 @@ tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
-    from project(':fabric').sourceSets.main.allSource
-    from project(':fabric').sourceSets.main.resources
 }
 
 jar {

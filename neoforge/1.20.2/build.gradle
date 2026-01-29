@@ -33,7 +33,6 @@ runs {
     configureEach {
         modSource project.sourceSets.main
         modSource project(':common').sourceSets.main
-        modSource project(':neoforge').sourceSets.main
     }
 
     client {
@@ -64,18 +63,15 @@ repositories {
 dependencies {
     implementation "net.neoforged:neoforge:${neoforge_version_1_20_2}"
     compileOnly project(':common')
-    compileOnly project(':neoforge')
 }
 
 tasks.named('compileJava', JavaCompile) {
     source(project(':common').sourceSets.main.allSource)
-    source(project(':neoforge').sourceSets.main.allSource)
 }
 
 tasks.named('processResources', ProcessResources) {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from project(':common').sourceSets.main.resources
-    from project(':neoforge').sourceSets.main.resources
     from sourceSets.main.resources
 
     def expandProps = [
@@ -105,8 +101,6 @@ tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
-    from project(':neoforge').sourceSets.main.allSource
-    from project(':neoforge').sourceSets.main.resources
 }
 
 jar {

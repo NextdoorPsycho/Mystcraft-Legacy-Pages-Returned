@@ -20,7 +20,7 @@ minecraft {
 
     copyIdeResources = true
 
-    def at = project(':forge').file('src/main/resources/META-INF/accesstransformer.cfg')
+    def at = file('src/main/resources/META-INF/accesstransformer.cfg')
     if (at.exists()) {
         accessTransformer = at
     }
@@ -35,7 +35,6 @@ minecraft {
                 mystcraft {
                     source sourceSets.main
                     source project(':common').sourceSets.main
-                    source project(':forge').sourceSets.main
                 }
             }
         }
@@ -72,21 +71,16 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version_1_20_2}-${forge_version_1_20_2}"
     compileOnly project(':common')
-    compileOnly project(':forge')
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
 }
 
 tasks.named('compileJava', JavaCompile) {
     source(project(':common').sourceSets.main.allSource)
-    source(project(':forge').sourceSets.main.allSource)
 }
 
 tasks.named('processResources', ProcessResources) {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    // Version-specific resources last to override base
     from project(':common').sourceSets.main.resources
-    from project(':forge').sourceSets.main.resources
-    // Own resources processed last for service file overrides
     from sourceSets.main.resources
 
     def expandProps = [
@@ -116,8 +110,6 @@ tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
-    from project(':forge').sourceSets.main.allSource
-    from project(':forge').sourceSets.main.resources
 }
 
 jar {

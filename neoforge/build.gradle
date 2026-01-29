@@ -1,28 +1,18 @@
-buildscript {
-    repositories {
-        maven { url = 'https://maven.neoforged.net/releases' }
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath "net.neoforged.gradle:userdev:7.0.41"
-    }
+// Base NeoForge adapter module - contains shared code compiled by version subprojects
+// No JAR is produced from this module directly
+
+plugins {
+    id 'java'
 }
 
-apply plugin: 'net.neoforged.gradle.userdev'
-
-apply from: 'gradle/base.gradle'
-
-apply from: 'gradle/minecraft.gradle'
-apply from: 'gradle/run-base.gradle'
-apply from: 'gradle/run-client.gradle'
-apply from: 'gradle/run-server.gradle'
-apply from: 'gradle/run-data.gradle'
-apply from: 'gradle/run-gametest.gradle'
-
-apply from: 'gradle/sources.gradle'
-apply from: 'gradle/tasks.gradle'
-
-// Disable NeoForge IDE post-sync task; keep build tasks intact.
-tasks.matching { it.name == 'idePostSync' }.configureEach {
-    enabled = false
+// Minimal setup so version subprojects can reference this module's source
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version)
 }
+
+// Skip compilation - source is compiled by version subprojects
+tasks.named('compileJava') { enabled = false }
+tasks.named('processResources') { enabled = false }
+tasks.named('classes') { enabled = false }
+tasks.named('jar') { enabled = false }
+tasks.named('sourcesJar') { enabled = false }

@@ -1,17 +1,19 @@
 {
   "category": "biome_controller",
-  "card_rank": 1,
-  "instability_cost": 0.0,
+  "display_name": "Showcase Biome Grid",
+  "card_rank": 2,
+  "instability_cost": 1.0,
+  "allow_random": false,
   "poem": [
     "Biomes",
     "Grid",
-    "Medium",
+    "Pattern",
     "Flow"
   ],
   "logic": [
     {
-      "type": "set_biome_controller",
-      "value": "medium"
+      "type": "register_biome_controller",
+      "controller": "grid"
     }
   ]
 }

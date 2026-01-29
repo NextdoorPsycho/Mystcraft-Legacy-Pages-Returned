@@ -19,6 +19,7 @@ public final class MystcraftGameTestAssertions {
     public static void assertRegistries(ServerLevel level) {
         assertItemRegistered("linkbook");
         assertItemRegistered("linkbook_unlinked");
+        assertItemRegistered("personal_link_book");
         assertItemRegistered("agebook");
 
         assertCreativeTabRegistered("mystcraft");

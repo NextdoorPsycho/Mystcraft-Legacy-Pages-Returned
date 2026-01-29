@@ -105,6 +105,7 @@ public class MystcraftForge {
         art.arcane.mystcraft.registry.ModItems.AGEBOOK = ForgeModItems.AGEBOOK;
         art.arcane.mystcraft.registry.ModItems.LINKBOOK = ForgeModItems.LINKBOOK;
         art.arcane.mystcraft.registry.ModItems.LINKBOOK_UNLINKED = ForgeModItems.LINKBOOK_UNLINKED;
+        art.arcane.mystcraft.registry.ModItems.PERSONAL_LINK_BOOK = ForgeModItems.PERSONAL_LINK_BOOK;
         art.arcane.mystcraft.registry.ModItems.BOOSTER_PACK = ForgeModItems.BOOSTER_PACK;
         art.arcane.mystcraft.registry.ModItems.FOLDER = ForgeModItems.FOLDER;
         art.arcane.mystcraft.registry.ModItems.PORTFOLIO = ForgeModItems.PORTFOLIO;
@@ -171,6 +172,8 @@ public class MystcraftForge {
         art.arcane.mystcraft.config.MystcraftConfig.giveGuidebookOnFirstSpawn = ForgeMystcraftConfig.giveGuidebookOnFirstSpawn::get;
         art.arcane.mystcraft.config.MystcraftConfig.maxSymbolsPerBook = ForgeMystcraftConfig.maxSymbolsPerBook::get;
         art.arcane.mystcraft.config.MystcraftConfig.deleteAgesOnStartup = ForgeMystcraftConfig.deleteAgesOnStartup::get;
+        art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols =
+                () -> List.copyOf(ForgeMystcraftConfig.disabledSymbols.get());
         art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = ForgeMystcraftConfig.instabilityEnabled::get;
         art.arcane.mystcraft.config.MystcraftConfig.deathEffectsEnabled = ForgeMystcraftConfig.deathEffectsEnabled::get;
         art.arcane.mystcraft.config.MystcraftConfig.allowUnstableAges = ForgeMystcraftConfig.allowUnstableAges::get;

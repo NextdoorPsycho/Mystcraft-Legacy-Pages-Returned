@@ -1,14 +1,15 @@
 {
   "category": "special",
+  "display_name": "Showcase Star Fissure",
   "card_rank": 3,
-  "instability_cost": 1.0,
+  "instability_cost": 4.0,
+  "allow_random": false,
   "poem": [
-    "Fissure",
     "Star",
+    "Fissure",
     "Rift",
-    "Call"
+    "Echo"
   ],
-  "grammar": false,
   "logic": [
     {
       "type": "set_flag",

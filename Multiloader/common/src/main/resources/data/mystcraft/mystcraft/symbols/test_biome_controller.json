@@ -2,8 +2,17 @@
   "category": "biome_controller",
   "card_rank": 1,
   "instability_cost": 0.0,
-  "poem": ["Biome", "Order", "System", "Control"],
+  "poem": [
+    "Biome",
+    "Order",
+    "System",
+    "Control"
+  ],
   "logic": [
-    { "type": "set_biome_controller", "value": "native" }
-  ]
+    {
+      "type": "set_biome_controller",
+      "value": "native"
+    }
+  ],
+  "allow_random": false
 }

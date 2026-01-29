@@ -55,6 +55,8 @@ public final class PopulatorRegistry {
         register(myst("tendrils"), (seed, json) -> new TendrilsPopulator(seed));
         register(myst("vertical_tendrils"), (seed, json) -> new VerticalTendrilsPopulator(seed));
         register(myst("perlin_worms"), (seed, json) -> new PerlinWormsPopulator(seed));
+        register(myst("block_shuffle_terrain"), (seed, json) -> new BlockShufflePopulator(seed, BlockShufflePopulator.Mode.TERRAIN));
+        register(myst("block_shuffle_global"), (seed, json) -> new BlockShufflePopulator(seed, BlockShufflePopulator.Mode.GLOBAL));
         register(myst("dripstone_caves"), (seed, json) -> new DripstoneCavesPopulator(seed));
         register(myst("lush_caves"), (seed, json) -> new LushCavesPopulator(seed));
         register(myst("deep_dark"), (seed, json) -> new DeepDarkPopulator(seed));

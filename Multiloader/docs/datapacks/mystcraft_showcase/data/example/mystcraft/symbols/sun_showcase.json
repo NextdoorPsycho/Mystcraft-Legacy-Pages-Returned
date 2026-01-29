@@ -1,12 +1,14 @@
 {
   "category": "sun",
+  "display_name": "Showcase Sun",
   "card_rank": 1,
   "instability_cost": 0.0,
+  "allow_random": false,
   "poem": [
     "Sun",
-    "Rise",
-    "Gold",
-    "Warm"
+    "Warm",
+    "Bright",
+    "Rise"
   ],
   "logic": [
     {

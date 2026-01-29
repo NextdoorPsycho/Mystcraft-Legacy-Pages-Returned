@@ -245,6 +245,10 @@ public class LinkbookEntity extends Entity {
      * Processes slow starvation decay over time.
      */
     private void processGroundDecay() {
+        ItemStack book = getBookItem();
+        if (!book.isEmpty() && book.getTag() != null && book.getTag().getBoolean("NoDecay")) {
+            return;
+        }
         if (onGround() && level().getFluidState(blockPosition()).isEmpty()) {
             ticksOnGround++;
             damageBook(DECAY_DAMAGE_PER_TICK * decayMultiplier);

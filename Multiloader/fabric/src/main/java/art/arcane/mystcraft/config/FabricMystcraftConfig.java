@@ -12,6 +12,8 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Fabric-side configuration for Mystcraft.
@@ -22,6 +24,10 @@ public class FabricMystcraftConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("mystcraft-common.json");
+    private static final List<String> DISABLED_SYMBOLS_SAMPLE = List.of(
+            "mystcraft:example_symbol_a",
+            "mystcraft:example_symbol_b"
+    );
 
     // --- General ---
     public static final BooleanValue giveGuidebookOnFirstSpawn = new BooleanValue(true);
@@ -49,6 +55,9 @@ public class FabricMystcraftConfig {
     public static final DoubleValue chanceLightning = new DoubleValue(0.0005);
     public static final DoubleValue chanceMeteor = new DoubleValue(0.0002);
     public static final DoubleValue chancePlayerEffect = new DoubleValue(0.0001);
+
+    // --- Symbols ---
+    public static final StringListValue disabledSymbols = new StringListValue(new ArrayList<>());
 
     private FabricMystcraftConfig() {}
 
@@ -94,6 +103,9 @@ public class FabricMystcraftConfig {
             readDouble(json, "chanceMeteor", chanceMeteor);
             readDouble(json, "chancePlayerEffect", chancePlayerEffect);
 
+            // Symbols
+            readStringList(json, "disabledSymbols", disabledSymbols);
+
             Mystcraft.LOGGER.info("[FabricMystcraftConfig] Loaded config from {}", CONFIG_PATH);
         } catch (IOException e) {
             Mystcraft.LOGGER.error("[FabricMystcraftConfig] Failed to read config file, using defaults", e);
@@ -131,6 +143,10 @@ public class FabricMystcraftConfig {
         json.addProperty("chanceMeteor", chanceMeteor.get());
         json.addProperty("chancePlayerEffect", chancePlayerEffect.get());
 
+        // Symbols
+        json.add("disabledSymbols", GSON.toJsonTree(disabledSymbols.get()));
+        json.add("disabledSymbolsSample", GSON.toJsonTree(DISABLED_SYMBOLS_SAMPLE));
+
         try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
             GSON.toJson(json, writer);
         } catch (IOException e) {
@@ -164,6 +180,21 @@ public class FabricMystcraftConfig {
             if (prim.isNumber()) {
                 value.set(prim.getAsDouble());
             }
+        }
+    }
+
+    private static void readStringList(JsonObject json, String key, StringListValue value) {
+        if (json.has(key) && json.get(key).isJsonArray()) {
+            List<String> items = new ArrayList<>();
+            json.getAsJsonArray(key).forEach(element -> {
+                if (element.isJsonPrimitive()) {
+                    JsonPrimitive prim = element.getAsJsonPrimitive();
+                    if (prim.isString()) {
+                        items.add(prim.getAsString());
+                    }
+                }
+            });
+            value.set(items);
         }
     }
 
@@ -216,6 +247,23 @@ public class FabricMystcraftConfig {
         }
 
         public void set(double value) {
+            this.value = value;
+        }
+    }
+
+    /** List config value for string lists. */
+    public static final class StringListValue {
+        private List<String> value;
+
+        public StringListValue(List<String> defaultValue) {
+            this.value = defaultValue;
+        }
+
+        public List<String> get() {
+            return value;
+        }
+
+        public void set(List<String> value) {
             this.value = value;
         }
     }

@@ -1,22 +1,32 @@
 {
   "category": "feature_large",
-  "card_rank": 2,
-  "instability_cost": 0.5,
+  "display_name": "Showcase Floating Islands",
+  "card_rank": 4,
+  "instability_cost": 10.0,
+  "allow_random": false,
   "poem": [
-    "Caves",
-    "Hollow",
-    "Depth",
-    "Echo"
+    "Terrain",
+    "Float",
+    "Ruins",
+    "Sky"
   ],
   "logic": [
     {
+      "type": "set_flag",
+      "flag": "floating_islands_enabled",
+      "value": true
+    },
+    {
       "type": "register_terrain_alteration",
-      "id": "mystcraft:caves",
+      "id": "mystcraft:floating_islands",
       "params": {
-        "rate": 12,
-        "size": 40,
-        "fill_block": "minecraft:air"
+        "style": "ruins",
+        "density": 12
       }
+    },
+    {
+      "type": "add_instability",
+      "value": 10.0
     }
   ]
 }

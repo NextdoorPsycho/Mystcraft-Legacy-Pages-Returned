@@ -1,11 +1,13 @@
 {
   "category": "stars",
+  "display_name": "Showcase Stars",
   "card_rank": 1,
   "instability_cost": 0.0,
+  "allow_random": false,
   "poem": [
     "Stars",
-    "Night",
-    "Field",
+    "Dense",
+    "Sky",
     "Spark"
   ],
   "logic": [
@@ -15,7 +17,7 @@
     },
     {
       "type": "set_star_type",
-      "value": "normal"
+      "value": "dense"
     }
   ]
 }

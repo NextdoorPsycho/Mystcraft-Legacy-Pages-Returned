@@ -1,22 +1,24 @@
 {
-  "category": "feature_medium",
+  "category": "modifier",
+  "display_name": "Showcase Ores",
   "card_rank": 2,
-  "instability_cost": 0.3,
+  "instability_cost": 2.0,
+  "allow_random": false,
   "poem": [
     "Ore",
-    "Dense",
-    "Deep",
-    "Bright"
+    "Boost",
+    "Cut",
+    "Balance"
   ],
   "logic": [
     {
       "type": "set_ore_multiplier",
-      "ore": "iron",
-      "multiplier": 2.0
+      "ore": "diamond",
+      "multiplier": 2.5
     },
     {
       "type": "set_ore_disabled",
-      "ore": "diamond",
+      "ore": "coal",
       "disabled": true
     },
     {

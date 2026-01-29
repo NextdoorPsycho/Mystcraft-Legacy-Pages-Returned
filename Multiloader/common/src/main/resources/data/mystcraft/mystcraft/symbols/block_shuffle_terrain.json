@@ -1,0 +1,15 @@
+{
+  "category": "feature_medium",
+  "card_rank": 4,
+  "instability_cost": 4.0,
+  "poem": [
+    "Stone",
+    "Swap",
+    "Layer",
+    "Twist"
+  ],
+  "logic": [
+    { "type": "register_populator", "id": "mystcraft:block_shuffle_terrain" },
+    { "type": "add_instability", "value": 4.0 }
+  ]
+}

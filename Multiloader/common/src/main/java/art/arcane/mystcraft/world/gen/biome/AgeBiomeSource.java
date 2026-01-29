@@ -143,6 +143,9 @@ public class AgeBiomeSource extends BiomeSource {
             case "grid":
                 this.biomeController = new BiomeControllerGrid(cachedBiomes, seed);
                 break;
+            case "shuffle":
+                this.biomeController = new BiomeControllerShuffle(cachedBiomes, seed);
+                break;
             default:
                 // Default to medium noise
                 this.biomeController = new BiomeControllerNoise(cachedBiomes, seed, BiomeControllerNoise.Scale.MEDIUM);

@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.config;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -13,6 +14,7 @@ public final class MystcraftConfig {
     public static Supplier<Boolean> giveGuidebookOnFirstSpawn = () -> true;
     public static Supplier<Integer> maxSymbolsPerBook = () -> 50;
     public static Supplier<Boolean> deleteAgesOnStartup = () -> false;
+    public static Supplier<List<String>> disabledSymbols = List::of;
 
     // Instability
     public static Supplier<Boolean> instabilityEnabled = () -> true;

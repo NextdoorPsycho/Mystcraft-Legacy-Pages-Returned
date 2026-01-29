@@ -2,8 +2,17 @@
   "category": "lighting",
   "card_rank": 1,
   "instability_cost": 0.0,
-  "poem": ["Light", "Form", "Order", "Glow"],
+  "poem": [
+    "Light",
+    "Form",
+    "Order",
+    "Glow"
+  ],
   "logic": [
-    { "type": "set_lighting_type", "value": "normal" }
-  ]
+    {
+      "type": "set_lighting_type",
+      "value": "normal"
+    }
+  ],
+  "allow_random": false
 }

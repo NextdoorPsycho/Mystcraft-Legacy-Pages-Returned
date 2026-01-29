@@ -9,6 +9,7 @@ import art.arcane.mystcraft.world.gen.biome.BiomeControllerGrid;
 import art.arcane.mystcraft.world.gen.biome.BiomeControllerNoise;
 import art.arcane.mystcraft.world.gen.biome.BiomeControllerSingle;
 import art.arcane.mystcraft.world.gen.biome.BiomeControllerTiled;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerShuffle;
 import com.mojang.serialization.Lifecycle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -362,6 +363,7 @@ public class AgeDimensionFactory {
                         case "huge" -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.HUGE);
                         case "tiled" -> new BiomeControllerTiled(directorBiomes, director.getSeed());
                         case "grid" -> new BiomeControllerGrid(directorBiomes, director.getSeed());
+                        case "shuffle" -> new BiomeControllerShuffle(directorBiomes, director.getSeed());
                         default -> new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.MEDIUM);
                     };
                     director.registerInterface(biomeController);

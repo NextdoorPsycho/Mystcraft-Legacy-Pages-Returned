@@ -2,8 +2,17 @@
   "category": "biome",
   "card_rank": 1,
   "instability_cost": 0.0,
-  "poem": ["Biome", "Life", "Growth", "Balance"],
+  "poem": [
+    "Biome",
+    "Life",
+    "Growth",
+    "Balance"
+  ],
   "logic": [
-    { "type": "add_biome", "biome": "minecraft:plains" }
-  ]
+    {
+      "type": "add_biome",
+      "biome": "minecraft:plains"
+    }
+  ],
+  "allow_random": false
 }

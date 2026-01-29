@@ -128,6 +128,7 @@ public class AgeDirectorImpl implements AgeDirector {
     private boolean tendrilsEnabled = false;
     private boolean verticalTendrilsEnabled = false;
     private boolean perlinWormsEnabled = false;
+    private boolean personalPocket = false;
 
     // New structures (1.20+)
     private boolean pillagerOutpostsEnabled = false;
@@ -899,6 +900,14 @@ public class AgeDirectorImpl implements AgeDirector {
         return perlinWormsEnabled;
     }
 
+    public void setPersonalPocket(boolean personalPocket) {
+        this.personalPocket = personalPocket;
+    }
+
+    public boolean isPersonalPocket() {
+        return personalPocket;
+    }
+
     // --- Modifiers ---
 
     @Override
@@ -1246,9 +1255,8 @@ public class AgeDirectorImpl implements AgeDirector {
     @Override
     public void registerInterface(IWeatherController controller) {
         if (this.weatherControllerImpl != null) {
-            LOGGER.info("[Director] Replacing weather controller: {} -> {} (+5 instability)",
+            LOGGER.info("[Director] Replacing weather controller: {} -> {}",
                     this.weatherControllerImpl.getType(), controller != null ? controller.getType() : "null");
-            addInstability(5.0f);
         } else {
             LOGGER.info("[Director] Registered weather controller: {}",
                     controller != null ? controller.getType() : "null");

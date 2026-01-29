@@ -2,6 +2,7 @@ package art.arcane.mystcraft.neoforge.event;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.event.AgeDeathHandler;
+import art.arcane.mystcraft.event.PersonalPocketEscapeHandler;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -17,6 +18,10 @@ public class NeoForgeAgeDeathHandler {
     public static void onPlayerDeath(LivingDeathEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             if (player.level() instanceof ServerLevel serverLevel) {
+                if (PersonalPocketEscapeHandler.handleDeath(player, event.getSource())) {
+                    event.setCanceled(true);
+                    return;
+                }
                 AgeDeathHandler.onPlayerDeath(player, event.getSource(), serverLevel);
             }
         }

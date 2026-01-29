@@ -1,12 +1,14 @@
 {
   "category": "moon",
+  "display_name": "Showcase Moon",
   "card_rank": 1,
   "instability_cost": 0.0,
+  "allow_random": false,
   "poem": [
     "Moon",
-    "Soft",
-    "Silver",
-    "Quiet"
+    "Calm",
+    "Night",
+    "Glow"
   ],
   "logic": [
     {

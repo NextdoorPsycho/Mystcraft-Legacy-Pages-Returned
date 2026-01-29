@@ -531,7 +531,8 @@ public class MystcraftCommands {
 
         // --- Big features: 0-3 weighted 0,0,1,1,1,2,2,3,3 ---
         int featureLargeCount = pickCountWeighted(random, new int[]{0, 0, 1, 1, 1, 2, 2, 3, 3});
-        budget = addCategorySymbols(pages, seen, SymbolCategory.FEATURE_LARGE, random, featureLargeCount, budget, null);
+        budget = addCategorySymbols(pages, seen, SymbolCategory.FEATURE_LARGE, random, featureLargeCount, budget,
+                MystcraftCommands::featureLargeWeight);
 
         // --- Medium/Small features: random ---
         int featureMediumCount = random.nextInt(3);
@@ -664,21 +665,18 @@ public class MystcraftCommands {
     }
 
     private static IAgeSymbol pickWeightedTerrain(RandomSource random) {
-        String[] pool = {
-                "mystcraft:terrain_amplified",
-                "mystcraft:terrain_cave",
-                "mystcraft:terrain_skylands",
-                "mystcraft:terrain_blend",
-                "mystcraft:terrain_checkerboard",
-                "mystcraft:terrain_stripes",
-                "mystcraft:terrain_normal",
-                "mystcraft:terrain_end",
-                "mystcraft:terrain_nether",
-                "mystcraft:terrain_void",
-                "mystcraft:terrain_flat"
-        };
-        int[] weights = {3, 3, 3, 3, 3, 2, 1, 1, 1, 1, 1};
-        return pickFromPool(pool, weights, random);
+        List<IAgeSymbol> list = SymbolRegistry.getByCategory(SymbolCategory.TERRAIN);
+        List<IAgeSymbol> weighted = new ArrayList<>();
+        for (IAgeSymbol symbol : list) {
+            if (!symbol.allowInRandomGeneration()) continue;
+            if (SymbolRegistry.isBlacklisted(symbol.getRegistryName())) continue;
+            int weight = terrainWeight(symbol);
+            for (int i = 0; i < weight; i++) {
+                weighted.add(symbol);
+            }
+        }
+        if (weighted.isEmpty()) return null;
+        return weighted.get(random.nextInt(weighted.size()));
     }
 
     private static IAgeSymbol pickWeightedBiome(RandomSource random) {
@@ -699,11 +697,17 @@ public class MystcraftCommands {
     private static int biomeWeight(IAgeSymbol symbol) {
         String path = symbol.getRegistryName().getPath();
         if (path.contains("ocean")) return 1;
-        if (path.contains("beach") || path.contains("river") || path.contains("shore")) return 2;
         if (path.contains("nether") || path.contains("crimson") || path.contains("warped")
                 || path.contains("basalt") || path.contains("soul")) return 1;
         if (path.contains("end")) return 1;
         return 5;
+    }
+
+    private static int terrainWeight(IAgeSymbol symbol) {
+        String path = symbol.getRegistryName().getPath();
+        if (path.contains("normal")) return 0; // avoid boring overworld-like in random books
+        if (path.contains("void")) return 1; // void rare
+        return 2; // even otherwise
     }
 
     private static int lightingWeight(IAgeSymbol symbol) {
@@ -715,6 +719,12 @@ public class MystcraftCommands {
     private static int environmentWeight(IAgeSymbol symbol) {
         String path = symbol.getRegistryName().getPath();
         if (path.contains("lightning") || path.contains("meteors")) return 1;
+        return 3;
+    }
+
+    private static int featureLargeWeight(IAgeSymbol symbol) {
+        String path = symbol.getRegistryName().getPath();
+        if (path.startsWith("floating_islands") || path.equals("skylands")) return 1;
         return 3;
     }
 

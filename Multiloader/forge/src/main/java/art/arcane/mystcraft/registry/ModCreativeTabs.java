@@ -34,6 +34,7 @@ public final class ModCreativeTabs {
                                 output.accept(ForgeModItems.AGEBOOK.get());
                                 output.accept(ForgeModItems.LINKBOOK.get());
                                 output.accept(ForgeModItems.LINKBOOK_UNLINKED.get());
+                                output.accept(ForgeModItems.PERSONAL_LINK_BOOK.get());
 
                                 // Page storage items
                                 output.accept(ForgeModItems.PAGE.get());

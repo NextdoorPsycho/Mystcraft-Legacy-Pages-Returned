@@ -2,9 +2,22 @@
   "category": "feature_medium",
   "card_rank": 2,
   "instability_cost": 0.0,
-  "poem": ["Terrain", "Transform", "Stone", "Pierce"],
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Stone",
+    "Pierce"
+  ],
   "logic": [
-    { "type": "set_flag", "flag": "spikes_enabled", "value": true },
-    { "type": "register_populator", "id": "mystcraft:spikes" }
-  ]
+    {
+      "type": "set_flag",
+      "flag": "spikes_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:spikes"
+    }
+  ],
+  "allow_random": false
 }

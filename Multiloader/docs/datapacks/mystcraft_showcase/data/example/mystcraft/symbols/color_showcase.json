@@ -1,22 +1,34 @@
 {
-  "category": "color",
+  "category": "visual_effect",
+  "display_name": "Showcase Colors",
   "card_rank": 2,
-  "instability_cost": 0.1,
-  "poem": [
-    "Hue",
-    "Layer",
-    "Shift",
-    "Pulse"
-  ],
+  "instability_cost": 0.5,
+  "allow_random": false,
   "can_duplicate": true,
+  "poem": [
+    "Color",
+    "Grass",
+    "Foliage",
+    "Water"
+  ],
   "logic": [
     {
-      "type": "push_color",
-      "value": 16755251
+      "type": "set_color_from_stack",
+      "target": "grass",
+      "palette": "grass",
+      "random_instability": 0.5
     },
     {
-      "type": "push_gradient",
-      "value": 16733695
+      "type": "set_color_from_stack",
+      "target": "foliage",
+      "palette": "foliage",
+      "random_instability": 0.5
+    },
+    {
+      "type": "set_color_from_stack",
+      "target": "water",
+      "palette": "water",
+      "random_instability": 0.5
     }
   ]
 }

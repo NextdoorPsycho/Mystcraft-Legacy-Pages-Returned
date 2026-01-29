@@ -131,7 +131,7 @@ public class SymbolSyncPacket {
 
             for (SymbolData data : symbols) {
                 boolean exists = SymbolRegistry.contains(data.id);
-                boolean shouldRegister = data.isDatapack || data.isOverride || !exists;
+                boolean shouldRegister = data.isOverride || !exists;
                 if (shouldRegister) {
                     DataSymbol symbol = new DataSymbol(
                             data.id,
@@ -147,7 +147,7 @@ public class SymbolSyncPacket {
                             List.of(),
                             data.displayName
                     );
-                    SymbolRegistry.register(symbol, data.isOverride || !exists);
+                    SymbolRegistry.registerSynced(symbol, data.isOverride || !exists);
                 } else if (!exists) {
                     Mystcraft.LOGGER.warn("Server has symbol {} that client doesn't know about", data.id);
                 }

@@ -82,6 +82,7 @@ public class AgeData extends SavedData {
     private static final String TAG_SECONDARY_TERRAIN_TYPE = "SecondaryTerrainType";
     private static final String TAG_TIMESCALE = "Timescale";
     private static final String TAG_DECK_ORDERS = "DeckOrders";
+    private static final String TAG_PERSONAL_POCKET = "PersonalPocket";
 
     private int ageUID;
     private UUID ageUUID;
@@ -129,6 +130,7 @@ public class AgeData extends SavedData {
     private float timescale = 1.0f;
     private float cloudHeight = 192.0f;
     private float horizonHeight = 0.0f;
+    private boolean personalPocket = false;
     private String terrainMixMode = "none";
     private String secondaryTerrainType = "none";
 
@@ -249,6 +251,7 @@ public class AgeData extends SavedData {
             if (this.terrainMixMode.isEmpty()) this.terrainMixMode = "none";
             this.secondaryTerrainType = config.getString(TAG_SECONDARY_TERRAIN_TYPE);
             if (this.secondaryTerrainType.isEmpty()) this.secondaryTerrainType = "none";
+            this.personalPocket = config.getBoolean(TAG_PERSONAL_POCKET);
         }
 
         // Load deck orders
@@ -344,6 +347,7 @@ public class AgeData extends SavedData {
         config.putFloat(TAG_HORIZON_HEIGHT, horizonHeight);
         config.putString(TAG_TERRAIN_MIX_MODE, terrainMixMode);
         config.putString(TAG_SECONDARY_TERRAIN_TYPE, secondaryTerrainType);
+        config.putBoolean(TAG_PERSONAL_POCKET, personalPocket);
         tag.put(TAG_CONFIG, config);
 
         // Save deck orders
@@ -443,7 +447,11 @@ public class AgeData extends SavedData {
     }
 
     public void setInstability(float instability) {
-        this.instability = Math.max(0.0f, instability);
+        if (personalPocket) {
+            this.instability = 0.0f;
+        } else {
+            this.instability = Math.max(0.0f, instability);
+        }
         setDirty();
     }
 
@@ -546,6 +554,7 @@ public class AgeData extends SavedData {
     public float getHorizonHeight() { return horizonHeight; }
     public String getTerrainMixMode() { return terrainMixMode; }
     public String getSecondaryTerrainType() { return secondaryTerrainType; }
+    public boolean isPersonalPocket() { return personalPocket; }
 
     /**
      * Copies configuration from an AgeDirectorImpl.
@@ -590,7 +599,8 @@ public class AgeData extends SavedData {
         this.horizonHeight = director.getHorizonHeight();
         this.terrainMixMode = director.getTerrainMixMode();
         this.secondaryTerrainType = director.getSecondaryTerrainType();
-        this.instability = director.getInstability();
+        this.personalPocket = director.isPersonalPocket();
+        this.instability = personalPocket ? 0.0f : director.getInstability();
         setDirty();
 
         Mystcraft.LOGGER.info("[AgeData] Age {} colors from director: sky=0x{}, fog=0x{}, grass=0x{}, foliage=0x{}, water=0x{}, cloud=0x{}, nightSky=0x{}, sunset=0x{}",

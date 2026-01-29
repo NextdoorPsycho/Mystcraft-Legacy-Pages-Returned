@@ -1,18 +1,20 @@
 {
-  "category": "modifier",
+  "category": "special",
+  "display_name": "Grammar Disabled",
   "card_rank": 1,
   "instability_cost": 0.0,
+  "allow_random": false,
   "poem": [
-    "Silent",
-    "Symbol",
-    "No",
-    "Rule"
+    "Grammar",
+    "Off",
+    "Static",
+    "Silence"
   ],
   "grammar": false,
   "logic": [
     {
       "type": "set_flag",
-      "flag": "villages_enabled",
+      "flag": "pvp_enabled",
       "value": false
     }
   ]

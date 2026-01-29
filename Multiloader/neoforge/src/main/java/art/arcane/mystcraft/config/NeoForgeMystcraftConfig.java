@@ -3,6 +3,9 @@ package art.arcane.mystcraft.config;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.config.ModConfig;
+import net.minecraft.resources.ResourceLocation;
+
+import java.util.List;
 
 /**
  * Configuration options for Mystcraft.
@@ -22,6 +25,7 @@ public class NeoForgeMystcraftConfig {
     public static final ModConfigSpec.BooleanValue giveGuidebookOnFirstSpawn;
     public static final ModConfigSpec.IntValue maxSymbolsPerBook;
     public static final ModConfigSpec.BooleanValue deleteAgesOnStartup;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> disabledSymbols;
     // Instability settings
     public static final ModConfigSpec.BooleanValue instabilityEnabled;
     public static final ModConfigSpec.BooleanValue deathEffectsEnabled;
@@ -66,6 +70,13 @@ public class NeoForgeMystcraftConfig {
         deleteAgesOnStartup = COMMON_BUILDER
                 .comment("If true, all Mystcraft Ages will be deleted every time the server starts. Use for development/testing.")
                 .define("deleteAgesOnStartup", false);
+
+        disabledSymbols = COMMON_BUILDER
+                .comment(
+                        "List of symbol IDs to disable, e.g. [\"mystcraft:example_symbol_a\", \"mystcraft:example_symbol_b\"].",
+                        "Disabled symbols are hidden from books and not registered at runtime."
+                )
+                .defineListAllowEmpty("disabledSymbols", List.of(), NeoForgeMystcraftConfig::isValidSymbolId);
 
         COMMON_BUILDER.pop();
 
@@ -181,5 +192,12 @@ public class NeoForgeMystcraftConfig {
     /** Register the config with NeoForge. Call from the mod constructor. */
     public static void register() {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, "mystcraft-common.toml");
+    }
+
+    private static boolean isValidSymbolId(Object value) {
+        if (!(value instanceof String string)) {
+            return false;
+        }
+        return ResourceLocation.isValidResourceLocation(string);
     }
 }

@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AgeEffectsHandler {
 
     private static final Random random = new Random();
+    private static final float INSTABILITY_DECAY_PER_TICK = 0.01f;
 
     // Per-dimension weather controller instances, lazily created from the weather type string.
     // These maintain internal state (timers, rain levels) across ticks.
@@ -62,8 +63,13 @@ public class AgeEffectsHandler {
         // Tick instability controller (deck-based: decay, crumble, erosion, potion effects, etc.)
         tickInstabilityController(level, ageData);
 
+        // Reduce instability over time while players are present.
+        decayInstability(level, ageData);
+
         // Handle time scaling (accelerated, slow, static, etc.)
         handleTimescale(level, ageData);
+
+        handlePersonalPocket(level);
     }
 
     /**
@@ -116,6 +122,7 @@ public class AgeEffectsHandler {
             case "fast" -> new WeatherControllerFast();
             case "slow" -> new WeatherControllerSlow();
             case "blizzard" -> new WeatherControllerBlizzard();
+            case "random" -> new WeatherControllerRandom();
             default -> new WeatherControllerNormal();
         };
     }
@@ -217,6 +224,17 @@ public class AgeEffectsHandler {
     }
 
     /**
+     * Reduces instability over time while players are in the Age.
+     */
+    private static void decayInstability(ServerLevel level, AgeData ageData) {
+        if (!MystcraftConfig.instabilityEnabled.get()) return;
+        if (level.players().isEmpty()) return;
+        if (ageData.getInstability() <= 0.0f) return;
+
+        ageData.setInstability(ageData.getInstability() - INSTABILITY_DECAY_PER_TICK);
+    }
+
+    /**
      * Handles day/night cycle speed based on the timescale value.
      * Timescale 1.0 = normal (no-op), 2.0 = double speed, 0.5 = half speed, 0.0 = frozen.
      * The accelerated flag is treated as timescale 2.0 for backwards compatibility.
@@ -247,6 +265,19 @@ public class AgeEffectsHandler {
             if ((gameTime % Math.max(1, Math.round(1.0f / skipRate))) != 0) {
                 level.setDayTime(dayTime - 1);
             }
+        }
+    }
+
+    private static void handlePersonalPocket(ServerLevel level) {
+        if (!art.arcane.mystcraft.world.PersonalPocketDimension.isPersonalPocket(level)) {
+            return;
+        }
+        art.arcane.mystcraft.world.PersonalPocketDimension.enforceBorder(level);
+        if (level.getDayTime() != 18000L) {
+            level.setDayTime(18000L);
+        }
+        for (ServerPlayer player : new java.util.ArrayList<>(level.players())) {
+            PersonalPocketEscapeHandler.handleVoidFall(player);
         }
     }
 

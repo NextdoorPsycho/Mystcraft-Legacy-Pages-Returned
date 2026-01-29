@@ -52,6 +52,7 @@ public final class ModCreativeTabs {
                     output.accept(FabricModItems.AGEBOOK.get());
                     output.accept(FabricModItems.LINKBOOK.get());
                     output.accept(FabricModItems.LINKBOOK_UNLINKED.get());
+                    output.accept(FabricModItems.PERSONAL_LINK_BOOK.get());
 
                     // Page storage items
                     output.accept(FabricModItems.PAGE.get());

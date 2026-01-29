@@ -2,8 +2,17 @@
   "category": "sea",
   "card_rank": 1,
   "instability_cost": 0.0,
-  "poem": ["Water", "Depth", "Flow", "Cycle"],
+  "poem": [
+    "Water",
+    "Depth",
+    "Flow",
+    "Cycle"
+  ],
   "logic": [
-    { "type": "set_sea_block", "block": "minecraft:water" }
-  ]
+    {
+      "type": "set_sea_block",
+      "block": "minecraft:water"
+    }
+  ],
+  "allow_random": false
 }

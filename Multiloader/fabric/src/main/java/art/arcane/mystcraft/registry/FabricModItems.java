@@ -10,6 +10,7 @@ import art.arcane.mystcraft.item.GuidebookItem;
 import art.arcane.mystcraft.item.InkVialItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.item.LinkbookUnlinkedItem;
+import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.item.PortfolioItem;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -40,6 +41,9 @@ public final class FabricModItems {
 
     public static final Supplier<Item> LINKBOOK_UNLINKED = registerItem("linkbook_unlinked",
             new LinkbookUnlinkedItem(new Item.Properties().stacksTo(16)));
+
+    public static final Supplier<Item> PERSONAL_LINK_BOOK = registerItem("personal_link_book",
+            new PersonalLinkBookItem(new Item.Properties().stacksTo(1)));
 
     public static final Supplier<Item> BOOSTER_PACK = registerItem("booster",
             new BoosterPackItem(new Item.Properties().stacksTo(16)));

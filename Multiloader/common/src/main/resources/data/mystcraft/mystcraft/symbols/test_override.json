@@ -2,5 +2,11 @@
   "category": "special",
   "card_rank": 4,
   "instability_cost": 0.0,
-  "poem": ["Base", "Override", "Symbol", "Test"]
+  "poem": [
+    "Base",
+    "Override",
+    "Symbol",
+    "Test"
+  ],
+  "allow_random": false
 }

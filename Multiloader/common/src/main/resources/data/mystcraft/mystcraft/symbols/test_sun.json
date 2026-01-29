@@ -2,8 +2,17 @@
   "category": "sun",
   "card_rank": 1,
   "instability_cost": 0.0,
-  "poem": ["Sun", "Light", "Cycle", "Order"],
+  "poem": [
+    "Sun",
+    "Light",
+    "Cycle",
+    "Order"
+  ],
   "logic": [
-    { "type": "set_sun_visible", "value": true }
-  ]
+    {
+      "type": "set_sun_visible",
+      "value": true
+    }
+  ],
+  "allow_random": false
 }

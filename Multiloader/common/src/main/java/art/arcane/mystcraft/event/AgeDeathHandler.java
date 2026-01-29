@@ -10,8 +10,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 
@@ -32,10 +30,6 @@ public class AgeDeathHandler {
 
     // Tracks death counts per player per Age dimension (resets on server restart)
     private static final Map<UUID, Map<ResourceKey<Level>, Integer>> DEATH_COUNTS = new ConcurrentHashMap<>();
-
-    // Tracks the instability level at death for players who died in an unstable Age.
-    // Used to scale respawn debuffs proportionally. Removed on respawn.
-    private static final Map<UUID, Float> DEATH_INSTABILITY = new ConcurrentHashMap<>();
 
     // --- Death Messages by Instability Tier ---
 
@@ -77,7 +71,7 @@ public class AgeDeathHandler {
 
     /**
      * Handles player death in a Mystcraft Age.
-     * Sends narrative death messages, applies instability surges, and stores data for respawn debuffs.
+     * Sends narrative death messages.
      */
     public static void onPlayerDeath(ServerPlayer player, DamageSource source, ServerLevel level) {
         if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) return;
@@ -107,51 +101,14 @@ public class AgeDeathHandler {
             player.sendSystemMessage(message);
         }
 
-        // Instability surge and respawn debuffs scale with severity above 50.
-        // severity is 0.0 at instability 50, 1.0 at instability 100+
-        if (instability >= 50.0f) {
-            float severity = Math.min((instability - 50.0f) / 50.0f, 1.0f);
-
-            // Surge scales: 0.5 at 50 instability up to 8.0 at 100+
-            float surge = 0.5f + (severity * 7.5f);
-            ageData.addInstability(surge);
-            Mystcraft.LOGGER.debug("[AgeDeathHandler] Death instability surge: +{} (severity={}, now {})",
-                    surge, severity, ageData.getInstability());
-
-            // Store instability for scaled respawn debuffs
-            DEATH_INSTABILITY.put(player.getUUID(), instability);
-        }
+        // Deaths no longer add instability or apply respawn debuffs.
     }
 
     /**
      * Handles player respawn after dying in a Mystcraft Age.
-     * Applies debuffs scaled to the instability level at the time of death.
      */
     public static void onPlayerRespawn(ServerPlayer player, ServerLevel level) {
         if (!MystcraftConfig.deathEffectsEnabled.get()) return;
-
-        Float instability = DEATH_INSTABILITY.remove(player.getUUID());
-        if (instability == null) return;
-
-        // severity: 0.0 at instability 50, 1.0 at instability 100+
-        float severity = Math.min((instability - 50.0f) / 50.0f, 1.0f);
-
-        // Slowness: always present at 50+, duration scales 4s to 20s
-        int slowDuration = (int) (80 + severity * 320); // 4s (80 ticks) to 20s (400 ticks)
-        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, slowDuration, 0));
-
-        // Mining Fatigue: kicks in at severity 0.3 (instability ~65), duration scales 5s to 30s
-        if (severity >= 0.3f) {
-            int fatigueDuration = (int) (100 + ((severity - 0.3f) / 0.7f) * 500); // 5s to 30s
-            int fatigueAmp = severity >= 0.7f ? 1 : 0; // Amplifier II only at instability ~85+
-            player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, fatigueDuration, fatigueAmp));
-        }
-
-        // Darkness: kicks in at severity 0.6 (instability ~80), duration scales 3s to 10s
-        if (severity >= 0.6f) {
-            int darknessDuration = (int) (60 + ((severity - 0.6f) / 0.4f) * 140); // 3s to 10s
-            player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, darknessDuration, 0));
-        }
     }
 
     /**

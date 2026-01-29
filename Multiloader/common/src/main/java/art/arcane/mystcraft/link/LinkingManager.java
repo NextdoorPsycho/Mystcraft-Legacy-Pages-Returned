@@ -744,6 +744,10 @@ public final class LinkingManager {
      * (performLink pre-loads it via getChunk before calling calculateTargetPosition).
      */
     private static int findSafeY(ServerLevel level, int x, int startY, int z) {
+        AgeData ageData = AgeData.getIfPresent(level);
+        if (ageData != null && ageData.isPersonalPocket()) {
+            return startY;
+        }
         int minY = level.getMinBuildHeight();
         int maxY = level.getMaxBuildHeight();
 

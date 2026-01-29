@@ -4,6 +4,7 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
+import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.network.BlockBookActivatePacket;
 import art.arcane.mystcraft.network.EntityBookActivatePacket;
 import art.arcane.mystcraft.network.LinkBookActivatePacket;
@@ -206,6 +207,10 @@ public class BookScreen extends Screen {
         boolean visited = isTargetVisited();
         int topColor = visited ? 0xFF000044 : 0xFF000000;
         int bottomColor = visited ? 0xFF006666 : 0xFF000000;
+        if (isPersonalBook() && !hasValidDestination()) {
+            topColor = 0xFFF8F8F8;
+            bottomColor = 0xFFEFEFEF;
+        }
 
         // Draw gradient rectangle
         guiGraphics.fillGradient(x, y, x + width, y + height, topColor, bottomColor);
@@ -216,7 +221,8 @@ public class BookScreen extends Screen {
             int textWidth = this.font.width(unwrittenText);
             int textX = x + (width - textWidth) / 2;
             int textY = y + (height - 8) / 2;
-            guiGraphics.drawString(this.font, unwrittenText, textX, textY, 0x888888, false);
+            int textColor = isPersonalBook() ? 0x444444 : 0x888888;
+            guiGraphics.drawString(this.font, unwrittenText, textX, textY, textColor, false);
         }
     }
 
@@ -366,6 +372,9 @@ public class BookScreen extends Screen {
                 return name;
             }
         }
+        if (isPersonalBook()) {
+            return "Personal Link Book";
+        }
         return isAgebook ? "Descriptive Book" : "Linking Book";
     }
 
@@ -405,6 +414,11 @@ public class BookScreen extends Screen {
             return AgebookItem.isNewAgebook(book);
         }
 
+        // Personal link books can always attempt to create their pocket
+        if (isPersonalBook()) {
+            return false;
+        }
+
         return false;
     }
 
@@ -412,7 +426,11 @@ public class BookScreen extends Screen {
      * Checks if linking is allowed (for permission overlay).
      */
     private boolean canLink() {
-        return hasValidDestination();
+        return hasValidDestination() || isPersonalBook();
+    }
+
+    private boolean isPersonalBook() {
+        return book.getItem() instanceof PersonalLinkBookItem;
     }
 
     /**

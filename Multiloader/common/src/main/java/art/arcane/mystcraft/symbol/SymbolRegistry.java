@@ -74,7 +74,7 @@ public final class SymbolRegistry {
             removeInternal(id);
         }
 
-        registerInternal(symbol);
+        registerInternal(symbol, true);
 
         if (staticRegistrationOpen) {
             STATIC_SYMBOLS.put(id, symbol);
@@ -156,7 +156,7 @@ public final class SymbolRegistry {
         };
     }
 
-    private static void registerInternal(IAgeSymbol symbol) {
+    private static void registerInternal(IAgeSymbol symbol, boolean includeGrammar) {
         ResourceLocation id = symbol.getRegistryName();
         SYMBOLS.put(id, symbol);
 
@@ -167,7 +167,9 @@ public final class SymbolRegistry {
             BY_CARD_RANK.computeIfAbsent(rank, k -> new ArrayList<>()).add(symbol);
         }
 
-        registerWithGrammar(symbol);
+        if (includeGrammar) {
+            registerWithGrammar(symbol);
+        }
     }
 
     private static void removeInternal(ResourceLocation id) {
@@ -305,6 +307,10 @@ public final class SymbolRegistry {
         LOGGER.info("Blacklisted symbol: {}", id);
     }
 
+    public static void clearBlacklist() {
+        BLACKLIST.clear();
+    }
+
     /**
      * Checks if a symbol is blacklisted.
      * @param id The symbol ID
@@ -366,8 +372,34 @@ public final class SymbolRegistry {
         frozen = false;
 
         for (IAgeSymbol symbol : STATIC_SYMBOLS.values()) {
-            registerInternal(symbol);
+            if (!BLACKLIST.contains(symbol.getRegistryName())) {
+                registerInternal(symbol, true);
+            }
         }
+    }
+
+    /**
+     * Registers a symbol without enforcing the frozen guard and without grammar binding.
+     * Intended for client sync only.
+     */
+    public static boolean registerSynced(IAgeSymbol symbol, boolean replace) {
+        ResourceLocation id = symbol.getRegistryName();
+        if (id == null) {
+            LOGGER.error("Cannot register symbol with null registry name");
+            return false;
+        }
+        if (BLACKLIST.contains(id)) {
+            LOGGER.info("Symbol {} is blacklisted, skipping registration", id);
+            return false;
+        }
+        if (SYMBOLS.containsKey(id)) {
+            if (!replace) {
+                return false;
+            }
+            removeInternal(id);
+        }
+        registerInternal(symbol, false);
+        return true;
     }
 
     /**

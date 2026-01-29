@@ -1,0 +1,31 @@
+{
+  "category": "feature_medium",
+  "card_rank": 4,
+  "instability_cost": 4.0,
+  "poem": [
+    "Feature",
+    "Dice",
+    "Fate",
+    "Form"
+  ],
+  "logic": [
+    {
+      "type": "register_populator_pool",
+      "count": 4,
+      "pool": [
+        "mystcraft:spikes",
+        "mystcraft:spheres",
+        "mystcraft:tendrils",
+        "mystcraft:vertical_tendrils",
+        "mystcraft:perlin_worms",
+        "mystcraft:huge_trees",
+        "mystcraft:surface_lakes",
+        "mystcraft:deep_lakes",
+        "mystcraft:obelisks",
+        "mystcraft:crystal_formation",
+        "mystcraft:star_fissure"
+      ]
+    },
+    { "type": "add_instability", "value": 4.0 }
+  ]
+}

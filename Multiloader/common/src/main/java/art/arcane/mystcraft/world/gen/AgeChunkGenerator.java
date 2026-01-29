@@ -428,6 +428,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
     @Override
     public void buildSurface(WorldGenRegion level, StructureManager structureManager,
                              RandomState randomState, ChunkAccess chunk) {
+        if ("personal".equals(terrainType)) {
+            return;
+        }
         int count = buildSurfaceCount.incrementAndGet();
         int chunkX = chunk.getPos().x;
         int chunkZ = chunk.getPos().z;
@@ -892,7 +895,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
      */
     private void stripBedrockBlocks(ChunkAccess chunk) {
         BlockState replacement = Blocks.NETHERRACK.defaultBlockState();
-        if (director != null && director.getTerrainBlock() != null) {
+        if ("personal".equals(terrainType)) {
+            replacement = Blocks.AIR.defaultBlockState();
+        } else if (director != null && director.getTerrainBlock() != null) {
             replacement = director.getTerrainBlock();
         }
 
@@ -923,7 +928,19 @@ public class AgeChunkGenerator extends ChunkGenerator {
 
         switch (terrainType) {
             case "void" -> generateVoidTerrain(chunk, random);
+            case "personal" -> generatePersonalTerrain(chunk, random);
             case "flat" -> generateFlatTerrain(chunk, random);
+            case "skygrid" -> generateSkygridTerrain(chunk, random);
+            case "sponge" -> generateSpongeTerrain(chunk, random);
+            case "bridges" -> generateBridgesTerrain(chunk, random);
+            case "rooms" -> generateRoomsTerrain(chunk, random);
+            case "tunnels" -> generateTunnelsTerrain(chunk, random);
+            case "pillars" -> generatePillarsTerrain(chunk, random);
+            case "checker" -> generateCheckerTerrain(chunk, random);
+            case "colors" -> generateColorsTerrain(chunk, random);
+            case "slime" -> generateSlimeTerrain(chunk, random);
+            case "decay" -> generateDecayTerrain(chunk, random);
+            case "library" -> generateLibraryTerrain(chunk, random);
             default -> {
                 // Fallback to flat if unknown special type
                 Mystcraft.LOGGER.warn("Unknown terrain type '{}', using flat", terrainType);
@@ -958,6 +975,32 @@ public class AgeChunkGenerator extends ChunkGenerator {
         // All other chunks are pure void (air)
     }
 
+    private void generatePersonalTerrain(ChunkAccess chunk, RandomSource random) {
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+        if (chunkX < -1 || chunkX > 1 || chunkZ < -1 || chunkZ > 1) {
+            return;
+        }
+
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        BlockState platformBlock = Blocks.STONE.defaultBlockState();
+        int platformY = 61;
+        int minY = chunk.getMinBuildHeight();
+        int maxY = chunk.getMaxBuildHeight();
+        BlockState air = Blocks.AIR.defaultBlockState();
+
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                for (int y = minY; y < maxY; y++) {
+                    pos.set(x, y, z);
+                    chunk.setBlockState(pos, air, false);
+                }
+                pos.set(x, platformY, z);
+                chunk.setBlockState(pos, platformBlock, false);
+            }
+        }
+    }
+
     private void generateFlatTerrain(ChunkAccess chunk, RandomSource random) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         int minY = chunk.getMinBuildHeight();
@@ -975,6 +1018,334 @@ public class AgeChunkGenerator extends ChunkGenerator {
                         chunk.setBlockState(pos, bedrockBlock, false);
                     } else {
                         chunk.setBlockState(pos, terrainBlock, false);
+                    }
+                }
+            }
+        }
+    }
+
+    private void generateSkygridTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+        int maxY = chunk.getMaxBuildHeight();
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+        int grid = 4;
+
+        for (int x = 0; x < 16; x++) {
+            int wx = chunkX * 16 + x;
+            for (int z = 0; z < 16; z++) {
+                int wz = chunkZ * 16 + z;
+                if (Math.floorMod(wx, grid) != 0 || Math.floorMod(wz, grid) != 0) {
+                    continue;
+                }
+                for (int y = minY; y < maxY; y++) {
+                    if (Math.floorMod(y, grid) != 0) continue;
+                    pos.set(x, y, z);
+                    BlockState block = pickSkygridBlock(wx, y, wz);
+                    chunk.setBlockState(pos, block, false);
+                }
+            }
+        }
+    }
+
+    private BlockState pickSkygridBlock(int x, int y, int z) {
+        BlockState[] palette = new BlockState[] {
+                Blocks.STONE.defaultBlockState(),
+                Blocks.COBBLESTONE.defaultBlockState(),
+                Blocks.DIRT.defaultBlockState(),
+                Blocks.GRASS_BLOCK.defaultBlockState(),
+                Blocks.OAK_PLANKS.defaultBlockState(),
+                Blocks.SAND.defaultBlockState(),
+                Blocks.GRAVEL.defaultBlockState(),
+                Blocks.GLASS.defaultBlockState(),
+                Blocks.OAK_LEAVES.defaultBlockState(),
+                Blocks.OBSIDIAN.defaultBlockState(),
+                Blocks.NETHERRACK.defaultBlockState(),
+                Blocks.END_STONE.defaultBlockState()
+        };
+        long h = (long) x * 73428767L ^ (long) y * 91236781L ^ (long) z * 4236067L ^ seed;
+        int idx = (int) Math.floorMod(h, palette.length);
+        return palette[idx];
+    }
+
+    private void generateSpongeTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+        int maxY = Math.min(chunk.getMaxBuildHeight(), groundLevel + 16);
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                for (int y = minY; y < maxY; y++) {
+                    pos.set(x, y, z);
+                    if (y == minY) {
+                        chunk.setBlockState(pos, bedrockBlock, false);
+                    } else {
+                        chunk.setBlockState(pos, Blocks.SPONGE.defaultBlockState(), false);
+                    }
+                }
+            }
+        }
+    }
+
+    private void generateBridgesTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+        int bridgeY = groundLevel;
+        int spacing = 32;
+        int width = 2;
+        BlockState block = Blocks.STONE_BRICKS.defaultBlockState();
+
+        for (int x = 0; x < 16; x++) {
+            int wx = chunkX * 16 + x;
+            for (int z = 0; z < 16; z++) {
+                int wz = chunkZ * 16 + z;
+                boolean onX = Math.floorMod(wx, spacing) == 0;
+                boolean onZ = Math.floorMod(wz, spacing) == 0;
+                if (onX || onZ) {
+                    for (int dx = -width; dx <= width; dx++) {
+                        for (int dz = -width; dz <= width; dz++) {
+                            if (!onX && dx != 0) continue;
+                            if (!onZ && dz != 0) continue;
+                            int bx = x + dx;
+                            int bz = z + dz;
+                            if (bx < 0 || bx > 15 || bz < 0 || bz > 15) continue;
+                            pos.set(bx, bridgeY, bz);
+                            chunk.setBlockState(pos, block, false);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void generateRoomsTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+        int maxY = Math.min(chunk.getMaxBuildHeight(), groundLevel + 96);
+        int roomSize = 16;
+        int roomHeight = 8;
+        BlockState wall = Blocks.STONE_BRICKS.defaultBlockState();
+        BlockState floor = Blocks.SMOOTH_STONE.defaultBlockState();
+
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+
+        for (int x = 0; x < 16; x++) {
+            int wx = chunkX * 16 + x;
+            for (int z = 0; z < 16; z++) {
+                int wz = chunkZ * 16 + z;
+                int localX = Math.floorMod(wx, roomSize);
+                int localZ = Math.floorMod(wz, roomSize);
+                boolean wallX = localX == 0 || localX == roomSize - 1;
+                boolean wallZ = localZ == 0 || localZ == roomSize - 1;
+                for (int y = minY; y < maxY; y++) {
+                    int localY = Math.floorMod(y - minY, roomHeight);
+                    boolean wallY = localY == 0 || localY == roomHeight - 1;
+                    if (wallX || wallZ || wallY) {
+                        pos.set(x, y, z);
+                        chunk.setBlockState(pos, wallY ? floor : wall, false);
+                    }
+                }
+            }
+        }
+    }
+
+    private void generateTunnelsTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+        int maxY = Math.min(chunk.getMaxBuildHeight(), groundLevel + 96);
+        int spacing = 12;
+        int radius = 2;
+        BlockState fill = Blocks.STONE.defaultBlockState();
+
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+
+        for (int x = 0; x < 16; x++) {
+            int wx = chunkX * 16 + x;
+            for (int z = 0; z < 16; z++) {
+                int wz = chunkZ * 16 + z;
+                for (int y = minY; y < maxY; y++) {
+                    if (y == minY) {
+                        pos.set(x, y, z);
+                        chunk.setBlockState(pos, bedrockBlock, false);
+                        continue;
+                    }
+                    int dx = Math.abs(Math.floorMod(wx, spacing) - spacing / 2);
+                    int dz = Math.abs(Math.floorMod(wz, spacing) - spacing / 2);
+                    int dy = Math.abs(Math.floorMod(y - minY, spacing) - spacing / 2);
+                    boolean inTunnel = dx <= radius || dz <= radius || dy <= radius;
+                    if (!inTunnel) {
+                        pos.set(x, y, z);
+                        chunk.setBlockState(pos, fill, false);
+                    }
+                }
+            }
+        }
+    }
+
+    private void generatePillarsTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+        int maxY = chunk.getMaxBuildHeight();
+        int spacing = 8;
+        int radius = 1;
+        BlockState block = Blocks.POLISHED_ANDESITE.defaultBlockState();
+
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+
+        for (int x = 0; x < 16; x++) {
+            int wx = chunkX * 16 + x;
+            for (int z = 0; z < 16; z++) {
+                int wz = chunkZ * 16 + z;
+                if (Math.floorMod(wx, spacing) != 0 || Math.floorMod(wz, spacing) != 0) continue;
+                for (int y = minY; y < maxY; y++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        for (int dz = -radius; dz <= radius; dz++) {
+                            int bx = x + dx;
+                            int bz = z + dz;
+                            if (bx < 0 || bx > 15 || bz < 0 || bz > 15) continue;
+                            pos.set(bx, y, bz);
+                            chunk.setBlockState(pos, block, false);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void generateCheckerTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+        int topY = groundLevel;
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+
+        for (int x = 0; x < 16; x++) {
+            int wx = chunkX * 16 + x;
+            for (int z = 0; z < 16; z++) {
+                int wz = chunkZ * 16 + z;
+                boolean dark = ((wx + wz) & 1) == 0;
+                BlockState top = dark ? Blocks.BLACK_CONCRETE.defaultBlockState() : Blocks.WHITE_CONCRETE.defaultBlockState();
+                for (int y = minY; y <= topY; y++) {
+                    pos.set(x, y, z);
+                    if (y == minY) {
+                        chunk.setBlockState(pos, bedrockBlock, false);
+                    } else if (y == topY) {
+                        chunk.setBlockState(pos, top, false);
+                    } else {
+                        chunk.setBlockState(pos, Blocks.STONE.defaultBlockState(), false);
+                    }
+                }
+            }
+        }
+    }
+
+    private void generateColorsTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+        int topY = groundLevel;
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+        BlockState[] palette = new BlockState[] {
+                Blocks.RED_CONCRETE.defaultBlockState(),
+                Blocks.ORANGE_CONCRETE.defaultBlockState(),
+                Blocks.YELLOW_CONCRETE.defaultBlockState(),
+                Blocks.LIME_CONCRETE.defaultBlockState(),
+                Blocks.LIGHT_BLUE_CONCRETE.defaultBlockState(),
+                Blocks.BLUE_CONCRETE.defaultBlockState(),
+                Blocks.PURPLE_CONCRETE.defaultBlockState(),
+                Blocks.MAGENTA_CONCRETE.defaultBlockState()
+        };
+
+        for (int x = 0; x < 16; x++) {
+            int wx = chunkX * 16 + x;
+            for (int z = 0; z < 16; z++) {
+                int wz = chunkZ * 16 + z;
+                long h = seed ^ (long) wx * 73428767L ^ (long) wz * 91236781L;
+                BlockState top = palette[(int) Math.floorMod(h, palette.length)];
+                for (int y = minY; y <= topY; y++) {
+                    pos.set(x, y, z);
+                    if (y == minY) {
+                        chunk.setBlockState(pos, bedrockBlock, false);
+                    } else if (y == topY) {
+                        chunk.setBlockState(pos, top, false);
+                    } else {
+                        chunk.setBlockState(pos, Blocks.WHITE_TERRACOTTA.defaultBlockState(), false);
+                    }
+                }
+            }
+        }
+    }
+
+    private void generateSlimeTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+        int topY = groundLevel;
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                for (int y = minY; y <= topY; y++) {
+                    pos.set(x, y, z);
+                    if (y == minY) {
+                        chunk.setBlockState(pos, bedrockBlock, false);
+                    } else if (y == topY) {
+                        chunk.setBlockState(pos, Blocks.SLIME_BLOCK.defaultBlockState(), false);
+                    } else {
+                        chunk.setBlockState(pos, Blocks.SLIME_BLOCK.defaultBlockState(), false);
+                    }
+                }
+            }
+        }
+    }
+
+    private void generateDecayTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+        int topY = groundLevel;
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                for (int y = minY; y <= topY; y++) {
+                    pos.set(x, y, z);
+                    if (y == minY) {
+                        chunk.setBlockState(pos, bedrockBlock, false);
+                    } else {
+                        chunk.setBlockState(pos, art.arcane.mystcraft.registry.ModBlocks.DECAY.get().defaultBlockState(), false);
+                    }
+                }
+            }
+        }
+    }
+
+    private void generateLibraryTerrain(ChunkAccess chunk, RandomSource random) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = chunk.getMinBuildHeight();
+        int maxY = Math.min(chunk.getMaxBuildHeight(), groundLevel + 80);
+        int roomSize = 12;
+        int roomHeight = 7;
+
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+
+        for (int x = 0; x < 16; x++) {
+            int wx = chunkX * 16 + x;
+            for (int z = 0; z < 16; z++) {
+                int wz = chunkZ * 16 + z;
+                int localX = Math.floorMod(wx, roomSize);
+                int localZ = Math.floorMod(wz, roomSize);
+                boolean wallX = localX == 0 || localX == roomSize - 1;
+                boolean wallZ = localZ == 0 || localZ == roomSize - 1;
+                for (int y = minY; y < maxY; y++) {
+                    int localY = Math.floorMod(y - minY, roomHeight);
+                    boolean wallY = localY == 0 || localY == roomHeight - 1;
+                    if (wallX || wallZ || wallY) {
+                        pos.set(x, y, z);
+                        if (wallY) {
+                            chunk.setBlockState(pos, Blocks.DARK_OAK_PLANKS.defaultBlockState(), false);
+                        } else {
+                            chunk.setBlockState(pos, Blocks.BOOKSHELF.defaultBlockState(), false);
+                        }
                     }
                 }
             }

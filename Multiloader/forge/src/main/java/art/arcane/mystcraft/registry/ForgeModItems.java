@@ -9,6 +9,7 @@ import art.arcane.mystcraft.item.InkVialItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.item.LinkbookUnlinkedItem;
 import art.arcane.mystcraft.item.ForgePageItem;
+import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.item.PortfolioItem;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
@@ -40,6 +41,10 @@ public final class ForgeModItems {
     public static final RegistryObject<Item> LINKBOOK_UNLINKED =
             MystcraftRegistries.ITEMS.register("linkbook_unlinked",
                     () -> new LinkbookUnlinkedItem(new Item.Properties().stacksTo(16)));
+
+    public static final RegistryObject<Item> PERSONAL_LINK_BOOK =
+            MystcraftRegistries.ITEMS.register("personal_link_book",
+                    () -> new PersonalLinkBookItem(new Item.Properties().stacksTo(1)));
 
     public static final RegistryObject<Item> BOOSTER_PACK =
             MystcraftRegistries.ITEMS.register("booster",

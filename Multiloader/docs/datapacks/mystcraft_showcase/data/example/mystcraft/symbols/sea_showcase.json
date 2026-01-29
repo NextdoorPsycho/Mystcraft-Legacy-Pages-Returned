@@ -1,12 +1,14 @@
 {
   "category": "sea",
-  "card_rank": 1,
-  "instability_cost": 0.0,
+  "display_name": "Showcase Sea",
+  "card_rank": 2,
+  "instability_cost": 1.0,
+  "allow_random": false,
   "poem": [
     "Sea",
-    "Blue",
-    "Level",
-    "Still"
+    "Lava",
+    "Depth",
+    "Glow"
   ],
   "logic": [
     {
@@ -15,11 +17,11 @@
     },
     {
       "type": "set_sea_level",
-      "value": 62
+      "value": 70
     },
     {
       "type": "set_sea_block",
-      "block": "minecraft:water"
+      "block": "minecraft:lava"
     }
   ]
 }

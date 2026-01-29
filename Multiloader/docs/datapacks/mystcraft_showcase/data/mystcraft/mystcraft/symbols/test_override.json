@@ -1,19 +1,21 @@
 {
   "replace": true,
   "category": "special",
+  "display_name": "Override Example",
   "card_rank": 4,
   "instability_cost": 0.0,
+  "allow_random": false,
   "poem": [
     "Override",
+    "Symbol",
     "Live",
-    "Here",
-    "Now"
+    "Swap"
   ],
   "logic": [
     {
       "type": "set_flag",
-      "flag": "rainbow_enabled",
-      "value": true
+      "flag": "pvp_enabled",
+      "value": false
     }
   ]
 }

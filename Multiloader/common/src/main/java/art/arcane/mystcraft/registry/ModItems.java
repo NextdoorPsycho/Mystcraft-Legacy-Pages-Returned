@@ -13,6 +13,7 @@ public final class ModItems {
     public static Supplier<Item> AGEBOOK;
     public static Supplier<Item> LINKBOOK;
     public static Supplier<Item> LINKBOOK_UNLINKED;
+    public static Supplier<Item> PERSONAL_LINK_BOOK;
     public static Supplier<Item> BOOSTER_PACK;
     public static Supplier<Item> FOLDER;
     public static Supplier<Item> PORTFOLIO;

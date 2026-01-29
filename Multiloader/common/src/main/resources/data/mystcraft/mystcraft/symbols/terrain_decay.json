@@ -1,0 +1,18 @@
+{
+  "category": "terrain",
+  "card_rank": 6,
+  "instability_cost": 8.0,
+  "poem": [
+    "Rot",
+    "Creep",
+    "Hunger",
+    "Fall"
+  ],
+  "logic": [
+    { "type": "set_terrain_type", "value": "decay" },
+    { "type": "set_average_ground_level", "value": 48 },
+    { "type": "set_sea_level", "value": -64 },
+    { "type": "set_has_sea", "value": false },
+    { "type": "add_instability", "value": 8.0 }
+  ]
+}

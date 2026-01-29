@@ -1,14 +1,21 @@
 {
   "category": "feature_medium",
+  "display_name": "Showcase Spikes",
   "card_rank": 2,
-  "instability_cost": 0.2,
+  "instability_cost": 3.0,
+  "allow_random": false,
   "poem": [
-    "Spikes",
     "Stone",
+    "Spike",
     "Rise",
-    "Line"
+    "Pierce"
   ],
   "logic": [
+    {
+      "type": "set_flag",
+      "flag": "spikes_enabled",
+      "value": true
+    },
     {
       "type": "register_populator",
       "id": "mystcraft:spikes"

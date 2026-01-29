@@ -1,14 +1,21 @@
 {
   "category": "feature_small",
+  "display_name": "Showcase Dripstone",
   "card_rank": 2,
-  "instability_cost": 0.2,
+  "instability_cost": 2.0,
+  "allow_random": false,
   "poem": [
+    "Cave",
     "Drip",
     "Stone",
-    "Slow",
-    "Fall"
+    "Echo"
   ],
   "logic": [
+    {
+      "type": "set_flag",
+      "flag": "dripstone_caves_enabled",
+      "value": true
+    },
     {
       "type": "register_populator",
       "id": "mystcraft:dripstone_caves"

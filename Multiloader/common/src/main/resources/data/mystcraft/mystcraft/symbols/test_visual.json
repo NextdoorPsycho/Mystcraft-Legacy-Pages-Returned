@@ -2,9 +2,23 @@
   "category": "visual_effect",
   "card_rank": 2,
   "instability_cost": 0.0,
-  "poem": ["Color", "Sky", "Light", "Flow"],
+  "poem": [
+    "Color",
+    "Sky",
+    "Light",
+    "Flow"
+  ],
   "logic": [
-    { "type": "set_sky_color", "value": 7829759, "natural": false },
-    { "type": "set_fog_color", "value": 2236962, "natural": false }
-  ]
+    {
+      "type": "set_sky_color",
+      "value": 7829759,
+      "natural": false
+    },
+    {
+      "type": "set_fog_color",
+      "value": 2236962,
+      "natural": false
+    }
+  ],
+  "allow_random": false
 }

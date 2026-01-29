@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.datapack.symbol;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.datapack.grammar.GrammarDatapackLoader;
 import art.arcane.mystcraft.grammar.CFGGrammarGenerator;
 import art.arcane.mystcraft.grammar.GrammarRules;
@@ -25,6 +26,7 @@ public final class SymbolDatapackLoader {
 
     public static void apply(Map<ResourceLocation, JsonElement> elements,
                              Map<ResourceLocation, JsonElement> grammarRules) {
+        applySymbolBlacklist();
         SymbolRegistry.resetToStatic();
         CFGGrammarGenerator.reset();
         GrammarRules.registerBaseRules();
@@ -65,6 +67,24 @@ public final class SymbolDatapackLoader {
         SymbolRegistry.freeze();
 
         Mystcraft.LOGGER.info("[Datapack] Applied {} symbol definitions", applied);
+    }
+
+    private static void applySymbolBlacklist() {
+        SymbolRegistry.clearBlacklist();
+        List<String> disabled = MystcraftConfig.disabledSymbols.get();
+        if (disabled == null || disabled.isEmpty()) {
+            return;
+        }
+        for (String raw : disabled) {
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            if (!ResourceLocation.isValidResourceLocation(raw)) {
+                Mystcraft.LOGGER.warn("[Datapack] Invalid symbol id in disabledSymbols: {}", raw);
+                continue;
+            }
+            SymbolRegistry.blacklist(new ResourceLocation(raw));
+        }
     }
 
     private static void registerFluidSeaSymbols() {

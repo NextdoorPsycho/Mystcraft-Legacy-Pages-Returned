@@ -124,6 +124,7 @@ public class MystcraftFabric implements ModInitializer {
         art.arcane.mystcraft.registry.ModItems.AGEBOOK = FabricModItems.AGEBOOK;
         art.arcane.mystcraft.registry.ModItems.LINKBOOK = FabricModItems.LINKBOOK;
         art.arcane.mystcraft.registry.ModItems.LINKBOOK_UNLINKED = FabricModItems.LINKBOOK_UNLINKED;
+        art.arcane.mystcraft.registry.ModItems.PERSONAL_LINK_BOOK = FabricModItems.PERSONAL_LINK_BOOK;
         art.arcane.mystcraft.registry.ModItems.BOOSTER_PACK = FabricModItems.BOOSTER_PACK;
         art.arcane.mystcraft.registry.ModItems.FOLDER = FabricModItems.FOLDER;
         art.arcane.mystcraft.registry.ModItems.PORTFOLIO = FabricModItems.PORTFOLIO;
@@ -185,6 +186,7 @@ public class MystcraftFabric implements ModInitializer {
         art.arcane.mystcraft.config.MystcraftConfig.giveGuidebookOnFirstSpawn = () -> FabricMystcraftConfig.giveGuidebookOnFirstSpawn.get();
         art.arcane.mystcraft.config.MystcraftConfig.maxSymbolsPerBook = () -> FabricMystcraftConfig.maxSymbolsPerBook.get();
         art.arcane.mystcraft.config.MystcraftConfig.deleteAgesOnStartup = () -> FabricMystcraftConfig.deleteAgesOnStartup.get();
+        art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols = () -> FabricMystcraftConfig.disabledSymbols.get();
         art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = () -> FabricMystcraftConfig.instabilityEnabled.get();
         art.arcane.mystcraft.config.MystcraftConfig.deathEffectsEnabled = () -> FabricMystcraftConfig.deathEffectsEnabled.get();
         art.arcane.mystcraft.config.MystcraftConfig.allowUnstableAges = () -> FabricMystcraftConfig.allowUnstableAges.get();

@@ -18,6 +18,7 @@ import art.arcane.mystcraft.world.gen.biome.BiomeControllerNative;
 import art.arcane.mystcraft.world.gen.biome.BiomeControllerNoise;
 import art.arcane.mystcraft.world.gen.biome.BiomeControllerSingle;
 import art.arcane.mystcraft.world.gen.biome.BiomeControllerTiled;
+import art.arcane.mystcraft.world.gen.biome.BiomeControllerShuffle;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,6 +109,7 @@ public final class SymbolLogicTypes {
         SymbolLogicRegistry.register(new RegisterPopulatorType());
         SymbolLogicRegistry.register(new RegisterTerrainAlterationType());
         SymbolLogicRegistry.register(new RegisterBiomeControllerType());
+        SymbolLogicRegistry.register(new RegisterPopulatorPoolType());
         SymbolLogicRegistry.register(new AddBiomeType());
         SymbolLogicRegistry.register(new SetOreDisabledType());
         SymbolLogicRegistry.register(new SetOresDisabledType());
@@ -383,6 +385,57 @@ public final class SymbolLogicTypes {
         }
     }
 
+    private static class RegisterPopulatorPoolType implements SymbolLogicType {
+        private final ResourceLocation id = new ResourceLocation(Mystcraft.MOD_ID, "register_populator_pool");
+
+        @Override
+        public ResourceLocation getId() {
+            return id;
+        }
+
+        @Override
+        public SymbolLogic parse(JsonObject json) {
+            int count = GsonHelper.getAsInt(json, "count", 3);
+            boolean allowDuplicates = GsonHelper.getAsBoolean(json, "allow_duplicates", false);
+            long seedOffset = GsonHelper.getAsLong(json, "seed_offset", 0L);
+
+            List<ResourceLocation> pool = new ArrayList<>();
+            if (json.has("pool") && json.get("pool").isJsonArray()) {
+                json.getAsJsonArray("pool").forEach(el -> {
+                    if (el.isJsonPrimitive()) {
+                        ResourceLocation id = ResourceLocation.tryParse(el.getAsString());
+                        if (id != null) {
+                            pool.add(id);
+                        }
+                    }
+                });
+            }
+
+            return (director, seed) -> {
+                if (pool.isEmpty() || count <= 0) return;
+                RandomSource rand = RandomSource.create(seed ^ 0xC0FFEE1234L ^ seedOffset);
+                List<ResourceLocation> working = new ArrayList<>(pool);
+
+                for (int i = 0; i < count; i++) {
+                    if (working.isEmpty()) {
+                        if (!allowDuplicates) break;
+                        working = new ArrayList<>(pool);
+                    }
+                    int idx = rand.nextInt(working.size());
+                    ResourceLocation popId = working.get(idx);
+                    if (!allowDuplicates) {
+                        working.remove(idx);
+                    }
+                    JsonObject params = new JsonObject();
+                    var populator = PopulatorRegistry.create(popId, params, seed);
+                    if (populator != null) {
+                        director.registerInterface(populator);
+                    }
+                }
+            };
+        }
+    }
+
     private static class RegisterTerrainAlterationType implements SymbolLogicType {
         private final ResourceLocation id = new ResourceLocation(Mystcraft.MOD_ID, "register_terrain_alteration");
 
@@ -418,10 +471,17 @@ public final class SymbolLogicTypes {
 
         @Override
         public SymbolLogic parse(JsonObject json) {
-            String type = GsonHelper.getAsString(json, "type", "medium").toLowerCase(Locale.ROOT);
+            String type = GsonHelper.getAsString(json, "controller", null);
+            if (type == null || type.isBlank()) {
+                type = GsonHelper.getAsString(json, "controller_type", null);
+            }
+            if (type == null || type.isBlank()) {
+                type = GsonHelper.getAsString(json, "biome_controller", "medium");
+            }
+            final String typeFinal = type.toLowerCase(Locale.ROOT);
             return (director, seed) -> {
                 List<Holder<Biome>> biomes = collectBiomes(director);
-                IBiomeController controller = switch (type) {
+                IBiomeController controller = switch (typeFinal) {
                     case "single" -> new BiomeControllerSingle(biomes, seed);
                     case "native" -> new BiomeControllerNative(seed);
                     case "tiny" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.TINY);
@@ -431,6 +491,7 @@ public final class SymbolLogicTypes {
                     case "huge" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.HUGE);
                     case "tiled" -> new BiomeControllerTiled(biomes, seed);
                     case "grid" -> new BiomeControllerGrid(biomes, seed);
+                    case "shuffle" -> new BiomeControllerShuffle(biomes, seed);
                     default -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.MEDIUM);
                 };
                 director.registerInterface(controller);

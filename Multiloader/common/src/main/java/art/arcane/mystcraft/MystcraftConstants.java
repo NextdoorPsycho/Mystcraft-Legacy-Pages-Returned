@@ -44,6 +44,7 @@ public final class MystcraftConstants {
         public static final String AGEBOOK = "agebook";
         public static final String LINKBOOK = "linkbook";
         public static final String LINKBOOK_UNLINKED = "linkbook_unlinked";
+        public static final String PERSONAL_LINK_BOOK = "personal_link_book";
         public static final String BOOSTER = "booster";
         public static final String FOLDER = "folder";
         public static final String PORTFOLIO = "portfolio";

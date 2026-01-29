@@ -1,17 +1,19 @@
 {
   "category": "lighting",
+  "display_name": "Showcase Lighting",
   "card_rank": 1,
   "instability_cost": 0.0,
+  "allow_random": false,
   "poem": [
     "Light",
-    "Balance",
-    "Glow",
-    "Soft"
+    "Bright",
+    "Clear",
+    "Day"
   ],
   "logic": [
     {
       "type": "set_lighting_type",
-      "value": "normal"
+      "value": "bright"
     }
   ]
 }

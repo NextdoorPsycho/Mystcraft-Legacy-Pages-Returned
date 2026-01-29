@@ -38,7 +38,8 @@ public class GuidebookItem extends Item {
             Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
             Class<?> screenClass = Class.forName("art.arcane.mystcraft.client.screen.GuidebookScreen");
             Object screen = screenClass.getConstructor().newInstance();
-            minecraftClass.getMethod("setScreen", screenClass).invoke(minecraft, screen);
+            Class<?> screenBaseClass = Class.forName("net.minecraft.client.gui.screens.Screen");
+            minecraftClass.getMethod("setScreen", screenBaseClass).invoke(minecraft, screen);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to open Mystcraft guidebook screen", e);
         }

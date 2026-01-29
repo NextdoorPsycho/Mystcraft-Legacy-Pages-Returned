@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "IUI",
+    "III"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "U": {
+      "item": "mystcraft:linkbook_unlinked"
+    }
+  },
+  "result": {
+    "item": "mystcraft:personal_link_book"
+  }
+}

@@ -34,6 +34,7 @@ public final class ModCreativeTabs {
                                 output.accept(NeoForgeModItems.AGEBOOK.get());
                                 output.accept(NeoForgeModItems.LINKBOOK.get());
                                 output.accept(NeoForgeModItems.LINKBOOK_UNLINKED.get());
+                                output.accept(NeoForgeModItems.PERSONAL_LINK_BOOK.get());
 
                                 // Page storage items
                                 output.accept(NeoForgeModItems.PAGE.get());

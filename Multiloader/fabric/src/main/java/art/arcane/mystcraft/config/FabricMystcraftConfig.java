@@ -1,33 +1,22 @@
 package art.arcane.mystcraft.config;
 
 import art.arcane.mystcraft.Mystcraft;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.electronwill.nightconfig.core.file.CommentedFileConfig;
+import com.electronwill.nightconfig.core.io.WritingMode;
 import net.fabricmc.loader.api.FabricLoader;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Fabric-side configuration for Mystcraft.
- * Uses JSON file storage since Fabric has no ForgeConfigSpec equivalent.
+ * Uses TOML file storage to match Forge/NeoForge format.
  * Fields expose .get() methods to match the ForgeConfigSpec API used by common code.
  */
 public class FabricMystcraftConfig {
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("mystcraft-common.json");
-    private static final List<String> DISABLED_SYMBOLS_SAMPLE = List.of(
-            "mystcraft:example_symbol_a",
-            "mystcraft:example_symbol_b"
-    );
+    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("mystcraft-common.toml");
 
     // --- General ---
     public static final BooleanValue giveGuidebookOnFirstSpawn = new BooleanValue(true);
@@ -35,6 +24,26 @@ public class FabricMystcraftConfig {
     public static final BooleanValue deleteAgesOnStartup = new BooleanValue(false);
     public static final BooleanValue enablePersonalLinkBooks = new BooleanValue(true);
     public static final BooleanValue allowGravityBlocksInAges = new BooleanValue(false);
+    public static final BooleanValue microDimensionsEnabled = new BooleanValue(false);
+    public static final IntValue microDimensionRadiusChunks = new IntValue(0);
+    public static final IntValue microDimensionExtraChunks = new IntValue(1);
+
+    // --- Personal Pocket Dimension ---
+    public static final IntValue pocketInnerHalfSize = new IntValue(24);
+    public static final IntValue pocketInnerThickness = new IntValue(3);
+    public static final IntValue pocketOuterThickness = new IntValue(5);
+    public static final IntValue pocketCenterY = new IntValue(64);
+    public static final StringListValue pocketInnerBlockPalette = new StringListValue(new ArrayList<>(List.of(
+            "minecraft:oak_planks",
+            "minecraft:spruce_planks",
+            "minecraft:birch_planks",
+            "minecraft:jungle_planks",
+            "minecraft:acacia_planks",
+            "minecraft:dark_oak_planks",
+            "minecraft:mangrove_planks",
+            "minecraft:cherry_planks"
+    )));
+    public static final StringValue pocketOuterBlock = new StringValue("minecraft:bedrock");
 
     // --- Instability ---
     public static final BooleanValue instabilityEnabled = new BooleanValue(true);
@@ -59,9 +68,7 @@ public class FabricMystcraftConfig {
     public static final DoubleValue chancePlayerEffect = new DoubleValue(0.0001);
 
     // --- Symbols ---
-    // Ore block terrain symbols are disabled by default as they are overpowered
     private static final List<String> DEFAULT_DISABLED_SYMBOLS = List.of(
-            // Ore storage blocks
             "mystcraft:block_minecraft_coal_block",
             "mystcraft:block_minecraft_copper_block",
             "mystcraft:block_minecraft_diamond_block",
@@ -74,7 +81,6 @@ public class FabricMystcraftConfig {
             "mystcraft:block_minecraft_raw_gold_block",
             "mystcraft:block_minecraft_raw_iron_block",
             "mystcraft:block_minecraft_redstone_block",
-            // Ancient debris
             "mystcraft:block_minecraft_ancient_debris"
     );
     public static final StringListValue disabledSymbols = new StringListValue(new ArrayList<>(DEFAULT_DISABLED_SYMBOLS));
@@ -83,152 +89,166 @@ public class FabricMystcraftConfig {
 
     /** Loads configuration from disk. Creates default file if it does not exist. */
     public static void load() {
-        if (!Files.exists(CONFIG_PATH)) {
-            save();
-            Mystcraft.LOGGER.info("[FabricMystcraftConfig] Created default config at {}", CONFIG_PATH);
-            return;
-        }
+        CommentedFileConfig config = CommentedFileConfig.builder(CONFIG_PATH)
+                .sync()
+                .autosave()
+                .writingMode(WritingMode.REPLACE)
+                .build();
 
-        try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
-            JsonObject json = GSON.fromJson(reader, JsonObject.class);
-            if (json == null) {
-                Mystcraft.LOGGER.warn("[FabricMystcraftConfig] Config file was empty, using defaults");
-                return;
-            }
+        config.load();
 
-            // General
-            readBoolean(json, "giveGuidebookOnFirstSpawn", giveGuidebookOnFirstSpawn);
-            readInt(json, "maxSymbolsPerBook", maxSymbolsPerBook);
-            readBoolean(json, "deleteAgesOnStartup", deleteAgesOnStartup);
-            readBoolean(json, "enablePersonalLinkBooks", enablePersonalLinkBooks);
-            readBoolean(json, "allowGravityBlocksInAges", allowGravityBlocksInAges);
+        // Set defaults and read values
 
-            // Instability
-            readBoolean(json, "instabilityEnabled", instabilityEnabled);
-            readBoolean(json, "deathEffectsEnabled", deathEffectsEnabled);
-            readBoolean(json, "allowUnstableAges", allowUnstableAges);
-            readDouble(json, "instabilityMultiplier", instabilityMultiplier);
-            readDouble(json, "maxAllowedInstability", maxAllowedInstability);
+        // --- General ---
+        setCommentAndDefault(config, "general.giveGuidebookOnFirstSpawn", giveGuidebookOnFirstSpawn.defaultValue,
+                "Whether to give new players a copy of the Mystcraft Guidebook when they first join the world.");
+        giveGuidebookOnFirstSpawn.set(config.getOrElse("general.giveGuidebookOnFirstSpawn", giveGuidebookOnFirstSpawn.defaultValue));
 
-            // Thresholds
-            readDouble(json, "thresholdDecay", thresholdDecay);
-            readDouble(json, "thresholdTransmute", thresholdTransmute);
-            readDouble(json, "thresholdLightning", thresholdLightning);
-            readDouble(json, "thresholdMeteor", thresholdMeteor);
-            readDouble(json, "thresholdPoison", thresholdPoison);
-            readDouble(json, "thresholdWither", thresholdWither);
+        setCommentAndDefault(config, "general.maxSymbolsPerBook", maxSymbolsPerBook.defaultValue,
+                "Maximum number of symbol pages allowed in a single Agebook. Set to -1 for unlimited.");
+        maxSymbolsPerBook.set(config.getOrElse("general.maxSymbolsPerBook", maxSymbolsPerBook.defaultValue));
 
-            // Chances
-            readDouble(json, "chanceDecay", chanceDecay);
-            readDouble(json, "chanceTransmute", chanceTransmute);
-            readDouble(json, "chanceLightning", chanceLightning);
-            readDouble(json, "chanceMeteor", chanceMeteor);
-            readDouble(json, "chancePlayerEffect", chancePlayerEffect);
+        setCommentAndDefault(config, "general.deleteAgesOnStartup", deleteAgesOnStartup.defaultValue,
+                "If true, all Mystcraft Ages will be deleted every time the server starts. Use for development/testing.");
+        deleteAgesOnStartup.set(config.getOrElse("general.deleteAgesOnStartup", deleteAgesOnStartup.defaultValue));
 
-            // Symbols
-            readStringList(json, "disabledSymbols", disabledSymbols);
+        setCommentAndDefault(config, "general.enablePersonalLinkBooks", enablePersonalLinkBooks.defaultValue,
+                "If true, personal link books and personal pocket dimensions are enabled.");
+        enablePersonalLinkBooks.set(config.getOrElse("general.enablePersonalLinkBooks", enablePersonalLinkBooks.defaultValue));
 
-            Mystcraft.LOGGER.info("[FabricMystcraftConfig] Loaded config from {}", CONFIG_PATH);
-        } catch (IOException e) {
-            Mystcraft.LOGGER.error("[FabricMystcraftConfig] Failed to read config file, using defaults", e);
-        }
+        setCommentAndDefault(config, "general.allowGravityBlocksInAges", allowGravityBlocksInAges.defaultValue,
+                "If true, gravity blocks (sand, gravel, anvils, concrete powder) can fall in Mystcraft Ages.");
+        allowGravityBlocksInAges.set(config.getOrElse("general.allowGravityBlocksInAges", allowGravityBlocksInAges.defaultValue));
+
+        setCommentAndDefault(config, "general.microDimensionsEnabled", microDimensionsEnabled.defaultValue,
+                "If true, newly created Ages are limited to a small chunk radius around the spawn chunk.");
+        microDimensionsEnabled.set(config.getOrElse("general.microDimensionsEnabled", microDimensionsEnabled.defaultValue));
+
+        setCommentAndDefault(config, "general.microDimensionRadiusChunks", microDimensionRadiusChunks.defaultValue,
+                "Radius in chunks from the spawn chunk center for micro dimensions. 0 = single chunk.");
+        microDimensionRadiusChunks.set(config.getOrElse("general.microDimensionRadiusChunks", microDimensionRadiusChunks.defaultValue));
+
+        setCommentAndDefault(config, "general.microDimensionExtraChunks", microDimensionExtraChunks.defaultValue,
+                "Additional chunk rings generated beyond the border for visual continuity.");
+        microDimensionExtraChunks.set(config.getOrElse("general.microDimensionExtraChunks", microDimensionExtraChunks.defaultValue));
+
+        setCommentAndDefault(config, "general.disabledSymbols", new ArrayList<>(DEFAULT_DISABLED_SYMBOLS),
+                "List of symbol IDs to disable. Disabled symbols are hidden from books and not registered at runtime.");
+        disabledSymbols.set(config.getOrElse("general.disabledSymbols", new ArrayList<>(DEFAULT_DISABLED_SYMBOLS)));
+
+        // --- Personal Pocket ---
+        setCommentAndDefault(config, "personal_pocket.innerHalfSize", pocketInnerHalfSize.defaultValue,
+                "Half the inner void space in blocks. Default: 24 (48 block diameter, 3 chunks).");
+        pocketInnerHalfSize.set(config.getOrElse("personal_pocket.innerHalfSize", pocketInnerHalfSize.defaultValue));
+
+        setCommentAndDefault(config, "personal_pocket.innerThickness", pocketInnerThickness.defaultValue,
+                "Thickness of the inner shell surrounding the void. Default: 3 blocks.");
+        pocketInnerThickness.set(config.getOrElse("personal_pocket.innerThickness", pocketInnerThickness.defaultValue));
+
+        setCommentAndDefault(config, "personal_pocket.outerThickness", pocketOuterThickness.defaultValue,
+                "Thickness of the outer shell surrounding the inner layer. Default: 5 blocks.");
+        pocketOuterThickness.set(config.getOrElse("personal_pocket.outerThickness", pocketOuterThickness.defaultValue));
+
+        setCommentAndDefault(config, "personal_pocket.centerY", pocketCenterY.defaultValue,
+                "Y coordinate of the pocket center. Must allow room for the pocket within build limits.");
+        pocketCenterY.set(config.getOrElse("personal_pocket.centerY", pocketCenterY.defaultValue));
+
+        setCommentAndDefault(config, "personal_pocket.innerBlockPalette", new ArrayList<>(pocketInnerBlockPalette.defaultValue),
+                "List of block IDs for the inner shell layer. Multiple blocks create a varied pattern.");
+        pocketInnerBlockPalette.set(config.getOrElse("personal_pocket.innerBlockPalette", new ArrayList<>(pocketInnerBlockPalette.defaultValue)));
+
+        setCommentAndDefault(config, "personal_pocket.outerBlock", pocketOuterBlock.defaultValue,
+                "Block ID for the outer shell. Default: minecraft:bedrock");
+        pocketOuterBlock.set(config.getOrElse("personal_pocket.outerBlock", pocketOuterBlock.defaultValue));
+
+        // --- Instability ---
+        setCommentAndDefault(config, "instability.enabled", instabilityEnabled.defaultValue,
+                "Master switch for the instability system. If false, no instability effects occur.");
+        instabilityEnabled.set(config.getOrElse("instability.enabled", instabilityEnabled.defaultValue));
+
+        setCommentAndDefault(config, "instability.deathEffectsEnabled", deathEffectsEnabled.defaultValue,
+                "Whether thematic death effects occur when players die in Ages.");
+        deathEffectsEnabled.set(config.getOrElse("instability.deathEffectsEnabled", deathEffectsEnabled.defaultValue));
+
+        setCommentAndDefault(config, "instability.allowUnstableAges", allowUnstableAges.defaultValue,
+                "Whether to allow creation of Ages that exceed the maximum instability threshold.");
+        allowUnstableAges.set(config.getOrElse("instability.allowUnstableAges", allowUnstableAges.defaultValue));
+
+        setCommentAndDefault(config, "instability.effectMultiplier", instabilityMultiplier.defaultValue,
+                "Global multiplier for all instability effect chances. 1.0 = normal frequency.");
+        instabilityMultiplier.set(config.getOrElse("instability.effectMultiplier", instabilityMultiplier.defaultValue));
+
+        setCommentAndDefault(config, "instability.maxAllowedInstability", maxAllowedInstability.defaultValue,
+                "Maximum instability allowed when 'allowUnstableAges' is false.");
+        maxAllowedInstability.set(config.getOrElse("instability.maxAllowedInstability", maxAllowedInstability.defaultValue));
+
+        // --- Instability Thresholds ---
+        setCommentAndDefault(config, "instability_thresholds.decay", thresholdDecay.defaultValue,
+                "Instability threshold for decay blocks to start spreading.");
+        thresholdDecay.set(config.getOrElse("instability_thresholds.decay", thresholdDecay.defaultValue));
+
+        setCommentAndDefault(config, "instability_thresholds.transmute", thresholdTransmute.defaultValue,
+                "Instability threshold for random block transmutation to begin.");
+        thresholdTransmute.set(config.getOrElse("instability_thresholds.transmute", thresholdTransmute.defaultValue));
+
+        setCommentAndDefault(config, "instability_thresholds.lightning", thresholdLightning.defaultValue,
+                "Instability threshold for random lightning strikes.");
+        thresholdLightning.set(config.getOrElse("instability_thresholds.lightning", thresholdLightning.defaultValue));
+
+        setCommentAndDefault(config, "instability_thresholds.meteor", thresholdMeteor.defaultValue,
+                "Instability threshold for meteor falls.");
+        thresholdMeteor.set(config.getOrElse("instability_thresholds.meteor", thresholdMeteor.defaultValue));
+
+        setCommentAndDefault(config, "instability_thresholds.poison", thresholdPoison.defaultValue,
+                "Instability threshold for poison/hunger effects on players.");
+        thresholdPoison.set(config.getOrElse("instability_thresholds.poison", thresholdPoison.defaultValue));
+
+        setCommentAndDefault(config, "instability_thresholds.wither", thresholdWither.defaultValue,
+                "Instability threshold for wither effects on players (most severe).");
+        thresholdWither.set(config.getOrElse("instability_thresholds.wither", thresholdWither.defaultValue));
+
+        // --- Effect Chances ---
+        setCommentAndDefault(config, "instability_chances.decay", chanceDecay.defaultValue,
+                "Base chance per tick for decay to spread (0.001 = 0.1%).");
+        chanceDecay.set(config.getOrElse("instability_chances.decay", chanceDecay.defaultValue));
+
+        setCommentAndDefault(config, "instability_chances.transmute", chanceTransmute.defaultValue,
+                "Base chance per tick for block transmutation (0.002 = 0.2%).");
+        chanceTransmute.set(config.getOrElse("instability_chances.transmute", chanceTransmute.defaultValue));
+
+        setCommentAndDefault(config, "instability_chances.lightning", chanceLightning.defaultValue,
+                "Base chance per tick for lightning strikes (0.0005 = 0.05%).");
+        chanceLightning.set(config.getOrElse("instability_chances.lightning", chanceLightning.defaultValue));
+
+        setCommentAndDefault(config, "instability_chances.meteor", chanceMeteor.defaultValue,
+                "Base chance per tick for meteor spawns (0.0002 = 0.02%).");
+        chanceMeteor.set(config.getOrElse("instability_chances.meteor", chanceMeteor.defaultValue));
+
+        setCommentAndDefault(config, "instability_chances.playerEffect", chancePlayerEffect.defaultValue,
+                "Base chance per tick for player debuffs (0.0001 = 0.01%).");
+        chancePlayerEffect.set(config.getOrElse("instability_chances.playerEffect", chancePlayerEffect.defaultValue));
+
+        config.save();
+        config.close();
+
+        Mystcraft.LOGGER.info("[FabricMystcraftConfig] Loaded config from {}", CONFIG_PATH);
     }
 
-    /** Saves current configuration values to disk. */
-    public static void save() {
-        JsonObject json = new JsonObject();
-
-        // General
-        json.addProperty("giveGuidebookOnFirstSpawn", giveGuidebookOnFirstSpawn.get());
-        json.addProperty("maxSymbolsPerBook", maxSymbolsPerBook.get());
-        json.addProperty("deleteAgesOnStartup", deleteAgesOnStartup.get());
-        json.addProperty("enablePersonalLinkBooks", enablePersonalLinkBooks.get());
-        json.addProperty("allowGravityBlocksInAges", allowGravityBlocksInAges.get());
-
-        // Instability
-        json.addProperty("instabilityEnabled", instabilityEnabled.get());
-        json.addProperty("deathEffectsEnabled", deathEffectsEnabled.get());
-        json.addProperty("allowUnstableAges", allowUnstableAges.get());
-        json.addProperty("instabilityMultiplier", instabilityMultiplier.get());
-        json.addProperty("maxAllowedInstability", maxAllowedInstability.get());
-
-        // Thresholds
-        json.addProperty("thresholdDecay", thresholdDecay.get());
-        json.addProperty("thresholdTransmute", thresholdTransmute.get());
-        json.addProperty("thresholdLightning", thresholdLightning.get());
-        json.addProperty("thresholdMeteor", thresholdMeteor.get());
-        json.addProperty("thresholdPoison", thresholdPoison.get());
-        json.addProperty("thresholdWither", thresholdWither.get());
-
-        // Chances
-        json.addProperty("chanceDecay", chanceDecay.get());
-        json.addProperty("chanceTransmute", chanceTransmute.get());
-        json.addProperty("chanceLightning", chanceLightning.get());
-        json.addProperty("chanceMeteor", chanceMeteor.get());
-        json.addProperty("chancePlayerEffect", chancePlayerEffect.get());
-
-        // Symbols
-        json.add("disabledSymbols", GSON.toJsonTree(disabledSymbols.get()));
-        json.add("disabledSymbolsSample", GSON.toJsonTree(DISABLED_SYMBOLS_SAMPLE));
-
-        try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
-            GSON.toJson(json, writer);
-        } catch (IOException e) {
-            Mystcraft.LOGGER.error("[FabricMystcraftConfig] Failed to write config file", e);
-        }
-    }
-
-    // --- JSON read helpers ---
-
-    private static void readBoolean(JsonObject json, String key, BooleanValue value) {
-        if (json.has(key) && json.get(key).isJsonPrimitive()) {
-            JsonPrimitive prim = json.getAsJsonPrimitive(key);
-            if (prim.isBoolean()) {
-                value.set(prim.getAsBoolean());
-            }
-        }
-    }
-
-    private static void readInt(JsonObject json, String key, IntValue value) {
-        if (json.has(key) && json.get(key).isJsonPrimitive()) {
-            JsonPrimitive prim = json.getAsJsonPrimitive(key);
-            if (prim.isNumber()) {
-                value.set(prim.getAsInt());
-            }
-        }
-    }
-
-    private static void readDouble(JsonObject json, String key, DoubleValue value) {
-        if (json.has(key) && json.get(key).isJsonPrimitive()) {
-            JsonPrimitive prim = json.getAsJsonPrimitive(key);
-            if (prim.isNumber()) {
-                value.set(prim.getAsDouble());
-            }
-        }
-    }
-
-    private static void readStringList(JsonObject json, String key, StringListValue value) {
-        if (json.has(key) && json.get(key).isJsonArray()) {
-            List<String> items = new ArrayList<>();
-            json.getAsJsonArray(key).forEach(element -> {
-                if (element.isJsonPrimitive()) {
-                    JsonPrimitive prim = element.getAsJsonPrimitive();
-                    if (prim.isString()) {
-                        items.add(prim.getAsString());
-                    }
-                }
-            });
-            value.set(items);
+    private static <T> void setCommentAndDefault(CommentedFileConfig config, String path, T defaultValue, String comment) {
+        config.setComment(path, comment);
+        if (!config.contains(path)) {
+            config.set(path, defaultValue);
         }
     }
 
     // --- Value wrapper types matching ForgeConfigSpec API ---
 
-    /** Boolean config value with .get()/.set() matching ForgeConfigSpec.BooleanValue. */
     public static final class BooleanValue {
+        private final boolean defaultValue;
         private boolean value;
 
         public BooleanValue(boolean defaultValue) {
+            this.defaultValue = defaultValue;
             this.value = defaultValue;
         }
 
@@ -241,11 +261,12 @@ public class FabricMystcraftConfig {
         }
     }
 
-    /** Integer config value with .get()/.set() matching ForgeConfigSpec.IntValue. */
     public static final class IntValue {
+        private final int defaultValue;
         private int value;
 
         public IntValue(int defaultValue) {
+            this.defaultValue = defaultValue;
             this.value = defaultValue;
         }
 
@@ -258,11 +279,12 @@ public class FabricMystcraftConfig {
         }
     }
 
-    /** Double config value with .get()/.set() matching ForgeConfigSpec.DoubleValue. */
     public static final class DoubleValue {
+        private final double defaultValue;
         private double value;
 
         public DoubleValue(double defaultValue) {
+            this.defaultValue = defaultValue;
             this.value = defaultValue;
         }
 
@@ -275,12 +297,13 @@ public class FabricMystcraftConfig {
         }
     }
 
-    /** List config value for string lists. */
     public static final class StringListValue {
+        private final List<String> defaultValue;
         private List<String> value;
 
         public StringListValue(List<String> defaultValue) {
-            this.value = defaultValue;
+            this.defaultValue = new ArrayList<>(defaultValue);
+            this.value = new ArrayList<>(defaultValue);
         }
 
         public List<String> get() {
@@ -288,6 +311,24 @@ public class FabricMystcraftConfig {
         }
 
         public void set(List<String> value) {
+            this.value = new ArrayList<>(value);
+        }
+    }
+
+    public static final class StringValue {
+        private final String defaultValue;
+        private String value;
+
+        public StringValue(String defaultValue) {
+            this.defaultValue = defaultValue;
+            this.value = defaultValue;
+        }
+
+        public String get() {
+            return value;
+        }
+
+        public void set(String value) {
             this.value = value;
         }
     }

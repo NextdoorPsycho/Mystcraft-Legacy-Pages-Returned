@@ -15,7 +15,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.border.WorldBorder;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,52 +25,131 @@ import java.util.UUID;
 
 /**
  * Personal pocket dimension: a hollow cube structure.
- * Inner space is 3x3 chunks (48 blocks) of void.
- * Surrounded by 3 blocks of wood (simplex pattern) then 5 blocks of bedrock.
- * Spawn point is at the center of the hollow interior.
+ * Inner space is configurable (default 3x3 chunks = 48 blocks of void).
+ * Surrounded by configurable wood shell then bedrock shell.
+ * Spawn point is at the bottom of the hollow interior.
  */
 public final class PersonalPocketDimension {
 
   private static final int PERSONAL_UID_OFFSET = 1_000_000_000;
   private static final int PERSONAL_UID_RANGE = 1_000_000_000;
 
-  /** Half the inner void space (3 chunks = 48 blocks, half = 24). */
-  public static final int INNER_HALF_SIZE = 24;
-
-  /** Wood shell thickness surrounding the inner void. */
-  public static final int WOOD_THICKNESS = 3;
-
-  /** Bedrock shell thickness surrounding the wood layer. */
-  public static final int BEDROCK_THICKNESS = 5;
-
-  /** Total half-size from center to outer bedrock edge. */
-  public static final int TOTAL_HALF_SIZE = INNER_HALF_SIZE + WOOD_THICKNESS + BEDROCK_THICKNESS; // 32
-
-  /** Inner void size (diameter) - used for world border. */
-  public static final int INNER_SIZE = INNER_HALF_SIZE * 2; // 48
-
-  /** Total pocket size (diameter including walls). */
-  public static final int POCKET_SIZE = TOTAL_HALF_SIZE * 2; // 64
-
-  /** Y coordinate of the center of the cube. */
-  public static final int CENTER_Y = 64;
-
-  /** Bottom of inner void. */
-  public static final int INNER_MIN_Y = CENTER_Y - INNER_HALF_SIZE; // 40
-
-  /** Top of inner void. */
-  public static final int INNER_MAX_Y = CENTER_Y + INNER_HALF_SIZE - 1; // 87
-
-  /** Spawn position at center of the cube. */
-  private static final BlockPos POCKET_SPAWN = new BlockPos(0, CENTER_Y, 0);
-
-  /** Minimum Y before boundary triggers (bottom of bedrock). */
-  public static final int BOUNDARY_MIN_Y = CENTER_Y - TOTAL_HALF_SIZE; // 32
-
-  /** Maximum Y before boundary triggers (top of bedrock). */
-  public static final int BOUNDARY_MAX_Y = CENTER_Y + TOTAL_HALF_SIZE - 1; // 95
+  /** Minecraft build limits. */
+  public static final int MIN_BUILD_Y = -64;
+  public static final int MAX_BUILD_Y = 320;
 
   private PersonalPocketDimension() {
+  }
+
+  // --- Configurable dimensions with validation ---
+
+  /** Half the inner void space (from config, clamped to valid range). */
+  public static int getInnerHalfSize() {
+    return Math.max(8, Math.min(128, MystcraftConfig.pocketInnerHalfSize.get()));
+  }
+
+  /** Inner shell thickness (from config, clamped to valid range). */
+  public static int getInnerThickness() {
+    return Math.max(1, Math.min(32, MystcraftConfig.pocketInnerThickness.get()));
+  }
+
+  /** Outer shell thickness (from config, clamped to valid range). */
+  public static int getOuterThickness() {
+    return Math.max(1, Math.min(32, MystcraftConfig.pocketOuterThickness.get()));
+  }
+
+  /** Center Y coordinate (from config, adjusted if needed to fit within build limits). */
+  public static int getCenterY() {
+    int requestedCenterY = MystcraftConfig.pocketCenterY.get();
+    int totalHalfSize = getTotalHalfSize();
+
+    // Ensure pocket fits within build limits
+    int minCenterY = MIN_BUILD_Y + totalHalfSize;
+    int maxCenterY = MAX_BUILD_Y - totalHalfSize;
+
+    if (maxCenterY < minCenterY) {
+      // Pocket too large to fit - use midpoint and log warning
+      Mystcraft.LOGGER.warn("[PersonalPocket] Pocket too large ({} blocks) to fit in build limits, centering at Y=128", totalHalfSize * 2);
+      return 128;
+    }
+
+    return Math.max(minCenterY, Math.min(maxCenterY, requestedCenterY));
+  }
+
+  /** Total half-size from center to outer edge. */
+  public static int getTotalHalfSize() {
+    return getInnerHalfSize() + getInnerThickness() + getOuterThickness();
+  }
+
+  /** Inner void size (diameter) - used for world border. */
+  public static int getInnerSize() {
+    return getInnerHalfSize() * 2;
+  }
+
+  /** Total pocket size (diameter including walls). */
+  public static int getPocketSize() {
+    return getTotalHalfSize() * 2;
+  }
+
+  /** Bottom of inner void (spawn floor). */
+  public static int getInnerMinY() {
+    return getCenterY() - getInnerHalfSize();
+  }
+
+  /** Top of inner void. */
+  public static int getInnerMaxY() {
+    return getCenterY() + getInnerHalfSize() - 1;
+  }
+
+  /** Minimum Y before boundary triggers (bottom of bedrock). */
+  public static int getBoundaryMinY() {
+    return getCenterY() - getTotalHalfSize();
+  }
+
+  /** Maximum Y before boundary triggers (top of bedrock). */
+  public static int getBoundaryMaxY() {
+    return getCenterY() + getTotalHalfSize() - 1;
+  }
+
+  /** Gets the configured inner block palette, falling back to oak_planks if all invalid. */
+  public static java.util.List<BlockState> getInnerBlockPalette() {
+    java.util.List<String> blockIds = MystcraftConfig.pocketInnerBlockPalette.get();
+    java.util.List<BlockState> palette = new java.util.ArrayList<>();
+
+    for (String blockId : blockIds) {
+      ResourceLocation loc = ResourceLocation.tryParse(blockId);
+      if (loc != null) {
+        Block block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(loc);
+        if (block != Blocks.AIR) {
+          palette.add(block.defaultBlockState());
+        } else {
+          Mystcraft.LOGGER.warn("[PersonalPocket] Invalid inner block '{}', skipping", blockId);
+        }
+      } else {
+        Mystcraft.LOGGER.warn("[PersonalPocket] Invalid inner block ID '{}', skipping", blockId);
+      }
+    }
+
+    if (palette.isEmpty()) {
+      Mystcraft.LOGGER.warn("[PersonalPocket] No valid inner blocks configured, using oak_planks");
+      palette.add(Blocks.OAK_PLANKS.defaultBlockState());
+    }
+
+    return palette;
+  }
+
+  /** Gets the configured outer block, falling back to bedrock if invalid. */
+  public static BlockState getOuterBlock() {
+    String blockId = MystcraftConfig.pocketOuterBlock.get();
+    ResourceLocation loc = ResourceLocation.tryParse(blockId);
+    if (loc != null) {
+      Block block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(loc);
+      if (block != Blocks.AIR) {
+        return block.defaultBlockState();
+      }
+    }
+    Mystcraft.LOGGER.warn("[PersonalPocket] Invalid outer block '{}', using bedrock", blockId);
+    return Blocks.BEDROCK.defaultBlockState();
   }
 
   public static int getPersonalAgeUid(UUID playerId) {
@@ -80,8 +161,9 @@ public final class PersonalPocketDimension {
     return uid;
   }
 
+  /** Returns spawn position 2 blocks above the bottom floor of the inner void. */
   public static BlockPos getPocketSpawn() {
-    return POCKET_SPAWN;
+    return new BlockPos(0, getInnerMinY() + 2, 0);
   }
 
   public static boolean isPersonalPocket(ServerLevel level) {
@@ -90,19 +172,22 @@ public final class PersonalPocketDimension {
   }
 
   /**
-   * Checks if a position is outside the inner void space (inside walls).
-   * Used to teleport players back if they clip into the walls.
+   * Checks if a position is outside the entire pocket structure (beyond bedrock).
+   * This is a failsafe - players should never reach here normally.
+   * Teleports them back if they somehow clip through the bedrock walls.
    */
   public static boolean isOutsideBoundary(double x, double z) {
-    return x < -INNER_HALF_SIZE || x >= INNER_HALF_SIZE ||
-           z < -INNER_HALF_SIZE || z >= INNER_HALF_SIZE;
+    int totalHalfSize = getTotalHalfSize();
+    return x < -totalHalfSize || x >= totalHalfSize ||
+           z < -totalHalfSize || z >= totalHalfSize;
   }
 
   /**
-   * Checks if Y coordinate is outside the inner void space.
+   * Checks if Y coordinate is outside the entire pocket structure (beyond bedrock).
+   * This is a failsafe - players should never reach here normally.
    */
   public static boolean isOutsideVerticalBoundary(double y) {
-    return y < INNER_MIN_Y || y > INNER_MAX_Y;
+    return y < getBoundaryMinY() || y > getBoundaryMaxY();
   }
 
   @Nullable
@@ -145,7 +230,8 @@ public final class PersonalPocketDimension {
     ageData.setAgeUUID(ageUUID);
     ageData.setAgeName("Personal Pocket");
     ageData.copyFromDirector(director);
-    ageData.setSpawn(POCKET_SPAWN.getX(), POCKET_SPAWN.getY(), POCKET_SPAWN.getZ());
+    BlockPos spawn = getPocketSpawn();
+    ageData.setSpawn(spawn.getX(), spawn.getY(), spawn.getZ());
 
     configurePersonalRules(level);
     enforceBorder(level);
@@ -248,7 +334,7 @@ public final class PersonalPocketDimension {
       border.setCenter(0.0, 0.0);
       changed = true;
     }
-    int borderSize = INNER_SIZE + 2; // +1 on each side
+    int borderSize = getInnerSize() + 2; // +1 on each side
     if (border.getSize() != borderSize) {
       Mystcraft.LOGGER.info("[PersonalPocket] Setting world border size from {} to {}", border.getSize(), borderSize);
       border.setSize(borderSize);

@@ -75,6 +75,9 @@ public class AgeData extends SavedData {
   private static final String TAG_TIMESCALE = "Timescale";
   private static final String TAG_DECK_ORDERS = "DeckOrders";
   private static final String TAG_PERSONAL_POCKET = "PersonalPocket";
+  private static final String TAG_MICRO_DIMENSIONS_ENABLED = "MicroDimensionsEnabled";
+  private static final String TAG_MICRO_DIMENSION_RADIUS = "MicroDimensionRadiusChunks";
+  private static final String TAG_MICRO_DIMENSION_EXTRA = "MicroDimensionExtraChunks";
   private final List<String> authors = new ArrayList<>();
   private final List<ItemStack> pages = new ArrayList<>();
   private final List<Integer> grassColors = new ArrayList<>();
@@ -123,6 +126,9 @@ public class AgeData extends SavedData {
   private float cloudHeight = 192.0f;
   private float horizonHeight = 0.0f;
   private boolean personalPocket = false;
+  private boolean microDimensionsEnabled = false;
+  private int microDimensionRadiusChunks = 0;
+  private int microDimensionExtraChunks = 1;
   private String terrainMixMode = "none";
   private String secondaryTerrainType = "none";
 
@@ -256,6 +262,13 @@ public class AgeData extends SavedData {
       this.secondaryTerrainType = config.getString(TAG_SECONDARY_TERRAIN_TYPE);
       if (this.secondaryTerrainType.isEmpty()) this.secondaryTerrainType = "none";
       this.personalPocket = config.getBoolean(TAG_PERSONAL_POCKET);
+      this.microDimensionsEnabled = config.getBoolean(TAG_MICRO_DIMENSIONS_ENABLED);
+      this.microDimensionRadiusChunks = config.contains(TAG_MICRO_DIMENSION_RADIUS)
+          ? Math.max(0, config.getInt(TAG_MICRO_DIMENSION_RADIUS))
+          : 0;
+      this.microDimensionExtraChunks = config.contains(TAG_MICRO_DIMENSION_EXTRA)
+          ? Math.max(0, config.getInt(TAG_MICRO_DIMENSION_EXTRA))
+          : 1;
     }
 
     // Load deck orders
@@ -352,6 +365,9 @@ public class AgeData extends SavedData {
     config.putString(TAG_TERRAIN_MIX_MODE, terrainMixMode);
     config.putString(TAG_SECONDARY_TERRAIN_TYPE, secondaryTerrainType);
     config.putBoolean(TAG_PERSONAL_POCKET, personalPocket);
+    config.putBoolean(TAG_MICRO_DIMENSIONS_ENABLED, microDimensionsEnabled);
+    config.putInt(TAG_MICRO_DIMENSION_RADIUS, microDimensionRadiusChunks);
+    config.putInt(TAG_MICRO_DIMENSION_EXTRA, microDimensionExtraChunks);
     tag.put(TAG_CONFIG, config);
 
     // Save deck orders
@@ -661,6 +677,25 @@ public class AgeData extends SavedData {
     return personalPocket;
   }
 
+  public boolean isMicroDimensionsEnabled() {
+    return microDimensionsEnabled;
+  }
+
+  public int getMicroDimensionRadiusChunks() {
+    return microDimensionRadiusChunks;
+  }
+
+  public int getMicroDimensionExtraChunks() {
+    return microDimensionExtraChunks;
+  }
+
+  public void setMicroDimensions(boolean enabled, int radiusChunks, int extraChunks) {
+    this.microDimensionsEnabled = enabled;
+    this.microDimensionRadiusChunks = Math.max(0, radiusChunks);
+    this.microDimensionExtraChunks = Math.max(0, extraChunks);
+    setDirty();
+  }
+
   /**
    * Copies configuration from an AgeDirectorImpl.
    * Call this after processing symbols to persist the Age configuration.
@@ -705,6 +740,9 @@ public class AgeData extends SavedData {
     this.terrainMixMode = director.getTerrainMixMode();
     this.secondaryTerrainType = director.getSecondaryTerrainType();
     this.personalPocket = director.isPersonalPocket();
+    this.microDimensionsEnabled = director.isMicroDimensionsEnabled() && !this.personalPocket;
+    this.microDimensionRadiusChunks = director.getMicroDimensionRadiusChunks();
+    this.microDimensionExtraChunks = director.getMicroDimensionExtraChunks();
     this.instability = personalPocket ? 0.0f : director.getInstability();
     setDirty();
 

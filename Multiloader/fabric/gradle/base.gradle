@@ -20,4 +20,10 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
     compileOnly project(':common')
+
+    // TOML config library (same as Forge/NeoForge use)
+    implementation "com.electronwill.night-config:core:3.6.7"
+    implementation "com.electronwill.night-config:toml:3.6.7"
+    include "com.electronwill.night-config:core:3.6.7"
+    include "com.electronwill.night-config:toml:3.6.7"
 }

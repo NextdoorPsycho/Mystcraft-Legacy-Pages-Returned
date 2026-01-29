@@ -64,7 +64,10 @@ public class AgeChunkGenerator extends ChunkGenerator {
           Codec.LONG.fieldOf("seed").forGetter(gen -> gen.seed),
           Codec.INT.fieldOf("age_uid").forGetter(gen -> gen.ageUID),
           Codec.STRING.optionalFieldOf("secondary_terrain_type", "none").forGetter(gen -> gen.secondaryTerrainType),
-          Codec.STRING.optionalFieldOf("terrain_mix_mode", "none").forGetter(gen -> gen.terrainMixMode)
+          Codec.STRING.optionalFieldOf("terrain_mix_mode", "none").forGetter(gen -> gen.terrainMixMode),
+          Codec.BOOL.optionalFieldOf("micro_enabled", false).forGetter(gen -> gen.microDimensionsEnabled),
+          Codec.INT.optionalFieldOf("micro_radius_chunks", 0).forGetter(gen -> gen.microDimensionRadiusChunks),
+          Codec.INT.optionalFieldOf("micro_extra_chunks", 1).forGetter(gen -> gen.microDimensionExtraChunks)
       ).apply(instance, AgeChunkGenerator::new)
   );
   private static final int DEBUG_CHUNK_LIMIT = 50;
@@ -77,6 +80,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
   private final boolean hasSea;
   private final long seed;
   private final int ageUID;
+  private final boolean microDimensionsEnabled;
+  private final int microDimensionRadiusChunks;
+  private final int microDimensionExtraChunks;
   // Debug counters for first N chunks
   private final AtomicInteger fillFromNoiseCount = new AtomicInteger(0);
   private final AtomicInteger buildSurfaceCount = new AtomicInteger(0);
@@ -98,7 +104,8 @@ public class AgeChunkGenerator extends ChunkGenerator {
    */
   public AgeChunkGenerator(BiomeSource biomeSource, String terrainType, int groundLevel,
                            int seaLevel, boolean hasSea, long seed, int ageUID,
-                           String secondaryTerrainType, String terrainMixMode) {
+                           String secondaryTerrainType, String terrainMixMode,
+                           boolean microEnabled, int microRadiusChunks, int microExtraChunks) {
     super(biomeSource);
     this.terrainType = terrainType;
     this.secondaryTerrainType = secondaryTerrainType != null ? secondaryTerrainType : "none";
@@ -108,6 +115,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
     this.hasSea = hasSea;
     this.seed = seed;
     this.ageUID = ageUID;
+    this.microDimensionsEnabled = microEnabled;
+    this.microDimensionRadiusChunks = Math.max(0, microRadiusChunks);
+    this.microDimensionExtraChunks = Math.max(0, microExtraChunks);
   }
 
   /**
@@ -124,6 +134,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
     this.hasSea = director.hasSea();
     this.seed = seed;
     this.ageUID = ageUID;
+    this.microDimensionsEnabled = director.isMicroDimensionsEnabled();
+    this.microDimensionRadiusChunks = Math.max(0, director.getMicroDimensionRadiusChunks());
+    this.microDimensionExtraChunks = Math.max(0, director.getMicroDimensionExtraChunks());
   }
 
   /**
@@ -142,6 +155,14 @@ public class AgeChunkGenerator extends ChunkGenerator {
         || "nether".equals(type) || "end".equals(type)
         || "cave".equals(type) || "skylands".equals(type)
         || type == null;
+  }
+
+  private boolean isChunkWithinMicroGenerationBounds(int chunkX, int chunkZ) {
+    if (!microDimensionsEnabled) {
+      return true;
+    }
+    int maxRadius = microDimensionRadiusChunks + microDimensionExtraChunks;
+    return Math.abs(chunkX) <= maxRadius && Math.abs(chunkZ) <= maxRadius;
   }
 
   /**
@@ -425,6 +446,11 @@ public class AgeChunkGenerator extends ChunkGenerator {
   public void applyCarvers(WorldGenRegion level, long seed, RandomState randomState,
                            BiomeManager biomeManager, StructureManager structureManager,
                            ChunkAccess chunk, GenerationStep.Carving step) {
+    int chunkX = chunk.getPos().x;
+    int chunkZ = chunk.getPos().z;
+    if (!isChunkWithinMicroGenerationBounds(chunkX, chunkZ)) {
+      return;
+    }
     ensureVanillaDelegate();
 
     // Use vanillaRandomState (built from real noise settings) when available,
@@ -445,9 +471,12 @@ public class AgeChunkGenerator extends ChunkGenerator {
     if ("personal".equals(terrainType)) {
       return;
     }
-    int count = buildSurfaceCount.incrementAndGet();
     int chunkX = chunk.getPos().x;
     int chunkZ = chunk.getPos().z;
+    if (!isChunkWithinMicroGenerationBounds(chunkX, chunkZ)) {
+      return;
+    }
+    int count = buildSurfaceCount.incrementAndGet();
 
     if (count <= DEBUG_CHUNK_LIMIT) {
       Mystcraft.LOGGER.debug("[ChunkGen] Age {} buildSurface #{}: chunk [{}, {}] on thread: {} | delegate={}",
@@ -582,6 +611,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
     int count = biomeDecorationCount.incrementAndGet();
     int chunkX = chunk.getPos().x;
     int chunkZ = chunk.getPos().z;
+    if (!isChunkWithinMicroGenerationBounds(chunkX, chunkZ)) {
+      return;
+    }
 
     if (count <= DEBUG_CHUNK_LIMIT) {
       Mystcraft.LOGGER.debug("[ChunkGen] Age {} applyBiomeDecoration #{}: chunk [{}, {}] on thread: {}",
@@ -669,6 +701,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
                                                       ChunkAccess chunk) {
     int chunkX = chunk.getPos().x;
     int chunkZ = chunk.getPos().z;
+    if (!isChunkWithinMicroGenerationBounds(chunkX, chunkZ)) {
+      return CompletableFuture.completedFuture(chunk);
+    }
     int count = fillFromNoiseCount.incrementAndGet();
     String threadName = Thread.currentThread().getName();
 
@@ -1023,20 +1058,20 @@ public class AgeChunkGenerator extends ChunkGenerator {
 
   private void generatePersonalTerrain(ChunkAccess chunk, RandomSource random) {
     // Personal pocket: hollow cube structure
-    // Inner void: 48x48x48 (3x3 chunks), centered at (0, 64, 0)
-    // Wood layer: 3 blocks thick with simplex-like pattern
-    // Bedrock layer: 5 blocks thick outer shell
+    // Inner void: configurable size, centered at configurable Y
+    // Inner shell: configurable thickness with simplex-like pattern from configured palette
+    // Outer shell: configurable thickness with configured block
 
     int chunkX = chunk.getPos().x;
     int chunkZ = chunk.getPos().z;
     int chunkMinX = chunkX << 4;
     int chunkMinZ = chunkZ << 4;
 
-    // Cube parameters from PersonalPocketDimension
-    int innerHalf = art.arcane.mystcraft.world.PersonalPocketDimension.INNER_HALF_SIZE; // 24
-    int woodThick = art.arcane.mystcraft.world.PersonalPocketDimension.WOOD_THICKNESS;   // 3
-    int totalHalf = art.arcane.mystcraft.world.PersonalPocketDimension.TOTAL_HALF_SIZE;  // 32
-    int centerY = art.arcane.mystcraft.world.PersonalPocketDimension.CENTER_Y;           // 64
+    // Cube parameters from PersonalPocketDimension config
+    int innerHalf = art.arcane.mystcraft.world.PersonalPocketDimension.getInnerHalfSize();
+    int innerThick = art.arcane.mystcraft.world.PersonalPocketDimension.getInnerThickness();
+    int totalHalf = art.arcane.mystcraft.world.PersonalPocketDimension.getTotalHalfSize();
+    int centerY = art.arcane.mystcraft.world.PersonalPocketDimension.getCenterY();
 
     // Cube boundaries in world coordinates
     int cubeMinX = -totalHalf;
@@ -1053,19 +1088,11 @@ public class AgeChunkGenerator extends ChunkGenerator {
     }
 
     BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-    BlockState bedrock = Blocks.BEDROCK.defaultBlockState();
+    BlockState outerBlock = art.arcane.mystcraft.world.PersonalPocketDimension.getOuterBlock();
 
-    // Wood types for simplex-like pattern
-    BlockState[] woodTypes = new BlockState[] {
-        Blocks.OAK_PLANKS.defaultBlockState(),
-        Blocks.SPRUCE_PLANKS.defaultBlockState(),
-        Blocks.BIRCH_PLANKS.defaultBlockState(),
-        Blocks.JUNGLE_PLANKS.defaultBlockState(),
-        Blocks.ACACIA_PLANKS.defaultBlockState(),
-        Blocks.DARK_OAK_PLANKS.defaultBlockState(),
-        Blocks.MANGROVE_PLANKS.defaultBlockState(),
-        Blocks.CHERRY_PLANKS.defaultBlockState()
-    };
+    // Inner block palette for simplex-like pattern
+    java.util.List<BlockState> innerPalette = art.arcane.mystcraft.world.PersonalPocketDimension.getInnerBlockPalette();
+    BlockState[] innerBlocks = innerPalette.toArray(new BlockState[0]);
 
     for (int localX = 0; localX < 16; localX++) {
       int worldX = chunkMinX + localX;
@@ -1087,15 +1114,15 @@ public class AgeChunkGenerator extends ChunkGenerator {
           if (maxDist < innerHalf) {
             // Inside inner void - leave as air
             continue;
-          } else if (maxDist < innerHalf + woodThick) {
-            // Wood layer - use simplex-like pattern for variety
-            BlockState wood = getSimplexWood(worldX, worldY, worldZ, woodTypes);
+          } else if (maxDist < innerHalf + innerThick) {
+            // Inner shell layer - use simplex-like pattern for variety
+            BlockState innerBlock = getSimplexInnerBlock(worldX, worldY, worldZ, innerBlocks);
             pos.set(localX, worldY, localZ);
-            chunk.setBlockState(pos, wood, false);
+            chunk.setBlockState(pos, innerBlock, false);
           } else {
-            // Bedrock layer
+            // Outer shell layer
             pos.set(localX, worldY, localZ);
-            chunk.setBlockState(pos, bedrock, false);
+            chunk.setBlockState(pos, outerBlock, false);
           }
         }
       }
@@ -1103,17 +1130,20 @@ public class AgeChunkGenerator extends ChunkGenerator {
   }
 
   /**
-   * Returns a wood block type based on simplex-like noise pattern.
-   * Creates organic-looking variation in the wood shell.
+   * Returns an inner block type based on simplex-like noise pattern.
+   * Creates organic-looking variation in the inner shell.
    */
-  private BlockState getSimplexWood(int x, int y, int z, BlockState[] woodTypes) {
-    // Simple hash-based noise for wood type variation
-    // Creates patches of similar wood types
+  private BlockState getSimplexInnerBlock(int x, int y, int z, BlockState[] innerBlocks) {
+    if (innerBlocks.length == 1) {
+      return innerBlocks[0];
+    }
+    // Simple hash-based noise for block type variation
+    // Creates patches of similar block types
     double scale = 0.15;
     long hash = (long) (x * scale) * 73856093L ^ (long) (y * scale) * 19349663L ^ (long) (z * scale) * 83492791L ^ seed;
     hash = hash * 6364136223846793005L + 1442695040888963407L;
-    int index = (int) ((hash & 0x7FFFFFFFL) % woodTypes.length);
-    return woodTypes[index];
+    int index = (int) ((hash & 0x7FFFFFFFL) % innerBlocks.length);
+    return innerBlocks[index];
   }
 
   private void generateFlatTerrain(ChunkAccess chunk, RandomSource random) {
@@ -1494,6 +1524,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
     ensureVanillaDelegate();
     int chunkX = x >> 4;
     int chunkZ = z >> 4;
+    if (!isChunkWithinMicroGenerationBounds(chunkX, chunkZ)) {
+      return level.getMinBuildHeight();
+    }
     NoiseBasedChunkGenerator heightDelegate = getDelegateForChunk(chunkX, chunkZ);
     RandomState heightRandomState = getRandomStateForChunk(chunkX, chunkZ);
     if (heightDelegate != null) {
@@ -1510,6 +1543,16 @@ public class AgeChunkGenerator extends ChunkGenerator {
   @Override
   public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor level, RandomState randomState) {
     ensureVanillaDelegate();
+    int chunkX = x >> 4;
+    int chunkZ = z >> 4;
+    if (!isChunkWithinMicroGenerationBounds(chunkX, chunkZ)) {
+      BlockState[] states = new BlockState[level.getHeight()];
+      BlockState air = Blocks.AIR.defaultBlockState();
+      for (int i = 0; i < states.length; i++) {
+        states[i] = air;
+      }
+      return new NoiseColumn(level.getMinBuildHeight(), states);
+    }
     if (vanillaDelegate != null) {
       return vanillaDelegate.getBaseColumn(x, z, level, vanillaRandomState);
     }

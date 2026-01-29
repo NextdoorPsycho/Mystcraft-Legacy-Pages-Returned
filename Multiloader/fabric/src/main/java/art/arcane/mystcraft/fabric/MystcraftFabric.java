@@ -187,6 +187,9 @@ public class MystcraftFabric implements ModInitializer {
         art.arcane.mystcraft.config.MystcraftConfig.deleteAgesOnStartup = () -> FabricMystcraftConfig.deleteAgesOnStartup.get();
         art.arcane.mystcraft.config.MystcraftConfig.enablePersonalLinkBooks = () -> FabricMystcraftConfig.enablePersonalLinkBooks.get();
         art.arcane.mystcraft.config.MystcraftConfig.allowGravityBlocksInAges = () -> FabricMystcraftConfig.allowGravityBlocksInAges.get();
+        art.arcane.mystcraft.config.MystcraftConfig.microDimensionsEnabled = () -> FabricMystcraftConfig.microDimensionsEnabled.get();
+        art.arcane.mystcraft.config.MystcraftConfig.microDimensionRadiusChunks = () -> FabricMystcraftConfig.microDimensionRadiusChunks.get();
+        art.arcane.mystcraft.config.MystcraftConfig.microDimensionExtraChunks = () -> FabricMystcraftConfig.microDimensionExtraChunks.get();
         art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols = () -> FabricMystcraftConfig.disabledSymbols.get();
         art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = () -> FabricMystcraftConfig.instabilityEnabled.get();
         art.arcane.mystcraft.config.MystcraftConfig.deathEffectsEnabled = () -> FabricMystcraftConfig.deathEffectsEnabled.get();
@@ -204,6 +207,12 @@ public class MystcraftFabric implements ModInitializer {
         art.arcane.mystcraft.config.MystcraftConfig.chanceLightning = () -> FabricMystcraftConfig.chanceLightning.get();
         art.arcane.mystcraft.config.MystcraftConfig.chanceMeteor = () -> FabricMystcraftConfig.chanceMeteor.get();
         art.arcane.mystcraft.config.MystcraftConfig.chancePlayerEffect = () -> FabricMystcraftConfig.chancePlayerEffect.get();
+        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerHalfSize = () -> FabricMystcraftConfig.pocketInnerHalfSize.get();
+        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerThickness = () -> FabricMystcraftConfig.pocketInnerThickness.get();
+        art.arcane.mystcraft.config.MystcraftConfig.pocketOuterThickness = () -> FabricMystcraftConfig.pocketOuterThickness.get();
+        art.arcane.mystcraft.config.MystcraftConfig.pocketCenterY = () -> FabricMystcraftConfig.pocketCenterY.get();
+        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerBlockPalette = () -> FabricMystcraftConfig.pocketInnerBlockPalette.get();
+        art.arcane.mystcraft.config.MystcraftConfig.pocketOuterBlock = () -> FabricMystcraftConfig.pocketOuterBlock.get();
 
         // Network
         art.arcane.mystcraft.network.MystcraftNetwork.sendToServerHandler = packet -> {

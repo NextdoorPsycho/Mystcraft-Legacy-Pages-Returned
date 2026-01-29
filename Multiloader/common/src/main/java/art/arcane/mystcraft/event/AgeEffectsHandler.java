@@ -5,6 +5,7 @@ import art.arcane.mystcraft.api.world.logic.IWeatherController;
 import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.instability.InstabilityController;
+import art.arcane.mystcraft.registry.ModSounds;
 import art.arcane.mystcraft.registry.ModEntities;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
@@ -69,6 +70,7 @@ public class AgeEffectsHandler {
     // Handle time scaling (accelerated, slow, static, etc.)
     handleTimescale(level, ageData);
 
+    handleMicroDimensions(level, ageData);
     handlePersonalPocket(level);
   }
 
@@ -301,6 +303,43 @@ public class AgeEffectsHandler {
     for (ServerPlayer player : new java.util.ArrayList<>(level.players())) {
       PersonalPocketEscapeHandler.checkBoundaries(player);
     }
+  }
+
+  /**
+   * Keeps micro-dimension borders synced to players.
+   */
+  private static void handleMicroDimensions(ServerLevel level, AgeData ageData) {
+    if (ageData.isPersonalPocket() || !ageData.isMicroDimensionsEnabled()) {
+      return;
+    }
+    if (level.getGameTime() % 40 == 0 && !level.players().isEmpty()) {
+      AgeDimensionFactory.applyMicroDimensionBorder(level, ageData);
+    }
+    if (level.players().isEmpty()) {
+      return;
+    }
+    var border = level.getWorldBorder();
+    for (ServerPlayer player : new java.util.ArrayList<>(level.players())) {
+      if (!border.isWithinBounds(player.blockPosition())) {
+        teleportToSpawn(player, level);
+      }
+    }
+  }
+
+  private static void teleportToSpawn(ServerPlayer player, ServerLevel level) {
+    BlockPos spawn = AgeDimensionFactory.getAgeSpawn(level);
+    player.setDeltaMovement(0.0, 0.0, 0.0);
+    player.fallDistance = 0.0f;
+    player.teleportTo(
+        level,
+        spawn.getX() + 0.5,
+        spawn.getY(),
+        spawn.getZ() + 0.5,
+        player.getYRot(),
+        player.getXRot()
+    );
+    level.playSound(null, spawn, ModSounds.LINKING_LINK.get(),
+        net.minecraft.sounds.SoundSource.PLAYERS, 0.5f, 1.2f);
   }
 
   /**

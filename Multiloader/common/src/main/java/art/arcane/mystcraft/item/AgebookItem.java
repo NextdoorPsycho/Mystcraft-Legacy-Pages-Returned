@@ -9,6 +9,7 @@ import art.arcane.mystcraft.event.AgeDataSyncHandler;
 import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
@@ -199,6 +200,13 @@ public class AgebookItem extends Item {
     // Build the Age using the grammar system
     AgeBuilder builder = new AgeBuilder(symbols, seed);
     AgeDirectorImpl director = builder.build();
+    if (MystcraftConfig.microDimensionsEnabled.get() && !director.isPersonalPocket()) {
+      director.setMicroDimensions(
+          true,
+          MystcraftConfig.microDimensionRadiusChunks.get(),
+          MystcraftConfig.microDimensionExtraChunks.get()
+      );
+    }
 
     // Allocate a new age UID
     AgeManager ageManager = AgeManager.get(level);
@@ -243,6 +251,7 @@ public class AgebookItem extends Item {
     // and use the heightmap to find the real surface.
     BlockPos spawn = findAgeSpawnPosition(ageLevel);
     ageData.setSpawn(spawn.getX(), spawn.getY(), spawn.getZ());
+    AgeDimensionFactory.applyMicroDimensionBorder(ageLevel, ageData);
 
     // Update the book with the Age's dimension ID and spawn
     LinkOptions.setDimensionUID(stack.getTag(), ageUID);

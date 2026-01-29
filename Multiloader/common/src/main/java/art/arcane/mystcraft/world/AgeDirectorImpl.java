@@ -141,6 +141,10 @@ public class AgeDirectorImpl implements AgeDirector {
   // World heights
   private float cloudHeight = 192.0f;
   private float horizonHeight = 0.0f;
+  // Micro dimension settings (applied to newly created Ages only)
+  private boolean microDimensionsEnabled = false;
+  private int microDimensionRadiusChunks = 0;
+  private int microDimensionExtraChunks = 1;
   // Registered logic interfaces (for full world generation pipeline)
   private ITerrainGenerator terrainGenerator;
   private IBiomeController biomeControllerImpl;
@@ -781,6 +785,24 @@ public class AgeDirectorImpl implements AgeDirector {
   @Override
   public float getHorizonHeight() {
     return horizonHeight;
+  }
+
+  public boolean isMicroDimensionsEnabled() {
+    return microDimensionsEnabled;
+  }
+
+  public int getMicroDimensionRadiusChunks() {
+    return microDimensionRadiusChunks;
+  }
+
+  public int getMicroDimensionExtraChunks() {
+    return microDimensionExtraChunks;
+  }
+
+  public void setMicroDimensions(boolean enabled, int radiusChunks, int extraChunks) {
+    this.microDimensionsEnabled = enabled;
+    this.microDimensionRadiusChunks = Math.max(0, radiusChunks);
+    this.microDimensionExtraChunks = Math.max(0, extraChunks);
   }
 
   @Override

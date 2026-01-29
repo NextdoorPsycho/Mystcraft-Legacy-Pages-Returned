@@ -27,7 +27,19 @@ public class ForgeMystcraftConfig {
     public static final ForgeConfigSpec.BooleanValue deleteAgesOnStartup;
     public static final ForgeConfigSpec.BooleanValue enablePersonalLinkBooks;
     public static final ForgeConfigSpec.BooleanValue allowGravityBlocksInAges;
+    public static final ForgeConfigSpec.BooleanValue microDimensionsEnabled;
+    public static final ForgeConfigSpec.IntValue microDimensionRadiusChunks;
+    public static final ForgeConfigSpec.IntValue microDimensionExtraChunks;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> disabledSymbols;
+
+    // Personal pocket dimension settings
+    public static final ForgeConfigSpec.IntValue pocketInnerHalfSize;
+    public static final ForgeConfigSpec.IntValue pocketInnerThickness;
+    public static final ForgeConfigSpec.IntValue pocketOuterThickness;
+    public static final ForgeConfigSpec.IntValue pocketCenterY;
+    public static final ForgeConfigSpec.ConfigValue<List<? extends String>> pocketInnerBlockPalette;
+    public static final ForgeConfigSpec.ConfigValue<String> pocketOuterBlock;
+
     // Instability settings
     public static final ForgeConfigSpec.BooleanValue instabilityEnabled;
     public static final ForgeConfigSpec.BooleanValue deathEffectsEnabled;
@@ -81,6 +93,27 @@ public class ForgeMystcraftConfig {
                 .comment("If true, gravity blocks (sand, gravel, anvils, concrete powder) can fall in Mystcraft Ages.")
                 .define("allowGravityBlocksInAges", false);
 
+        microDimensionsEnabled = COMMON_BUILDER
+                .comment(
+                        "If true, newly created Ages are limited to a small chunk radius around the spawn chunk.",
+                        "Uses a world border as a hard cutoff and prevents chunk generation past the limit."
+                )
+                .define("microDimensionsEnabled", false);
+
+        microDimensionRadiusChunks = COMMON_BUILDER
+                .comment(
+                        "Radius in chunks from the spawn chunk center for micro dimensions.",
+                        "0 = single chunk. Border aligns to chunk edges."
+                )
+                .defineInRange("microDimensionRadiusChunks", 0, 0, 2048);
+
+        microDimensionExtraChunks = COMMON_BUILDER
+                .comment(
+                        "Additional chunk rings generated beyond the border for visual continuity.",
+                        "Default 1 generates one extra ring outside the border."
+                )
+                .defineInRange("microDimensionExtraChunks", 1, 0, 16);
+
         disabledSymbols = COMMON_BUILDER
                 .comment(
                         "List of symbol IDs to disable, e.g. [\"mystcraft:example_symbol_a\", \"mystcraft:example_symbol_b\"].",
@@ -104,6 +137,70 @@ public class ForgeMystcraftConfig {
                         // Ancient debris
                         "mystcraft:block_minecraft_ancient_debris"
                 ), ForgeMystcraftConfig::isValidSymbolId);
+
+        COMMON_BUILDER.pop();
+
+        // --- Personal Pocket Dimension ---
+        COMMON_BUILDER.comment(
+                "Personal Pocket Dimension Settings",
+                "Configure the size and materials of personal pocket dimensions.",
+                "The pocket is a hollow cube: inner void surrounded by inner shell then outer shell.",
+                "Total size must fit within Minecraft's build limits (-64 to 320)."
+        ).push("personal_pocket");
+
+        pocketInnerHalfSize = COMMON_BUILDER
+                .comment(
+                        "Half the inner void space in blocks.",
+                        "Default: 24 (48 block diameter, 3 chunks).",
+                        "Max: 128 (256 block diameter)."
+                )
+                .defineInRange("innerHalfSize", 24, 8, 128);
+
+        pocketInnerThickness = COMMON_BUILDER
+                .comment(
+                        "Thickness of the inner shell surrounding the void.",
+                        "Default: 3 blocks."
+                )
+                .defineInRange("innerThickness", 3, 1, 32);
+
+        pocketOuterThickness = COMMON_BUILDER
+                .comment(
+                        "Thickness of the outer shell surrounding the inner layer.",
+                        "Default: 5 blocks."
+                )
+                .defineInRange("outerThickness", 5, 1, 32);
+
+        pocketCenterY = COMMON_BUILDER
+                .comment(
+                        "Y coordinate of the pocket center.",
+                        "Default: 64.",
+                        "Must allow room for the pocket above and below within build limits."
+                )
+                .defineInRange("centerY", 64, -64, 320);
+
+        pocketInnerBlockPalette = COMMON_BUILDER
+                .comment(
+                        "List of block IDs for the inner shell layer.",
+                        "Multiple blocks will be randomly selected during generation using a simplex-like pattern.",
+                        "Default includes all wood plank types for a cozy varied appearance."
+                )
+                .defineListAllowEmpty("innerBlockPalette", List.of(
+                        "minecraft:oak_planks",
+                        "minecraft:spruce_planks",
+                        "minecraft:birch_planks",
+                        "minecraft:jungle_planks",
+                        "minecraft:acacia_planks",
+                        "minecraft:dark_oak_planks",
+                        "minecraft:mangrove_planks",
+                        "minecraft:cherry_planks"
+                ), ForgeMystcraftConfig::isValidBlockId);
+
+        pocketOuterBlock = COMMON_BUILDER
+                .comment(
+                        "Block ID for the outer shell.",
+                        "Default: minecraft:bedrock"
+                )
+                .define("outerBlock", "minecraft:bedrock");
 
         COMMON_BUILDER.pop();
 
@@ -225,6 +322,13 @@ public class ForgeMystcraftConfig {
     }
 
     private static boolean isValidSymbolId(Object value) {
+        if (!(value instanceof String string)) {
+            return false;
+        }
+        return ResourceLocation.isValidResourceLocation(string);
+    }
+
+    private static boolean isValidBlockId(Object value) {
         if (!(value instanceof String string)) {
             return false;
         }

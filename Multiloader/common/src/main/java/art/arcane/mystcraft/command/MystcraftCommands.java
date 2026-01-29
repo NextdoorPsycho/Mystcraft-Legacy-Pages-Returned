@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.command;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
@@ -1599,6 +1600,13 @@ public class MystcraftCommands {
         long seed = System.currentTimeMillis() ^ player.blockPosition().asLong();
         AgeBuilder builder = new AgeBuilder(symbols, seed);
         AgeDirectorImpl director = builder.build();
+        if (MystcraftConfig.microDimensionsEnabled.get() && !director.isPersonalPocket()) {
+            director.setMicroDimensions(
+                    true,
+                    MystcraftConfig.microDimensionRadiusChunks.get(),
+                    MystcraftConfig.microDimensionExtraChunks.get()
+            );
+        }
 
         AgeManager ageManager = AgeManager.get(source.getServer());
         int ageUID = ageManager.allocateUID();
@@ -1625,6 +1633,7 @@ public class MystcraftCommands {
 
         BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
         ageData.setSpawn(spawn.getX(), spawn.getY(), spawn.getZ());
+        AgeDimensionFactory.applyMicroDimensionBorder(ageLevel, ageData);
 
         source.sendSuccess(() -> Component.literal("Created age " + ageUID + " (" + ageName + ")"), true);
 

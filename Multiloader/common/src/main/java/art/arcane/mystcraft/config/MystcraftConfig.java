@@ -16,6 +16,9 @@ public final class MystcraftConfig {
   public static Supplier<Boolean> deleteAgesOnStartup = () -> false;
   public static Supplier<Boolean> enablePersonalLinkBooks = () -> true;
   public static Supplier<Boolean> allowGravityBlocksInAges = () -> false;
+  public static Supplier<Boolean> microDimensionsEnabled = () -> false;
+  public static Supplier<Integer> microDimensionRadiusChunks = () -> 0;
+  public static Supplier<Integer> microDimensionExtraChunks = () -> 1;
   // Ore block terrain symbols are disabled by default as they are overpowered
   public static Supplier<List<String>> disabledSymbols = () -> List.of(
       // Ore storage blocks
@@ -34,6 +37,23 @@ public final class MystcraftConfig {
       // Ancient debris
       "mystcraft:block_minecraft_ancient_debris"
   );
+
+  // Personal Pocket Dimension
+  public static Supplier<Integer> pocketInnerHalfSize = () -> 24;
+  public static Supplier<Integer> pocketInnerThickness = () -> 3;
+  public static Supplier<Integer> pocketOuterThickness = () -> 5;
+  public static Supplier<Integer> pocketCenterY = () -> 64;
+  public static Supplier<List<String>> pocketInnerBlockPalette = () -> List.of(
+      "minecraft:oak_planks",
+      "minecraft:spruce_planks",
+      "minecraft:birch_planks",
+      "minecraft:jungle_planks",
+      "minecraft:acacia_planks",
+      "minecraft:dark_oak_planks",
+      "minecraft:mangrove_planks",
+      "minecraft:cherry_planks"
+  );
+  public static Supplier<String> pocketOuterBlock = () -> "minecraft:bedrock";
 
   // Instability
   public static Supplier<Boolean> instabilityEnabled = () -> true;

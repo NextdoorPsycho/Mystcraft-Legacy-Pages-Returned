@@ -172,6 +172,9 @@ public class MystcraftNeoForge {
         art.arcane.mystcraft.config.MystcraftConfig.giveGuidebookOnFirstSpawn = NeoForgeMystcraftConfig.giveGuidebookOnFirstSpawn::get;
         art.arcane.mystcraft.config.MystcraftConfig.maxSymbolsPerBook = NeoForgeMystcraftConfig.maxSymbolsPerBook::get;
         art.arcane.mystcraft.config.MystcraftConfig.deleteAgesOnStartup = NeoForgeMystcraftConfig.deleteAgesOnStartup::get;
+        art.arcane.mystcraft.config.MystcraftConfig.microDimensionsEnabled = NeoForgeMystcraftConfig.microDimensionsEnabled::get;
+        art.arcane.mystcraft.config.MystcraftConfig.microDimensionRadiusChunks = NeoForgeMystcraftConfig.microDimensionRadiusChunks::get;
+        art.arcane.mystcraft.config.MystcraftConfig.microDimensionExtraChunks = NeoForgeMystcraftConfig.microDimensionExtraChunks::get;
         art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols = () -> List.copyOf(NeoForgeMystcraftConfig.disabledSymbols.get());
         art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = NeoForgeMystcraftConfig.instabilityEnabled::get;
         art.arcane.mystcraft.config.MystcraftConfig.deathEffectsEnabled = NeoForgeMystcraftConfig.deathEffectsEnabled::get;
@@ -189,6 +192,12 @@ public class MystcraftNeoForge {
         art.arcane.mystcraft.config.MystcraftConfig.chanceLightning = NeoForgeMystcraftConfig.chanceLightning::get;
         art.arcane.mystcraft.config.MystcraftConfig.chanceMeteor = NeoForgeMystcraftConfig.chanceMeteor::get;
         art.arcane.mystcraft.config.MystcraftConfig.chancePlayerEffect = NeoForgeMystcraftConfig.chancePlayerEffect::get;
+        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerHalfSize = NeoForgeMystcraftConfig.pocketInnerHalfSize::get;
+        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerThickness = NeoForgeMystcraftConfig.pocketInnerThickness::get;
+        art.arcane.mystcraft.config.MystcraftConfig.pocketOuterThickness = NeoForgeMystcraftConfig.pocketOuterThickness::get;
+        art.arcane.mystcraft.config.MystcraftConfig.pocketCenterY = NeoForgeMystcraftConfig.pocketCenterY::get;
+        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerBlockPalette = () -> List.copyOf(NeoForgeMystcraftConfig.pocketInnerBlockPalette.get());
+        art.arcane.mystcraft.config.MystcraftConfig.pocketOuterBlock = NeoForgeMystcraftConfig.pocketOuterBlock::get;
 
         // Network
         art.arcane.mystcraft.network.MystcraftNetwork.sendToServerHandler = NeoForgeMystcraftNetwork::sendToServer;

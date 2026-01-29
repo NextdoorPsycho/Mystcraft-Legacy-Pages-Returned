@@ -21,6 +21,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.border.BorderChangeListener;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
@@ -288,6 +289,7 @@ public class AgeDimensionFactory {
       var newBorder = newLevel.getWorldBorder();
 
       boolean isPersonalPocket = director != null && director.isPersonalPocket();
+      boolean isMicroDimension = director != null && director.isMicroDimensionsEnabled();
       if (isPersonalPocket) {
         // Personal pockets have a fixed small border centered at origin
         newBorder.setCenter(0.0, 0.0);
@@ -297,6 +299,15 @@ public class AgeDimensionFactory {
         newBorder.setWarningBlocks(15);
         newBorder.setWarningTime(15);
         // Do NOT add border listener - personal pocket border is independent
+      } else if (isMicroDimension) {
+        int radiusChunks = Math.max(0, director.getMicroDimensionRadiusChunks());
+        int borderSizeBlocks = (radiusChunks * 2 + 1) * 16;
+        newBorder.setCenter(8.0, 8.0);
+        newBorder.setSize(borderSizeBlocks);
+        newBorder.setDamagePerBlock(0.0);
+        newBorder.setDamageSafeZone(0.0);
+        newBorder.setWarningBlocks(0);
+        newBorder.setWarningTime(0);
       } else {
         // Regular Ages sync border from overworld
         newBorder.setCenter(overworldBorder.getCenterX(), overworldBorder.getCenterZ());
@@ -335,6 +346,7 @@ public class AgeDimensionFactory {
       AgeData ageData = AgeData.get(newLevel);
       ageData.setAgeUID(ageUID);
       ageData.setAgeUUID(ageUUID);
+      applyMicroDimensionBorder(newLevel, ageData);
 
       return newLevel;
 
@@ -668,6 +680,38 @@ public class AgeDimensionFactory {
 
     // Last resort: return world spawn
     return worldSpawn;
+  }
+
+  /**
+   * Applies a fixed micro-dimension world border for new Ages (if enabled in AgeData).
+   * Uses the spawn chunk center as the border center and aligns to chunk edges.
+   */
+  public static void applyMicroDimensionBorder(@NotNull ServerLevel level, @NotNull AgeData ageData) {
+    if (ageData.isPersonalPocket() || !ageData.isMicroDimensionsEnabled()) {
+      return;
+    }
+
+    int radiusChunks = Math.max(0, ageData.getMicroDimensionRadiusChunks());
+    int borderSizeBlocks = (radiusChunks * 2 + 1) * 16;
+
+    int spawnX = ageData.isSpawnSet() ? ageData.getSpawnX() : 8;
+    int spawnZ = ageData.isSpawnSet() ? ageData.getSpawnZ() : 8;
+    int centerChunkX = Math.floorDiv(spawnX, 16);
+    int centerChunkZ = Math.floorDiv(spawnZ, 16);
+    double centerX = centerChunkX * 16 + 8;
+    double centerZ = centerChunkZ * 16 + 8;
+
+    WorldBorder border = level.getWorldBorder();
+    border.setCenter(centerX, centerZ);
+    border.setSize(borderSizeBlocks);
+    border.setDamagePerBlock(0.0);
+    border.setDamageSafeZone(0.0);
+    border.setWarningBlocks(0);
+    border.setWarningTime(0);
+
+    if (!level.players().isEmpty()) {
+      PersonalPocketDimension.syncBorderToPlayers(level, border);
+    }
   }
 
   /**

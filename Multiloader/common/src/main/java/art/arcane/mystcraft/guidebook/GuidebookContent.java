@@ -1069,7 +1069,10 @@ public class GuidebookContent {
             "Config file: mystcraft-common.toml\n\n" +
                 "giveGuidebookOnFirstSpawn: true\n" +
                 "maxSymbolsPerBook: 50 (-1 = unlimited)\n" +
-                "deleteAgesOnStartup: false (dev only)")
+                "deleteAgesOnStartup: false (dev only)\n" +
+                "microDimensionsEnabled: false\n" +
+                "microDimensionRadiusChunks: 0\n" +
+                "microDimensionExtraChunks: 1")
         .addPage("Instability Settings",
             "instabilityEnabled: true (master switch)\n" +
                 "deathEffectsEnabled: true\n" +

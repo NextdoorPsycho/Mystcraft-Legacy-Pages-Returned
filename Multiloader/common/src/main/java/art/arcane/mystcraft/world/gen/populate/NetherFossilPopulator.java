@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
@@ -15,13 +16,19 @@ import net.minecraft.world.level.block.state.BlockState;
 public class NetherFossilPopulator implements IPopulate {
 
     private final long seed;
+    private final int rarity;
 
-    private static final int RARITY = 16;
+    private static final int DEFAULT_RARITY = 16;
 
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     public NetherFossilPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public NetherFossilPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.rarity = PopulatorConfig.rarityFrom(params, DEFAULT_RARITY);
     }
 
     @Override
@@ -33,7 +40,7 @@ public class NetherFossilPopulator implements IPopulate {
         chunkMinZ = chunkZ << 4;
         chunkMaxZ = chunkMinZ + 15;
 
-        if ((chunkX * 47L + chunkZ * 13L + seed) % RARITY != 0) {
+        if ((chunkX * 47L + chunkZ * 13L + seed) % rarity != 0) {
             return;
         }
 

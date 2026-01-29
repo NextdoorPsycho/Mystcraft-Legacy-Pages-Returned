@@ -173,7 +173,7 @@ public class MystcraftNeoForge {
         art.arcane.mystcraft.config.MystcraftConfig.giveGuidebookOnFirstSpawn = NeoForgeMystcraftConfig.giveGuidebookOnFirstSpawn::get;
         art.arcane.mystcraft.config.MystcraftConfig.maxSymbolsPerBook = NeoForgeMystcraftConfig.maxSymbolsPerBook::get;
         art.arcane.mystcraft.config.MystcraftConfig.deleteAgesOnStartup = NeoForgeMystcraftConfig.deleteAgesOnStartup::get;
-        art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols = NeoForgeMystcraftConfig.disabledSymbols::get;
+        art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols = () -> List.copyOf(NeoForgeMystcraftConfig.disabledSymbols.get());
         art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = NeoForgeMystcraftConfig.instabilityEnabled::get;
         art.arcane.mystcraft.config.MystcraftConfig.deathEffectsEnabled = NeoForgeMystcraftConfig.deathEffectsEnabled::get;
         art.arcane.mystcraft.config.MystcraftConfig.allowUnstableAges = NeoForgeMystcraftConfig.allowUnstableAges::get;

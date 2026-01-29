@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BlockTags;
@@ -20,19 +21,44 @@ import java.util.Random;
 public class VerticalTendrilsPopulator implements IPopulate {
 
     private final long seed;
+    private final int tendrilsPerChunk;
+    private final int minLength;
+    private final int maxLength;
+    private final float ceilingChance;
+    private final float spawnChance;
+    private final int neighborRange;
+    private final int minThickness;
+    private final int maxThickness;
+    private final double wobbleRange;
 
-    private static final int TENDRILS_PER_CHUNK = 1;
-    private static final int MIN_LENGTH = 25;
-    private static final int MAX_LENGTH = 80;
-    private static final float CEILING_CHANCE = 0.25f;
+    private static final int DEFAULT_TENDRILS_PER_CHUNK = 1;
+    private static final int DEFAULT_MIN_LENGTH = 25;
+    private static final int DEFAULT_MAX_LENGTH = 80;
+    private static final float DEFAULT_CEILING_CHANCE = 0.25f;
     // ~8% of chunks spawn a creepy pillar
-    private static final float SPAWN_CHANCE = 0.08f;
+    private static final float DEFAULT_SPAWN_CHANCE = 0.08f;
 
     // Vertical tendrils wobble slightly but can be thick, check nearby chunks
-    private static final int NEIGHBOR_RANGE = 2;
+    private static final int DEFAULT_NEIGHBOR_RANGE = 2;
+    private static final int DEFAULT_MIN_THICKNESS = 2;
+    private static final int DEFAULT_MAX_THICKNESS = 6;
+    private static final double DEFAULT_WOBBLE_RANGE = 0.25;
 
     public VerticalTendrilsPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public VerticalTendrilsPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.tendrilsPerChunk = PopulatorConfig.getInt(params, "count", DEFAULT_TENDRILS_PER_CHUNK);
+        this.minLength = Math.max(5, PopulatorConfig.getInt(params, "min_length", DEFAULT_MIN_LENGTH));
+        this.maxLength = Math.max(this.minLength, PopulatorConfig.getInt(params, "max_length", DEFAULT_MAX_LENGTH));
+        this.ceilingChance = PopulatorConfig.getFloat(params, "ceiling_chance", DEFAULT_CEILING_CHANCE);
+        this.spawnChance = PopulatorConfig.chanceFrom(params, DEFAULT_SPAWN_CHANCE, 0);
+        this.neighborRange = Math.max(1, PopulatorConfig.getInt(params, "neighbor_range", DEFAULT_NEIGHBOR_RANGE));
+        this.minThickness = Math.max(1, PopulatorConfig.getInt(params, "min_thickness", DEFAULT_MIN_THICKNESS));
+        this.maxThickness = Math.max(this.minThickness, PopulatorConfig.getInt(params, "max_thickness", DEFAULT_MAX_THICKNESS));
+        this.wobbleRange = PopulatorConfig.getDouble(params, "wobble_range", DEFAULT_WOBBLE_RANGE);
     }
 
     @Override
@@ -45,32 +71,32 @@ public class VerticalTendrilsPopulator implements IPopulate {
         int chunkMinZ = thisChunkZ << 4;
         int chunkMaxZ = chunkMinZ + 15;
 
-        for (int ncx = thisChunkX - NEIGHBOR_RANGE; ncx <= thisChunkX + NEIGHBOR_RANGE; ncx++) {
-            for (int ncz = thisChunkZ - NEIGHBOR_RANGE; ncz <= thisChunkZ + NEIGHBOR_RANGE; ncz++) {
+        for (int ncx = thisChunkX - neighborRange; ncx <= thisChunkX + neighborRange; ncx++) {
+            for (int ncz = thisChunkZ - neighborRange; ncz <= thisChunkZ + neighborRange; ncz++) {
                 long chunkSeed = getChunkSeed(ncx, ncz);
                 Random chunkRand = new Random(chunkSeed);
 
                 int neighborMinX = ncx << 4;
                 int neighborMinZ = ncz << 4;
 
-                for (int i = 0; i < TENDRILS_PER_CHUNK; i++) {
+                for (int i = 0; i < tendrilsPerChunk; i++) {
                     // Deterministic spawn chance - skip most chunks
-                    if (chunkRand.nextFloat() >= SPAWN_CHANCE) {
+                    if (chunkRand.nextFloat() >= spawnChance) {
                         continue;
                     }
 
                     int startX = neighborMinX + chunkRand.nextInt(16);
                     int startZ = neighborMinZ + chunkRand.nextInt(16);
-                    boolean fromCeiling = chunkRand.nextFloat() < CEILING_CHANCE;
+                    boolean fromCeiling = chunkRand.nextFloat() < ceilingChance;
 
                     BlockState tendrilBlock = getTendrilMaterial(chunkRand);
                     BlockState decorationBlock = getDecorationBlock(tendrilBlock, chunkRand);
-                    int length = MIN_LENGTH + chunkRand.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
-                    int baseThickness = 2 + chunkRand.nextInt(5);
+                    int length = minLength + chunkRand.nextInt(maxLength - minLength + 1);
+                    int baseThickness = minThickness + chunkRand.nextInt(maxThickness - minThickness + 1);
 
                     // Slight wobble parameters
-                    double wobbleX = (chunkRand.nextDouble() - 0.5) * 0.25;
-                    double wobbleZ = (chunkRand.nextDouble() - 0.5) * 0.25;
+                    double wobbleX = (chunkRand.nextDouble() - 0.5) * wobbleRange;
+                    double wobbleZ = (chunkRand.nextDouble() - 0.5) * wobbleRange;
                     long pathSeed = chunkRand.nextLong();
                     long decorSeed = chunkRand.nextLong();
 

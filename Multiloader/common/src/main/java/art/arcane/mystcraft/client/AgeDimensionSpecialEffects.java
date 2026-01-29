@@ -1,10 +1,10 @@
 package art.arcane.mystcraft.client;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.client.AgeColorUtils;
 import art.arcane.mystcraft.api.world.logic.ICelestial;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.util.ColorUtils;
-import art.arcane.mystcraft.world.AgeDimensionFactory;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
@@ -53,18 +53,7 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
      * Returns -1 if not in a Mystcraft age.
      */
     private static int getCurrentAgeUID() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return -1;
-
-        String path = mc.level.dimension().location().getPath();
-        if (path.startsWith("mystcraft_age_")) {
-            try {
-                return Integer.parseInt(path.substring("mystcraft_age_".length()));
-            } catch (NumberFormatException e) {
-                return -1;
-            }
-        }
-        return -1;
+        return AgeColorUtils.getCurrentAgeUID();
     }
 
     @Override

@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:strongholds"
+      "id": "mystcraft:strongholds",
+      "params": {
+        "rarity": 128
+      }
     }
   ]
 }

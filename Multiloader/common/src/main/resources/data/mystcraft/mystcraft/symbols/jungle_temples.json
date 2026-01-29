@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:jungle_temples"
+      "id": "mystcraft:jungle_temples",
+      "params": {
+        "rarity": 32
+      }
     },
     {
       "type": "add_instability",

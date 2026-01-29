@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:trail_ruins"
+      "id": "mystcraft:trail_ruins",
+      "params": {
+        "chance": 1.0
+      }
     }
   ]
 }

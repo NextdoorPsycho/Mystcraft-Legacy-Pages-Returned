@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:bastion_remnants"
+      "id": "mystcraft:bastion_remnants",
+      "params": {
+        "chance": 1.0
+      }
     },
     {
       "type": "add_instability",

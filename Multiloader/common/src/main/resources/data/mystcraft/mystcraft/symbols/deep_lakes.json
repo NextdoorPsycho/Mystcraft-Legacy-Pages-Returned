@@ -16,7 +16,14 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:deep_lakes"
+      "id": "mystcraft:deep_lakes",
+      "params": {
+        "water_attempts": 4,
+        "lava_attempts": 1,
+        "max_water_y": 40,
+        "min_y": -60,
+        "lava_preferred_y": -20
+      }
     }
   ]
 }

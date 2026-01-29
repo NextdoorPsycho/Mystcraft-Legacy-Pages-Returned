@@ -57,7 +57,25 @@ public class FabricMystcraftConfig {
     public static final DoubleValue chancePlayerEffect = new DoubleValue(0.0001);
 
     // --- Symbols ---
-    public static final StringListValue disabledSymbols = new StringListValue(new ArrayList<>());
+    // Ore block terrain symbols are disabled by default as they are overpowered
+    private static final List<String> DEFAULT_DISABLED_SYMBOLS = List.of(
+            // Ore storage blocks
+            "mystcraft:block_minecraft_coal_block",
+            "mystcraft:block_minecraft_copper_block",
+            "mystcraft:block_minecraft_diamond_block",
+            "mystcraft:block_minecraft_emerald_block",
+            "mystcraft:block_minecraft_gold_block",
+            "mystcraft:block_minecraft_iron_block",
+            "mystcraft:block_minecraft_lapis_block",
+            "mystcraft:block_minecraft_netherite_block",
+            "mystcraft:block_minecraft_raw_copper_block",
+            "mystcraft:block_minecraft_raw_gold_block",
+            "mystcraft:block_minecraft_raw_iron_block",
+            "mystcraft:block_minecraft_redstone_block",
+            // Ancient debris
+            "mystcraft:block_minecraft_ancient_debris"
+    );
+    public static final StringListValue disabledSymbols = new StringListValue(new ArrayList<>(DEFAULT_DISABLED_SYMBOLS));
 
     private FabricMystcraftConfig() {}
 

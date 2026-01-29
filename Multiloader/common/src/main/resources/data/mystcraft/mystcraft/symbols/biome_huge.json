@@ -10,7 +10,8 @@
   ],
   "logic": [
     {
-      "type": "huge"
+      "type": "set_biome_controller",
+      "value": "huge"
     },
     {
       "type": "add_instability",

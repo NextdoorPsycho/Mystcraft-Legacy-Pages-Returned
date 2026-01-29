@@ -16,7 +16,18 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:vertical_tendrils"
+      "id": "mystcraft:vertical_tendrils",
+      "params": {
+        "count": 1,
+        "min_length": 25,
+        "max_length": 80,
+        "ceiling_chance": 0.25,
+        "chance": 0.08,
+        "neighbor_range": 2,
+        "min_thickness": 2,
+        "max_thickness": 6,
+        "wobble_range": 0.25
+      }
     },
     {
       "type": "add_instability",

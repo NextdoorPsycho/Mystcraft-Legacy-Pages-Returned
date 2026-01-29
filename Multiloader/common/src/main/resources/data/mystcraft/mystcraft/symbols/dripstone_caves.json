@@ -2,9 +2,26 @@
   "category": "feature_small",
   "card_rank": 2,
   "instability_cost": 0.0,
-  "poem": ["Stone", "Form", "Spike", "Cave"],
+  "poem": [
+    "Stone",
+    "Form",
+    "Spike",
+    "Cave"
+  ],
   "logic": [
-    { "type": "set_flag", "flag": "dripstone_caves_enabled", "value": true },
-    { "type": "register_populator", "id": "mystcraft:dripstone_caves" }
+    {
+      "type": "set_flag",
+      "flag": "dripstone_caves_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:dripstone_caves",
+      "params": {
+        "attempts": 15,
+        "max_y": 60,
+        "chance": 1.0
+      }
+    }
   ]
 }

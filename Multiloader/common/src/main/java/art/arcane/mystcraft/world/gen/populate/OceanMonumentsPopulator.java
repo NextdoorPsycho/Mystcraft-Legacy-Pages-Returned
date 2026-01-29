@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.ElderGuardian;
@@ -21,18 +22,30 @@ import net.minecraft.world.level.block.state.BlockState;
 public class OceanMonumentsPopulator implements IPopulate {
 
     private final long seed;
+    private final int chunksBetween;
+    private final float spawnChance;
 
-    private static final int CHUNKS_BETWEEN = 64;
+    private static final int DEFAULT_CHUNKS_BETWEEN = 64;
 
     // Chunk boundaries for current population
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     public OceanMonumentsPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public OceanMonumentsPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.chunksBetween = Math.max(1, PopulatorConfig.getInt(params, "chunks_between", DEFAULT_CHUNKS_BETWEEN));
+        this.spawnChance = PopulatorConfig.chanceFrom(params, 1.0f, 0);
     }
 
     @Override
     public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        if (random.nextFloat() > spawnChance) {
+            return;
+        }
+
         // Only attempt generation in specific chunks based on grid
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;
@@ -43,7 +56,7 @@ public class OceanMonumentsPopulator implements IPopulate {
         chunkMinZ = chunkZ << 4;
         chunkMaxZ = chunkMinZ + 15;
 
-        if (chunkX % CHUNKS_BETWEEN != 0 || chunkZ % CHUNKS_BETWEEN != 0) {
+        if (chunkX % chunksBetween != 0 || chunkZ % chunksBetween != 0) {
             return;
         }
 

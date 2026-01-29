@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:witch_huts"
+      "id": "mystcraft:witch_huts",
+      "params": {
+        "rarity": 32
+      }
     },
     {
       "type": "add_instability",

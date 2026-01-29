@@ -9,7 +9,18 @@
     "Mask"
   ],
   "logic": [
-    { "type": "register_populator", "id": "mystcraft:block_shuffle_global" },
-    { "type": "add_instability", "value": 7.0 }
+    {
+      "type": "register_populator",
+      "id": "mystcraft:block_shuffle_global",
+      "params": {
+        "chance": 1.0,
+        "min_y": -999999,
+        "max_y": -999999
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
   ]
 }

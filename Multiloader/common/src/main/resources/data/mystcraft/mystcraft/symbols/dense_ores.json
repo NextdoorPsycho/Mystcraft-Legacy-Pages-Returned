@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:dense_ores"
+      "id": "mystcraft:dense_ores",
+      "params": {
+        "vein_multiplier": 1.0
+      }
     }
   ]
 }

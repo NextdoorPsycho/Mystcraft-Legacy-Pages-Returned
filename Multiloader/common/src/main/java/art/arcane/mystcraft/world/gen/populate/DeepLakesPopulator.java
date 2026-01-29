@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
@@ -18,21 +19,35 @@ import net.minecraft.world.level.block.state.BlockState;
 public class DeepLakesPopulator implements IPopulate {
 
     private final long seed;
+    private final int waterAttemptsPerChunk;
+    private final int lavaAttemptsPerChunk;
+    private final int maxWaterY;
+    private final int minY;
+    private final int lavaPreferredY;
 
     // Number of lake attempts per chunk
-    private static final int WATER_ATTEMPTS_PER_CHUNK = 4;
-    private static final int LAVA_ATTEMPTS_PER_CHUNK = 1;
+    private static final int DEFAULT_WATER_ATTEMPTS_PER_CHUNK = 4;
+    private static final int DEFAULT_LAVA_ATTEMPTS_PER_CHUNK = 1;
 
     // Y level thresholds for lake generation
-    private static final int MAX_WATER_Y = 40;
-    private static final int MIN_Y = -60;
-    private static final int LAVA_PREFERRED_Y = -20;
+    private static final int DEFAULT_MAX_WATER_Y = 40;
+    private static final int DEFAULT_MIN_Y = -60;
+    private static final int DEFAULT_LAVA_PREFERRED_Y = -20;
 
     // Chunk boundaries for current population
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     public DeepLakesPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public DeepLakesPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.waterAttemptsPerChunk = PopulatorConfig.getInt(params, "water_attempts", DEFAULT_WATER_ATTEMPTS_PER_CHUNK);
+        this.lavaAttemptsPerChunk = PopulatorConfig.getInt(params, "lava_attempts", DEFAULT_LAVA_ATTEMPTS_PER_CHUNK);
+        this.maxWaterY = PopulatorConfig.getInt(params, "max_water_y", DEFAULT_MAX_WATER_Y);
+        this.minY = PopulatorConfig.getInt(params, "min_y", DEFAULT_MIN_Y);
+        this.lavaPreferredY = PopulatorConfig.getInt(params, "lava_preferred_y", DEFAULT_LAVA_PREFERRED_Y);
     }
 
     @Override
@@ -46,18 +61,18 @@ public class DeepLakesPopulator implements IPopulate {
         chunkMaxZ = chunkMinZ + 15;
 
         // Generate water pools
-        for (int i = 0; i < WATER_ATTEMPTS_PER_CHUNK; i++) {
+        for (int i = 0; i < waterAttemptsPerChunk; i++) {
             int x = chunkPos.getX() + random.nextInt(16);
-            int y = MIN_Y + random.nextInt(MAX_WATER_Y - MIN_Y);
+            int y = minY + random.nextInt(Math.max(1, maxWaterY - minY + 1));
             int z = chunkPos.getZ() + random.nextInt(16);
 
             generateLake(world, random, new BlockPos(x, y, z), Blocks.WATER.defaultBlockState(), true);
         }
 
         // Generate lava pools (more common at deeper levels)
-        for (int i = 0; i < LAVA_ATTEMPTS_PER_CHUNK; i++) {
+        for (int i = 0; i < lavaAttemptsPerChunk; i++) {
             int x = chunkPos.getX() + random.nextInt(16);
-            int y = MIN_Y + random.nextInt(LAVA_PREFERRED_Y - MIN_Y);
+            int y = minY + random.nextInt(Math.max(1, lavaPreferredY - minY + 1));
             int z = chunkPos.getZ() + random.nextInt(16);
 
             generateLake(world, random, new BlockPos(x, y, z), Blocks.LAVA.defaultBlockState(), false);

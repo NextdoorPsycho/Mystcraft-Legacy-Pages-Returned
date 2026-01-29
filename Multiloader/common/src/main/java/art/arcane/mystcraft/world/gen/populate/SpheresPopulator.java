@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BlockTags;
@@ -20,6 +21,14 @@ import java.util.Random;
 public class SpheresPopulator implements IPopulate {
 
     private final long seed;
+    private final int spheresPerChunk;
+    private final int minRadius;
+    private final int maxRadius;
+    private final float floatingChance;
+    private final float spawnChance;
+    private final int neighborRange;
+    private final int minBaseY;
+    private final int maxBaseY;
 
     private enum SphereShape {
         NORMAL,
@@ -27,21 +36,35 @@ public class SpheresPopulator implements IPopulate {
         ERODED
     }
 
-    private static final int SPHERES_PER_CHUNK = 1;
-    private static final int MIN_RADIUS = 5;
-    private static final int MAX_RADIUS = 15;
-    private static final float FLOATING_CHANCE = 0.4f;
+    private static final int DEFAULT_SPHERES_PER_CHUNK = 1;
+    private static final int DEFAULT_MIN_RADIUS = 5;
+    private static final int DEFAULT_MAX_RADIUS = 15;
+    private static final float DEFAULT_FLOATING_CHANCE = 0.4f;
     // ~3% of chunks spawn a sphere (~1 per 33 chunks)
-    private static final float SPAWN_CHANCE = 0.03f;
+    private static final float DEFAULT_SPAWN_CHANCE = 0.03f;
     private static final int CRACK_MIN_PLANES = 2;
     private static final int CRACK_MAX_PLANES = 4;
 
     // How many neighbor chunks to scan in each direction.
     // Worst case: center at position 15 + radius 15 = 30 blocks = 2 chunks away.
-    private static final int NEIGHBOR_RANGE = 2;
+    private static final int DEFAULT_NEIGHBOR_RANGE = 2;
+    private static final int DEFAULT_MIN_BASE_Y = 40;
+    private static final int DEFAULT_MAX_BASE_Y = 99;
 
     public SpheresPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public SpheresPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.spheresPerChunk = PopulatorConfig.getInt(params, "count", DEFAULT_SPHERES_PER_CHUNK);
+        this.minRadius = Math.max(1, PopulatorConfig.getInt(params, "min_radius", DEFAULT_MIN_RADIUS));
+        this.maxRadius = Math.max(this.minRadius, PopulatorConfig.getInt(params, "max_radius", DEFAULT_MAX_RADIUS));
+        this.floatingChance = PopulatorConfig.getFloat(params, "floating_chance", DEFAULT_FLOATING_CHANCE);
+        this.spawnChance = PopulatorConfig.chanceFrom(params, DEFAULT_SPAWN_CHANCE, 0);
+        this.neighborRange = Math.max(1, PopulatorConfig.getInt(params, "neighbor_range", DEFAULT_NEIGHBOR_RANGE));
+        this.minBaseY = PopulatorConfig.getInt(params, "min_base_y", DEFAULT_MIN_BASE_Y);
+        this.maxBaseY = Math.max(this.minBaseY, PopulatorConfig.getInt(params, "max_base_y", DEFAULT_MAX_BASE_Y));
     }
 
     @Override
@@ -55,8 +78,8 @@ public class SpheresPopulator implements IPopulate {
         int chunkMaxZ = chunkMinZ + 15;
 
         // Scan this chunk and all neighbors that could have spheres overlapping us
-        for (int ncx = thisChunkX - NEIGHBOR_RANGE; ncx <= thisChunkX + NEIGHBOR_RANGE; ncx++) {
-            for (int ncz = thisChunkZ - NEIGHBOR_RANGE; ncz <= thisChunkZ + NEIGHBOR_RANGE; ncz++) {
+        for (int ncx = thisChunkX - neighborRange; ncx <= thisChunkX + neighborRange; ncx++) {
+            for (int ncz = thisChunkZ - neighborRange; ncz <= thisChunkZ + neighborRange; ncz++) {
                 // Deterministic seed per neighbor chunk (independent of visit order)
                 long chunkSeed = getChunkSeed(ncx, ncz);
                 Random chunkRand = new Random(chunkSeed);
@@ -64,9 +87,9 @@ public class SpheresPopulator implements IPopulate {
                 int neighborMinX = ncx << 4;
                 int neighborMinZ = ncz << 4;
 
-                for (int i = 0; i < SPHERES_PER_CHUNK; i++) {
+                for (int i = 0; i < spheresPerChunk; i++) {
                     // Deterministic spawn chance - skip most chunks
-                    if (chunkRand.nextFloat() >= SPAWN_CHANCE) {
+                    if (chunkRand.nextFloat() >= spawnChance) {
                         continue;
                     }
 
@@ -75,8 +98,8 @@ public class SpheresPopulator implements IPopulate {
                     // overlaps our chunk, so subsequent spheres stay in sync.
                     int cx = neighborMinX + chunkRand.nextInt(16);
                     int cz = neighborMinZ + chunkRand.nextInt(16);
-                    boolean floating = chunkRand.nextFloat() < FLOATING_CHANCE;
-                    int radius = MIN_RADIUS + chunkRand.nextInt(MAX_RADIUS - MIN_RADIUS + 1);
+                    boolean floating = chunkRand.nextFloat() < floatingChance;
+                    int radius = minRadius + chunkRand.nextInt(maxRadius - minRadius + 1);
                     BlockState sphereBlock = getSphereMaterial(chunkRand, floating);
                     BlockState coreBlock = getCoreBlock(sphereBlock, chunkRand);
 
@@ -103,7 +126,8 @@ public class SpheresPopulator implements IPopulate {
                     // agree on the same center. Reading the heightmap at a neighbor chunk's
                     // coordinates can return wrong values if that chunk isn't generated yet,
                     // causing half-spheres at chunk borders.
-                    int baseY = 40 + (int) ((irregSeed & 0x7FL) % 60); // Deterministic range 40-99
+                    int baseRange = Math.max(1, maxBaseY - minBaseY + 1);
+                    int baseY = minBaseY + (int) ((irregSeed & 0x7FL) % baseRange);
                     int y = floating ? (baseY + 40 + yOffset) : baseY;
 
                     BlockPos center = new BlockPos(cx, y, cz);

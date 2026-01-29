@@ -19,7 +19,9 @@
       "id": "mystcraft:floating_islands",
       "params": {
         "style": "ruins",
-        "density": 10
+        "density": 10,
+        "structure_block": "minecraft:stone",
+        "surface_block": "minecraft:grass_block"
       }
     },
     {

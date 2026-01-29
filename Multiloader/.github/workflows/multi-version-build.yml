@@ -1,0 +1,161 @@
+name: Multi-Version Build
+
+on:
+  push:
+    branches: [main, "1.20.2"]
+    paths:
+      - "Multiloader/**"
+      - ".github/workflows/multi-version-build.yml"
+  pull_request:
+    branches: [main, "1.20.2"]
+    paths:
+      - "Multiloader/**"
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: "Versions to build (comma-separated, or 'all')"
+        required: false
+        default: "all"
+
+defaults:
+  run:
+    working-directory: Multiloader
+
+jobs:
+  discover-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.discover.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: discover
+        name: Discover available versions
+        working-directory: Multiloader
+        run: |
+          # Get main version from gradle.properties
+          MAIN_VERSION=$(grep "^minecraft_version=" gradle.properties | cut -d= -f2)
+          echo "Main version: ${MAIN_VERSION}"
+
+          # Start JSON array with main version
+          VERSIONS="[\"${MAIN_VERSION}\""
+
+          # Add patched versions if they exist
+          if [ -d "patches" ]; then
+            for dir in patches/*/; do
+              if [ -d "$dir" ]; then
+                version=$(basename "$dir")
+                VERSIONS="${VERSIONS},\"${version}\""
+                echo "Found patched version: ${version}"
+              fi
+            done
+          fi
+
+          VERSIONS="${VERSIONS}]"
+          echo "versions=${VERSIONS}" >> $GITHUB_OUTPUT
+          echo "Discovered versions: ${VERSIONS}"
+
+  build:
+    needs: discover-versions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJson(needs.discover-versions.outputs.versions) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine Java version
+        id: java-version
+        working-directory: Multiloader
+        run: |
+          # Check if this version has a patch with Java version override
+          JAVA_VERSION="17"
+          if [ -f "patches/${{ matrix.version }}/gradle.properties.override" ]; then
+            OVERRIDE_JAVA=$(grep "^java_version=" "patches/${{ matrix.version }}/gradle.properties.override" | cut -d= -f2 || echo "")
+            if [ -n "$OVERRIDE_JAVA" ]; then
+              JAVA_VERSION="$OVERRIDE_JAVA"
+            fi
+          fi
+          # MC 1.21+ requires Java 21
+          case "${{ matrix.version }}" in
+            1.21*|1.22*) JAVA_VERSION="21" ;;
+          esac
+          echo "java_version=${JAVA_VERSION}" >> $GITHUB_OUTPUT
+          echo "Using Java ${JAVA_VERSION} for MC ${{ matrix.version }}"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ steps.java-version.outputs.java_version }}
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Get main version
+        id: main-version
+        working-directory: Multiloader
+        run: |
+          MAIN_VERSION=$(grep "^minecraft_version=" gradle.properties | cut -d= -f2)
+          echo "main_version=${MAIN_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Apply patches (if not main version)
+        if: matrix.version != steps.main-version.outputs.main_version
+        working-directory: Multiloader
+        run: |
+          chmod +x scripts/apply-patches.sh
+          ./scripts/apply-patches.sh ${{ matrix.version }}
+
+      - name: Build with Gradle
+        working-directory: Multiloader
+        run: ./gradlew build --no-daemon
+
+      - name: Collect artifacts
+        working-directory: Multiloader
+        run: |
+          mkdir -p artifacts/${{ matrix.version }}
+          for loader in fabric forge neoforge; do
+            jar=$(find ${loader}/build/libs -name "*.jar" \
+              ! -name "*-sources*" \
+              ! -name "*-dev*" \
+              ! -name "*-shadow*" \
+              2>/dev/null | head -1)
+            if [ -n "$jar" ] && [ -f "$jar" ]; then
+              cp "$jar" "artifacts/${{ matrix.version }}/mystcraft-${loader}-${{ matrix.version }}.jar"
+              echo "Collected: mystcraft-${loader}-${{ matrix.version }}.jar"
+            fi
+          done
+          ls -la "artifacts/${{ matrix.version }}/"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mystcraft-${{ matrix.version }}
+          path: Multiloader/artifacts/${{ matrix.version }}/*.jar
+          retention-days: 30
+
+  collect-all:
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-versions
+          pattern: mystcraft-*
+
+      - name: List all artifacts
+        run: |
+          echo "All built artifacts:"
+          find all-versions -name "*.jar" | sort
+
+      - name: Create combined artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mystcraft-all-versions
+          path: all-versions/**/*.jar
+          retention-days: 30
+          if-no-files-found: warn

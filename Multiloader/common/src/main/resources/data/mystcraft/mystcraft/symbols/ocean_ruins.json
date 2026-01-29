@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:ocean_ruins"
+      "id": "mystcraft:ocean_ruins",
+      "params": {
+        "rarity": 20
+      }
     }
   ]
 }

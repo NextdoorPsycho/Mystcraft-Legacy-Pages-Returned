@@ -10,7 +10,8 @@
   ],
   "logic": [
     {
-      "type": "tiled"
+      "type": "set_biome_controller",
+      "value": "tiled"
     }
   ]
 }

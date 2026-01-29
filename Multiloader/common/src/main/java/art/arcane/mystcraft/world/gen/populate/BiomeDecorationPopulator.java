@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -30,16 +31,31 @@ import net.minecraft.world.level.levelgen.feature.configurations.TreeConfigurati
 public class BiomeDecorationPopulator implements IPopulate {
 
     private final long seed;
+    private final float spawnChance;
+    private final float treeMultiplier;
+    private final float grassMultiplier;
+    private final float flowerMultiplier;
 
     // Chunk boundaries for current population
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     public BiomeDecorationPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public BiomeDecorationPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.spawnChance = PopulatorConfig.chanceFrom(params, 1.0f, 0);
+        this.treeMultiplier = PopulatorConfig.getFloat(params, "tree_multiplier", 1.0f);
+        this.grassMultiplier = PopulatorConfig.getFloat(params, "grass_multiplier", 1.0f);
+        this.flowerMultiplier = PopulatorConfig.getFloat(params, "flower_multiplier", 1.0f);
     }
 
     @Override
     public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        if (random.nextFloat() > spawnChance) {
+            return;
+        }
         int chunkX = chunkPos.getX();
         int chunkZ = chunkPos.getZ();
 
@@ -62,7 +78,7 @@ public class BiomeDecorationPopulator implements IPopulate {
     }
 
     private void generateTrees(WorldGenLevel world, RandomSource random, BlockPos chunkPos, Holder<Biome> biomeHolder) {
-        int treesPerChunk = getTreesPerChunk(biomeHolder);
+        int treesPerChunk = Math.max(0, Math.round(getTreesPerChunk(biomeHolder) * treeMultiplier));
 
         for (int i = 0; i < treesPerChunk; i++) {
             int x = chunkPos.getX() + random.nextInt(16);
@@ -331,7 +347,7 @@ public class BiomeDecorationPopulator implements IPopulate {
             return;
         }
 
-        int grassPatches = getGrassPatches(biomeHolder);
+        int grassPatches = Math.max(0, Math.round(getGrassPatches(biomeHolder) * grassMultiplier));
 
         for (int i = 0; i < grassPatches; i++) {
             int x = chunkPos.getX() + random.nextInt(16);
@@ -393,7 +409,7 @@ public class BiomeDecorationPopulator implements IPopulate {
             return;
         }
 
-        int flowerPatches = getFlowerPatches(biomeHolder);
+        int flowerPatches = Math.max(0, Math.round(getFlowerPatches(biomeHolder) * flowerMultiplier));
 
         for (int i = 0; i < flowerPatches; i++) {
             int x = chunkPos.getX() + random.nextInt(16);

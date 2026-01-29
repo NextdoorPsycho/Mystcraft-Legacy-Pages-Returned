@@ -7,6 +7,7 @@ import art.arcane.mystcraft.registry.FabricModItems;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
+import art.arcane.mystcraft.world.AgeDimensionFactory;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -89,15 +90,7 @@ public final class FabricGlassesOverlay {
     }
 
     private static int getAgeUID(ResourceKey<Level> dimension) {
-        String path = dimension.location().getPath();
-        if (path.startsWith("mystcraft_age_")) {
-            try {
-                return Integer.parseInt(path.substring("mystcraft_age_".length()));
-            } catch (NumberFormatException e) {
-                return -1;
-            }
-        }
-        return -1;
+        return AgeDimensionFactory.getAgeUID(dimension);
     }
 
     private FabricGlassesOverlay() {}

@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:huge_trees"
+      "id": "mystcraft:huge_trees",
+      "params": {
+        "count": 3
+      }
     },
     {
       "type": "add_instability",

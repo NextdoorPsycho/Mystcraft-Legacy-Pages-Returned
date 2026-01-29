@@ -16,7 +16,12 @@
     },
     {
       "type": "register_terrain_alteration",
-      "id": "mystcraft:caves"
+      "id": "mystcraft:caves",
+      "params": {
+        "rate": 15,
+        "size": 40,
+        "fill_block": "minecraft:air"
+      }
     }
   ]
 }

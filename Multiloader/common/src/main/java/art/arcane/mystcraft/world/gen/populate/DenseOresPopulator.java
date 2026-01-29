@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.Mth;
@@ -16,6 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public class DenseOresPopulator implements IPopulate {
 
     private final long seed;
+    private final float veinMultiplier;
 
     // Dense ore configurations
     // blockState, veinSize, veinsPerChunk, minY, maxY
@@ -47,7 +49,12 @@ public class DenseOresPopulator implements IPopulate {
     };
 
     public DenseOresPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public DenseOresPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.veinMultiplier = PopulatorConfig.getFloat(params, "vein_multiplier", 1.0f);
     }
 
     @Override
@@ -61,7 +68,8 @@ public class DenseOresPopulator implements IPopulate {
         int chunkX = chunkPos.getX();
         int chunkZ = chunkPos.getZ();
 
-        for (int i = 0; i < config.veinsPerChunk; i++) {
+        int veins = Math.max(0, Math.round(config.veinsPerChunk * veinMultiplier));
+        for (int i = 0; i < veins; i++) {
             int x = chunkX + random.nextInt(16);
             int y = config.minY + random.nextInt(config.maxY - config.minY);
             int z = chunkZ + random.nextInt(16);

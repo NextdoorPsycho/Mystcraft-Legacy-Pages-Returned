@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.WorldGenLevel;
@@ -23,9 +24,10 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 public class DungeonPopulator implements IPopulate {
 
     private final long seed;
+    private final int attemptsPerChunk;
 
     // Number of dungeon attempts per chunk
-    private static final int ATTEMPTS_PER_CHUNK = 8;
+    private static final int DEFAULT_ATTEMPTS_PER_CHUNK = 8;
 
     // Mob types that can spawn in dungeons
     private static final EntityType<?>[] DUNGEON_MOBS = {
@@ -38,7 +40,12 @@ public class DungeonPopulator implements IPopulate {
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     public DungeonPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public DungeonPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.attemptsPerChunk = PopulatorConfig.getInt(params, "attempts", DEFAULT_ATTEMPTS_PER_CHUNK);
     }
 
     @Override
@@ -51,7 +58,7 @@ public class DungeonPopulator implements IPopulate {
         chunkMinZ = chunkZ << 4;
         chunkMaxZ = chunkMinZ + 15;
 
-        for (int i = 0; i < ATTEMPTS_PER_CHUNK; i++) {
+        for (int i = 0; i < attemptsPerChunk; i++) {
             int x = chunkPos.getX() + random.nextInt(16);
             int y = random.nextInt(world.getHeight() - 16) + 8;
             int z = chunkPos.getZ() + random.nextInt(16);

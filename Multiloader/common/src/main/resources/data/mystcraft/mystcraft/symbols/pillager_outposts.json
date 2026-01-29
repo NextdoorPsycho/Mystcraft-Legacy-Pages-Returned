@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:pillager_outposts"
+      "id": "mystcraft:pillager_outposts",
+      "params": {
+        "chance": 1.0
+      }
     },
     {
       "type": "add_instability",

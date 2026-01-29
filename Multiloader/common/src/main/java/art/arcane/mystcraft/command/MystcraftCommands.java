@@ -3,8 +3,13 @@ package art.arcane.mystcraft.command;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
+import art.arcane.mystcraft.api.world.logic.IPopulate;
 import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.datapack.symbol.PopulatorRegistry;
+import art.arcane.mystcraft.datapack.symbol.TerrainAlterationRegistry;
 import art.arcane.mystcraft.entity.MeteorEntity;
+import art.arcane.mystcraft.event.AgeDataSyncHandler;
+import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.instability.InstabilityController;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.registry.ModItems;
@@ -13,6 +18,11 @@ import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
 import art.arcane.mystcraft.world.AgeManager;
+import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
+import art.arcane.mystcraft.world.gen.populate.StarFissurePopulator;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
@@ -37,6 +47,10 @@ import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -71,6 +85,18 @@ public class MystcraftCommands {
         return SharedSuggestionProvider.suggest(ageIds, builder);
     };
 
+    private static final SuggestionProvider<CommandSourceStack> POPULATOR_SUGGESTIONS = (context, builder) -> {
+        return SharedSuggestionProvider.suggestResource(PopulatorRegistry.getAll().keySet(), builder);
+    };
+
+    private static final SuggestionProvider<CommandSourceStack> CATEGORY_SUGGESTIONS = (context, builder) -> {
+        List<String> categories = new ArrayList<>();
+        for (SymbolCategory category : SymbolCategory.values()) {
+            categories.add(category.name().toLowerCase());
+        }
+        return SharedSuggestionProvider.suggest(categories, builder);
+    };
+
     /**
      * Registers all Mystcraft commands with the given dispatcher.
      */
@@ -92,18 +118,104 @@ public class MystcraftCommands {
                                         .executes(MystcraftCommands::ageInfo)))
                         .then(Commands.literal("create")
                                 .requires(source -> source.hasPermission(2))
-                                .executes(MystcraftCommands::createAge)))
+                                .executes(MystcraftCommands::createAge)
+                                .then(Commands.literal("preset")
+                                        .then(Commands.argument("name", StringArgumentType.string())
+                                                .suggests(PRESET_SUGGESTIONS)
+                                                .executes(context -> createAgeFromPreset(context, false))
+                                                .then(Commands.literal("tp")
+                                                        .executes(context -> createAgeFromPreset(context, true)))))
+                                .then(Commands.literal("symbols")
+                                        .then(Commands.argument("symbols", StringArgumentType.string())
+                                                .executes(context -> createAgeFromSymbols(context, false, null))
+                                                .then(Commands.literal("tp")
+                                                        .executes(context -> createAgeFromSymbols(context, true, null)))
+                                                .then(Commands.literal("name")
+                                                        .then(Commands.argument("ageName", StringArgumentType.greedyString())
+                                                                .executes(context -> createAgeFromSymbols(context, false,
+                                                                        StringArgumentType.getString(context, "ageName")))
+                                                                .then(Commands.literal("tp")
+                                                                        .executes(context -> createAgeFromSymbols(context, true,
+                                                                                StringArgumentType.getString(context, "ageName"))))))))))
                 .then(Commands.literal("symbols")
                         .requires(source -> source.hasPermission(0))
                         .executes(MystcraftCommands::listSymbols)
+                        .then(Commands.literal("list")
+                                .executes(MystcraftCommands::listSymbols)
+                                .then(Commands.argument("category", StringArgumentType.string())
+                                        .suggests(CATEGORY_SUGGESTIONS)
+                                        .executes(MystcraftCommands::listSymbolsByCategory)))
                         .then(Commands.literal("info")
                                 .then(Commands.argument("symbolId", StringArgumentType.string())
                                         .suggests(SYMBOL_SUGGESTIONS)
                                         .executes(MystcraftCommands::symbolInfo))))
+                .then(Commands.literal("dump")
+                        .requires(source -> source.hasPermission(2))
+                        .then(Commands.literal("symbols")
+                                .then(Commands.argument("symbols", StringArgumentType.greedyString())
+                                        .executes(MystcraftCommands::dumpSymbolsToFile)))
+                        .then(Commands.literal("age")
+                                .executes(MystcraftCommands::dumpCurrentAgeToFile)
+                                .then(Commands.argument("ageId", IntegerArgumentType.integer(0))
+                                        .suggests(AGE_SUGGESTIONS)
+                                        .executes(MystcraftCommands::dumpAgeToFile)))))
                 .then(Commands.literal("debug")
                         .requires(source -> source.hasPermission(2))
+                        .then(Commands.literal("age")
+                                .then(Commands.literal("info")
+                                        .executes(MystcraftCommands::debugAgeInfoCurrent)
+                                        .then(Commands.argument("ageId", IntegerArgumentType.integer(0))
+                                                .suggests(AGE_SUGGESTIONS)
+                                                .executes(MystcraftCommands::debugAgeInfoById))))
+                        .then(Commands.literal("registry")
+                                .then(Commands.literal("symbols")
+                                        .executes(MystcraftCommands::debugRegistrySymbols))
+                                .then(Commands.literal("populators")
+                                        .executes(MystcraftCommands::debugRegistryPopulators))
+                                .then(Commands.literal("terrain")
+                                        .executes(MystcraftCommands::debugRegistryTerrain)))
+                        .then(Commands.literal("give")
+                                .then(Commands.literal("page")
+                                        .then(Commands.literal("blank")
+                                                .executes(MystcraftCommands::debugGiveBlankPage))
+                                        .then(Commands.literal("linkpanel")
+                                                .executes(context -> debugGiveLinkPanel(context, ""))
+                                                .then(Commands.argument("property", StringArgumentType.string())
+                                                        .executes(context -> debugGiveLinkPanel(context,
+                                                                StringArgumentType.getString(context, "property")))))
+                                        .then(Commands.literal("symbol")
+                                                .then(Commands.argument("symbolId", StringArgumentType.string())
+                                                        .suggests(SYMBOL_SUGGESTIONS)
+                                                        .executes(context -> debugGiveSymbolPage(context, 1))
+                                                        .then(Commands.argument("count", IntegerArgumentType.integer(1, 64))
+                                                                .executes(context -> debugGiveSymbolPage(context,
+                                                                        IntegerArgumentType.getInteger(context, "count"))))))
+                                .then(Commands.literal("agebook")
+                                        .then(Commands.literal("symbols")
+                                                .then(Commands.argument("symbols", StringArgumentType.string())
+                                                        .executes(context -> debugGiveAgebookFromSymbols(context, null))
+                                                        .then(Commands.literal("name")
+                                                                .then(Commands.argument("name", StringArgumentType.greedyString())
+                                                                        .executes(context -> debugGiveAgebookFromSymbols(context,
+                                                                                StringArgumentType.getString(context, "name"))))))))))
                         .then(Commands.literal("instability")
-                                .executes(MystcraftCommands::debugInstability)))
+                                .executes(MystcraftCommands::debugInstability))
+                        .then(Commands.literal("star_fissure")
+                                .then(Commands.literal("locate")
+                                        .executes(context -> debugStarFissureLocate(context, 8))
+                                        .then(Commands.argument("radius", IntegerArgumentType.integer(1, 64))
+                                                .executes(context -> debugStarFissureLocate(context,
+                                                        IntegerArgumentType.getInteger(context, "radius")))))
+                                .then(Commands.literal("spawn")
+                                        .executes(MystcraftCommands::debugStarFissureSpawn)))
+                        .then(Commands.literal("populator")
+                                .then(Commands.literal("run")
+                                        .then(Commands.argument("id", StringArgumentType.string())
+                                                .suggests(POPULATOR_SUGGESTIONS)
+                                                .executes(context -> debugRunPopulator(context, ""))
+                                                .then(Commands.argument("params", StringArgumentType.greedyString())
+                                                        .executes(context -> debugRunPopulator(context,
+                                                                StringArgumentType.getString(context, "params"))))))))
                 .then(Commands.literal("give")
                         .requires(source -> source.hasPermission(2))
                         .then(Commands.literal("randombook")
@@ -326,6 +438,33 @@ public class MystcraftCommands {
     }
 
     /**
+     * Lists symbols in a specific category.
+     */
+    private static int listSymbolsByCategory(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        String rawCategory = StringArgumentType.getString(context, "category");
+        SymbolCategory category = parseSymbolCategory(rawCategory);
+        if (category == null) {
+            source.sendFailure(Component.literal("Unknown category: " + rawCategory));
+            return 0;
+        }
+
+        List<ResourceLocation> ids = new ArrayList<>();
+        for (IAgeSymbol symbol : SymbolRegistry.getAll()) {
+            if (symbol.getCategory() == category) {
+                ids.add(symbol.getRegistryName());
+            }
+        }
+        ids.sort(ResourceLocation::compareTo);
+
+        source.sendSuccess(() -> Component.literal("=== Symbols: " + category.name().toLowerCase() + " (" + ids.size() + ") ==="), false);
+        for (ResourceLocation id : ids) {
+            source.sendSuccess(() -> Component.literal("  " + id), false);
+        }
+        return ids.size();
+    }
+
+    /**
      * Shows information about a specific symbol.
      */
     private static int symbolInfo(CommandContext<CommandSourceStack> context) {
@@ -370,6 +509,479 @@ public class MystcraftCommands {
         source.sendSuccess(() -> Component.literal("  UID: " + ageData.getAgeUID()), false);
 
         return 1;
+    }
+
+    private static int debugAgeInfoCurrent(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        ServerLevel level = player.serverLevel();
+        return debugAgeInfoForLevel(source, level, null);
+    }
+
+    private static int debugAgeInfoById(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        int ageId = IntegerArgumentType.getInteger(context, "ageId");
+        AgeManager ageManager = AgeManager.get(source.getServer());
+        ServerLevel level = ageManager.getAgeLevel(source.getServer(), ageId);
+        if (level == null) {
+            source.sendFailure(Component.literal("Age " + ageId + " not loaded."));
+            return 0;
+        }
+        return debugAgeInfoForLevel(source, level, ageId);
+    }
+
+    private static int debugAgeInfoForLevel(CommandSourceStack source, ServerLevel level, Integer expectedAgeId) {
+        ResourceLocation dimId = level.dimension().location();
+        AgeData ageData = AgeData.getIfPresent(level);
+        AgeChunkGenerator generator = getAgeGenerator(level);
+        AgeDirectorImpl director = generator != null ? generator.getDirector() : null;
+
+        int ageUID = ageData != null ? ageData.getAgeUID() : (expectedAgeId != null ? expectedAgeId : -1);
+        String ageName = ageData != null ? ageData.getAgeName() : "Unknown";
+        float instability = ageData != null ? ageData.getInstability() : 0.0f;
+
+        source.sendSuccess(() -> Component.literal("=== Age Debug ==="), false);
+        source.sendSuccess(() -> Component.literal("  UID: " + ageUID), false);
+        source.sendSuccess(() -> Component.literal("  Name: " + ageName), false);
+        source.sendSuccess(() -> Component.literal("  Dimension: " + dimId), false);
+        source.sendSuccess(() -> Component.literal("  Instability: " + String.format("%.2f", instability)), false);
+        if (generator != null) {
+            source.sendSuccess(() -> Component.literal("  Seed: " + generator.getAgeSeed()), false);
+        }
+        if (director != null) {
+            source.sendSuccess(() -> Component.literal("  Terrain: " + director.getTerrainType()), false);
+            source.sendSuccess(() -> Component.literal("  BiomeController: " + director.getBiomeController()), false);
+            source.sendSuccess(() -> Component.literal("  Weather: " + director.getWeatherType()), false);
+            source.sendSuccess(() -> Component.literal("  Lighting: " + director.getLightingType()), false);
+            source.sendSuccess(() -> Component.literal("  Stars: " + director.getStarType()), false);
+            source.sendSuccess(() -> Component.literal("  StarFissure: " + director.isStarFissureEnabled()), false);
+            source.sendSuccess(() -> Component.literal("  FloatingIslands: " + director.areFloatingIslandsEnabled()), false);
+            source.sendSuccess(() -> Component.literal("  Caves: " + director.areCavesEnabled()), false);
+            source.sendSuccess(() -> Component.literal("  Ravines: " + director.areRavinesEnabled()), false);
+        }
+        return 1;
+    }
+
+    private static int debugRegistrySymbols(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        Collection<IAgeSymbol> symbols = SymbolRegistry.getAll();
+        source.sendSuccess(() -> Component.literal("=== Registry: Symbols (" + symbols.size() + ") ==="), false);
+        java.util.Map<String, Integer> byCategory = new java.util.HashMap<>();
+        for (IAgeSymbol symbol : symbols) {
+            String key = symbol.getCategory().name().toLowerCase();
+            byCategory.put(key, byCategory.getOrDefault(key, 0) + 1);
+        }
+        for (var entry : byCategory.entrySet()) {
+            source.sendSuccess(() -> Component.literal("  " + entry.getKey() + ": " + entry.getValue()), false);
+        }
+        return symbols.size();
+    }
+
+    private static int debugRegistryPopulators(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        List<ResourceLocation> ids = new ArrayList<>(PopulatorRegistry.getAll().keySet());
+        ids.sort(ResourceLocation::compareTo);
+        source.sendSuccess(() -> Component.literal("=== Registry: Populators (" + ids.size() + ") ==="), false);
+        for (ResourceLocation id : ids) {
+            source.sendSuccess(() -> Component.literal("  " + id), false);
+        }
+        return ids.size();
+    }
+
+    private static int debugRegistryTerrain(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        List<ResourceLocation> ids = new ArrayList<>(TerrainAlterationRegistry.getAll().keySet());
+        ids.sort(ResourceLocation::compareTo);
+        source.sendSuccess(() -> Component.literal("=== Registry: Terrain Alterations (" + ids.size() + ") ==="), false);
+        for (ResourceLocation id : ids) {
+            source.sendSuccess(() -> Component.literal("  " + id), false);
+        }
+        return ids.size();
+    }
+
+    private static int debugGiveBlankPage(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        ItemStack page = Page.createPage();
+        giveItem(player, page);
+        source.sendSuccess(() -> Component.literal("Gave blank page"), false);
+        return 1;
+    }
+
+    private static int debugGiveLinkPanel(CommandContext<CommandSourceStack> context, String property) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        ItemStack page = property == null || property.isBlank()
+                ? Page.createLinkPage()
+                : Page.createLinkPage(property);
+        giveItem(player, page);
+        source.sendSuccess(() -> Component.literal("Gave link panel page" + (property == null || property.isBlank() ? "" : " (" + property + ")")), false);
+        return 1;
+    }
+
+    private static int debugGiveSymbolPage(CommandContext<CommandSourceStack> context, int count) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        String raw = StringArgumentType.getString(context, "symbolId");
+        ResourceLocation id = ResourceLocation.tryParse(raw);
+        if (id == null || SymbolRegistry.get(id) == null) {
+            source.sendFailure(Component.literal("Unknown symbol: " + raw));
+            return 0;
+        }
+        for (int i = 0; i < count; i++) {
+            giveItem(player, Page.createSymbolPage(id));
+        }
+        source.sendSuccess(() -> Component.literal("Gave " + count + " symbol page(s): " + id), false);
+        return 1;
+    }
+
+    private static int debugGiveAgebookFromSymbols(CommandContext<CommandSourceStack> context, String name) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        String rawSymbols = StringArgumentType.getString(context, "symbols");
+        List<ResourceLocation> symbols = parseSymbolList(source, rawSymbols);
+        if (symbols.isEmpty()) {
+            source.sendFailure(Component.literal("No valid symbols found."));
+            return 0;
+        }
+        String title = name != null && !name.isBlank() ? name : "Custom Agebook";
+
+        List<ItemStack> pages = new ArrayList<>();
+        pages.add(Page.createLinkPage());
+        for (ResourceLocation id : symbols) {
+            pages.add(Page.createSymbolPage(id));
+        }
+
+        ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
+        AgebookItem.create(agebook, player, pages, title);
+        giveItem(player, agebook);
+
+        source.sendSuccess(() -> Component.literal("Gave agebook '" + title + "' with " + (pages.size() - 1) + " symbols"), false);
+        return 1;
+    }
+
+    private static int dumpSymbolsToFile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        String rawSymbols = StringArgumentType.getString(context, "symbols");
+        List<ResourceLocation> symbols = parseSymbolList(source, rawSymbols);
+        if (symbols.isEmpty()) {
+            source.sendFailure(Component.literal("No valid symbols found."));
+            return 0;
+        }
+
+        StringBuilder out = new StringBuilder();
+        out.append("# Mystcraft Symbols Dump\n");
+        out.append("count: ").append(symbols.size()).append("\n\n");
+        for (ResourceLocation id : symbols) {
+            IAgeSymbol symbol = SymbolRegistry.get(id);
+            out.append("- ").append(id);
+            if (symbol != null) {
+                out.append(" | category=").append(symbol.getCategory().name().toLowerCase());
+                out.append(" | instability=").append(symbol.getInstabilityCost());
+            }
+            out.append("\n");
+        }
+
+        Path file = writeDumpFile(source, "symbols_dump.txt", out.toString());
+        if (file == null) {
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("Wrote symbols dump to " + file.toAbsolutePath()), false);
+        return 1;
+    }
+
+    private static int dumpCurrentAgeToFile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        ServerLevel level = player.serverLevel();
+        return dumpAgeLevelToFile(source, level, null);
+    }
+
+    private static int dumpAgeToFile(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        int ageId = IntegerArgumentType.getInteger(context, "ageId");
+        AgeManager ageManager = AgeManager.get(source.getServer());
+        ServerLevel level = ageManager.getAgeLevel(source.getServer(), ageId);
+        if (level == null) {
+            source.sendFailure(Component.literal("Age " + ageId + " not loaded."));
+            return 0;
+        }
+        return dumpAgeLevelToFile(source, level, ageId);
+    }
+
+    private static int dumpAgeLevelToFile(CommandSourceStack source, ServerLevel level, Integer expectedAgeId) {
+        ResourceLocation dimId = level.dimension().location();
+        AgeData ageData = AgeData.getIfPresent(level);
+        AgeChunkGenerator generator = getAgeGenerator(level);
+        AgeDirectorImpl director = generator != null ? generator.getDirector() : null;
+
+        int ageUID = ageData != null ? ageData.getAgeUID() : (expectedAgeId != null ? expectedAgeId : -1);
+        String ageName = ageData != null ? ageData.getAgeName() : "Unknown";
+
+        StringBuilder out = new StringBuilder();
+        out.append("# Mystcraft Age Dump\n");
+        out.append("uid: ").append(ageUID).append("\n");
+        out.append("name: ").append(ageName).append("\n");
+        out.append("dimension: ").append(dimId).append("\n");
+        if (generator != null) {
+            out.append("seed: ").append(generator.getAgeSeed()).append("\n");
+        }
+        if (ageData != null) {
+            out.append("instability: ").append(String.format("%.2f", ageData.getInstability())).append("\n");
+            out.append("weather: ").append(ageData.getWeatherType()).append("\n");
+            out.append("lighting: ").append(ageData.getLightingType()).append("\n");
+            out.append("biome_controller: ").append(ageData.getBiomeController()).append("\n");
+            out.append("stars: ").append(ageData.getStarType()).append("\n");
+            out.append("pages: ").append(ageData.getPages().size()).append("\n");
+
+            out.append("\n# Pages\n");
+            int idx = 0;
+            for (ItemStack page : ageData.getPages()) {
+                idx++;
+                if (Page.isLinkPanel(page)) {
+                    out.append(idx).append(". linkpanel");
+                    List<String> props = Page.getLinkProperties(page);
+                    if (!props.isEmpty()) {
+                        out.append(" [").append(String.join(",", props)).append("]");
+                    }
+                    out.append("\n");
+                    continue;
+                }
+                ResourceLocation sym = Page.getSymbol(page);
+                if (sym != null) {
+                    out.append(idx).append(". symbol ").append(sym).append("\n");
+                } else {
+                    out.append(idx).append(". page\n");
+                }
+            }
+        }
+
+        if (director != null) {
+            out.append("\n# Director Flags\n");
+            out.append("terrain_type: ").append(director.getTerrainType()).append("\n");
+            out.append("has_sea: ").append(director.hasSea()).append("\n");
+            out.append("star_fissure_enabled: ").append(director.isStarFissureEnabled()).append("\n");
+            out.append("floating_islands_enabled: ").append(director.isFloatingIslandsEnabled()).append("\n");
+            out.append("caves_enabled: ").append(director.isCavesEnabled()).append("\n");
+            out.append("ravines_enabled: ").append(director.isRavinesEnabled()).append("\n");
+        }
+
+        String filename = "age_" + ageUID + "_dump.txt";
+        Path file = writeDumpFile(source, filename, out.toString());
+        if (file == null) {
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("Wrote age dump to " + file.toAbsolutePath()), false);
+        return 1;
+    }
+
+    private static int debugStarFissureLocate(CommandContext<CommandSourceStack> context, int radius) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        ServerLevel level = player.serverLevel();
+
+        AgeChunkGenerator generator = getAgeGenerator(level);
+        long seed = generator != null ? generator.getAgeSeed() : level.getSeed();
+        AgeDirectorImpl director = generator != null ? generator.getDirector() : null;
+        JsonObject params = director != null ? director.getStarFissureParams() : new JsonObject();
+
+        StarFissurePopulator populator = new StarFissurePopulator(seed, params);
+        BlockPos playerPos = player.blockPosition();
+        int baseChunkX = playerPos.getX() >> 4;
+        int baseChunkZ = playerPos.getZ() >> 4;
+
+        BlockPos best = null;
+        double bestDist = Double.MAX_VALUE;
+
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                int cx = baseChunkX + dx;
+                int cz = baseChunkZ + dz;
+                BlockPos candidate = populator.findCandidateInChunk(level, cx, cz);
+                if (candidate == null) {
+                    continue;
+                }
+                double dist = candidate.distSqr(playerPos);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = candidate;
+                }
+            }
+        }
+
+        source.sendSuccess(() -> Component.literal("=== Star Fissure Locate ==="), false);
+        source.sendSuccess(() -> Component.literal("  Radius (chunks): " + radius), false);
+        source.sendSuccess(() -> Component.literal("  Seed: " + seed), false);
+        if (best == null) {
+            source.sendSuccess(() -> Component.literal("  Result: none found"), false);
+            return 0;
+        }
+        BlockPos result = best;
+        source.sendSuccess(() -> Component.literal("  Result: " + result.getX() + ", " + result.getY() + ", " + result.getZ()), false);
+        return 1;
+    }
+
+    private static int debugStarFissureSpawn(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        ServerLevel level = player.serverLevel();
+
+        AgeChunkGenerator generator = getAgeGenerator(level);
+        long seed = generator != null ? generator.getAgeSeed() : level.getSeed();
+        AgeDirectorImpl director = generator != null ? generator.getDirector() : null;
+        JsonObject params = director != null ? director.getStarFissureParams() : new JsonObject();
+
+        StarFissurePopulator populator = new StarFissurePopulator(seed, params);
+        BlockPos pos = player.blockPosition();
+        int surfaceY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
+        BlockPos centerPos = new BlockPos(pos.getX(), surfaceY, pos.getZ());
+        populator.forceGenerate(level, centerPos);
+
+        source.sendSuccess(() -> Component.literal("=== Star Fissure Spawn ==="), false);
+        source.sendSuccess(() -> Component.literal("  Center: " + centerPos.getX() + ", " + centerPos.getY() + ", " + centerPos.getZ()), false);
+        return 1;
+    }
+
+    private static int debugRunPopulator(CommandContext<CommandSourceStack> context, String rawParams) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        ServerLevel level = player.serverLevel();
+
+        String idRaw = StringArgumentType.getString(context, "id");
+        ResourceLocation id = ResourceLocation.tryParse(idRaw);
+        if (id == null) {
+            source.sendFailure(Component.literal("Invalid populator id: " + idRaw));
+            return 0;
+        }
+
+        JsonObject params = parseParams(source, rawParams);
+        long seed = getSeedForLevel(level);
+        IPopulate populator = PopulatorRegistry.create(id, params, seed);
+        if (populator == null) {
+            source.sendFailure(Component.literal("Unknown populator: " + id));
+            return 0;
+        }
+
+        BlockPos playerPos = player.blockPosition();
+        int chunkX = playerPos.getX() >> 4;
+        int chunkZ = playerPos.getZ() >> 4;
+        BlockPos chunkPos = new BlockPos(chunkX << 4, 0, chunkZ << 4);
+        long chunkSeed = (long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + seed;
+        RandomSource random = RandomSource.create(chunkSeed);
+
+        populator.populate(level, random, chunkPos);
+
+        source.sendSuccess(() -> Component.literal("=== Populator Run ==="), false);
+        source.sendSuccess(() -> Component.literal("  Populator: " + id), false);
+        source.sendSuccess(() -> Component.literal("  Chunk: " + chunkX + ", " + chunkZ), false);
+        return 1;
+    }
+
+    private static JsonObject parseParams(CommandSourceStack source, String rawParams) {
+        if (rawParams == null || rawParams.isBlank()) {
+            return new JsonObject();
+        }
+        try {
+            return JsonParser.parseString(rawParams).getAsJsonObject();
+        } catch (IllegalStateException | JsonSyntaxException e) {
+            source.sendFailure(Component.literal("Invalid params JSON, using defaults: " + e.getMessage()));
+            return new JsonObject();
+        }
+    }
+
+    private static long getSeedForLevel(ServerLevel level) {
+        AgeChunkGenerator generator = getAgeGenerator(level);
+        if (generator != null) {
+            return generator.getAgeSeed();
+        }
+        return level.getSeed();
+    }
+
+    private static AgeChunkGenerator getAgeGenerator(ServerLevel level) {
+        if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+            return null;
+        }
+        if (level.getChunkSource().getGenerator() instanceof AgeChunkGenerator ageGen) {
+            return ageGen;
+        }
+        return null;
+    }
+
+    private static SymbolCategory parseSymbolCategory(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        try {
+            return SymbolCategory.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private static List<ResourceLocation> parseSymbolList(CommandSourceStack source, String raw) {
+        List<ResourceLocation> result = new ArrayList<>();
+        if (raw == null || raw.isBlank()) {
+            return result;
+        }
+        String[] tokens = raw.split("[,\\s]+");
+        for (String token : tokens) {
+            if (token.isBlank()) {
+                continue;
+            }
+            ResourceLocation id = ResourceLocation.tryParse(token.trim());
+            if (id == null) {
+                source.sendFailure(Component.literal("Invalid symbol id: " + token));
+                continue;
+            }
+            if (SymbolRegistry.get(id) == null) {
+                source.sendFailure(Component.literal("Unknown symbol: " + id));
+                continue;
+            }
+            result.add(id);
+        }
+        return result;
+    }
+
+    private static List<ResourceLocation> collectPresetSymbols(AgePresets.Preset preset, RandomSource random) {
+        List<ResourceLocation> symbols = new ArrayList<>();
+        for (String symbolId : preset.fixedSymbols) {
+            ResourceLocation id = new ResourceLocation(symbolId);
+            if (SymbolRegistry.get(id) != null) {
+                symbols.add(id);
+            }
+        }
+
+        for (AgePresets.RandomPool pool : preset.randomPools) {
+            List<String> available = new ArrayList<>(pool.options);
+            Collections.shuffle(available, new java.util.Random(random.nextLong()));
+            int count = Math.min(pool.pickCount, available.size());
+            for (int i = 0; i < count; i++) {
+                ResourceLocation id = new ResourceLocation(available.get(i));
+                if (SymbolRegistry.get(id) != null) {
+                    symbols.add(id);
+                }
+            }
+        }
+        return symbols;
+    }
+
+    private static void giveItem(ServerPlayer player, ItemStack item) {
+        if (!player.getInventory().add(item)) {
+            player.drop(item, false);
+        }
+    }
+
+    private static Path writeDumpFile(CommandSourceStack source, String filename, String content) {
+        Path dir = source.getServer().getServerDirectory().toPath().resolve("mystcraft_dumps");
+        try {
+            Files.createDirectories(dir);
+            Path file = dir.resolve(filename);
+            Files.writeString(file, content, StandardCharsets.UTF_8);
+            return file;
+        } catch (IOException e) {
+            source.sendFailure(Component.literal("Failed to write dump file: " + e.getMessage()));
+            return null;
+        }
     }
 
     /**
@@ -555,6 +1167,16 @@ public class MystcraftCommands {
         // --- Ores: random, rarely no ore ---
         int oreCount = pickCountWeighted(random, new int[]{0, 1, 1, 2});
         budget = addOreSymbols(pages, seen, random, oreCount, budget);
+
+        // --- Star fissure section: 50/50 if not explicitly present ---
+        if (budget > 0 && !seen.contains(new ResourceLocation("mystcraft", "star_fissure"))) {
+            if (random.nextBoolean()) {
+                IAgeSymbol starFissure = SymbolRegistry.get(new ResourceLocation("mystcraft", "star_fissure"));
+                if (starFissure != null && addSymbolPage(pages, seen, starFissure)) {
+                    budget--;
+                }
+            }
+        }
 
         // --- Special symbols: random ---
         int specialCount = random.nextInt(2);
@@ -925,6 +1547,94 @@ public class MystcraftCommands {
 
         int symbolCount = pages.size() - 1;
         source.sendSuccess(() -> Component.literal("Created preset book '" + preset.displayName + "' with " + symbolCount + " symbols"), true);
+        return 1;
+    }
+
+    private static int createAgeFromPreset(CommandContext<CommandSourceStack> context, boolean teleport) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        String presetName = StringArgumentType.getString(context, "name");
+
+        AgePresets.Preset preset = AgePresets.getPreset(presetName);
+        if (preset == null) {
+            source.sendFailure(Component.literal("Unknown preset: " + presetName));
+            source.sendFailure(Component.literal("Available: " + String.join(", ", AgePresets.PRESET_NAMES)));
+            return 0;
+        }
+
+        List<ResourceLocation> symbols = collectPresetSymbols(preset, player.getRandom());
+        return createAgeFromSymbolsInternal(source, player, symbols, preset.displayName, teleport);
+    }
+
+    private static int createAgeFromSymbols(CommandContext<CommandSourceStack> context, boolean teleport, String name) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        String rawSymbols = StringArgumentType.getString(context, "symbols");
+        List<ResourceLocation> symbols = parseSymbolList(source, rawSymbols);
+        if (symbols.isEmpty()) {
+            source.sendFailure(Component.literal("No valid symbols found."));
+            return 0;
+        }
+        String ageName = name != null && !name.isBlank() ? name : "Custom Age";
+        return createAgeFromSymbolsInternal(source, player, symbols, ageName, teleport);
+    }
+
+    private static int createAgeFromSymbolsInternal(CommandSourceStack source, ServerPlayer player,
+                                                    List<ResourceLocation> symbolIds, String ageName,
+                                                    boolean teleport) {
+        List<IAgeSymbol> symbols = new ArrayList<>();
+        List<ItemStack> pages = new ArrayList<>();
+        for (ResourceLocation id : symbolIds) {
+            IAgeSymbol symbol = SymbolRegistry.get(id);
+            if (symbol != null) {
+                symbols.add(symbol);
+                pages.add(Page.createSymbolPage(id));
+            }
+        }
+        if (symbols.isEmpty()) {
+            source.sendFailure(Component.literal("No valid symbols to build age."));
+            return 0;
+        }
+
+        long seed = System.currentTimeMillis() ^ player.blockPosition().asLong();
+        AgeBuilder builder = new AgeBuilder(symbols, seed);
+        AgeDirectorImpl director = builder.build();
+
+        AgeManager ageManager = AgeManager.get(source.getServer());
+        int ageUID = ageManager.allocateUID();
+        java.util.UUID ageUUID = java.util.UUID.randomUUID();
+
+        ServerLevel ageLevel = AgeDimensionFactory.createAgeDimension(
+                source.getServer(), ageUID, ageUUID, director);
+
+        if (ageLevel == null) {
+            source.sendFailure(Component.literal("Failed to create age."));
+            return 0;
+        }
+
+        ResourceLocation dimLoc = new ResourceLocation("mystcraft", "mystcraft_age_" + ageUID);
+        ageManager.registerAge(ageUID, dimLoc, ageUUID);
+
+        AgeData ageData = AgeData.get(ageLevel);
+        ageData.setAgeUID(ageUID);
+        ageData.setAgeUUID(ageUUID);
+        ageData.setAgeName(ageName);
+        ageData.addAuthor(player.getGameProfile().getName());
+        ageData.setPages(pages);
+        ageData.copyFromDirector(director);
+
+        BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
+        ageData.setSpawn(spawn.getX(), spawn.getY(), spawn.getZ());
+
+        source.sendSuccess(() -> Component.literal("Created age " + ageUID + " (" + ageName + ")"), true);
+
+        if (teleport) {
+            AgeDataSyncHandler.syncAgeDataToPlayer(player, ageLevel);
+            player.teleportTo(ageLevel, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5,
+                    player.getYRot(), player.getXRot());
+            source.sendSuccess(() -> Component.literal("Teleported to age " + ageUID), true);
+        }
+
         return 1;
     }
 

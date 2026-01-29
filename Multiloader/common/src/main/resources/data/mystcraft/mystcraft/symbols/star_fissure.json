@@ -10,9 +10,11 @@
   ],
   "logic": [
     {
-      "type": "set_flag",
-      "flag": "star_fissure_enabled",
-      "value": true
+      "type": "set_star_fissure",
+      "enabled": true,
+      "params": {
+        "rarity": 16
+      }
     }
   ]
 }

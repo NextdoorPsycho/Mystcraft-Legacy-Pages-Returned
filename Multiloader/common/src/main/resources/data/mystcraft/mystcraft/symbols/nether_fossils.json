@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:nether_fossils"
+      "id": "mystcraft:nether_fossils",
+      "params": {
+        "rarity": 16
+      }
     },
     {
       "type": "add_instability",

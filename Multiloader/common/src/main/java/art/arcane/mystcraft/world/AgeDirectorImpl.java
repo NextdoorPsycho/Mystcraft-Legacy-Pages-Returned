@@ -11,6 +11,7 @@ import art.arcane.mystcraft.api.world.logic.IStaticColorProvider;
 import art.arcane.mystcraft.api.world.logic.ITerrainAlteration;
 import art.arcane.mystcraft.api.world.logic.ITerrainGenerator;
 import art.arcane.mystcraft.api.world.logic.IWeatherController;
+import com.google.gson.JsonObject;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
@@ -124,6 +125,8 @@ public class AgeDirectorImpl implements AgeDirector {
     private boolean spheresEnabled = false;
     private boolean spikesEnabled = false;
     private boolean starFissureEnabled = false;
+    private boolean starFissureExplicit = false;
+    private JsonObject starFissureParams = new JsonObject();
     private boolean surfaceLakesEnabled = true;
     private boolean tendrilsEnabled = false;
     private boolean verticalTendrilsEnabled = false;
@@ -862,6 +865,30 @@ public class AgeDirectorImpl implements AgeDirector {
 
     public boolean isStarFissureEnabled() {
         return starFissureEnabled;
+    }
+
+    @Override
+    public void setStarFissureExplicit(boolean explicit) {
+        this.starFissureExplicit = explicit;
+    }
+
+    @Override
+    public boolean isStarFissureExplicit() {
+        return starFissureExplicit;
+    }
+
+    @Override
+    public void setStarFissureParams(JsonObject params) {
+        if (params == null) {
+            this.starFissureParams = new JsonObject();
+            return;
+        }
+        this.starFissureParams = params;
+    }
+
+    @Override
+    public JsonObject getStarFissureParams() {
+        return starFissureParams;
     }
 
     @Override

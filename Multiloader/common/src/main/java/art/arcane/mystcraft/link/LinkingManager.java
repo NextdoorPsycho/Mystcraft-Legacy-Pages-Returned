@@ -340,17 +340,7 @@ public final class LinkingManager {
      * Gets the Age UID from a level, or -1 if not a Mystcraft Age.
      */
     private static int getAgeUID(ServerLevel level) {
-        if (AgeDimensionFactory.isMystcraftAge(level.dimension())) {
-            String path = level.dimension().location().getPath();
-            if (path.startsWith("mystcraft_age_")) {
-                try {
-                    return Integer.parseInt(path.substring("mystcraft_age_".length()));
-                } catch (NumberFormatException e) {
-                    return -1;
-                }
-            }
-        }
-        return -1;
+        return AgeDimensionFactory.getAgeUID(level.dimension());
     }
 
     /**

@@ -10,7 +10,8 @@
   ],
   "logic": [
     {
-      "type": "native"
+      "type": "set_biome_controller",
+      "value": "native"
     },
     {
       "type": "add_instability",

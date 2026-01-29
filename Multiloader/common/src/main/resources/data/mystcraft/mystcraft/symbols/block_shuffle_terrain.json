@@ -9,7 +9,18 @@
     "Twist"
   ],
   "logic": [
-    { "type": "register_populator", "id": "mystcraft:block_shuffle_terrain" },
-    { "type": "add_instability", "value": 4.0 }
+    {
+      "type": "register_populator",
+      "id": "mystcraft:block_shuffle_terrain",
+      "params": {
+        "chance": 1.0,
+        "min_y": -999999,
+        "max_y": -999999
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 4.0
+    }
   ]
 }

@@ -2,7 +2,7 @@ package art.arcane.mystcraft.mixin;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
-import art.arcane.mystcraft.world.AgeDimensionFactory;
+import art.arcane.mystcraft.client.AgeColorUtils;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -86,21 +86,6 @@ public class FogRendererMixin {
     }
 
     private static int getCurrentAgeUID() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return -1;
-
-        if (!AgeDimensionFactory.isMystcraftAge(mc.level.dimension())) {
-            return -1;
-        }
-
-        String path = mc.level.dimension().location().getPath();
-        if (path.startsWith("mystcraft_age_")) {
-            try {
-                return Integer.parseInt(path.substring("mystcraft_age_".length()));
-            } catch (NumberFormatException e) {
-                return -1;
-            }
-        }
-        return -1;
+        return AgeColorUtils.getCurrentAgeUID();
     }
 }

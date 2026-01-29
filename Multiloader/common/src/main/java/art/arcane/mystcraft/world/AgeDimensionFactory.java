@@ -66,6 +66,8 @@ public class AgeDimensionFactory {
             ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_cave"));
     private static final ResourceKey<DimensionType> DIM_TYPE_SKYLANDS =
             ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_skylands"));
+    private static final ResourceKey<DimensionType> DIM_TYPE_PERSONAL =
+            ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_personal"));
 
     // Cached reflection fields
     private static Field executorField;
@@ -274,19 +276,32 @@ public class AgeDimensionFactory {
                     null // randomSequences
             );
 
-            // Initialize world border to match overworld's current state
-            // This prevents red warning lines from appearing due to uninitialized border
+            // Initialize world border
+            // Personal pockets get their own fixed border, other Ages sync from overworld
             var overworldBorder = overworld.getWorldBorder();
             var newBorder = newLevel.getWorldBorder();
-            newBorder.setCenter(overworldBorder.getCenterX(), overworldBorder.getCenterZ());
-            newBorder.setSize(overworldBorder.getSize());
-            newBorder.setDamagePerBlock(overworldBorder.getDamagePerBlock());
-            newBorder.setDamageSafeZone(overworldBorder.getDamageSafeZone());
-            newBorder.setWarningBlocks(overworldBorder.getWarningBlocks());
-            newBorder.setWarningTime(overworldBorder.getWarningTime());
 
-            // Add world border listener to sync future changes from overworld
-            overworldBorder.addListener(new BorderChangeListener.DelegateBorderChangeListener(newBorder));
+            boolean isPersonalPocket = director != null && director.isPersonalPocket();
+            if (isPersonalPocket) {
+                // Personal pockets have a fixed small border centered at origin
+                newBorder.setCenter(0.0, 0.0);
+                newBorder.setSize(160);
+                newBorder.setDamagePerBlock(0.0);
+                newBorder.setDamageSafeZone(0.0);
+                newBorder.setWarningBlocks(15);
+                newBorder.setWarningTime(15);
+                // Do NOT add border listener - personal pocket border is independent
+            } else {
+                // Regular Ages sync border from overworld
+                newBorder.setCenter(overworldBorder.getCenterX(), overworldBorder.getCenterZ());
+                newBorder.setSize(overworldBorder.getSize());
+                newBorder.setDamagePerBlock(overworldBorder.getDamagePerBlock());
+                newBorder.setDamageSafeZone(overworldBorder.getDamageSafeZone());
+                newBorder.setWarningBlocks(overworldBorder.getWarningBlocks());
+                newBorder.setWarningTime(overworldBorder.getWarningTime());
+                // Add world border listener to sync future changes from overworld
+                overworldBorder.addListener(new BorderChangeListener.DelegateBorderChangeListener(newBorder));
+            }
 
             // Register the level with the server
             levels.put(dimensionKey, newLevel);
@@ -464,6 +479,11 @@ public class AgeDimensionFactory {
      * 7. Normal (default)
      */
     private static ResourceKey<DimensionType> determineDimensionTypeKey(@NotNull AgeDirectorImpl director) {
+        // Personal pockets use dedicated dimension type (eternal night, full brightness)
+        if (director.isPersonalPocket()) {
+            return DIM_TYPE_PERSONAL;
+        }
+
         String terrainType = director.getTerrainType();
         String lightingType = director.getLightingType();
 
@@ -576,6 +596,31 @@ public class AgeDimensionFactory {
     public static boolean isMystcraftAge(@NotNull ResourceKey<Level> dimensionKey) {
         return dimensionKey.location().getNamespace().equals(Mystcraft.MOD_ID)
                 && dimensionKey.location().getPath().startsWith(DIMENSION_PREFIX);
+    }
+
+    /**
+     * Extracts the Age UID from a dimension key, or -1 if not a Mystcraft Age.
+     */
+    public static int getAgeUID(@NotNull ResourceKey<Level> dimensionKey) {
+        return getAgeUID(dimensionKey.location());
+    }
+
+    /**
+     * Extracts the Age UID from a dimension id, or -1 if not a Mystcraft Age.
+     */
+    public static int getAgeUID(@NotNull ResourceLocation dimensionId) {
+        if (!dimensionId.getNamespace().equals(Mystcraft.MOD_ID)) {
+            return -1;
+        }
+        String path = dimensionId.getPath();
+        if (!path.startsWith(DIMENSION_PREFIX)) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(path.substring(DIMENSION_PREFIX.length()));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     /**

@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -143,10 +144,12 @@ public final class PersonalPocketDimension {
         director.setSpheresEnabled(false);
         director.setSpikesEnabled(false);
         director.setStarFissureEnabled(false);
+        director.setStarFissureExplicit(true);
+        director.setStarFissureParams(new JsonObject());
         director.setTendrilsEnabled(false);
         director.setVerticalTendrilsEnabled(false);
         director.setPerlinWormsEnabled(false);
-        director.setPvPEnabled(false);
+        director.setPvPEnabled(true);
 
         Registry<Biome> biomeRegistry = server.registryAccess().registryOrThrow(Registries.BIOME);
         Holder<Biome> voidBiome = biomeRegistry.getHolderOrThrow(Biomes.THE_VOID);
@@ -167,11 +170,29 @@ public final class PersonalPocketDimension {
 
     public static void enforceBorder(ServerLevel level) {
         WorldBorder border = level.getWorldBorder();
+        boolean needsUpdate = false;
+
         if (border.getCenterX() != 0.0 || border.getCenterZ() != 0.0) {
             border.setCenter(0.0, 0.0);
+            needsUpdate = true;
         }
         if (border.getSize() != BORDER_SIZE_BLOCKS) {
             border.setSize(BORDER_SIZE_BLOCKS);
+            needsUpdate = true;
+        }
+        // Set warning distance so border is visible (15 blocks from edge)
+        if (border.getWarningBlocks() != 15) {
+            border.setWarningBlocks(15);
+            needsUpdate = true;
+        }
+        // No damage from border in personal pocket (player gets teleported back instead)
+        if (border.getDamagePerBlock() != 0.0) {
+            border.setDamagePerBlock(0.0);
+            needsUpdate = true;
+        }
+        if (border.getDamageSafeZone() != 0.0) {
+            border.setDamageSafeZone(0.0);
+            needsUpdate = true;
         }
     }
 }

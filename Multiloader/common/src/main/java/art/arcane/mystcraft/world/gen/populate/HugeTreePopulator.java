@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.WorldGenLevel;
@@ -22,12 +23,18 @@ public class HugeTreePopulator implements IPopulate {
 
     private final long seed;
     private BlockPos currentChunkPos;
+    private final int hugeTreesPerChunk;
 
     // Number of huge tree attempts per chunk
-    private static final int HUGE_TREES_PER_CHUNK = 3;
+    private static final int DEFAULT_HUGE_TREES_PER_CHUNK = 3;
 
     public HugeTreePopulator(long seed) {
+        this(seed, null);
+    }
+
+    public HugeTreePopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.hugeTreesPerChunk = PopulatorConfig.getInt(params, "count", DEFAULT_HUGE_TREES_PER_CHUNK);
     }
 
     @Override
@@ -38,7 +45,7 @@ public class HugeTreePopulator implements IPopulate {
         BlockPos centerPos = new BlockPos(chunkPos.getX() + 8, 64, chunkPos.getZ() + 8);
         Holder<Biome> biomeHolder = world.getBiome(centerPos);
 
-        for (int i = 0; i < HUGE_TREES_PER_CHUNK; i++) {
+        for (int i = 0; i < hugeTreesPerChunk; i++) {
             // Huge trees need 2x2 base, so start at 2-12 to keep canopy within writable area
             int x = chunkPos.getX() + 2 + random.nextInt(12);
             int z = chunkPos.getZ() + 2 + random.nextInt(12);

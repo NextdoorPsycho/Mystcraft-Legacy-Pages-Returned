@@ -16,7 +16,13 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:surface_lakes"
+      "id": "mystcraft:surface_lakes",
+      "params": {
+        "water_attempts": 4,
+        "lava_attempts": 1,
+        "lava_rarity": 10,
+        "water_attempt_chance": 0.25
+      }
     }
   ],
   "allow_random": false

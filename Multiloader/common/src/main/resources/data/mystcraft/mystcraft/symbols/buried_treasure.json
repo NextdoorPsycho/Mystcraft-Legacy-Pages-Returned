@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:buried_treasure"
+      "id": "mystcraft:buried_treasure",
+      "params": {
+        "rarity": 20
+      }
     }
   ]
 }

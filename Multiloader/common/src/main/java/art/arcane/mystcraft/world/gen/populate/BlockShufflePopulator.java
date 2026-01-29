@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.BlockTags;
@@ -30,17 +31,30 @@ public class BlockShufflePopulator implements IPopulate {
     private final long seed;
     private final Mode mode;
     private final Map<Block, BlockState> mapping;
+    private final Integer minYOverride;
+    private final Integer maxYOverride;
+    private final float chance;
 
     public BlockShufflePopulator(long seed, Mode mode) {
+        this(seed, mode, null);
+    }
+
+    public BlockShufflePopulator(long seed, Mode mode, JsonObject params) {
         this.seed = seed;
         this.mode = mode == null ? Mode.TERRAIN : mode;
         this.mapping = buildMapping(this.mode, seed);
+        this.minYOverride = PopulatorConfig.getOptionalInt(params, "min_y", PopulatorConfig.UNSET_INT);
+        this.maxYOverride = PopulatorConfig.getOptionalInt(params, "max_y", PopulatorConfig.UNSET_INT);
+        this.chance = PopulatorConfig.chanceFrom(params, 1.0f, 0);
     }
 
     @Override
     public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
-        int minY = world.getMinBuildHeight();
-        int maxY = world.getMaxBuildHeight();
+        if (random.nextFloat() > chance) {
+            return;
+        }
+        int minY = minYOverride != null ? minYOverride : world.getMinBuildHeight();
+        int maxY = maxYOverride != null ? maxYOverride : world.getMaxBuildHeight();
 
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int x = 0; x < 16; x++) {

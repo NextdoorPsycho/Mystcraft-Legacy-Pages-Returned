@@ -62,5 +62,21 @@
 				"name": "mystcraft:entity/meteor/roar"
 			}
 		]
+	},
+	"entity.meteor.impact": {
+		"category": "hostile",
+		"sounds": [
+			{
+				"name": "mystcraft:entity/meteor/roar"
+			}
+		]
+	},
+	"entity_meteor_impact": {
+		"category": "hostile",
+		"sounds": [
+			{
+				"name": "mystcraft:entity/meteor/roar"
+			}
+		]
 	}
 }

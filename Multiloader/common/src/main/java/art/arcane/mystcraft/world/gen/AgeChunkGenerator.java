@@ -149,10 +149,24 @@ public class AgeChunkGenerator extends ChunkGenerator {
     }
 
     /**
+     * Returns the Age seed used for deterministic population.
+     */
+    public long getAgeSeed() {
+        return seed;
+    }
+
+    /**
      * Sets the director for this generator.
      */
     public void setDirector(AgeDirectorImpl director) {
         this.director = director;
+    }
+
+    /**
+     * Returns the current director, if available.
+     */
+    public AgeDirectorImpl getDirector() {
+        return director;
     }
 
     /**
@@ -229,11 +243,11 @@ public class AgeChunkGenerator extends ChunkGenerator {
             }
 
             String threadName = Thread.currentThread().getName();
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} ensureVanillaDelegate called on thread: {}", ageUID, threadName);
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} ensureVanillaDelegate called on thread: {}", ageUID, threadName);
 
             if (!usesVanillaDelegate()) {
                 delegateInitialized = true;
-                Mystcraft.LOGGER.info("[ChunkGen] Age {} does not use vanilla delegate (type: {})", ageUID, terrainType);
+                Mystcraft.LOGGER.debug("[ChunkGen] Age {} does not use vanilla delegate (type: {})", ageUID, terrainType);
                 return;
             }
 
@@ -278,7 +292,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
                         seed
                 );
 
-                Mystcraft.LOGGER.info("[ChunkGen] Age {} initialized vanilla terrain delegate (type: {}, noiseSettings: {})",
+                Mystcraft.LOGGER.debug("[ChunkGen] Age {} initialized vanilla terrain delegate (type: {}, noiseSettings: {})",
                         ageUID, terrainType,
                         "amplified".equals(terrainType) ? "AMPLIFIED" :
                         ("nether".equals(terrainType) || "cave".equals(terrainType)) ? "NETHER" :
@@ -305,7 +319,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
                                 server.registryAccess().lookupOrThrow(Registries.NOISE),
                                 seed
                         );
-                        Mystcraft.LOGGER.info("[ChunkGen] Age {} initialized SECONDARY vanilla terrain delegate (type: {})",
+                        Mystcraft.LOGGER.debug("[ChunkGen] Age {} initialized SECONDARY vanilla terrain delegate (type: {})",
                                 ageUID, secondaryTerrainType);
                     } catch (Exception e) {
                         Mystcraft.LOGGER.error("[ChunkGen] Age {} failed to initialize secondary delegate (type: {}), falling back to primary only",
@@ -348,7 +362,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
      * Reconstructs the director from saved AgeData.
      */
     public void reconstructDirectorFromAgeData(ServerLevel level) {
-        Mystcraft.LOGGER.info("[ChunkGen] Age {} reconstructDirectorFromAgeData called on thread: {} | director={}",
+        Mystcraft.LOGGER.debug("[ChunkGen] Age {} reconstructDirectorFromAgeData called on thread: {} | director={}",
                 ageUID, Thread.currentThread().getName(), director != null ? "exists" : "null");
 
         if (director != null) {
@@ -436,7 +450,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
         int chunkZ = chunk.getPos().z;
 
         if (count <= DEBUG_CHUNK_LIMIT) {
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} buildSurface #{}: chunk [{}, {}] on thread: {} | delegate={}",
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} buildSurface #{}: chunk [{}, {}] on thread: {} | delegate={}",
                     ageUID, count, chunkX, chunkZ, Thread.currentThread().getName(),
                     vanillaDelegate != null ? "ready" : (delegateInitialized ? "null" : "not-init"));
         }
@@ -449,12 +463,12 @@ public class AgeChunkGenerator extends ChunkGenerator {
         RandomState surfaceRandomState = getRandomStateForChunk(chunkX, chunkZ);
         if (surfaceDelegate != null) {
             if (count <= DEBUG_CHUNK_LIMIT) {
-                Mystcraft.LOGGER.info("[ChunkGen] Age {} buildSurface #{}: delegating to vanilla [thread: {}]",
+                Mystcraft.LOGGER.debug("[ChunkGen] Age {} buildSurface #{}: delegating to vanilla [thread: {}]",
                         ageUID, count, Thread.currentThread().getName());
             }
             surfaceDelegate.buildSurface(level, structureManager, surfaceRandomState, chunk);
             if (count <= DEBUG_CHUNK_LIMIT) {
-                Mystcraft.LOGGER.info("[ChunkGen] Age {} buildSurface #{}: vanilla COMPLETE [thread: {}]",
+                Mystcraft.LOGGER.debug("[ChunkGen] Age {} buildSurface #{}: vanilla COMPLETE [thread: {}]",
                         ageUID, count, Thread.currentThread().getName());
             }
         }
@@ -473,7 +487,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
         }
 
         if (count <= DEBUG_CHUNK_LIMIT) {
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} buildSurface #{}: DONE [{}, {}]", ageUID, count, chunkX, chunkZ);
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} buildSurface #{}: DONE [{}, {}]", ageUID, count, chunkX, chunkZ);
         }
     }
 
@@ -565,7 +579,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
         int chunkZ = chunk.getPos().z;
 
         if (count <= DEBUG_CHUNK_LIMIT) {
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} applyBiomeDecoration #{}: chunk [{}, {}] on thread: {}",
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} applyBiomeDecoration #{}: chunk [{}, {}] on thread: {}",
                     ageUID, count, chunkX, chunkZ, Thread.currentThread().getName());
         }
 
@@ -573,7 +587,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
         // The base ChunkGenerator.applyBiomeDecoration() uses our BiomeSource's feature
         // lists directly, so this works for ALL terrain types -- not just delegate types.
         if (count <= DEBUG_CHUNK_LIMIT) {
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} applyBiomeDecoration #{}: running vanilla features [thread: {}]",
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} applyBiomeDecoration #{}: running vanilla features [thread: {}]",
                     ageUID, count, Thread.currentThread().getName());
         }
         try {
@@ -583,7 +597,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
                     ageUID, count, chunkX, chunkZ, e.getMessage(), e);
         }
         if (count <= DEBUG_CHUNK_LIMIT) {
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} applyBiomeDecoration #{}: vanilla features COMPLETE [thread: {}]",
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} applyBiomeDecoration #{}: vanilla features COMPLETE [thread: {}]",
                     ageUID, count, Thread.currentThread().getName());
         }
 
@@ -603,14 +617,14 @@ public class AgeChunkGenerator extends ChunkGenerator {
         RandomSource random = RandomSource.create(chunkSeed);
 
         if (count <= DEBUG_CHUNK_LIMIT) {
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} applyBiomeDecoration #{}: applying {} Mystcraft populators [{}, {}] [thread: {}]",
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} applyBiomeDecoration #{}: applying {} Mystcraft populators [{}, {}] [thread: {}]",
                     ageUID, count, populators.size(), chunkX, chunkZ, Thread.currentThread().getName());
         }
 
         for (IPopulate populator : populators) {
             String popId = populator.getIdentifier();
             if (count <= DEBUG_CHUNK_LIMIT) {
-                Mystcraft.LOGGER.info("[ChunkGen] Age {} chunk [{}, {}] >> START populator '{}' [thread: {}]",
+                Mystcraft.LOGGER.debug("[ChunkGen] Age {} chunk [{}, {}] >> START populator '{}' [thread: {}]",
                         ageUID, chunkX, chunkZ, popId, Thread.currentThread().getName());
             }
             long startTime = System.nanoTime();
@@ -618,7 +632,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
                 populator.populate(level, random, chunkPos);
                 if (count <= DEBUG_CHUNK_LIMIT) {
                     long elapsed = (System.nanoTime() - startTime) / 1_000_000;
-                    Mystcraft.LOGGER.info("[ChunkGen] Age {} chunk [{}, {}] << DONE  populator '{}' ({}ms)",
+                    Mystcraft.LOGGER.debug("[ChunkGen] Age {} chunk [{}, {}] << DONE  populator '{}' ({}ms)",
                             ageUID, chunkX, chunkZ, popId, elapsed);
                 }
             } catch (Exception e) {
@@ -629,7 +643,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
         }
 
         if (count <= DEBUG_CHUNK_LIMIT) {
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} chunk [{}, {}] == ALL POPULATORS DONE ({} total) [thread: {}]",
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} chunk [{}, {}] == ALL POPULATORS DONE ({} total) [thread: {}]",
                     ageUID, chunkX, chunkZ, populators.size(), Thread.currentThread().getName());
         }
     }
@@ -653,7 +667,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
         String threadName = Thread.currentThread().getName();
 
         if (count <= DEBUG_CHUNK_LIMIT) {
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} fillFromNoise #{}: chunk [{}, {}] on thread: {} | delegate={}, director={}",
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} fillFromNoise #{}: chunk [{}, {}] on thread: {} | delegate={}, director={}",
                     ageUID, count, chunkX, chunkZ, threadName,
                     vanillaDelegate != null ? "ready" : (delegateInitialized ? "null(failed)" : "not-init"),
                     director != null ? "yes" : "no");
@@ -662,7 +676,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
         ensureVanillaDelegate();
 
         if (count <= DEBUG_CHUNK_LIMIT) {
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} fillFromNoise #{}: post-init delegate={} [thread: {}]",
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} fillFromNoise #{}: post-init delegate={} [thread: {}]",
                     ageUID, count,
                     vanillaDelegate != null ? "ready" : "null",
                     threadName);
@@ -675,13 +689,13 @@ public class AgeChunkGenerator extends ChunkGenerator {
         if (chunkDelegate != null) {
             if (count <= DEBUG_CHUNK_LIMIT) {
                 boolean isPrimary = usePrimaryTerrain(chunkX, chunkZ);
-                Mystcraft.LOGGER.info("[ChunkGen] Age {} fillFromNoise #{}: DELEGATING to vanilla (type: {}, primary: {}) [thread: {}]",
+                Mystcraft.LOGGER.debug("[ChunkGen] Age {} fillFromNoise #{}: DELEGATING to vanilla (type: {}, primary: {}) [thread: {}]",
                         ageUID, count, isPrimary ? terrainType : secondaryTerrainType, isPrimary, threadName);
             }
             return chunkDelegate.fillFromNoise(executor, blender, chunkRandomState, structureManager, chunk)
                     .thenApply(filledChunk -> {
                         if (count <= DEBUG_CHUNK_LIMIT) {
-                            Mystcraft.LOGGER.info("[ChunkGen] Age {} fillFromNoise #{}: vanilla COMPLETE for [{}, {}] [thread: {}]",
+                            Mystcraft.LOGGER.debug("[ChunkGen] Age {} fillFromNoise #{}: vanilla COMPLETE for [{}, {}] [thread: {}]",
                                     ageUID, count, chunkX, chunkZ, Thread.currentThread().getName());
                         }
                         // Apply Mystcraft terrain alterations AFTER vanilla fills the chunk
@@ -689,7 +703,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
                         // AFTER vanilla applies biome surfaces, so surface builder can find stone
                         applyTerrainAlterations(filledChunk, randomState);
                         if (count <= DEBUG_CHUNK_LIMIT) {
-                            Mystcraft.LOGGER.info("[ChunkGen] Age {} fillFromNoise #{}: alterations COMPLETE for [{}, {}]",
+                            Mystcraft.LOGGER.debug("[ChunkGen] Age {} fillFromNoise #{}: alterations COMPLETE for [{}, {}]",
                                     ageUID, count, chunkX, chunkZ);
                         }
                         return filledChunk;
@@ -698,13 +712,13 @@ public class AgeChunkGenerator extends ChunkGenerator {
 
         // For special terrain types (void, flat), use custom generation
         if (count <= DEBUG_CHUNK_LIMIT) {
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} fillFromNoise #{}: CUSTOM generation (type: {}) for [{}, {}] [thread: {}]",
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} fillFromNoise #{}: CUSTOM generation (type: {}) for [{}, {}] [thread: {}]",
                     ageUID, count, terrainType, chunkX, chunkZ, threadName);
         }
         return CompletableFuture.supplyAsync(() -> {
             generateSpecialTerrain(chunk, randomState);
             if (count <= DEBUG_CHUNK_LIMIT) {
-                Mystcraft.LOGGER.info("[ChunkGen] Age {} fillFromNoise #{}: custom COMPLETE for [{}, {}] [thread: {}]",
+                Mystcraft.LOGGER.debug("[ChunkGen] Age {} fillFromNoise #{}: custom COMPLETE for [{}, {}] [thread: {}]",
                         ageUID, count, chunkX, chunkZ, Thread.currentThread().getName());
             }
             return chunk;
@@ -734,7 +748,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
         for (ITerrainAlteration alteration : alterations) {
             String altName = alteration.getClass().getSimpleName();
             if (altCount <= DEBUG_CHUNK_LIMIT) {
-                Mystcraft.LOGGER.info("[ChunkGen] Age {} chunk [{}, {}] >> START terrain alteration '{}' [thread: {}]",
+                Mystcraft.LOGGER.debug("[ChunkGen] Age {} chunk [{}, {}] >> START terrain alteration '{}' [thread: {}]",
                         ageUID, chunkX, chunkZ, altName, Thread.currentThread().getName());
             }
             long startTime = System.nanoTime();
@@ -742,7 +756,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
                 alteration.alterTerrain(null, chunkX, chunkZ, chunk, random);
                 if (altCount <= DEBUG_CHUNK_LIMIT) {
                     long elapsed = (System.nanoTime() - startTime) / 1_000_000;
-                    Mystcraft.LOGGER.info("[ChunkGen] Age {} chunk [{}, {}] << DONE  terrain alteration '{}' ({}ms)",
+                    Mystcraft.LOGGER.debug("[ChunkGen] Age {} chunk [{}, {}] << DONE  terrain alteration '{}' ({}ms)",
                             ageUID, chunkX, chunkZ, altName, elapsed);
                 }
             } catch (Exception e) {
@@ -976,27 +990,43 @@ public class AgeChunkGenerator extends ChunkGenerator {
     }
 
     private void generatePersonalTerrain(ChunkAccess chunk, RandomSource random) {
+        // Personal pocket: completely empty void with a small spawn platform.
+        // Spawn position is (0, 64, 0), platform at Y=63.
         int chunkX = chunk.getPos().x;
         int chunkZ = chunk.getPos().z;
+
+        // Only generate in limited area around spawn (chunks -1 to 1 on each axis)
         if (chunkX < -1 || chunkX > 1 || chunkZ < -1 || chunkZ > 1) {
             return;
         }
 
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-        BlockState platformBlock = Blocks.STONE.defaultBlockState();
-        int platformY = 61;
         int minY = chunk.getMinBuildHeight();
         int maxY = chunk.getMaxBuildHeight();
-        BlockState air = Blocks.AIR.defaultBlockState();
 
+        // Clear chunk to air (important: prevents any default/residual blocks)
+        BlockState air = Blocks.AIR.defaultBlockState();
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 for (int y = minY; y < maxY; y++) {
                     pos.set(x, y, z);
                     chunk.setBlockState(pos, air, false);
                 }
-                pos.set(x, platformY, z);
-                chunk.setBlockState(pos, platformBlock, false);
+            }
+        }
+
+        // Only place spawn platform in chunk (0,0)
+        if (chunkX == 0 && chunkZ == 0) {
+            BlockState platformBlock = Blocks.SMOOTH_STONE.defaultBlockState();
+            int platformY = 63;
+
+            // 5x5 platform at world coords (0-4, 63, 0-4)
+            // Player spawns at (0, 64, 0) standing on the corner
+            for (int x = 0; x <= 4; x++) {
+                for (int z = 0; z <= 4; z++) {
+                    pos.set(x, platformY, z);
+                    chunk.setBlockState(pos, platformBlock, false);
+                }
             }
         }
     }
@@ -1373,7 +1403,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
     @Override
     public int getBaseHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState randomState) {
         if (!delegateInitialized) {
-            Mystcraft.LOGGER.info("[ChunkGen] Age {} getBaseHeight called BEFORE delegate init at ({},{}) on thread: {}",
+            Mystcraft.LOGGER.debug("[ChunkGen] Age {} getBaseHeight called BEFORE delegate init at ({},{}) on thread: {}",
                     ageUID, x, z, Thread.currentThread().getName());
         }
         ensureVanillaDelegate();
@@ -1430,10 +1460,6 @@ public class AgeChunkGenerator extends ChunkGenerator {
             info.add("Alterations: " + director.getTerrainAlterations().size());
             info.add("Populators: " + director.getPopulateFunctions().size());
         }
-    }
-
-    public AgeDirectorImpl getDirector() {
-        return director;
     }
 
     public int getAgeUID() {

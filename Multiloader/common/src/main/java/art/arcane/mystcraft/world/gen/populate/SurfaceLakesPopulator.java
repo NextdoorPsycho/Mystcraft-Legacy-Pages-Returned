@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BlockTags;
@@ -18,16 +19,29 @@ public class SurfaceLakesPopulator implements IPopulate {
 
     private final long seed;
     private BlockPos currentChunkPos;
+    private final int waterAttemptsPerChunk;
+    private final int lavaAttemptsPerChunk;
+    private final int lavaRarity;
+    private final float waterAttemptChance;
 
     // Number of lake attempts per chunk
-    private static final int WATER_ATTEMPTS_PER_CHUNK = 4;
-    private static final int LAVA_ATTEMPTS_PER_CHUNK = 1;
+    private static final int DEFAULT_WATER_ATTEMPTS_PER_CHUNK = 4;
+    private static final int DEFAULT_LAVA_ATTEMPTS_PER_CHUNK = 1;
 
     // Lava lakes are much rarer than water lakes
-    private static final int LAVA_RARITY = 10;
+    private static final int DEFAULT_LAVA_RARITY = 10;
+    private static final float DEFAULT_WATER_ATTEMPT_CHANCE = 0.25f;
 
     public SurfaceLakesPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public SurfaceLakesPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.waterAttemptsPerChunk = PopulatorConfig.getInt(params, "water_attempts", DEFAULT_WATER_ATTEMPTS_PER_CHUNK);
+        this.lavaAttemptsPerChunk = PopulatorConfig.getInt(params, "lava_attempts", DEFAULT_LAVA_ATTEMPTS_PER_CHUNK);
+        this.lavaRarity = PopulatorConfig.rarityFrom(params, DEFAULT_LAVA_RARITY);
+        this.waterAttemptChance = PopulatorConfig.getFloat(params, "water_attempt_chance", DEFAULT_WATER_ATTEMPT_CHANCE);
     }
 
     @Override
@@ -35,20 +49,20 @@ public class SurfaceLakesPopulator implements IPopulate {
         this.currentChunkPos = chunkPos;
 
         // Generate water lakes
-        for (int i = 0; i < WATER_ATTEMPTS_PER_CHUNK; i++) {
+        for (int i = 0; i < waterAttemptsPerChunk; i++) {
             int x = chunkPos.getX() + random.nextInt(16);
             int z = chunkPos.getZ() + random.nextInt(16);
             int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
 
             // Only 1 in 4 attempts actually generate
-            if (random.nextInt(4) == 0) {
+            if (random.nextFloat() < waterAttemptChance) {
                 generateSurfaceLake(world, random, new BlockPos(x, y, z), Blocks.WATER.defaultBlockState(), true);
             }
         }
 
         // Generate lava lakes (very rare)
-        for (int i = 0; i < LAVA_ATTEMPTS_PER_CHUNK; i++) {
-            if (random.nextInt(LAVA_RARITY) == 0) {
+        for (int i = 0; i < lavaAttemptsPerChunk; i++) {
+            if (random.nextInt(lavaRarity) == 0) {
                 int x = chunkPos.getX() + random.nextInt(16);
                 int z = chunkPos.getZ() + random.nextInt(16);
                 int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);

@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:desert_temples"
+      "id": "mystcraft:desert_temples",
+      "params": {
+        "rarity": 32
+      }
     },
     {
       "type": "add_instability",

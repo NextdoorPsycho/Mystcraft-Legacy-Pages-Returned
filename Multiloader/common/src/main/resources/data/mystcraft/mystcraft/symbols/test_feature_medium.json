@@ -16,7 +16,14 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:spikes"
+      "id": "mystcraft:spikes",
+      "params": {
+        "count": 1,
+        "min_height": 10,
+        "max_height": 30,
+        "cold_temperature": 0.15,
+        "chance": 0.08
+      }
     }
   ],
   "allow_random": false

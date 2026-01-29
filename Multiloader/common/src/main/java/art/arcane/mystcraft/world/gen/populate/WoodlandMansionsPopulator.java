@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.WorldGenLevel;
@@ -30,13 +31,19 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 public class WoodlandMansionsPopulator implements IPopulate {
 
     private final long seed;
-    private static final int RARITY = 64;
+    private final int rarity;
+    private static final int DEFAULT_RARITY = 64;
 
     // Chunk boundaries for current population
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     public WoodlandMansionsPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public WoodlandMansionsPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.rarity = PopulatorConfig.rarityFrom(params, DEFAULT_RARITY);
     }
 
     @Override
@@ -50,7 +57,7 @@ public class WoodlandMansionsPopulator implements IPopulate {
         chunkMinZ = chunkZ << 4;
         chunkMaxZ = chunkMinZ + 15;
 
-        if ((chunkX + chunkZ * 53L + seed) % RARITY != 0) {
+        if ((chunkX + chunkZ * 53L + seed) % rarity != 0) {
             return;
         }
 

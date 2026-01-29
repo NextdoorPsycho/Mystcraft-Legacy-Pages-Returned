@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.WorldGenLevel;
@@ -21,8 +22,9 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 public class OceanRuinsPopulator implements IPopulate {
 
     private final long seed;
+    private final int rarity;
 
-    private static final int RARITY = 20;
+    private static final int DEFAULT_RARITY = 20;
 
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
@@ -45,7 +47,12 @@ public class OceanRuinsPopulator implements IPopulate {
     };
 
     public OceanRuinsPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public OceanRuinsPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.rarity = PopulatorConfig.rarityFrom(params, DEFAULT_RARITY);
     }
 
     @Override
@@ -57,7 +64,7 @@ public class OceanRuinsPopulator implements IPopulate {
         chunkMinZ = chunkZ << 4;
         chunkMaxZ = chunkMinZ + 15;
 
-        if ((chunkX * 29L + chunkZ * 43L + seed) % RARITY != 0) {
+        if ((chunkX * 29L + chunkZ * 43L + seed) % rarity != 0) {
             return;
         }
 

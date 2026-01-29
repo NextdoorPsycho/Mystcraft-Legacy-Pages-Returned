@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.WorldGenLevel;
@@ -19,16 +20,30 @@ import net.minecraft.world.level.levelgen.Heightmap;
 public class SpikesPopulator implements IPopulate {
 
     private final long seed;
+    private final int spikesPerChunk;
+    private final int minHeight;
+    private final int maxHeight;
+    private final float coldTemperature;
+    private final float spawnChance;
 
-    private static final int SPIKES_PER_CHUNK = 1;
-    private static final int MIN_HEIGHT = 10;
-    private static final int MAX_HEIGHT = 30;
-    private static final float COLD_TEMPERATURE = 0.15f;
+    private static final int DEFAULT_SPIKES_PER_CHUNK = 1;
+    private static final int DEFAULT_MIN_HEIGHT = 10;
+    private static final int DEFAULT_MAX_HEIGHT = 30;
+    private static final float DEFAULT_COLD_TEMPERATURE = 0.15f;
     // ~8% of chunks spawn a spike
-    private static final float SPAWN_CHANCE = 0.08f;
+    private static final float DEFAULT_SPAWN_CHANCE = 0.08f;
 
     public SpikesPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public SpikesPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.spikesPerChunk = PopulatorConfig.getInt(params, "count", DEFAULT_SPIKES_PER_CHUNK);
+        this.minHeight = Math.max(1, PopulatorConfig.getInt(params, "min_height", DEFAULT_MIN_HEIGHT));
+        this.maxHeight = Math.max(this.minHeight, PopulatorConfig.getInt(params, "max_height", DEFAULT_MAX_HEIGHT));
+        this.coldTemperature = PopulatorConfig.getFloat(params, "cold_temperature", DEFAULT_COLD_TEMPERATURE);
+        this.spawnChance = PopulatorConfig.chanceFrom(params, DEFAULT_SPAWN_CHANCE, 0);
     }
 
     @Override
@@ -36,8 +51,8 @@ public class SpikesPopulator implements IPopulate {
         int chunkX = chunkPos.getX();
         int chunkZ = chunkPos.getZ();
 
-        for (int i = 0; i < SPIKES_PER_CHUNK; i++) {
-            if (random.nextFloat() >= SPAWN_CHANCE) {
+        for (int i = 0; i < spikesPerChunk; i++) {
+            if (random.nextFloat() >= spawnChance) {
                 continue;
             }
 
@@ -67,11 +82,11 @@ public class SpikesPopulator implements IPopulate {
 
     private void generateSpike(WorldGenLevel world, RandomSource random, BlockPos basePos, float temperature, BlockPos chunkPos) {
         // Choose spike material based on biome temperature
-        BlockState spikeBlock = temperature < COLD_TEMPERATURE
+        BlockState spikeBlock = temperature < coldTemperature
                 ? Blocks.PACKED_ICE.defaultBlockState()
                 : Blocks.STONE.defaultBlockState();
 
-        int height = MIN_HEIGHT + random.nextInt(MAX_HEIGHT - MIN_HEIGHT + 1);
+        int height = minHeight + random.nextInt(maxHeight - minHeight + 1);
 
         // Generate tapering spike
         for (int y = 0; y < height; y++) {

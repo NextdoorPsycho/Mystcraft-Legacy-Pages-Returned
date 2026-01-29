@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.WorldGenLevel;
@@ -20,20 +21,26 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 public class MineshaftsPopulator implements IPopulate {
 
     private final long seed;
+    private final int rarity;
 
-    private static final int MINESHAFT_RARITY = 8;
+    private static final int DEFAULT_MINESHAFT_RARITY = 8;
     private static final int MIN_Y = 10;
     private static final int MAX_Y = 50;
     private static final int TUNNEL_LENGTH = 20;
     private static final int MAX_BRANCHES = 4;
 
     public MineshaftsPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public MineshaftsPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.rarity = PopulatorConfig.rarityFrom(params, DEFAULT_MINESHAFT_RARITY);
     }
 
     @Override
     public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
-        if (random.nextInt(MINESHAFT_RARITY) != 0) {
+        if (random.nextInt(rarity) != 0) {
             return;
         }
 

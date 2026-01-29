@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.WorldGenLevel;
@@ -23,6 +24,7 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 public class NetherFortressPopulator implements IPopulate {
 
     private final long seed;
+    private final float spawnChance;
 
     private static final int CHUNKS_BETWEEN_FORTRESSES = 32;
 
@@ -35,7 +37,12 @@ public class NetherFortressPopulator implements IPopulate {
     private static final BlockState SOUL_SAND = Blocks.SOUL_SAND.defaultBlockState();
 
     public NetherFortressPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public NetherFortressPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.spawnChance = PopulatorConfig.getFloat(params, "spawn_chance", 0.10f);
     }
 
     @Override
@@ -52,7 +59,7 @@ public class NetherFortressPopulator implements IPopulate {
         // Only generate in certain chunks (spacing control)
         if (chunkX % CHUNKS_BETWEEN_FORTRESSES == 0 && chunkZ % CHUNKS_BETWEEN_FORTRESSES == 0) {
             // Random chance to generate
-            if (random.nextInt(100) < 10) {
+            if (random.nextFloat() < spawnChance) {
                 int x = chunkPos.getX() + random.nextInt(16);
                 int y = 50 + random.nextInt(30);
                 int z = chunkPos.getZ() + random.nextInt(16);

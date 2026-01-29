@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:dungeons"
+      "id": "mystcraft:dungeons",
+      "params": {
+        "attempts": 8
+      }
     }
   ]
 }

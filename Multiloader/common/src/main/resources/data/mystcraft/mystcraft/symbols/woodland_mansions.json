@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:woodland_mansions"
+      "id": "mystcraft:woodland_mansions",
+      "params": {
+        "rarity": 64
+      }
     },
     {
       "type": "add_instability",

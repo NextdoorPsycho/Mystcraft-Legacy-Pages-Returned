@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:nether_fortress"
+      "id": "mystcraft:nether_fortress",
+      "params": {
+        "spawn_chance": 0.1
+      }
     },
     {
       "type": "add_instability",

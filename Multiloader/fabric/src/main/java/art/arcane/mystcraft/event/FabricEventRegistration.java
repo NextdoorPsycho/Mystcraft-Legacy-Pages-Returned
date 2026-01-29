@@ -36,7 +36,7 @@ public final class FabricEventRegistration {
         });
 
         // Living entity death: age death effects
-        ServerLivingEntityEvents.ALLOW_DEATH.register((entity, damageSource) -> {
+        ServerLivingEntityEvents.ALLOW_DEATH.register((entity, damageSource, damageAmount) -> {
             if (entity instanceof ServerPlayer player) {
                 if (player.level() instanceof ServerLevel serverLevel) {
                     return !PersonalPocketEscapeHandler.handleDeath(player, damageSource);

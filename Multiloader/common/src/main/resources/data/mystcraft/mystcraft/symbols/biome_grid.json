@@ -10,7 +10,8 @@
   ],
   "logic": [
     {
-      "type": "grid"
+      "type": "set_biome_controller",
+      "value": "grid"
     },
     {
       "type": "add_instability",

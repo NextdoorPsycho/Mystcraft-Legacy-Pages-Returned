@@ -104,6 +104,7 @@ public final class SymbolLogicTypes {
 
         SymbolLogicRegistry.register(new AddInstabilityType());
         SymbolLogicRegistry.register(new SetFlagType());
+        SymbolLogicRegistry.register(new SetStarFissureType());
         SymbolLogicRegistry.register(new SetTerrainBlockType());
         SymbolLogicRegistry.register(new SetSeaBlockType());
         SymbolLogicRegistry.register(new RegisterPopulatorType());
@@ -291,7 +292,10 @@ public final class SymbolLogicTypes {
                 case "horizon_hidden" -> director.setHorizonHidden(value);
                 case "rainbow_enabled" -> director.setRainbowEnabled(value);
                 case "obelisks_enabled" -> director.setObelisksEnabled(value);
-                case "star_fissure_enabled" -> director.setStarFissureEnabled(value);
+                case "star_fissure_enabled" -> {
+                    director.setStarFissureEnabled(value);
+                    director.setStarFissureExplicit(true);
+                }
                 case "explosions_enabled" -> director.setExplosionsEnabled(value);
                 case "pvp_enabled" -> director.setPvPEnabled(value);
                 case "pillager_outposts_enabled" -> director.setPillagerOutpostsEnabled(value);
@@ -315,6 +319,28 @@ public final class SymbolLogicTypes {
                 case "deep_dark_enabled" -> director.setDeepDarkEnabled(value);
                 default -> Mystcraft.LOGGER.warn("[SymbolLogic] Unknown flag {}", flag);
             }
+        }
+    }
+
+    private static class SetStarFissureType implements SymbolLogicType {
+        private final ResourceLocation id = new ResourceLocation(Mystcraft.MOD_ID, "set_star_fissure");
+
+        @Override
+        public ResourceLocation getId() {
+            return id;
+        }
+
+        @Override
+        public SymbolLogic parse(JsonObject json) {
+            boolean enabled = GsonHelper.getAsBoolean(json, "enabled", true);
+            JsonObject params = json.has("params") && json.get("params").isJsonObject()
+                    ? json.getAsJsonObject("params")
+                    : new JsonObject();
+            return (director, seed) -> {
+                director.setStarFissureEnabled(enabled);
+                director.setStarFissureExplicit(true);
+                director.setStarFissureParams(params);
+            };
         }
     }
 

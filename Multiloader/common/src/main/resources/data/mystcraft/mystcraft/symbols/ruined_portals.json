@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:ruined_portals"
+      "id": "mystcraft:ruined_portals",
+      "params": {
+        "chance": 1.0
+      }
     },
     {
       "type": "add_instability",

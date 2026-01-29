@@ -2,6 +2,7 @@ package art.arcane.mystcraft.client;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
+import art.arcane.mystcraft.world.AgeDimensionFactory;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -72,23 +73,11 @@ public final class InstabilityEffects {
         }
 
         private float getInstability(ResourceKey<Level> dimension) {
-            int ageUID = getAgeUID(dimension);
+            int ageUID = AgeDimensionFactory.getAgeUID(dimension);
             if (ageUID > 0) {
                 return ClientAgeDataCache.getInstability(ageUID);
             }
             return 0.0f;
-        }
-
-        private int getAgeUID(ResourceKey<Level> dimension) {
-            String path = dimension.location().getPath();
-            if (path.startsWith("mystcraft_age_")) {
-                try {
-                    return Integer.parseInt(path.substring("mystcraft_age_".length()));
-                } catch (NumberFormatException e) {
-                    return -1;
-                }
-            }
-            return -1;
         }
 
         private void renderInstabilityOverlay(GuiGraphics graphics, int screenWidth, int screenHeight) {

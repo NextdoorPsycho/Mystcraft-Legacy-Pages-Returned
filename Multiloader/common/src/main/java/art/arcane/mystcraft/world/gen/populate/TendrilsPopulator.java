@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BlockTags;
@@ -20,18 +21,38 @@ import java.util.Random;
 public class TendrilsPopulator implements IPopulate {
 
     private final long seed;
+    private final int tendrilsPerChunk;
+    private final int minLength;
+    private final int maxLength;
+    private final float spawnChance;
+    private final int neighborRange;
+    private final int minThickness;
+    private final int maxThickness;
 
-    private static final int TENDRILS_PER_CHUNK = 1;
-    private static final int MIN_LENGTH = 35;
-    private static final int MAX_LENGTH = 90;
+    private static final int DEFAULT_TENDRILS_PER_CHUNK = 1;
+    private static final int DEFAULT_MIN_LENGTH = 35;
+    private static final int DEFAULT_MAX_LENGTH = 90;
     // ~12% of chunks spawn a surface root
-    private static final float SPAWN_CHANCE = 0.12f;
+    private static final float DEFAULT_SPAWN_CHANCE = 0.12f;
 
     // Max lateral drift: curvature ±2.0 per segment * 50 segments = 100 blocks = 7 chunks
-    private static final int NEIGHBOR_RANGE = 8;
+    private static final int DEFAULT_NEIGHBOR_RANGE = 8;
+    private static final int DEFAULT_MIN_THICKNESS = 2;
+    private static final int DEFAULT_MAX_THICKNESS = 5;
 
     public TendrilsPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public TendrilsPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.tendrilsPerChunk = PopulatorConfig.getInt(params, "count", DEFAULT_TENDRILS_PER_CHUNK);
+        this.minLength = Math.max(5, PopulatorConfig.getInt(params, "min_length", DEFAULT_MIN_LENGTH));
+        this.maxLength = Math.max(this.minLength, PopulatorConfig.getInt(params, "max_length", DEFAULT_MAX_LENGTH));
+        this.spawnChance = PopulatorConfig.chanceFrom(params, DEFAULT_SPAWN_CHANCE, 0);
+        this.neighborRange = Math.max(1, PopulatorConfig.getInt(params, "neighbor_range", DEFAULT_NEIGHBOR_RANGE));
+        this.minThickness = Math.max(1, PopulatorConfig.getInt(params, "min_thickness", DEFAULT_MIN_THICKNESS));
+        this.maxThickness = Math.max(this.minThickness, PopulatorConfig.getInt(params, "max_thickness", DEFAULT_MAX_THICKNESS));
     }
 
     @Override
@@ -45,17 +66,17 @@ public class TendrilsPopulator implements IPopulate {
         int chunkMaxZ = chunkMinZ + 15;
 
         // Check this chunk and neighbors for tendrils that might reach us
-        for (int ncx = thisChunkX - NEIGHBOR_RANGE; ncx <= thisChunkX + NEIGHBOR_RANGE; ncx++) {
-            for (int ncz = thisChunkZ - NEIGHBOR_RANGE; ncz <= thisChunkZ + NEIGHBOR_RANGE; ncz++) {
+        for (int ncx = thisChunkX - neighborRange; ncx <= thisChunkX + neighborRange; ncx++) {
+            for (int ncz = thisChunkZ - neighborRange; ncz <= thisChunkZ + neighborRange; ncz++) {
                 long chunkSeed = getChunkSeed(ncx, ncz);
                 Random chunkRand = new Random(chunkSeed);
 
                 int neighborMinX = ncx << 4;
                 int neighborMinZ = ncz << 4;
 
-                for (int i = 0; i < TENDRILS_PER_CHUNK; i++) {
+                for (int i = 0; i < tendrilsPerChunk; i++) {
                     // Deterministic spawn chance - skip most chunks
-                    if (chunkRand.nextFloat() >= SPAWN_CHANCE) {
+                    if (chunkRand.nextFloat() >= spawnChance) {
                         continue;
                     }
 
@@ -66,12 +87,12 @@ public class TendrilsPopulator implements IPopulate {
                     // (material, decoration, length, curvature params, etc.)
                     BlockState tendrilBlock = getTendrilMaterial(chunkRand);
                     BlockState decorationBlock = getDecorationBlock(tendrilBlock, chunkRand);
-                    int length = MIN_LENGTH + chunkRand.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
+                    int length = minLength + chunkRand.nextInt(maxLength - minLength + 1);
 
                     // Initial curvature - surface crawling bias
                     double curvature = (chunkRand.nextDouble() - 0.5) * 0.6;
                     // Base thickness: 2-5 blocks
-                    int baseThickness = 2 + chunkRand.nextInt(4);
+                    int baseThickness = minThickness + chunkRand.nextInt(maxThickness - minThickness + 1);
 
                     // Pre-consume all random calls for the tendril path so that
                     // the path is fully deterministic regardless of which chunk visits it.

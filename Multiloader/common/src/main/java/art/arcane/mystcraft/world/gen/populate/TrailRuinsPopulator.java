@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
@@ -18,6 +19,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public class TrailRuinsPopulator implements IPopulate {
 
     private final long seed;
+    private final float spawnChance;
 
     private static final int CHUNKS_BETWEEN = 16;
 
@@ -37,11 +39,19 @@ public class TrailRuinsPopulator implements IPopulate {
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     public TrailRuinsPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public TrailRuinsPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.spawnChance = PopulatorConfig.chanceFrom(params, 1.0f, 0);
     }
 
     @Override
     public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        if (random.nextFloat() > spawnChance) {
+            return;
+        }
         // Set chunk boundaries for this population run
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;

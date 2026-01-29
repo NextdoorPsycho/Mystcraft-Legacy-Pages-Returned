@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.WorldGenLevel;
@@ -25,6 +26,7 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 public class EndCitiesPopulator implements IPopulate {
 
     private final long seed;
+    private final float spawnChance;
 
     private static final int CHUNKS_BETWEEN_CITIES = 32;
     private static final BlockState PURPUR_BLOCK = Blocks.PURPUR_BLOCK.defaultBlockState();
@@ -39,11 +41,19 @@ public class EndCitiesPopulator implements IPopulate {
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     public EndCitiesPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public EndCitiesPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.spawnChance = PopulatorConfig.chanceFrom(params, 1.0f, 0);
     }
 
     @Override
     public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        if (random.nextFloat() > spawnChance) {
+            return;
+        }
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;
 

@@ -74,9 +74,26 @@ public class NeoForgeMystcraftConfig {
         disabledSymbols = COMMON_BUILDER
                 .comment(
                         "List of symbol IDs to disable, e.g. [\"mystcraft:example_symbol_a\", \"mystcraft:example_symbol_b\"].",
-                        "Disabled symbols are hidden from books and not registered at runtime."
+                        "Disabled symbols are hidden from books and not registered at runtime.",
+                        "By default, ore block terrain symbols are disabled as they are overpowered."
                 )
-                .defineListAllowEmpty("disabledSymbols", List.of(), NeoForgeMystcraftConfig::isValidSymbolId);
+                .defineListAllowEmpty("disabledSymbols", List.of(
+                        // Ore storage blocks
+                        "mystcraft:block_minecraft_coal_block",
+                        "mystcraft:block_minecraft_copper_block",
+                        "mystcraft:block_minecraft_diamond_block",
+                        "mystcraft:block_minecraft_emerald_block",
+                        "mystcraft:block_minecraft_gold_block",
+                        "mystcraft:block_minecraft_iron_block",
+                        "mystcraft:block_minecraft_lapis_block",
+                        "mystcraft:block_minecraft_netherite_block",
+                        "mystcraft:block_minecraft_raw_copper_block",
+                        "mystcraft:block_minecraft_raw_gold_block",
+                        "mystcraft:block_minecraft_raw_iron_block",
+                        "mystcraft:block_minecraft_redstone_block",
+                        // Ancient debris
+                        "mystcraft:block_minecraft_ancient_debris"
+                ), NeoForgeMystcraftConfig::isValidSymbolId);
 
         COMMON_BUILDER.pop();
 

@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.WorldGenLevel;
@@ -18,11 +19,21 @@ import net.minecraft.world.level.block.state.BlockState;
 public class DeepDarkPopulator implements IPopulate {
 
     private final long seed;
-    private static final int ATTEMPTS_PER_CHUNK = 10;
-    private static final int MAX_Y = 0;
+    private final int attemptsPerChunk;
+    private final int maxY;
+    private final float spawnChance;
+    private static final int DEFAULT_ATTEMPTS_PER_CHUNK = 10;
+    private static final int DEFAULT_MAX_Y = 0;
 
     public DeepDarkPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public DeepDarkPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.attemptsPerChunk = PopulatorConfig.getInt(params, "attempts", DEFAULT_ATTEMPTS_PER_CHUNK);
+        this.maxY = PopulatorConfig.getInt(params, "max_y", DEFAULT_MAX_Y);
+        this.spawnChance = PopulatorConfig.chanceFrom(params, 1.0f, 0);
     }
 
     @Override
@@ -30,9 +41,12 @@ public class DeepDarkPopulator implements IPopulate {
         int chunkX = chunkPos.getX();
         int chunkZ = chunkPos.getZ();
 
-        for (int attempt = 0; attempt < ATTEMPTS_PER_CHUNK; attempt++) {
+        if (random.nextFloat() > spawnChance) {
+            return;
+        }
+        for (int attempt = 0; attempt < attemptsPerChunk; attempt++) {
             int x = chunkX + random.nextInt(16);
-            int y = world.getMinBuildHeight() + random.nextInt(Math.max(1, MAX_Y - world.getMinBuildHeight()));
+            int y = world.getMinBuildHeight() + random.nextInt(Math.max(1, maxY - world.getMinBuildHeight() + 1));
             int z = chunkZ + random.nextInt(16);
 
             BlockPos pos = new BlockPos(x, y, z);

@@ -2,8 +2,11 @@ package art.arcane.mystcraft.grammar;
 
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
+import art.arcane.mystcraft.api.world.logic.IPopulate;
+import art.arcane.mystcraft.datapack.symbol.PopulatorRegistry;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
+import com.google.gson.JsonObject;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -465,6 +468,8 @@ public class AgeBuilder {
             }
         }
 
+        applyStarFissureDefault(director, symbolRand);
+
         // --- Fallback pipeline (gated by completeness) ---
         float completenessRatio = expandedSymbols.isEmpty() ? 0.0f
                 : 1.0f - (generatedCount / (float) expandedSymbols.size());
@@ -519,6 +524,48 @@ public class AgeBuilder {
         director.setInstability(instability);
 
         return director;
+    }
+
+    private void applyStarFissureDefault(AgeDirectorImpl director, Random rand) {
+        if (director.isPersonalPocket()) {
+            return;
+        }
+        boolean explicit = director.isStarFissureExplicit();
+        boolean enabled = director.isStarFissureEnabled();
+
+        boolean hasPopulator = false;
+        for (IPopulate pop : director.getPopulateFunctions()) {
+            if ("mystcraft:star_fissure".equals(pop.getIdentifier())) {
+                hasPopulator = true;
+                break;
+            }
+        }
+        if (hasPopulator && !explicit) {
+            director.setStarFissureEnabled(true);
+            director.setStarFissureExplicit(true);
+            return;
+        }
+
+        if (!explicit) {
+            enabled = rand.nextBoolean();
+            director.setStarFissureEnabled(enabled);
+            director.setStarFissureExplicit(false);
+        }
+
+        if (!enabled) {
+            return;
+        }
+
+        if (!hasPopulator) {
+            JsonObject params = director.getStarFissureParams();
+            if (params == null) {
+                params = new JsonObject();
+            }
+            IPopulate populator = PopulatorRegistry.create(new ResourceLocation("mystcraft", "star_fissure"), params, director.getSeed());
+            if (populator != null) {
+                director.registerInterface(populator);
+            }
+        }
     }
 
     public float getInstability() {

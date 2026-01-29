@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:mineshafts"
+      "id": "mystcraft:mineshafts",
+      "params": {
+        "rarity": 8
+      }
     }
   ]
 }

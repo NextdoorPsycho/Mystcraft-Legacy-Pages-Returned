@@ -590,6 +590,28 @@ public interface AgeDirector {
     void setStarFissureEnabled(boolean enabled);
 
     /**
+     * Marks whether star fissure was explicitly specified in the book.
+     * @param explicit true if set by a symbol/section, false if defaulted
+     */
+    void setStarFissureExplicit(boolean explicit);
+
+    /**
+     * Returns true if star fissure was explicitly specified in the book.
+     */
+    boolean isStarFissureExplicit();
+
+    /**
+     * Sets star fissure generation parameters from datapack logic.
+     * @param params JSON config for the star fissure populator
+     */
+    void setStarFissureParams(com.google.gson.JsonObject params);
+
+    /**
+     * Gets star fissure generation parameters.
+     */
+    com.google.gson.JsonObject getStarFissureParams();
+
+    /**
      * Enables or disables random explosions.
      * @param enabled true to enable
      */

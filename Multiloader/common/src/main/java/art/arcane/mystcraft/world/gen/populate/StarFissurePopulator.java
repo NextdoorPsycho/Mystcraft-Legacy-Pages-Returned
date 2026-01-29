@@ -2,6 +2,7 @@ package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import art.arcane.mystcraft.registry.ModBlocks;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.tags.BlockTags;
@@ -22,20 +23,34 @@ import net.minecraft.world.level.levelgen.Heightmap;
 public class StarFissurePopulator implements IPopulate {
 
     private final long seed;
+    private final int rarity;
+    private final int minWidth;
+    private final int maxWidth;
+    private final int minLength;
+    private final int maxLength;
 
     // Rarity: 1 in 16 chunks
-    private static final int RARITY = 16;
+    private static final int DEFAULT_RARITY = 16;
     // Fissure dimensions
-    private static final int MIN_WIDTH = 3;
-    private static final int MAX_WIDTH = 5;
-    private static final int MIN_LENGTH = 10;
-    private static final int MAX_LENGTH = 20;
+    private static final int DEFAULT_MIN_WIDTH = 3;
+    private static final int DEFAULT_MAX_WIDTH = 5;
+    private static final int DEFAULT_MIN_LENGTH = 10;
+    private static final int DEFAULT_MAX_LENGTH = 20;
 
     // Chunk boundaries for current population
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
     public StarFissurePopulator(long seed) {
+        this(seed, null);
+    }
+
+    public StarFissurePopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.rarity = PopulatorConfig.rarityFrom(params, DEFAULT_RARITY);
+        this.minWidth = Math.max(1, PopulatorConfig.getInt(params, "min_width", DEFAULT_MIN_WIDTH));
+        this.maxWidth = Math.max(this.minWidth, PopulatorConfig.getInt(params, "max_width", DEFAULT_MAX_WIDTH));
+        this.minLength = Math.max(2, PopulatorConfig.getInt(params, "min_length", DEFAULT_MIN_LENGTH));
+        this.maxLength = Math.max(this.minLength, PopulatorConfig.getInt(params, "max_length", DEFAULT_MAX_LENGTH));
     }
 
     @Override
@@ -48,12 +63,13 @@ public class StarFissurePopulator implements IPopulate {
         chunkMinZ = chunkZ << 4;
         chunkMaxZ = chunkMinZ + 15;
 
-        if (random.nextInt(RARITY) != 0) {
+        RandomSource chunkRandom = chunkRandom(chunkX, chunkZ);
+        if (chunkRandom.nextInt(rarity) != 0) {
             return;
         }
 
-        int x = chunkPos.getX() + random.nextInt(16);
-        int z = chunkPos.getZ() + random.nextInt(16);
+        int x = chunkPos.getX() + chunkRandom.nextInt(16);
+        int z = chunkPos.getZ() + chunkRandom.nextInt(16);
         int surfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
 
         if (surfaceY < world.getMinBuildHeight() + 20) {
@@ -66,7 +82,7 @@ public class StarFissurePopulator implements IPopulate {
             return;
         }
 
-        generateStarFissure(world, random, centerPos);
+        generateStarFissure(world, chunkRandom, centerPos);
     }
 
     private boolean canGenerateFissure(WorldGenLevel world, BlockPos pos) {
@@ -98,8 +114,8 @@ public class StarFissurePopulator implements IPopulate {
     }
 
     private void generateStarFissure(WorldGenLevel world, RandomSource random, BlockPos centerPos) {
-        int width = MIN_WIDTH + random.nextInt(MAX_WIDTH - MIN_WIDTH + 1);
-        int length = MIN_LENGTH + random.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
+        int width = minWidth + random.nextInt(maxWidth - minWidth + 1);
+        int length = minLength + random.nextInt(maxLength - minLength + 1);
 
         double angle = random.nextDouble() * Math.PI * 2.0;
         double cosAngle = Math.cos(angle);
@@ -208,5 +224,38 @@ public class StarFissurePopulator implements IPopulate {
     @Override
     public String getIdentifier() {
         return "mystcraft:star_fissure";
+    }
+
+    public BlockPos findCandidateInChunk(WorldGenLevel world, int chunkX, int chunkZ) {
+        RandomSource chunkRandom = chunkRandom(chunkX, chunkZ);
+        if (chunkRandom.nextInt(rarity) != 0) {
+            return null;
+        }
+        int chunkBlockX = chunkX << 4;
+        int chunkBlockZ = chunkZ << 4;
+        int x = chunkBlockX + chunkRandom.nextInt(16);
+        int z = chunkBlockZ + chunkRandom.nextInt(16);
+        int surfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+        if (surfaceY < world.getMinBuildHeight() + 20) {
+            return null;
+        }
+        BlockPos centerPos = new BlockPos(x, surfaceY, z);
+        return canGenerateFissure(world, centerPos) ? centerPos : null;
+    }
+
+    public void forceGenerate(WorldGenLevel world, BlockPos centerPos) {
+        int chunkX = centerPos.getX() >> 4;
+        int chunkZ = centerPos.getZ() >> 4;
+        chunkMinX = chunkX << 4;
+        chunkMaxX = chunkMinX + 15;
+        chunkMinZ = chunkZ << 4;
+        chunkMaxZ = chunkMinZ + 15;
+        RandomSource rand = chunkRandom(chunkX, chunkZ);
+        generateStarFissure(world, rand, centerPos);
+    }
+
+    private RandomSource chunkRandom(int chunkX, int chunkZ) {
+        long chunkSeed = seed ^ ((long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + 0x5A7F1D3L);
+        return RandomSource.create(chunkSeed);
     }
 }

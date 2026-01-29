@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.WorldGenLevel;
@@ -21,11 +22,12 @@ import net.minecraft.world.level.block.state.BlockState;
 public class StrongholdsPopulator implements IPopulate {
 
     private final long seed;
+    private final int rarity;
 
     // Chunk boundaries for current population
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
-    private static final int STRONGHOLD_RARITY = 128;
+    private static final int DEFAULT_STRONGHOLD_RARITY = 128;
     private static final int MIN_Y = -20;
     private static final int MAX_Y = 20;
     private static final int MAX_ROOMS = 12;
@@ -38,7 +40,12 @@ public class StrongholdsPopulator implements IPopulate {
     }
 
     public StrongholdsPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public StrongholdsPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.rarity = PopulatorConfig.rarityFrom(params, DEFAULT_STRONGHOLD_RARITY);
     }
 
     @Override
@@ -51,7 +58,7 @@ public class StrongholdsPopulator implements IPopulate {
         chunkMinZ = chunkZ << 4;
         chunkMaxZ = chunkMinZ + 15;
 
-        if (random.nextInt(STRONGHOLD_RARITY) != 0) {
+        if (random.nextInt(rarity) != 0) {
             return;
         }
 

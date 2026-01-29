@@ -10,7 +10,8 @@
   ],
   "logic": [
     {
-      "type": "medium"
+      "type": "set_biome_controller",
+      "value": "medium"
     },
     {
       "type": "add_instability",

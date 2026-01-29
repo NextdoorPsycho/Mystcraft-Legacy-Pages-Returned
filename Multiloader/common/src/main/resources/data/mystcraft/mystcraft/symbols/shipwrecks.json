@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:shipwrecks"
+      "id": "mystcraft:shipwrecks",
+      "params": {
+        "rarity": 24
+      }
     }
   ]
 }

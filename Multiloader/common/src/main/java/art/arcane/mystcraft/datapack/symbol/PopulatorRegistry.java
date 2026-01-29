@@ -46,46 +46,46 @@ public final class PopulatorRegistry {
     }
 
     public static void registerDefaults() {
-        register(myst("dense_ores"), (seed, json) -> new DenseOresPopulator(seed));
-        register(myst("huge_trees"), (seed, json) -> new HugeTreePopulator(seed));
-        register(myst("deep_lakes"), (seed, json) -> new DeepLakesPopulator(seed));
-        register(myst("surface_lakes"), (seed, json) -> new SurfaceLakesPopulator(seed));
-        register(myst("spikes"), (seed, json) -> new SpikesPopulator(seed));
-        register(myst("spheres"), (seed, json) -> new SpheresPopulator(seed));
-        register(myst("tendrils"), (seed, json) -> new TendrilsPopulator(seed));
-        register(myst("vertical_tendrils"), (seed, json) -> new VerticalTendrilsPopulator(seed));
-        register(myst("perlin_worms"), (seed, json) -> new PerlinWormsPopulator(seed));
-        register(myst("block_shuffle_terrain"), (seed, json) -> new BlockShufflePopulator(seed, BlockShufflePopulator.Mode.TERRAIN));
-        register(myst("block_shuffle_global"), (seed, json) -> new BlockShufflePopulator(seed, BlockShufflePopulator.Mode.GLOBAL));
-        register(myst("dripstone_caves"), (seed, json) -> new DripstoneCavesPopulator(seed));
-        register(myst("lush_caves"), (seed, json) -> new LushCavesPopulator(seed));
-        register(myst("deep_dark"), (seed, json) -> new DeepDarkPopulator(seed));
-        register(myst("star_fissure"), (seed, json) -> new StarFissurePopulator(seed));
+        register(myst("dense_ores"), (seed, json) -> new DenseOresPopulator(seed, json));
+        register(myst("huge_trees"), (seed, json) -> new HugeTreePopulator(seed, json));
+        register(myst("deep_lakes"), (seed, json) -> new DeepLakesPopulator(seed, json));
+        register(myst("surface_lakes"), (seed, json) -> new SurfaceLakesPopulator(seed, json));
+        register(myst("spikes"), (seed, json) -> new SpikesPopulator(seed, json));
+        register(myst("spheres"), (seed, json) -> new SpheresPopulator(seed, json));
+        register(myst("tendrils"), (seed, json) -> new TendrilsPopulator(seed, json));
+        register(myst("vertical_tendrils"), (seed, json) -> new VerticalTendrilsPopulator(seed, json));
+        register(myst("perlin_worms"), (seed, json) -> new PerlinWormsPopulator(seed, json));
+        register(myst("block_shuffle_terrain"), (seed, json) -> new BlockShufflePopulator(seed, BlockShufflePopulator.Mode.TERRAIN, json));
+        register(myst("block_shuffle_global"), (seed, json) -> new BlockShufflePopulator(seed, BlockShufflePopulator.Mode.GLOBAL, json));
+        register(myst("dripstone_caves"), (seed, json) -> new DripstoneCavesPopulator(seed, json));
+        register(myst("lush_caves"), (seed, json) -> new LushCavesPopulator(seed, json));
+        register(myst("deep_dark"), (seed, json) -> new DeepDarkPopulator(seed, json));
+        register(myst("star_fissure"), (seed, json) -> new StarFissurePopulator(seed, json));
 
-        register(myst("villages"), (seed, json) -> new VillagesPopulator(seed));
-        register(myst("dungeons"), (seed, json) -> new DungeonPopulator(seed));
-        register(myst("mineshafts"), (seed, json) -> new MineshaftsPopulator(seed));
-        register(myst("strongholds"), (seed, json) -> new StrongholdsPopulator(seed));
-        register(myst("nether_fortress"), (seed, json) -> new NetherFortressPopulator(seed));
-        register(myst("pillager_outposts"), (seed, json) -> new PillagerOutpostsPopulator(seed));
-        register(myst("ruined_portals"), (seed, json) -> new RuinedPortalsPopulator(seed));
-        register(myst("ocean_monuments"), (seed, json) -> new OceanMonumentsPopulator(seed));
-        register(myst("witch_huts"), (seed, json) -> new WitchHutsPopulator(seed));
-        register(myst("desert_temples"), (seed, json) -> new DesertTemplesPopulator(seed));
-        register(myst("jungle_temples"), (seed, json) -> new JungleTemplesPopulator(seed));
-        register(myst("woodland_mansions"), (seed, json) -> new WoodlandMansionsPopulator(seed));
-        register(myst("trail_ruins"), (seed, json) -> new TrailRuinsPopulator(seed));
-        register(myst("ancient_cities"), (seed, json) -> new AncientCitiesPopulator(seed));
-        register(myst("bastion_remnants"), (seed, json) -> new BastionRemnantsPopulator(seed));
-        register(myst("end_cities"), (seed, json) -> new EndCitiesPopulator(seed));
-        register(myst("igloos"), (seed, json) -> new IglooPopulator(seed));
-        register(myst("shipwrecks"), (seed, json) -> new ShipwreckPopulator(seed));
-        register(myst("ocean_ruins"), (seed, json) -> new OceanRuinsPopulator(seed));
-        register(myst("buried_treasure"), (seed, json) -> new BuriedTreasurePopulator(seed));
-        register(myst("nether_fossils"), (seed, json) -> new NetherFossilPopulator(seed));
+        register(myst("villages"), (seed, json) -> new VillagesPopulator(seed, json));
+        register(myst("dungeons"), (seed, json) -> new DungeonPopulator(seed, json));
+        register(myst("mineshafts"), (seed, json) -> new MineshaftsPopulator(seed, json));
+        register(myst("strongholds"), (seed, json) -> new StrongholdsPopulator(seed, json));
+        register(myst("nether_fortress"), (seed, json) -> new NetherFortressPopulator(seed, json));
+        register(myst("pillager_outposts"), (seed, json) -> new PillagerOutpostsPopulator(seed, json));
+        register(myst("ruined_portals"), (seed, json) -> new RuinedPortalsPopulator(seed, json));
+        register(myst("ocean_monuments"), (seed, json) -> new OceanMonumentsPopulator(seed, json));
+        register(myst("witch_huts"), (seed, json) -> new WitchHutsPopulator(seed, json));
+        register(myst("desert_temples"), (seed, json) -> new DesertTemplesPopulator(seed, json));
+        register(myst("jungle_temples"), (seed, json) -> new JungleTemplesPopulator(seed, json));
+        register(myst("woodland_mansions"), (seed, json) -> new WoodlandMansionsPopulator(seed, json));
+        register(myst("trail_ruins"), (seed, json) -> new TrailRuinsPopulator(seed, json));
+        register(myst("ancient_cities"), (seed, json) -> new AncientCitiesPopulator(seed, json));
+        register(myst("bastion_remnants"), (seed, json) -> new BastionRemnantsPopulator(seed, json));
+        register(myst("end_cities"), (seed, json) -> new EndCitiesPopulator(seed, json));
+        register(myst("igloos"), (seed, json) -> new IglooPopulator(seed, json));
+        register(myst("shipwrecks"), (seed, json) -> new ShipwreckPopulator(seed, json));
+        register(myst("ocean_ruins"), (seed, json) -> new OceanRuinsPopulator(seed, json));
+        register(myst("buried_treasure"), (seed, json) -> new BuriedTreasurePopulator(seed, json));
+        register(myst("nether_fossils"), (seed, json) -> new NetherFossilPopulator(seed, json));
 
-        register(myst("biome_decoration"), (seed, json) -> new BiomeDecorationPopulator(seed));
-        register(myst("standard_ores"), (seed, json) -> new StandardOresPopulator(seed));
+        register(myst("biome_decoration"), (seed, json) -> new BiomeDecorationPopulator(seed, json));
+        register(myst("standard_ores"), (seed, json) -> new StandardOresPopulator(seed, json));
 
         register(myst("single_ore"), PopulatorRegistry::createSingleOrePopulator);
     }

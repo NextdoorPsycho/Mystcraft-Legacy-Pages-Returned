@@ -16,7 +16,10 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:igloos"
+      "id": "mystcraft:igloos",
+      "params": {
+        "rarity": 48
+      }
     }
   ]
 }

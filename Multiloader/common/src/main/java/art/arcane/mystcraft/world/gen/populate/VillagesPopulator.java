@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
@@ -19,17 +20,29 @@ import net.minecraft.world.level.levelgen.Heightmap;
 public class VillagesPopulator implements IPopulate {
 
     private final long seed;
+    private final int villageRarity;
+    private final int minHouses;
+    private final int maxHouses;
+    private final int flatnessCheckRadius;
 
     // Chunk boundaries for current population
     private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
-    private static final int VILLAGE_RARITY = 32;
-    private static final int MIN_HOUSES = 3;
-    private static final int MAX_HOUSES = 6;
-    private static final int FLATNESS_CHECK_RADIUS = 8;
+    private static final int DEFAULT_VILLAGE_RARITY = 32;
+    private static final int DEFAULT_MIN_HOUSES = 3;
+    private static final int DEFAULT_MAX_HOUSES = 6;
+    private static final int DEFAULT_FLATNESS_CHECK_RADIUS = 8;
 
     public VillagesPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public VillagesPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.villageRarity = PopulatorConfig.rarityFrom(params, DEFAULT_VILLAGE_RARITY);
+        this.minHouses = Math.max(1, PopulatorConfig.getInt(params, "min_houses", DEFAULT_MIN_HOUSES));
+        this.maxHouses = Math.max(this.minHouses, PopulatorConfig.getInt(params, "max_houses", DEFAULT_MAX_HOUSES));
+        this.flatnessCheckRadius = Math.max(1, PopulatorConfig.getInt(params, "flatness_radius", DEFAULT_FLATNESS_CHECK_RADIUS));
     }
 
     @Override
@@ -42,7 +55,7 @@ public class VillagesPopulator implements IPopulate {
         chunkMinZ = chunkZ << 4;
         chunkMaxZ = chunkMinZ + 15;
 
-        if (random.nextInt(VILLAGE_RARITY) != 0) {
+        if (random.nextInt(villageRarity) != 0) {
             return;
         }
 
@@ -70,8 +83,8 @@ public class VillagesPopulator implements IPopulate {
         int baseHeight = center.getY();
 
         // Only check within writable area to avoid cascading chunk loads
-        for (int x = -FLATNESS_CHECK_RADIUS; x <= FLATNESS_CHECK_RADIUS; x += 2) {
-            for (int z = -FLATNESS_CHECK_RADIUS; z <= FLATNESS_CHECK_RADIUS; z += 2) {
+        for (int x = -flatnessCheckRadius; x <= flatnessCheckRadius; x += 2) {
+            for (int z = -flatnessCheckRadius; z <= flatnessCheckRadius; z += 2) {
                 int checkX = center.getX() + x;
                 int checkZ = center.getZ() + z;
                 BlockPos checkPos = new BlockPos(checkX, 0, checkZ);
@@ -106,7 +119,7 @@ public class VillagesPopulator implements IPopulate {
     }
 
     private void generateVillage(WorldGenLevel world, RandomSource random, BlockPos center) {
-        int houseCount = MIN_HOUSES + random.nextInt(MAX_HOUSES - MIN_HOUSES + 1);
+        int houseCount = minHouses + random.nextInt(maxHouses - minHouses + 1);
 
         generateWell(world, center);
 

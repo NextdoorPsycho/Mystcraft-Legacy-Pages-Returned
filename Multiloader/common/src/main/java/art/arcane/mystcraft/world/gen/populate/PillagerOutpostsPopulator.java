@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Pillager;
@@ -17,15 +18,24 @@ import net.minecraft.world.level.block.state.BlockState;
 public class PillagerOutpostsPopulator implements IPopulate {
 
     private final long seed;
+    private final float spawnChance;
 
     private static final int CHUNKS_BETWEEN = 32;
 
     public PillagerOutpostsPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public PillagerOutpostsPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.spawnChance = PopulatorConfig.chanceFrom(params, 1.0f, 0);
     }
 
     @Override
     public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        if (random.nextFloat() > spawnChance) {
+            return;
+        }
         // Only attempt generation in specific chunks based on grid
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;

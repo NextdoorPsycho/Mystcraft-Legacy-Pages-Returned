@@ -1,9 +1,8 @@
 package art.arcane.mystcraft.client;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.client.AgeColorUtils;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
-import art.arcane.mystcraft.world.AgeDimensionFactory;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.FogRenderer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.ViewportEvent;
@@ -24,30 +23,10 @@ public class AgeRenderingHandler {
     /** Tracks which age UIDs have already logged fog info to avoid per-frame spam. */
     private static final Set<Integer> LOGGED_FOG_AGES = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-    /** Gets the current Age UID the player is in, or -1 if not in an Age. */
-    private static int getCurrentAgeUID() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return -1;
-
-        if (!AgeDimensionFactory.isMystcraftAge(mc.level.dimension())) {
-            return -1;
-        }
-
-        String path = mc.level.dimension().location().getPath();
-        if (path.startsWith("mystcraft_age_")) {
-            try {
-                return Integer.parseInt(path.substring("mystcraft_age_".length()));
-            } catch (NumberFormatException e) {
-                return -1;
-            }
-        }
-        return -1;
-    }
-
     /** Modifies fog color based on Age configuration. */
     @SubscribeEvent
     public static void onComputeFogColor(ViewportEvent.ComputeFogColor event) {
-        int ageUID = getCurrentAgeUID();
+        int ageUID = AgeColorUtils.getCurrentAgeUID();
         if (ageUID < 0) return;
 
         int fogColor = ClientAgeDataCache.getFogColor(ageUID);
@@ -91,7 +70,7 @@ public class AgeRenderingHandler {
     /** Modifies fog density based on Age lighting type. */
     @SubscribeEvent
     public static void onRenderFog(ViewportEvent.RenderFog event) {
-        int ageUID = getCurrentAgeUID();
+        int ageUID = AgeColorUtils.getCurrentAgeUID();
         if (ageUID < 0) return;
 
         String lightingType = ClientAgeDataCache.getLightingType(ageUID);

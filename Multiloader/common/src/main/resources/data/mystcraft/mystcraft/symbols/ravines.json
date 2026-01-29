@@ -16,7 +16,11 @@
     },
     {
       "type": "register_terrain_alteration",
-      "id": "mystcraft:ravines"
+      "id": "mystcraft:ravines",
+      "params": {
+        "rate": 50,
+        "fill_block": "minecraft:air"
+      }
     }
   ]
 }

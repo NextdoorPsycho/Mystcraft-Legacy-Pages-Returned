@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
@@ -22,6 +23,7 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 public class BastionRemnantsPopulator implements IPopulate {
 
     private final long seed;
+    private final float spawnChance;
 
     private static final int CHUNKS_BETWEEN_BASTIONS = 32;
 
@@ -37,11 +39,19 @@ public class BastionRemnantsPopulator implements IPopulate {
     private static final BlockState MAGMA_BLOCK = Blocks.MAGMA_BLOCK.defaultBlockState();
 
     public BastionRemnantsPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public BastionRemnantsPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.spawnChance = PopulatorConfig.chanceFrom(params, 1.0f, 0);
     }
 
     @Override
     public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
+        if (random.nextFloat() > spawnChance) {
+            return;
+        }
         int chunkX = chunkPos.getX() >> 4;
         int chunkZ = chunkPos.getZ() >> 4;
 

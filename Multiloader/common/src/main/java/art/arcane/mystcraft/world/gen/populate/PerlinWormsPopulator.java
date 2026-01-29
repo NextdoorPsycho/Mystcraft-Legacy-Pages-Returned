@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
@@ -21,24 +22,53 @@ import java.util.Random;
 public class PerlinWormsPopulator implements IPopulate {
 
     private final long seed;
+    private final int wormsPerChunk;
+    private final int minLength;
+    private final int maxLength;
+    private final float spawnChance;
+    private final int neighborRange;
+    private final double noiseFrequency;
+    private final int minRadius;
+    private final int maxRadius;
+    private final float leavesFloorChance;
+    private final Integer minStartYOverride;
+    private final Integer maxStartYOverride;
 
-    private static final int WORMS_PER_CHUNK = 2;
-    private static final int MIN_LENGTH = 80;
-    private static final int MAX_LENGTH = 220;
-    private static final float SPAWN_CHANCE = 0.35f;
+    private static final int DEFAULT_WORMS_PER_CHUNK = 2;
+    private static final int DEFAULT_MIN_LENGTH = 80;
+    private static final int DEFAULT_MAX_LENGTH = 220;
+    private static final float DEFAULT_SPAWN_CHANCE = 0.35f;
 
     // Worms can drift far: heading changes smoothly so max lateral drift is bounded
     // by segment count * max turn rate. 220 segments * ~1.5 blocks lateral = ~330 blocks = ~21 chunks
-    private static final int NEIGHBOR_RANGE = 20;
+    private static final int DEFAULT_NEIGHBOR_RANGE = 20;
 
     // Noise frequency controls how quickly the worm changes direction
-    private static final double NOISE_FREQUENCY = 0.03;
+    private static final double DEFAULT_NOISE_FREQUENCY = 0.03;
+    private static final int DEFAULT_MIN_RADIUS = 3;
+    private static final int DEFAULT_MAX_RADIUS = 6;
+    private static final float DEFAULT_LEAVES_FLOOR_CHANCE = 0.5f;
 
     // Permutation table for Perlin noise (fixed, deterministic)
     private final int[] perm;
 
     public PerlinWormsPopulator(long seed) {
+        this(seed, null);
+    }
+
+    public PerlinWormsPopulator(long seed, JsonObject params) {
         this.seed = seed;
+        this.wormsPerChunk = PopulatorConfig.getInt(params, "count", DEFAULT_WORMS_PER_CHUNK);
+        this.minLength = Math.max(10, PopulatorConfig.getInt(params, "min_length", DEFAULT_MIN_LENGTH));
+        this.maxLength = Math.max(this.minLength, PopulatorConfig.getInt(params, "max_length", DEFAULT_MAX_LENGTH));
+        this.spawnChance = PopulatorConfig.chanceFrom(params, DEFAULT_SPAWN_CHANCE, 0);
+        this.neighborRange = Math.max(1, PopulatorConfig.getInt(params, "neighbor_range", DEFAULT_NEIGHBOR_RANGE));
+        this.noiseFrequency = PopulatorConfig.getDouble(params, "noise_frequency", DEFAULT_NOISE_FREQUENCY);
+        this.minRadius = Math.max(1, PopulatorConfig.getInt(params, "min_radius", DEFAULT_MIN_RADIUS));
+        this.maxRadius = Math.max(this.minRadius, PopulatorConfig.getInt(params, "max_radius", DEFAULT_MAX_RADIUS));
+        this.leavesFloorChance = PopulatorConfig.getFloat(params, "leaves_floor_chance", DEFAULT_LEAVES_FLOOR_CHANCE);
+        this.minStartYOverride = PopulatorConfig.getOptionalInt(params, "min_start_y", PopulatorConfig.UNSET_INT);
+        this.maxStartYOverride = PopulatorConfig.getOptionalInt(params, "max_start_y", PopulatorConfig.UNSET_INT);
         this.perm = buildPermutationTable(seed);
     }
 
@@ -52,27 +82,27 @@ public class PerlinWormsPopulator implements IPopulate {
         int chunkMinZ = thisChunkZ << 4;
         int chunkMaxZ = chunkMinZ + 15;
 
-        for (int ncx = thisChunkX - NEIGHBOR_RANGE; ncx <= thisChunkX + NEIGHBOR_RANGE; ncx++) {
-            for (int ncz = thisChunkZ - NEIGHBOR_RANGE; ncz <= thisChunkZ + NEIGHBOR_RANGE; ncz++) {
+        for (int ncx = thisChunkX - neighborRange; ncx <= thisChunkX + neighborRange; ncx++) {
+            for (int ncz = thisChunkZ - neighborRange; ncz <= thisChunkZ + neighborRange; ncz++) {
                 long chunkSeed = getChunkSeed(ncx, ncz);
                 Random chunkRand = new Random(chunkSeed);
 
                 int neighborMinX = ncx << 4;
                 int neighborMinZ = ncz << 4;
 
-                for (int i = 0; i < WORMS_PER_CHUNK; i++) {
-                    if (chunkRand.nextFloat() >= SPAWN_CHANCE) {
+                for (int i = 0; i < wormsPerChunk; i++) {
+                    if (chunkRand.nextFloat() >= spawnChance) {
                         continue;
                     }
 
                     int startX = neighborMinX + chunkRand.nextInt(16);
                     int startZ = neighborMinZ + chunkRand.nextInt(16);
-                    int length = MIN_LENGTH + chunkRand.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
+                    int length = minLength + chunkRand.nextInt(maxLength - minLength + 1);
 
                     // Worm type determines behavior
                     int wormType = chunkRand.nextInt(4);
-                    int baseRadius = 3 + chunkRand.nextInt(4);
-                    boolean leavesFloor = chunkRand.nextBoolean();
+                    int baseRadius = minRadius + chunkRand.nextInt(maxRadius - minRadius + 1);
+                    boolean leavesFloor = chunkRand.nextFloat() < leavesFloorChance;
 
                     // Initial heading angles (yaw and pitch in radians)
                     double initialYaw = chunkRand.nextDouble() * Math.PI * 2.0;
@@ -108,11 +138,17 @@ public class PerlinWormsPopulator implements IPopulate {
         // Deterministic start Y from path seed
         Random yRand = new Random(pathSeed ^ 0xB4E_7C02L);
         int startY;
-        switch (wormType) {
-            case 0 -> startY = 20 + yRand.nextInt(30);  // Deep worm (20-49)
-            case 1 -> startY = 40 + yRand.nextInt(40);  // Mid worm (40-79)
-            case 2 -> startY = 10 + yRand.nextInt(50);  // Full-range worm (10-59)
-            default -> startY = 50 + yRand.nextInt(30);  // Shallow worm (50-79)
+        if (minStartYOverride != null && maxStartYOverride != null) {
+            int minY = Math.min(minStartYOverride, maxStartYOverride);
+            int maxY = Math.max(minStartYOverride, maxStartYOverride);
+            startY = minY + yRand.nextInt(Math.max(1, maxY - minY + 1));
+        } else {
+            switch (wormType) {
+                case 0 -> startY = 20 + yRand.nextInt(30);  // Deep worm (20-49)
+                case 1 -> startY = 40 + yRand.nextInt(40);  // Mid worm (40-79)
+                case 2 -> startY = 10 + yRand.nextInt(50);  // Full-range worm (10-59)
+                default -> startY = 50 + yRand.nextInt(30);  // Shallow worm (50-79)
+            }
         }
 
         double currentX = startX;
@@ -125,9 +161,9 @@ public class PerlinWormsPopulator implements IPopulate {
             double progress = (double) segment / length;
 
             // Sample 3D Perlin noise at the worm's current position to steer heading
-            double noiseX = (currentX * NOISE_FREQUENCY) + noiseOffX;
-            double noiseY = (currentY * NOISE_FREQUENCY) + noiseOffY;
-            double noiseZ = (currentZ * NOISE_FREQUENCY) + noiseOffZ;
+            double noiseX = (currentX * noiseFrequency) + noiseOffX;
+            double noiseY = (currentY * noiseFrequency) + noiseOffY;
+            double noiseZ = (currentZ * noiseFrequency) + noiseOffZ;
 
             double yawDelta = perlinNoise(noiseX, noiseY, noiseZ) * 0.6;
             double pitchDelta = perlinNoise(noiseX + 100, noiseY + 100, noiseZ + 100) * 0.3;

@@ -16,7 +16,16 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:tendrils"
+      "id": "mystcraft:tendrils",
+      "params": {
+        "count": 1,
+        "min_length": 35,
+        "max_length": 90,
+        "chance": 0.12,
+        "neighbor_range": 8,
+        "min_thickness": 2,
+        "max_thickness": 5
+      }
     },
     {
       "type": "add_instability",

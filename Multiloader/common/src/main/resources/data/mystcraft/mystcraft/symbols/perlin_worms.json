@@ -16,7 +16,20 @@
     },
     {
       "type": "register_populator",
-      "id": "mystcraft:perlin_worms"
+      "id": "mystcraft:perlin_worms",
+      "params": {
+        "count": 2,
+        "min_length": 80,
+        "max_length": 220,
+        "chance": 0.35,
+        "neighbor_range": 20,
+        "noise_frequency": 0.03,
+        "min_radius": 3,
+        "max_radius": 6,
+        "leaves_floor_chance": 0.5,
+        "min_start_y": -999999,
+        "max_start_y": -999999
+      }
     },
     {
       "type": "add_instability",

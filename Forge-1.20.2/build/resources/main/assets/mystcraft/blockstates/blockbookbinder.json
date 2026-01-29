@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": { "model": "mystcraft:block/bookbinder_model" },
-    "facing=south": { "model": "mystcraft:block/bookbinder_model", "y": 180 },
-    "facing=east": { "model": "mystcraft:block/bookbinder_model", "y": 90 },
-    "facing=west": { "model": "mystcraft:block/bookbinder_model", "y": 270 }
-  }
-}

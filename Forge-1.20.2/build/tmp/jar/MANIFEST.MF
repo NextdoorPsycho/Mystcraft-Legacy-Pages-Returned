@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Specification-Title: mystcraft
-Specification-Vendor: NextdoorPsycho, XCompWiz
-Specification-Version: 1
-Implementation-Title: mystcraft
-Implementation-Version: 1.0.0
-Implementation-Vendor: NextdoorPsycho, XCompWiz
-Implementation-Timestamp: 2026-01-27T12:31:54-0700
-

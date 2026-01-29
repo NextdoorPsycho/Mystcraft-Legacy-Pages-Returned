@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "LLL",
+    "PPP",
+    "LLL"
+  ],
+  "key": {
+    "L": {
+      "item": "minecraft:leather"
+    },
+    "P": {
+      "item": "mystcraft:page"
+    }
+  },
+  "result": {
+    "item": "mystcraft:linkbook_unlinked",
+    "count": 1
+  }
+}

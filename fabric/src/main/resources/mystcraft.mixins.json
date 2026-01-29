@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "package": "art.arcane.mystcraft.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "DimensionSpecialEffectsMixin",
+    "FogRendererMixin"
+  ],
+  "mixins": [
+    "DataFixerSchemaMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "refmap": "mystcraft.refmap.json"
+}

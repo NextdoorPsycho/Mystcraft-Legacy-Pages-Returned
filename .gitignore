@@ -57,6 +57,7 @@ locations.gradle
 **/.claude_context/
 **/claude.md
 **/CLAUDE.md
+**/GEMINI.md
 **/.claudeignore
 **/.openai/
 **/.chatgpt/

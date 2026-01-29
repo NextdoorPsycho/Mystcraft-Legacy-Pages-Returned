@@ -1,8 +1,7 @@
 package art.arcane.mystcraft.client;
 
-import art.arcane.mystcraft.client.AgeColorUtils;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
-import art.arcane.mystcraft.registry.FabricModBlocks;
+import art.arcane.mystcraft.registry.FabricRegistries;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.minecraft.client.color.block.BlockColor;
 
@@ -20,7 +19,7 @@ public final class FabricAgeBlockColorHandler {
             return baseColor;
         };
 
-        ColorProviderRegistry.BLOCK.register(crystalColor, FabricModBlocks.CRYSTAL.get());
+        ColorProviderRegistry.BLOCK.register(crystalColor, FabricRegistries.CRYSTAL.get());
     }
 
     private FabricAgeBlockColorHandler() {}

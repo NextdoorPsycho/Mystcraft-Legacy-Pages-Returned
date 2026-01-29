@@ -1,8 +1,6 @@
 package art.arcane.mystcraft.fluid;
 
-import art.arcane.mystcraft.registry.FabricModBlocks;
-import art.arcane.mystcraft.registry.FabricModFluids;
-import art.arcane.mystcraft.registry.FabricModItems;
+import art.arcane.mystcraft.registry.FabricRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.Item;
@@ -23,17 +21,17 @@ public abstract class FabricBlackInkFluid extends FlowingFluid {
 
     @Override
     public Fluid getFlowing() {
-        return FabricModFluids.BLACK_INK_FLOWING.get();
+        return FabricRegistries.BLACK_INK_FLOWING.get();
     }
 
     @Override
     public Fluid getSource() {
-        return FabricModFluids.BLACK_INK_SOURCE.get();
+        return FabricRegistries.BLACK_INK_SOURCE.get();
     }
 
     @Override
     public Item getBucket() {
-        return FabricModItems.INK_BUCKET.get();
+        return FabricRegistries.INK_BUCKET.get();
     }
 
     @Override
@@ -74,12 +72,12 @@ public abstract class FabricBlackInkFluid extends FlowingFluid {
 
     @Override
     protected BlockState createLegacyBlock(FluidState state) {
-        return FabricModBlocks.FLUID_INK.get().defaultBlockState().setValue(LiquidBlock.LEVEL, getLegacyLevel(state));
+        return FabricRegistries.FLUID_INK.get().defaultBlockState().setValue(LiquidBlock.LEVEL, getLegacyLevel(state));
     }
 
     @Override
     public boolean isSame(Fluid fluid) {
-        return fluid == FabricModFluids.BLACK_INK_SOURCE.get() || fluid == FabricModFluids.BLACK_INK_FLOWING.get();
+        return fluid == FabricRegistries.BLACK_INK_SOURCE.get() || fluid == FabricRegistries.BLACK_INK_FLOWING.get();
     }
 
     public static class Source extends FabricBlackInkFluid {

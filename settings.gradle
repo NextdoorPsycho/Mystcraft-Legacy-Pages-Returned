@@ -23,11 +23,8 @@ pluginManagement {
 
 rootProject.name = 'Mystcraft'
 include('common')
-include('fabric')
 include('fabric:1.20.1')
 include('fabric:1.20.2')
-include('neoforge')
 include('neoforge:1.20.2')
-include('forge')
 include('forge:1.20.1')
 include('forge:1.20.2')

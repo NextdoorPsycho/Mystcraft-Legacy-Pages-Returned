@@ -19,11 +19,8 @@ import art.arcane.mystcraft.client.screen.InkMixerScreen;
 import art.arcane.mystcraft.client.screen.LinkModifierScreen;
 import art.arcane.mystcraft.client.screen.PortfolioScreen;
 import art.arcane.mystcraft.client.screen.WritingDeskScreen;
-import art.arcane.mystcraft.registry.FabricModBlockEntities;
-import art.arcane.mystcraft.registry.FabricModEntities;
-import art.arcane.mystcraft.registry.FabricModItems;
+import art.arcane.mystcraft.registry.FabricRegistries;
 import art.arcane.mystcraft.network.FabricMystcraftNetwork;
-import art.arcane.mystcraft.registry.FabricModMenuTypes;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
@@ -32,7 +29,10 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
 
-/** Fabric client entry point for 1.20.1. */
+/**
+ * Fabric client entry point for Mystcraft 1.20.1.
+ * Self-contained - does not pull from fabric/src.
+ */
 public class MystcraftFabricClient implements ClientModInitializer {
 
     @Override
@@ -47,24 +47,24 @@ public class MystcraftFabricClient implements ClientModInitializer {
         PageItemRendererBEWLR.prewarmCache();
 
         // Register menu screens
-        ScreenRegistry.register(FabricModMenuTypes.INK_MIXER.get(), InkMixerScreen::new);
-        ScreenRegistry.register(FabricModMenuTypes.BOOK_BINDER.get(), BookBinderScreen::new);
-        ScreenRegistry.register(FabricModMenuTypes.LINK_MODIFIER.get(), LinkModifierScreen::new);
-        ScreenRegistry.register(FabricModMenuTypes.WRITING_DESK.get(), WritingDeskScreen::new);
-        ScreenRegistry.register(FabricModMenuTypes.FOLDER.get(), FolderScreen::new);
-        ScreenRegistry.register(FabricModMenuTypes.PORTFOLIO.get(), PortfolioScreen::new);
+        ScreenRegistry.register(FabricRegistries.INK_MIXER_MENU.get(), InkMixerScreen::new);
+        ScreenRegistry.register(FabricRegistries.BOOK_BINDER_MENU.get(), BookBinderScreen::new);
+        ScreenRegistry.register(FabricRegistries.LINK_MODIFIER_MENU.get(), LinkModifierScreen::new);
+        ScreenRegistry.register(FabricRegistries.WRITING_DESK_MENU.get(), WritingDeskScreen::new);
+        ScreenRegistry.register(FabricRegistries.FOLDER_MENU.get(), FolderScreen::new);
+        ScreenRegistry.register(FabricRegistries.PORTFOLIO_MENU.get(), PortfolioScreen::new);
 
         // Register block entity renderers
-        BlockEntityRendererRegistry.register(FabricModBlockEntities.BOOKSTAND.get(), BookstandRenderer::new);
-        BlockEntityRendererRegistry.register(FabricModBlockEntities.STAR_FISSURE.get(), StarFissureRenderer::new);
-        BlockEntityRendererRegistry.register(FabricModBlockEntities.WRITING_DESK.get(), WritingDeskRenderer::new);
-        BlockEntityRendererRegistry.register(FabricModBlockEntities.BOOK_RECEPTACLE.get(), BookReceptacleRenderer::new);
+        BlockEntityRendererRegistry.register(FabricRegistries.BOOKSTAND_BE.get(), BookstandRenderer::new);
+        BlockEntityRendererRegistry.register(FabricRegistries.STAR_FISSURE_BE.get(), StarFissureRenderer::new);
+        BlockEntityRendererRegistry.register(FabricRegistries.WRITING_DESK_BE.get(), WritingDeskRenderer::new);
+        BlockEntityRendererRegistry.register(FabricRegistries.BOOK_RECEPTACLE_BE.get(), BookReceptacleRenderer::new);
 
         // Register entity renderers
-        EntityRendererRegistry.register(FabricModEntities.LINKBOOK.get(), LinkbookEntityRenderer::new);
-        EntityRendererRegistry.register(FabricModEntities.METEOR.get(), MeteorEntityRenderer::new);
-        EntityRendererRegistry.register(FabricModEntities.FALLING_BLOCK.get(), MystcraftFallingBlockRenderer::new);
-        EntityRendererRegistry.register(FabricModEntities.COLORED_LIGHTNING.get(), ColoredLightningRenderer::new);
+        EntityRendererRegistry.register(FabricRegistries.LINKBOOK_ENTITY.get(), LinkbookEntityRenderer::new);
+        EntityRendererRegistry.register(FabricRegistries.METEOR_ENTITY.get(), MeteorEntityRenderer::new);
+        EntityRendererRegistry.register(FabricRegistries.FALLING_BLOCK_ENTITY.get(), MystcraftFallingBlockRenderer::new);
+        EntityRendererRegistry.register(FabricRegistries.COLORED_LIGHTNING_ENTITY.get(), ColoredLightningRenderer::new);
 
         // Register model layers
         EntityModelLayerRegistry.registerModelLayer(BookstandModel.LAYER_LOCATION, BookstandModel::createBodyLayer);
@@ -73,14 +73,14 @@ public class MystcraftFabricClient implements ClientModInitializer {
         // Register item colors
         ColorProviderRegistry.ITEM.register(
                 (stack, tintIndex) -> 0xFF303030,
-                FabricModItems.GUIDEBOOK.get());
+                FabricRegistries.GUIDEBOOK.get());
         ColorProviderRegistry.ITEM.register(
                 (stack, tintIndex) -> tintIndex == 1 ? 0xFF1A1A1A : 0xFFFFFFFF,
-                FabricModItems.INK_BUCKET.get());
+                FabricRegistries.INK_BUCKET.get());
 
         // Register BEWLR for page item
         BuiltinItemRendererRegistry.INSTANCE.register(
-                FabricModItems.PAGE.get(),
+                FabricRegistries.PAGE.get(),
                 (stack, mode, poseStack, bufferSource, light, overlay) ->
                         PageItemRendererBEWLR.getInstance().renderByItem(
                                 stack, mode, poseStack, bufferSource, light, overlay));

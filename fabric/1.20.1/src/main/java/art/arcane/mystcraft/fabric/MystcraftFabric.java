@@ -2,19 +2,9 @@ package art.arcane.mystcraft.fabric;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.config.FabricMystcraftConfig;
-import art.arcane.mystcraft.event.FabricEventRegistration;
+import art.arcane.mystcraft.event.FabricEventHelper;
 import art.arcane.mystcraft.network.FabricMystcraftNetwork;
-import art.arcane.mystcraft.registry.FabricModBlockEntities;
-import art.arcane.mystcraft.registry.FabricModBlocks;
-import art.arcane.mystcraft.registry.ModCreativeTabs;
-import art.arcane.mystcraft.registry.FabricModEntities;
-import art.arcane.mystcraft.registry.FabricModFluids;
-import art.arcane.mystcraft.registry.FabricModItems;
-import art.arcane.mystcraft.registry.FabricModMenuTypes;
-import art.arcane.mystcraft.registry.FabricModSounds;
-import art.arcane.mystcraft.registry.ModVillagers;
-import art.arcane.mystcraft.registry.ModWorldGen;
-import art.arcane.mystcraft.registry.FabricModStructures;
+import art.arcane.mystcraft.registry.FabricRegistries;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
@@ -25,7 +15,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.storage.LevelResource;
 
@@ -38,7 +27,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
-/** Fabric mod entry point for 1.20.1. */
+/**
+ * Fabric mod entry point for Mystcraft 1.20.1.
+ * Self-contained - does not pull from fabric/src.
+ */
 public class MystcraftFabric implements ModInitializer {
 
     @Override
@@ -47,21 +39,11 @@ public class MystcraftFabric implements ModInitializer {
 
         FabricMystcraftConfig.load();
 
-        // Register all content
-        FabricModFluids.register();
-        FabricModBlocks.register();
-        FabricModItems.register();
-        FabricModBlockEntities.register();
-        FabricModEntities.register();
-        FabricModSounds.register();
-        ModCreativeTabs.register();
-        FabricModMenuTypes.register();
-        ModVillagers.register();
-        ModWorldGen.register();
-        FabricModStructures.register();
+        // Register all content via consolidated registries
+        FabricRegistries.register();
 
         // Populate common stubs from Fabric registry objects
-        populateCommonRegistries();
+        FabricRegistries.populateCommonRegistries();
 
         Mystcraft.init();
 
@@ -98,148 +80,12 @@ public class MystcraftFabric implements ModInitializer {
                 .registerReloadListener(new art.arcane.mystcraft.fabric.resource.FabricSymbolReloadListener());
 
         // Register all Fabric event callbacks
-        FabricEventRegistration.registerAll();
+        FabricEventHelper.registerAll();
 
         // Register lectern interaction handler for Mystcraft books
         art.arcane.mystcraft.fabric.event.LecternInteractionHandler.register();
 
         Mystcraft.LOGGER.info("[Mystcraft] Fabric 1.20.1 registration complete");
-    }
-
-    /** Populates common registry stubs with Fabric-registered objects. */
-    private static void populateCommonRegistries() {
-        // Blocks
-        art.arcane.mystcraft.registry.ModBlocks.INK_MIXER = FabricModBlocks.INK_MIXER;
-        art.arcane.mystcraft.registry.ModBlocks.BOOK_BINDER = FabricModBlocks.BOOK_BINDER;
-        art.arcane.mystcraft.registry.ModBlocks.BOOK_RECEPTACLE = FabricModBlocks.BOOK_RECEPTACLE;
-        art.arcane.mystcraft.registry.ModBlocks.BOOKSTAND = FabricModBlocks.BOOKSTAND;
-        art.arcane.mystcraft.registry.ModBlocks.LINK_MODIFIER = FabricModBlocks.LINK_MODIFIER;
-        art.arcane.mystcraft.registry.ModBlocks.WRITING_DESK = FabricModBlocks.WRITING_DESK;
-        art.arcane.mystcraft.registry.ModBlocks.CRYSTAL = FabricModBlocks.CRYSTAL;
-        art.arcane.mystcraft.registry.ModBlocks.DECAY = FabricModBlocks.DECAY;
-        art.arcane.mystcraft.registry.ModBlocks.LINK_PORTAL = FabricModBlocks.LINK_PORTAL;
-        art.arcane.mystcraft.registry.ModBlocks.STAR_FISSURE = FabricModBlocks.STAR_FISSURE;
-        art.arcane.mystcraft.registry.ModBlocks.FLUID_INK = () -> (LiquidBlock) FabricModBlocks.FLUID_INK.get();
-
-        // Items
-        art.arcane.mystcraft.registry.ModItems.PAGE = FabricModItems.PAGE;
-        art.arcane.mystcraft.registry.ModItems.AGEBOOK = FabricModItems.AGEBOOK;
-        art.arcane.mystcraft.registry.ModItems.LINKBOOK = FabricModItems.LINKBOOK;
-        art.arcane.mystcraft.registry.ModItems.LINKBOOK_UNLINKED = FabricModItems.LINKBOOK_UNLINKED;
-        art.arcane.mystcraft.registry.ModItems.PERSONAL_LINK_BOOK = FabricModItems.PERSONAL_LINK_BOOK;
-        art.arcane.mystcraft.registry.ModItems.BOOSTER_PACK = FabricModItems.BOOSTER_PACK;
-        art.arcane.mystcraft.registry.ModItems.FOLDER = FabricModItems.FOLDER;
-        art.arcane.mystcraft.registry.ModItems.PORTFOLIO = FabricModItems.PORTFOLIO;
-        art.arcane.mystcraft.registry.ModItems.INK_VIAL = FabricModItems.INK_VIAL;
-        art.arcane.mystcraft.registry.ModItems.GUIDEBOOK = FabricModItems.GUIDEBOOK;
-        art.arcane.mystcraft.registry.ModItems.INK_BUCKET = FabricModItems.INK_BUCKET;
-        art.arcane.mystcraft.registry.ModItems.INK_MIXER_ITEM = FabricModItems.INK_MIXER_ITEM;
-        art.arcane.mystcraft.registry.ModItems.BOOK_BINDER_ITEM = FabricModItems.BOOK_BINDER_ITEM;
-        art.arcane.mystcraft.registry.ModItems.BOOK_RECEPTACLE_ITEM = FabricModItems.BOOK_RECEPTACLE_ITEM;
-        art.arcane.mystcraft.registry.ModItems.BOOKSTAND_ITEM = FabricModItems.BOOKSTAND_ITEM;
-        art.arcane.mystcraft.registry.ModItems.LINK_MODIFIER_ITEM = FabricModItems.LINK_MODIFIER_ITEM;
-        art.arcane.mystcraft.registry.ModItems.WRITING_DESK_ITEM = FabricModItems.WRITING_DESK_ITEM;
-        art.arcane.mystcraft.registry.ModItems.CRYSTAL_ITEM = FabricModItems.CRYSTAL_ITEM;
-        art.arcane.mystcraft.registry.ModItems.DECAY_ITEM = FabricModItems.DECAY_ITEM;
-
-        // Block entities
-        art.arcane.mystcraft.registry.ModBlockEntities.INK_MIXER = FabricModBlockEntities.INK_MIXER;
-        art.arcane.mystcraft.registry.ModBlockEntities.BOOK_BINDER = FabricModBlockEntities.BOOK_BINDER;
-        art.arcane.mystcraft.registry.ModBlockEntities.BOOK_RECEPTACLE = FabricModBlockEntities.BOOK_RECEPTACLE;
-        art.arcane.mystcraft.registry.ModBlockEntities.BOOKSTAND = FabricModBlockEntities.BOOKSTAND;
-        art.arcane.mystcraft.registry.ModBlockEntities.WRITING_DESK = FabricModBlockEntities.WRITING_DESK;
-        art.arcane.mystcraft.registry.ModBlockEntities.STAR_FISSURE = FabricModBlockEntities.STAR_FISSURE;
-        art.arcane.mystcraft.registry.ModBlockEntities.LINK_MODIFIER = FabricModBlockEntities.LINK_MODIFIER;
-
-        // Entities
-        art.arcane.mystcraft.registry.ModEntities.LINKBOOK = FabricModEntities.LINKBOOK;
-        art.arcane.mystcraft.registry.ModEntities.FALLING_BLOCK = FabricModEntities.FALLING_BLOCK;
-        art.arcane.mystcraft.registry.ModEntities.METEOR = FabricModEntities.METEOR;
-        art.arcane.mystcraft.registry.ModEntities.COLORED_LIGHTNING = FabricModEntities.COLORED_LIGHTNING;
-
-        // Fluids
-        art.arcane.mystcraft.registry.ModFluids.BLACK_INK_SOURCE = FabricModFluids.BLACK_INK_SOURCE;
-        art.arcane.mystcraft.registry.ModFluids.BLACK_INK_FLOWING = FabricModFluids.BLACK_INK_FLOWING;
-        art.arcane.mystcraft.registry.ModFluids.BLACK_INK_BUCKET = FabricModItems.INK_BUCKET;
-
-        // Sounds
-        art.arcane.mystcraft.registry.ModSounds.LINKING_POP = FabricModSounds.LINKING_POP;
-        art.arcane.mystcraft.registry.ModSounds.LINKING_LINK = FabricModSounds.LINKING_LINK;
-        art.arcane.mystcraft.registry.ModSounds.LINKING_DISARM = FabricModSounds.LINKING_DISARM;
-        art.arcane.mystcraft.registry.ModSounds.LINKING_FOLLOWING = FabricModSounds.LINKING_FOLLOWING;
-        art.arcane.mystcraft.registry.ModSounds.LINKING_INTRA = FabricModSounds.LINKING_INTRA;
-        art.arcane.mystcraft.registry.ModSounds.LINKING_FISSURE = FabricModSounds.LINKING_FISSURE;
-        art.arcane.mystcraft.registry.ModSounds.LINKING_PORTAL = FabricModSounds.LINKING_PORTAL;
-        art.arcane.mystcraft.registry.ModSounds.METEOR_ROAR = FabricModSounds.METEOR_ROAR;
-        art.arcane.mystcraft.registry.ModSounds.METEOR_IMPACT = FabricModSounds.METEOR_IMPACT;
-
-        // Menu types
-        art.arcane.mystcraft.registry.ModMenuTypes.INK_MIXER = FabricModMenuTypes.INK_MIXER;
-        art.arcane.mystcraft.registry.ModMenuTypes.BOOK_BINDER = FabricModMenuTypes.BOOK_BINDER;
-        art.arcane.mystcraft.registry.ModMenuTypes.LINK_MODIFIER = FabricModMenuTypes.LINK_MODIFIER;
-        art.arcane.mystcraft.registry.ModMenuTypes.WRITING_DESK = FabricModMenuTypes.WRITING_DESK;
-        art.arcane.mystcraft.registry.ModMenuTypes.FOLDER = FabricModMenuTypes.FOLDER;
-        art.arcane.mystcraft.registry.ModMenuTypes.PORTFOLIO = FabricModMenuTypes.PORTFOLIO;
-
-        // Config
-        art.arcane.mystcraft.config.MystcraftConfig.giveGuidebookOnFirstSpawn = () -> FabricMystcraftConfig.giveGuidebookOnFirstSpawn.get();
-        art.arcane.mystcraft.config.MystcraftConfig.maxSymbolsPerBook = () -> FabricMystcraftConfig.maxSymbolsPerBook.get();
-        art.arcane.mystcraft.config.MystcraftConfig.deleteAgesOnStartup = () -> FabricMystcraftConfig.deleteAgesOnStartup.get();
-        art.arcane.mystcraft.config.MystcraftConfig.enablePersonalLinkBooks = () -> FabricMystcraftConfig.enablePersonalLinkBooks.get();
-        art.arcane.mystcraft.config.MystcraftConfig.allowGravityBlocksInAges = () -> FabricMystcraftConfig.allowGravityBlocksInAges.get();
-        art.arcane.mystcraft.config.MystcraftConfig.microDimensionsEnabled = () -> FabricMystcraftConfig.microDimensionsEnabled.get();
-        art.arcane.mystcraft.config.MystcraftConfig.microDimensionRadiusChunks = () -> FabricMystcraftConfig.microDimensionRadiusChunks.get();
-        art.arcane.mystcraft.config.MystcraftConfig.microDimensionExtraChunks = () -> FabricMystcraftConfig.microDimensionExtraChunks.get();
-        art.arcane.mystcraft.config.MystcraftConfig.safeStories = () -> FabricMystcraftConfig.safeStories.get();
-        art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols = () -> FabricMystcraftConfig.disabledSymbols.get();
-        art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = () -> FabricMystcraftConfig.instabilityEnabled.get();
-        art.arcane.mystcraft.config.MystcraftConfig.deathEffectsEnabled = () -> FabricMystcraftConfig.deathEffectsEnabled.get();
-        art.arcane.mystcraft.config.MystcraftConfig.allowUnstableAges = () -> FabricMystcraftConfig.allowUnstableAges.get();
-        art.arcane.mystcraft.config.MystcraftConfig.instabilityMultiplier = () -> FabricMystcraftConfig.instabilityMultiplier.get();
-        art.arcane.mystcraft.config.MystcraftConfig.maxAllowedInstability = () -> FabricMystcraftConfig.maxAllowedInstability.get();
-        art.arcane.mystcraft.config.MystcraftConfig.thresholdDecay = () -> FabricMystcraftConfig.thresholdDecay.get();
-        art.arcane.mystcraft.config.MystcraftConfig.thresholdTransmute = () -> FabricMystcraftConfig.thresholdTransmute.get();
-        art.arcane.mystcraft.config.MystcraftConfig.thresholdLightning = () -> FabricMystcraftConfig.thresholdLightning.get();
-        art.arcane.mystcraft.config.MystcraftConfig.thresholdMeteor = () -> FabricMystcraftConfig.thresholdMeteor.get();
-        art.arcane.mystcraft.config.MystcraftConfig.thresholdPoison = () -> FabricMystcraftConfig.thresholdPoison.get();
-        art.arcane.mystcraft.config.MystcraftConfig.thresholdWither = () -> FabricMystcraftConfig.thresholdWither.get();
-        art.arcane.mystcraft.config.MystcraftConfig.chanceDecay = () -> FabricMystcraftConfig.chanceDecay.get();
-        art.arcane.mystcraft.config.MystcraftConfig.chanceTransmute = () -> FabricMystcraftConfig.chanceTransmute.get();
-        art.arcane.mystcraft.config.MystcraftConfig.chanceLightning = () -> FabricMystcraftConfig.chanceLightning.get();
-        art.arcane.mystcraft.config.MystcraftConfig.chanceMeteor = () -> FabricMystcraftConfig.chanceMeteor.get();
-        art.arcane.mystcraft.config.MystcraftConfig.chancePlayerEffect = () -> FabricMystcraftConfig.chancePlayerEffect.get();
-        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerHalfSizeXZ = () -> FabricMystcraftConfig.pocketInnerHalfSizeXZ.get();
-        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerHalfSizeY = () -> FabricMystcraftConfig.pocketInnerHalfSizeY.get();
-        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerThickness = () -> FabricMystcraftConfig.pocketInnerThickness.get();
-        art.arcane.mystcraft.config.MystcraftConfig.pocketOuterThickness = () -> FabricMystcraftConfig.pocketOuterThickness.get();
-        art.arcane.mystcraft.config.MystcraftConfig.pocketCenterY = () -> FabricMystcraftConfig.pocketCenterY.get();
-        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerBlockPalette = () -> FabricMystcraftConfig.pocketInnerBlockPalette.get();
-        art.arcane.mystcraft.config.MystcraftConfig.pocketOuterBlock = () -> FabricMystcraftConfig.pocketOuterBlock.get();
-
-        // Network
-        art.arcane.mystcraft.network.MystcraftNetwork.sendToServerHandler = packet -> {
-            FabricMystcraftNetwork.sendToServerGeneric(packet);
-        };
-        art.arcane.mystcraft.network.MystcraftNetwork.sendToPlayerHandler = (packet, player) -> {
-            FabricMystcraftNetwork.sendToPlayerGeneric(packet, player);
-        };
-        art.arcane.mystcraft.network.MystcraftNetwork.sendToAllHandler = packet -> {
-            MinecraftServer server = Mystcraft.getCurrentServer();
-            if (server != null) {
-                FabricMystcraftNetwork.sendToAll(packet, server);
-            }
-        };
-        art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingHandler = (packet, player) -> {
-            FabricMystcraftNetwork.sendToTracking(packet, player);
-        };
-        art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingBlockHandler = FabricMystcraftNetwork::sendToTrackingBlock;
-
-        // Structure types
-        art.arcane.mystcraft.world.structure.ModStructures.ABANDONED_LIBRARY = FabricModStructures.ABANDONED_LIBRARY;
-        art.arcane.mystcraft.world.structure.ModStructures.UNDERGROUND_ARCHIVE = FabricModStructures.UNDERGROUND_ARCHIVE;
-        art.arcane.mystcraft.world.structure.ModStructures.SCATTERED_LIBRARY = FabricModStructures.SCATTERED_LIBRARY;
-
-        Mystcraft.LOGGER.info("[Mystcraft] Common registry stubs populated from Fabric registrations");
     }
 
     /** Handles dimension-level load events for Mystcraft Ages. */

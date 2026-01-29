@@ -3,7 +3,6 @@ package art.arcane.mystcraft.registry;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.BoosterPackItem;
 import art.arcane.mystcraft.item.FolderItem;
-import art.arcane.mystcraft.item.GlassesItem;
 import art.arcane.mystcraft.item.GuidebookItem;
 import art.arcane.mystcraft.item.InkVialItem;
 import art.arcane.mystcraft.item.LinkbookItem;
@@ -63,10 +62,6 @@ public final class ForgeModItems {
     public static final RegistryObject<Item> INK_VIAL =
             MystcraftRegistries.ITEMS.register("inkvial",
                     () -> new InkVialItem(new Item.Properties().stacksTo(16)));
-
-    public static final RegistryObject<Item> GLASSES =
-            MystcraftRegistries.ITEMS.register("glasses",
-                    () -> new GlassesItem(new Item.Properties().stacksTo(1)));
 
     public static final RegistryObject<Item> GUIDEBOOK =
             MystcraftRegistries.ITEMS.register("guidebook",

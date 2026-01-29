@@ -1,0 +1,12 @@
+{
+  "type": "mystcraft:booster_pack",
+  "conditions": [
+    {
+      "condition": "forge:loot_table_id",
+      "loot_table_id": "minecraft:chests/abandoned_mineshaft"
+    }
+  ],
+  "chance": 0.25,
+  "min_count": 1,
+  "max_count": 1
+}

@@ -49,8 +49,6 @@ public final class FabricArchivistTrades {
         TradeOfferHelper.registerVillagerOffers(ModVillagers.ARCHIVIST.get(), 4, factories -> {
             factories.add((entity, random) -> new MerchantOffer(
                     new ItemStack(Items.EMERALD, 20), new ItemStack(FabricModItems.LINKBOOK_UNLINKED.get(), 1), 3, 15, 0.05f));
-            factories.add((entity, random) -> new MerchantOffer(
-                    new ItemStack(Items.EMERALD, 16), new ItemStack(FabricModItems.GLASSES.get(), 1), 3, 15, 0.05f));
             factories.add(new ArchivistTradeListings.RankedSymbolTrade(3, 2, 18));
             factories.add(new ArchivistTradeListings.RankedSymbolTrade(4, 1, 20));
         });

@@ -1,0 +1,38 @@
+{
+  "category": "terrain",
+  "card_rank": 4,
+  "instability_cost": 8.0,
+  "display_name": "Inverted Terrain (Advanced)",
+  "allow_random": true,
+  "grammar": {
+    "token": "mystcraft:terrain",
+    "rank": 4
+  },
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "inverted_advanced",
+        "params": {
+          "base_height": 64,
+          "height_amp": 32
+        },
+        "density": {
+          "op": "sub",
+          "a": { "var": "y" },
+          "b": {
+            "op": "add",
+            "a": { "var": "base_height" },
+            "b": {
+              "op": "mul",
+              "a": { "op": "noise2", "scale": 0.01, "octaves": 5, "seed": 1337 },
+              "b": { "var": "height_amp" }
+            }
+          }
+        }
+      }
+    },
+    { "type": "add_instability", "value": 8.0 }
+  ]
+}

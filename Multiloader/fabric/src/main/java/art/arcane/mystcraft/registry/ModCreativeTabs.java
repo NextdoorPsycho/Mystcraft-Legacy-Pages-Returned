@@ -66,7 +66,6 @@ public final class ModCreativeTabs {
                     // Ink and tools
                     output.accept(FabricModItems.INK_VIAL.get());
                     output.accept(FabricModItems.INK_BUCKET.get());
-                    output.accept(FabricModItems.GLASSES.get());
 
                     // Workstation blocks
                     output.accept(FabricModItems.WRITING_DESK_ITEM.get());

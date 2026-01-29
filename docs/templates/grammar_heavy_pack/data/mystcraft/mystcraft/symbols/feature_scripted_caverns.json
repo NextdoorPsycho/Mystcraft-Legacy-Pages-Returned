@@ -1,0 +1,26 @@
+{
+  "category": "feature_large",
+  "card_rank": 4,
+  "instability_cost": 7.0,
+  "display_name": "Cavern Weaves",
+  "allow_random": true,
+  "grammar": {
+    "token": "mystcraft:feature_large",
+    "rank": 4
+  },
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "cavern_weaves",
+        "density": {
+          "op": "sub",
+          "a": 0.4,
+          "b": { "op": "abs", "input": { "op": "noise3", "scale": 0.025, "octaves": 4, "seed": 222 } }
+        }
+      }
+    },
+    { "type": "add_instability", "value": 7.0 }
+  ]
+}

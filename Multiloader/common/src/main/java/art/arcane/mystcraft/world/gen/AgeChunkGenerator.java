@@ -176,6 +176,21 @@ public class AgeChunkGenerator extends ChunkGenerator {
     return isVanillaDelegateType(terrainType);
   }
 
+  private art.arcane.mystcraft.api.world.logic.ITerrainGenerator getCustomTerrainGenerator() {
+    if (director == null) {
+      return null;
+    }
+    var generator = director.getTerrainGenerator();
+    if (generator == null) {
+      return null;
+    }
+    String type = generator.getType();
+    if (type == null || type.isBlank()) {
+      return generator;
+    }
+    return isVanillaDelegateType(type) ? null : generator;
+  }
+
   private boolean hasMixMode() {
     return !"none".equals(terrainMixMode) && !"none".equals(secondaryTerrainType);
   }
@@ -671,6 +686,29 @@ public class AgeChunkGenerator extends ChunkGenerator {
           ageUID, count,
           vanillaDelegate != null ? "ready" : "null",
           threadName);
+    }
+
+    // Custom scripted terrain generator (datapack-driven)
+    var customGenerator = getCustomTerrainGenerator();
+    if (customGenerator != null) {
+      if (hasMixMode()) {
+        Mystcraft.LOGGER.warn("[ChunkGen] Age {} has custom terrain generator but mix mode is set; using custom generator only", ageUID);
+      }
+      if (count <= DEBUG_CHUNK_LIMIT) {
+        Mystcraft.LOGGER.debug("[ChunkGen] Age {} fillFromNoise #{}: CUSTOM generator '{}' for [{}, {}]",
+            ageUID, count, customGenerator.getType(), chunkX, chunkZ);
+      }
+      return CompletableFuture.supplyAsync(() -> {
+        long chunkSeed = (long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + seed;
+        RandomSource random = RandomSource.create(chunkSeed);
+        customGenerator.generateTerrain(chunkX, chunkZ, chunk, random);
+        applyTerrainAlterations(chunk, randomState);
+        if (count <= DEBUG_CHUNK_LIMIT) {
+          Mystcraft.LOGGER.debug("[ChunkGen] Age {} fillFromNoise #{}: custom generator COMPLETE for [{}, {}] [thread: {}]",
+              ageUID, count, chunkX, chunkZ, Thread.currentThread().getName());
+        }
+        return chunk;
+      }, executor);
     }
 
     // For normal/amplified terrain, delegate to vanilla with proper RandomState

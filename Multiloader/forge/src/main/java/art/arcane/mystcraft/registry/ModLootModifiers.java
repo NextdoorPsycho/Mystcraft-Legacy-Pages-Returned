@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.registry;
 
+import art.arcane.mystcraft.loot.BoosterPackLootModifier;
 import art.arcane.mystcraft.loot.GuidebookLootModifier;
 import art.arcane.mystcraft.loot.SymbolPageLootModifier;
 import com.mojang.serialization.Codec;
@@ -15,6 +16,9 @@ public final class ModLootModifiers {
 
     public static final RegistryObject<Codec<GuidebookLootModifier>> GUIDEBOOK =
             MystcraftRegistries.LOOT_MODIFIERS.register("guidebook", GuidebookLootModifier.CODEC);
+
+    public static final RegistryObject<Codec<BoosterPackLootModifier>> BOOSTER_PACK =
+            MystcraftRegistries.LOOT_MODIFIERS.register("booster_pack", BoosterPackLootModifier.CODEC);
 
     public static void register() {
         // Called to ensure class is loaded and static fields initialized

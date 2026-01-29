@@ -1,0 +1,26 @@
+{
+  "category": "feature_large",
+  "card_rank": 4,
+  "instability_cost": 7.0,
+  "display_name": "Sky Islets (Feature)",
+  "allow_random": true,
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "sky_islets_feature",
+        "density": {
+          "op": "mul",
+          "a": {
+            "op": "sub",
+            "a": { "op": "noise3", "scale": 0.02, "octaves": 4, "seed": 7717 },
+            "b": 0.35
+          },
+          "b": { "op": "step", "edge": 80, "value": { "var": "y" } }
+        }
+      }
+    },
+    { "type": "add_instability", "value": 7.0 }
+  ]
+}

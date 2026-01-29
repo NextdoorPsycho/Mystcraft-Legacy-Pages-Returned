@@ -1,0 +1,52 @@
+{
+  "category": "terrain",
+  "card_rank": 4,
+  "instability_cost": 8.0,
+  "display_name": "Template Scripted Terrain",
+  "poem": [
+    "Pattern",
+    "Noise",
+    "Form",
+    "Land"
+  ],
+  "allow_random": true,
+  "can_duplicate": false,
+  "grammar": {
+    "token": "mystcraft:terrain",
+    "rank": 4
+  },
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "template",
+        "x_scale": 1.0,
+        "y_scale": 1.0,
+        "z_scale": 1.0,
+        "seed_offset": 1337,
+        "params": {
+          "base_height": 64,
+          "height_amp": 30
+        },
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": { "var": "base_height" },
+            "b": {
+              "op": "mul",
+              "a": { "op": "noise2", "scale": 0.01, "octaves": 5, "seed": 1337 },
+              "b": { "var": "height_amp" }
+            }
+          },
+          "b": { "var": "y" }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

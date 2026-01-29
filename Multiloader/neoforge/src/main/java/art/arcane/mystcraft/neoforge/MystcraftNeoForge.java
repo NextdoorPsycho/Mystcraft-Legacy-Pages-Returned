@@ -111,7 +111,6 @@ public class MystcraftNeoForge {
         art.arcane.mystcraft.registry.ModItems.FOLDER = NeoForgeModItems.FOLDER;
         art.arcane.mystcraft.registry.ModItems.PORTFOLIO = NeoForgeModItems.PORTFOLIO;
         art.arcane.mystcraft.registry.ModItems.INK_VIAL = NeoForgeModItems.INK_VIAL;
-        art.arcane.mystcraft.registry.ModItems.GLASSES = NeoForgeModItems.GLASSES;
         art.arcane.mystcraft.registry.ModItems.GUIDEBOOK = NeoForgeModItems.GUIDEBOOK;
         art.arcane.mystcraft.registry.ModItems.INK_BUCKET = NeoForgeModItems.INK_BUCKET;
         art.arcane.mystcraft.registry.ModItems.INK_MIXER_ITEM = NeoForgeModItems.INK_MIXER_ITEM;

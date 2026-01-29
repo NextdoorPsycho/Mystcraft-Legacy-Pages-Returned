@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 3.0,
+  "display_name": "Feature Mix (Grammar)",
+  "allow_random": true,
+  "grammar": {
+    "token": "mystcraft:feature_medium",
+    "rank": 3
+  },
+  "logic": [
+    {
+      "type": "register_populator_pool",
+      "count": 2,
+      "pool": [
+        "mystcraft:spikes",
+        "mystcraft:spheres",
+        "mystcraft:tendrils",
+        "mystcraft:vertical_tendrils",
+        "mystcraft:perlin_worms",
+        "mystcraft:huge_trees"
+      ]
+    },
+    { "type": "add_instability", "value": 3.0 }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 5.0,
+  "display_name": "Plateau Worlds",
+  "allow_random": true,
+  "grammar": {
+    "token": "mystcraft:terrain",
+    "rank": 3
+  },
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "plateaus",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 62,
+            "b": {
+              "op": "mul",
+              "a": { "op": "cell", "mode": "square", "size": 96, "seed": 111, "min": 0.0, "max": 1.0 },
+              "b": 40
+            }
+          },
+          "b": { "var": "y" }
+        }
+      }
+    }
+  ]
+}

@@ -85,11 +85,6 @@ public final class ArchivistTrades {
                 new ItemStack(NeoForgeModItems.LINKBOOK_UNLINKED.get(), 1),
                 3, 15, 0.05f
         ));
-        level4.add(new BasicItemListing(
-                new ItemStack(Items.EMERALD, 16),
-                new ItemStack(NeoForgeModItems.GLASSES.get(), 1),
-                3, 15, 0.05f
-        ));
         level4.add(new ArchivistTradeListings.RankedSymbolTrade(3, 2, 18));
         level4.add(new ArchivistTradeListings.RankedSymbolTrade(4, 1, 20));
 

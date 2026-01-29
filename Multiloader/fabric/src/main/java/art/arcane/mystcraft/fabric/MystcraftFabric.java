@@ -129,7 +129,6 @@ public class MystcraftFabric implements ModInitializer {
         art.arcane.mystcraft.registry.ModItems.FOLDER = FabricModItems.FOLDER;
         art.arcane.mystcraft.registry.ModItems.PORTFOLIO = FabricModItems.PORTFOLIO;
         art.arcane.mystcraft.registry.ModItems.INK_VIAL = FabricModItems.INK_VIAL;
-        art.arcane.mystcraft.registry.ModItems.GLASSES = FabricModItems.GLASSES;
         art.arcane.mystcraft.registry.ModItems.GUIDEBOOK = FabricModItems.GUIDEBOOK;
         art.arcane.mystcraft.registry.ModItems.INK_BUCKET = FabricModItems.INK_BUCKET;
         art.arcane.mystcraft.registry.ModItems.INK_MIXER_ITEM = FabricModItems.INK_MIXER_ITEM;

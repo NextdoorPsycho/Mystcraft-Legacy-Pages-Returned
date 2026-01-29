@@ -19,7 +19,6 @@ public final class ModItems {
   public static Supplier<Item> FOLDER;
   public static Supplier<Item> PORTFOLIO;
   public static Supplier<Item> INK_VIAL;
-  public static Supplier<Item> GLASSES;
   public static Supplier<Item> GUIDEBOOK;
   public static Supplier<Item> INK_BUCKET;
   public static Supplier<Item> INK_MIXER_ITEM;

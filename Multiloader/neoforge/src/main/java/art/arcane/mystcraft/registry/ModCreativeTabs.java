@@ -45,7 +45,6 @@ public final class ModCreativeTabs {
                                 // Ink and tools
                                 output.accept(NeoForgeModItems.INK_VIAL.get());
                                 output.accept(NeoForgeModItems.INK_BUCKET.get());
-                                output.accept(NeoForgeModItems.GLASSES.get());
 
                                 // Workstation blocks
                                 output.accept(NeoForgeModItems.WRITING_DESK_ITEM.get());

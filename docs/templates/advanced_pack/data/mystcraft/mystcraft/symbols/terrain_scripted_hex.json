@@ -1,0 +1,37 @@
+{
+  "category": "terrain",
+  "card_rank": 4,
+  "instability_cost": 6.0,
+  "display_name": "Hex Tile Terrain (Advanced)",
+  "allow_random": true,
+  "grammar": {
+    "token": "mystcraft:terrain",
+    "rank": 4
+  },
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "hex_tiles_advanced",
+        "params": {
+          "base": 58,
+          "amp": 46
+        },
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": { "var": "base" },
+            "b": {
+              "op": "mul",
+              "a": { "op": "cell", "mode": "hex", "size": 48, "seed": 9001, "min": 0.0, "max": 1.0 },
+              "b": { "var": "amp" }
+            }
+          },
+          "b": { "var": "y" }
+        }
+      }
+    }
+  ]
+}

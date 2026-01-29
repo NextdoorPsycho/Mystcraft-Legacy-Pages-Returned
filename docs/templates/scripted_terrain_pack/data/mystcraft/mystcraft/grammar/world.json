@@ -1,0 +1,18 @@
+{
+  "rules": [
+    {
+      "token": "mystcraft:age",
+      "productions": [
+        ["mystcraft:terrain", "mystcraft:biome_controller", "mystcraft:weather"]
+      ]
+    },
+    {
+      "token": "mystcraft:terrain",
+      "productions": [
+        ["mystcraft:terrain"],
+        ["mystcraft:terrain", "mystcraft:feature_large"],
+        ["mystcraft:terrain", "mystcraft:feature_large", "mystcraft:feature_medium"]
+      ]
+    }
+  ]
+}

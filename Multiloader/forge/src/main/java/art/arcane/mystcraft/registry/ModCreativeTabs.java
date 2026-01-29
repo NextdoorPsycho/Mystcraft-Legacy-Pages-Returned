@@ -48,7 +48,6 @@ public final class ModCreativeTabs {
                                 // Ink and tools
                                 output.accept(ForgeModItems.INK_VIAL.get());
                                 output.accept(ForgeModItems.INK_BUCKET.get());
-                                output.accept(ForgeModItems.GLASSES.get());
 
                                 // Workstation blocks
                                 output.accept(ForgeModItems.WRITING_DESK_ITEM.get());

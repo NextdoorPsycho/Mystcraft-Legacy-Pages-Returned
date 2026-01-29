@@ -121,10 +121,6 @@ public class GuidebookContent {
                 "Right-click opens and generates 3 random pages: 20% chance " +
                 "for Link Panel, 80% for random symbol. Pages added to " +
                 "inventory or dropped if full.")
-        .addPage("Glasses",
-            "Head armor slot equipment. Stack size 1. Provides an overlay " +
-                "showing Age symbol data, instability rating, and symbol " +
-                "category information when worn.")
         .addPage("Guidebook",
             "In-game manual (this book). Stack size 1. Right-click opens " +
                 "tutorial screen. New players receive one on first login " +
@@ -736,6 +732,22 @@ public class GuidebookContent {
                 "End: Distance-based density from origin\n" +
                 "Void: Single bedrock layer, air above\n" +
                 "Flat: Direct block filling to ground level")
+        .addPage("Scripted Terrain",
+            "Datapack symbols can register scripted terrain generators.\n\n" +
+                "Density > 0 = solid, <= 0 = air.\n\n" +
+                "Ops: add/sub/mul/div, min/max, clamp, lerp,\n" +
+                "step/smoothstep, noise2/3, fbm2/3, ridged2/3,\n" +
+                "cell, cell_distance. Variables: x,y,z,seed.")
+        .addPage("Scripted Reference",
+            "Primitive values: 12.5 or {\"value\":12.5}\n" +
+                "Variables: {\"var\":\"x\"}, {\"var\":\"y\"}, {\"var\":\"z\"}\n\n" +
+                "Binary ops: {\"op\":\"add\",\"a\":X,\"b\":Y}\n" +
+                "Unary ops: {\"op\":\"abs\",\"input\":X}\n\n" +
+                "Noise2: {\"op\":\"noise2\",\"scale\":0.01,\"octaves\":4,\"seed\":42}\n" +
+                "Noise3: {\"op\":\"noise3\",\"scale\":0.02,\"octaves\":5}\n" +
+                "Cells: {\"op\":\"cell\",\"mode\":\"hex\",\"size\":48,\"min\":0,\"max\":1}\n" +
+                "CellDist: {\"op\":\"cell_distance\",\"mode\":\"square\",\"size\":64}\n\n" +
+                "Common form: {\"op\":\"sub\",\"a\":HEIGHT,\"b\":{\"var\":\"y\"}}")
         .addPage("Biome Controllers",
             "Single: One biome everywhere.\n" +
                 "Native: Standard overworld distribution.\n" +
@@ -964,7 +976,6 @@ public class GuidebookContent {
                 "Rank 2-3 symbol pages")
         .addPage("Level 4: Expert",
             "20 Emeralds -> 1 Unlinked Linkbook\n" +
-                "16 Emeralds -> 1 Glasses\n" +
                 "Rank 3-4 symbol pages")
         .addPage("Level 5: Master",
             "Random symbol pages (dynamic pricing)\n" +

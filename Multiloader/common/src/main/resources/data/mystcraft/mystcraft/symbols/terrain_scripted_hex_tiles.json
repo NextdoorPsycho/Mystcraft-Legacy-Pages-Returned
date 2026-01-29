@@ -1,0 +1,45 @@
+{
+  "category": "terrain",
+  "card_rank": 4,
+  "instability_cost": 6.0,
+  "display_name": "Hex Tile Terrain",
+  "poem": [
+    "Pattern",
+    "Order",
+    "Stone",
+    "Rise"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "hex_tiles",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 60,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "cell",
+                "mode": "hex",
+                "size": 48,
+                "seed": 9001,
+                "min": 0.0,
+                "max": 1.0
+              },
+              "b": 45
+            }
+          },
+          "b": { "var": "y" }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
+  ]
+}

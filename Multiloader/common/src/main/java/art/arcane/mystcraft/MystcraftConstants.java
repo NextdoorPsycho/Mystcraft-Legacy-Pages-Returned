@@ -52,7 +52,6 @@ public final class MystcraftConstants {
     public static final String FOLDER = "folder";
     public static final String PORTFOLIO = "portfolio";
     public static final String INK_VIAL = "inkvial";
-    public static final String GLASSES = "glasses";
     public static final String INK_BUCKET = "ink_bucket";
 
     private Items() {

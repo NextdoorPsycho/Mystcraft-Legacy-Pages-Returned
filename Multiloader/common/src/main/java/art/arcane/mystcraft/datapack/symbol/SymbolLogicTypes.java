@@ -61,6 +61,7 @@ public final class SymbolLogicTypes {
   public static void registerDefaults() {
     PopulatorRegistry.registerDefaults();
     TerrainAlterationRegistry.registerDefaults();
+    TerrainGeneratorRegistry.registerDefaults();
 
     registerSimpleString("set_terrain_type", AgeDirector::setTerrainType);
     registerSimpleString("set_terrain_mix_mode", AgeDirector::setTerrainMixMode);
@@ -112,6 +113,7 @@ public final class SymbolLogicTypes {
     SymbolLogicRegistry.register(new SetOreMultiplierType());
     SymbolLogicRegistry.register(new SetSecondaryTerrainWeightedType());
     SymbolLogicRegistry.register(new ColorFromStackType());
+    SymbolLogicRegistry.register(new RegisterTerrainGeneratorType());
   }
 
   private static void registerSimpleString(String id, BiConsumer<AgeDirector, String> setter) {
@@ -439,6 +441,31 @@ public final class SymbolLogicTypes {
         var alteration = TerrainAlterationRegistry.create(altId, params, seed);
         if (alteration != null) {
           director.registerInterface(alteration);
+        }
+      };
+    }
+  }
+
+  private static class RegisterTerrainGeneratorType implements SymbolLogicType {
+    private final ResourceLocation id = new ResourceLocation(Mystcraft.MOD_ID, "register_terrain_generator");
+
+    @Override
+    public ResourceLocation id() {
+      return id;
+    }
+
+    @Override
+    public SymbolLogic parse(JsonObject json) {
+      String rawId = GsonHelper.getAsString(json, "id");
+      ResourceLocation genId = ResourceLocation.tryParse(rawId);
+      JsonObject params = json.has("params") && json.get("params").isJsonObject()
+          ? json.getAsJsonObject("params")
+          : json;
+      return (director, seed) -> {
+        if (genId == null) return;
+        var generator = TerrainGeneratorRegistry.create(genId, director, seed, params);
+        if (generator != null) {
+          director.registerInterface(generator);
         }
       };
     }

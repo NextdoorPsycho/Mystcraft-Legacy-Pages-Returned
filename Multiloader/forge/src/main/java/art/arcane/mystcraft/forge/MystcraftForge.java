@@ -110,7 +110,6 @@ public class MystcraftForge {
         art.arcane.mystcraft.registry.ModItems.FOLDER = ForgeModItems.FOLDER;
         art.arcane.mystcraft.registry.ModItems.PORTFOLIO = ForgeModItems.PORTFOLIO;
         art.arcane.mystcraft.registry.ModItems.INK_VIAL = ForgeModItems.INK_VIAL;
-        art.arcane.mystcraft.registry.ModItems.GLASSES = ForgeModItems.GLASSES;
         art.arcane.mystcraft.registry.ModItems.GUIDEBOOK = ForgeModItems.GUIDEBOOK;
         art.arcane.mystcraft.registry.ModItems.INK_BUCKET = ForgeModItems.INK_BUCKET;
         art.arcane.mystcraft.registry.ModItems.INK_MIXER_ITEM = ForgeModItems.INK_MIXER_ITEM;

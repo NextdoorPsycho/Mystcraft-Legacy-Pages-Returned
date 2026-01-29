@@ -5,7 +5,6 @@ import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.BoosterPackItem;
 import art.arcane.mystcraft.item.FabricPageItem;
 import art.arcane.mystcraft.item.FolderItem;
-import art.arcane.mystcraft.item.GlassesItem;
 import art.arcane.mystcraft.item.GuidebookItem;
 import art.arcane.mystcraft.item.InkVialItem;
 import art.arcane.mystcraft.item.LinkbookItem;
@@ -56,9 +55,6 @@ public final class FabricModItems {
 
     public static final Supplier<Item> INK_VIAL = registerItem("inkvial",
             new InkVialItem(new Item.Properties().stacksTo(16)));
-
-    public static final Supplier<Item> GLASSES = registerItem("glasses",
-            new GlassesItem(new Item.Properties().stacksTo(1)));
 
     public static final Supplier<Item> GUIDEBOOK = registerItem("guidebook",
             new GuidebookItem(new Item.Properties().stacksTo(1)));

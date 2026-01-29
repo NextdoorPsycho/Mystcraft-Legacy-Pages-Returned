@@ -929,11 +929,11 @@ public final class LinkingManager {
     for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
       ItemStack itemStack = player.getInventory().getItem(i);
       if (!itemStack.isEmpty() && itemStack.getItem() instanceof art.arcane.mystcraft.item.LinkbookItem) {
-        art.arcane.mystcraft.advancements.ModAdvancements.ENTER_MYST_DIMENSION_SAFE.trigger(player);
+        art.arcane.mystcraft.advancements.ModAdvancements.triggerEnterMystDimensionSafe(player);
         return;
       }
     }
-    art.arcane.mystcraft.advancements.ModAdvancements.ENTER_MYST_DIMENSION_QUINN.trigger(player);
+    art.arcane.mystcraft.advancements.ModAdvancements.triggerEnterMystDimensionQuinn(player);
   }
 
   /**

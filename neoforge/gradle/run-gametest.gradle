@@ -1,9 +1,0 @@
-runs {
-    gameTestServer {
-        workingDirectory file('runs/gametest')
-        programArgument '--nogui'
-        if (hasProperty('ideConfigGenerated')) {
-            ideConfigGenerated = false
-        }
-    }
-}

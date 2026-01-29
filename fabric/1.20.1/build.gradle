@@ -1,0 +1,152 @@
+plugins {
+    id 'fabric-loom' version '1.4-SNAPSHOT'
+}
+
+version = "${project.version}"
+group = project.group
+
+base {
+    archivesName = "mystcraft_legacy-${version}-${minecraft_version_1_20_1}-fabric"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version_fabric)
+    withSourcesJar()
+}
+
+loom {
+    // Use 1.20.1-specific access widener with different CriteriaTriggers signature
+    accessWidenerPath = file("src/main/resources/${mod_id}.accesswidener")
+    mixin {
+        defaultRefmapName.set("${mod_id}.refmap.json")
+    }
+
+    runs {
+        client {
+            client()
+            setConfigName("Fabric 1.20.1 Client")
+            ideConfigGenerated(true)
+            runDir("runs/client")
+        }
+        server {
+            server()
+            setConfigName("Fabric 1.20.1 Server")
+            ideConfigGenerated(true)
+            runDir("runs/server")
+        }
+        gametest {
+            server()
+            setConfigName("Fabric 1.20.1 GameTest")
+            ideConfigGenerated(true)
+            runDir("runs/gametest")
+            vmArg "-Dfabric-api.gametest"
+            vmArg "-Dfabric-api.gametest.report-file=${project.buildDir}/junit.xml"
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version_1_20_1}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version_1_20_1}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_1}"
+    compileOnly project(':common')
+    compileOnly project(':fabric')
+
+    // TOML config library (same as Forge/NeoForge use)
+    implementation "com.electronwill.night-config:core:3.6.7"
+    implementation "com.electronwill.night-config:toml:3.6.7"
+    include "com.electronwill.night-config:core:3.6.7"
+    include "com.electronwill.night-config:toml:3.6.7"
+}
+
+tasks.named('compileJava', JavaCompile) {
+    source(project(':common').sourceSets.main.allSource)
+    source(project(':fabric').sourceSets.main.allSource)
+    // Exclude 1.20.2-specific classes from compilation (different API signatures)
+    exclude '**/gametest/**'
+    exclude '**/client/screen/**'
+    exclude '**/client/gui/element/**'
+    // Exclude 1.20.2 advancement triggers (use version-specific ones)
+    exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
+    exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
+    exclude '**/advancements/WritingDeskWriteTrigger.java'
+    // Exclude base client helper (use version-specific one with 1.20.1 API)
+    exclude '**/platform/FabricClientHelper.java'
+}
+
+tasks.named('processResources', ProcessResources) {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    // Version-specific resources last to override base
+    from project(':common').sourceSets.main.resources
+    from project(':fabric').sourceSets.main.resources
+    // Own resources processed last for service file overrides
+    from sourceSets.main.resources
+
+    def expandProps = [
+        'version'                 : version,
+        'group'                   : project.group,
+        'minecraft_version'       : minecraft_version_1_20_1,
+        'minecraft_version_range' : minecraft_version_range_1_20_1,
+        'fabric_version'          : fabric_version_1_20_1,
+        'fabric_loader_version'   : fabric_loader_version_1_20_1,
+        'mod_name'                : mod_name,
+        'mod_author'              : mod_author,
+        'mod_id'                  : mod_id,
+        'license'                 : license,
+        'description'             : description,
+        'credits'                 : credits,
+        'java_version'            : java_version
+    ]
+
+    filesMatching(['pack.mcmeta', 'fabric.mod.json']) {
+        expand expandProps
+    }
+
+    inputs.properties(expandProps)
+}
+
+tasks.named('sourcesJar', Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from project(':common').sourceSets.main.allSource
+    from project(':common').sourceSets.main.resources
+    from project(':fabric').sourceSets.main.allSource
+    from project(':fabric').sourceSets.main.resources
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version_1_20_1}-fabric-${fabric_loader_version_1_20_1}-dev.jar"
+
+    from(rootProject.file('LICENSE')) {
+        rename { "${it}_${mod_name}" }
+    }
+
+    manifest {
+        attributes([
+            'Specification-Title'   : mod_name,
+            'Specification-Vendor'  : mod_author,
+            'Specification-Version' : project.jar.archiveVersion,
+            'Implementation-Title'  : project.name,
+            'Implementation-Version': project.jar.archiveVersion,
+            'Implementation-Vendor' : mod_author,
+            'Built-On-Minecraft'    : minecraft_version_1_20_1
+        ])
+    }
+}
+
+remapJar {
+    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version_1_20_1}-fabric-${fabric_loader_version_1_20_1}.jar"
+}
+
+sourcesJar {
+    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-1.20.1-sources-dev.jar"
+}
+
+remapSourcesJar {
+    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-1.20.1-sources.jar"
+}

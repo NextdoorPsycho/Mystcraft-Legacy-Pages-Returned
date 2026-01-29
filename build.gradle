@@ -36,6 +36,15 @@ idea {
                 "Build XComp Jars"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':buildXCompJars']
                 }
+                "Build All Versions"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':buildAllVersionsAndCopy']
+                }
+                "Build 1.20.1"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':build_1_20_1']
+                }
+                "Build 1.20.2"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':build_1_20_2']
+                }
             }
         }
     }
@@ -58,12 +67,16 @@ tasks.register('cleanLibs') {
     description = 'Cleans libs directories and output directory'
 
     doLast {
-        def platforms = ['fabric', 'forge', 'neoforge']
+        def platforms = ['fabric', 'forge', 'neoforge', 'fabric:1.20.1', 'fabric:1.20.2', 'forge:1.20.1', 'forge:1.20.2']
         platforms.each { platform ->
-            def libsDir = project(":${platform}").file('build/libs')
-            if (libsDir.exists()) {
-                libsDir.listFiles()?.findAll { it.name.endsWith('.jar') }?.each { it.delete() }
-                println "Cleaned ${platform}/build/libs"
+            try {
+                def libsDir = project(":${platform}").file('build/libs')
+                if (libsDir.exists()) {
+                    libsDir.listFiles()?.findAll { it.name.endsWith('.jar') }?.each { it.delete() }
+                    println "Cleaned ${platform}/build/libs"
+                }
+            } catch (Exception e) {
+                // Subproject may not exist
             }
         }
 
@@ -84,8 +97,30 @@ tasks.register('cleanLibs') {
 
 tasks.register('buildPlatforms') {
     group = 'build'
-    description = 'Builds all platforms'
+    description = 'Builds all platforms (base builds only)'
     dependsOn ':fabric:build', ':forge:build', ':neoforge:build'
+    mustRunAfter 'cleanLibs'
+}
+
+// Version-specific build tasks
+tasks.register('buildAllVersions') {
+    group = 'build'
+    description = 'Builds all platform/version combinations (5 JARs total)'
+    dependsOn ':fabric:1.20.1:build', ':fabric:1.20.2:build', ':forge:1.20.1:build', ':forge:1.20.2:build', ':neoforge:1.20.2:build'
+    mustRunAfter 'cleanLibs'
+}
+
+tasks.register('build_1_20_1') {
+    group = 'build'
+    description = 'Builds 1.20.1 for Fabric and Forge'
+    dependsOn ':fabric:1.20.1:build', ':forge:1.20.1:build'
+    mustRunAfter 'cleanLibs'
+}
+
+tasks.register('build_1_20_2') {
+    group = 'build'
+    description = 'Builds 1.20.2 for all platforms'
+    dependsOn ':fabric:1.20.2:build', ':forge:1.20.2:build', ':neoforge:1.20.2:build'
     mustRunAfter 'cleanLibs'
 }
 
@@ -128,9 +163,65 @@ def registerCopyTask = { String name, String outputProp ->
     }
 }
 
+// Copy task for version-specific builds
+def registerVersionCopyTask = { String name, String outputProp ->
+    tasks.register(name, Copy) {
+        group = 'build'
+        description = 'Copies all version-specific built jars to output directory'
+        dependsOn 'buildAllVersions'
+        mustRunAfter 'cleanLibs'
+
+        def outputDir = project.findProperty(outputProp)?.toString()?.trim()
+        if (outputDir == null || outputDir.isEmpty()) {
+            enabled = false
+            return
+        }
+
+        // Version-specific builds
+        from(project(':fabric:1.20.1').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+            exclude '*-dev.jar'
+        }
+        from(project(':fabric:1.20.2').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+            exclude '*-dev.jar'
+        }
+        from(project(':forge:1.20.1').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+        }
+        from(project(':forge:1.20.2').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+        }
+        from(project(':neoforge:1.20.2').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+        }
+
+        into(outputDir)
+
+        doFirst {
+            def targetDir = file(outputDir)
+            if (!targetDir.exists()) {
+                targetDir.mkdirs()
+                println "Created output directory: ${targetDir.absolutePath}"
+            }
+            println "Copying version-specific jars to: ${targetDir.absolutePath}"
+        }
+    }
+}
+
 registerCopyTask('copyBuilds', 'build_output_dir')
 registerCopyTask('copyPsychoBuilds', 'build_output_dir_psycho')
 registerCopyTask('copyXCompBuilds', 'build_output_dir_xcomp')
+
+// Version-specific copy tasks
+registerVersionCopyTask('copyAllVersionBuilds', 'build_output_dir')
+registerVersionCopyTask('copyAllVersionPsychoBuilds', 'build_output_dir_psycho')
+registerVersionCopyTask('copyAllVersionXCompBuilds', 'build_output_dir_xcomp')
 
 tasks.register('buildAll') {
     group = 'build'
@@ -148,6 +239,25 @@ tasks.register('buildXCompJars') {
     group = 'build'
     description = 'Builds all platforms and copies jars to build_output_dir_xcomp'
     dependsOn 'cleanLibs', 'buildPlatforms', 'copyXCompBuilds'
+}
+
+// Version-specific comprehensive build tasks
+tasks.register('buildAllVersionsAndCopy') {
+    group = 'build'
+    description = 'Builds all version/platform combinations and copies to build_output_dir'
+    dependsOn 'cleanLibs', 'buildAllVersions', 'copyAllVersionBuilds'
+}
+
+tasks.register('buildAllVersionsPsychoJars') {
+    group = 'build'
+    description = 'Builds all versions and copies to build_output_dir_psycho'
+    dependsOn 'cleanLibs', 'buildAllVersions', 'copyAllVersionPsychoBuilds'
+}
+
+tasks.register('buildAllVersionsXCompJars') {
+    group = 'build'
+    description = 'Builds all versions and copies to build_output_dir_xcomp'
+    dependsOn 'cleanLibs', 'buildAllVersions', 'copyAllVersionXCompBuilds'
 }
 
 subprojects {

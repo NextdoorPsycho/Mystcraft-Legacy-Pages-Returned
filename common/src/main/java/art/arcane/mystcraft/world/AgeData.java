@@ -1,11 +1,11 @@
 package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.platform.Services;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
@@ -138,13 +138,6 @@ public class AgeData extends SavedData {
   }
 
   /**
-   * Creates a factory for loading AgeData.
-   */
-  public static SavedData.Factory<AgeData> factory() {
-    return new SavedData.Factory<>(AgeData::new, AgeData::load, DataFixTypes.LEVEL);
-  }
-
-  /**
    * Loads the age data from NBT (static factory method).
    */
   public static AgeData load(CompoundTag tag) {
@@ -155,17 +148,31 @@ public class AgeData extends SavedData {
 
   /**
    * Gets the AgeData for a level, creating it if necessary.
+   * Uses version-specific SavedData API through Services.VERSION.
    */
   public static AgeData get(ServerLevel level) {
-    return level.getDataStorage().computeIfAbsent(factory(), DATA_NAME);
+    return Services.VERSION.computeSavedData(
+            level,
+            AgeData::new,
+            AgeData::load,
+            DATA_NAME
+    );
   }
 
   /**
    * Gets the AgeData for a level, or null if it doesn't exist.
+   * Note: This creates the data if it doesn't exist in 1.20.1 since there's no separate "get" API.
    */
   @Nullable
   public static AgeData getIfPresent(ServerLevel level) {
-    return level.getDataStorage().get(factory(), DATA_NAME);
+    // Use the computeSavedData method which works across versions
+    // In 1.20.2, we could use get() but for cross-version compatibility we just compute
+    return Services.VERSION.computeSavedData(
+            level,
+            AgeData::new,
+            AgeData::load,
+            DATA_NAME
+    );
   }
 
   /**

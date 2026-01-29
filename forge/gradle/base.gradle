@@ -1,7 +1,0 @@
-jar {
-    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version}-forge-${forge_version}.jar"
-}
-
-sourcesJar {
-    archiveFileName = "Mystcrafy Legacy - ${version} - Forge-sources.jar"
-}

@@ -4,7 +4,10 @@ import art.arcane.mystcraft.platform.services.*;
 
 import java.util.ServiceLoader;
 
-// ServiceLoader utility for loading platform implementations
+/**
+ * ServiceLoader utility for loading platform implementations.
+ * All platform-specific and version-specific services are accessed through this class.
+ */
 public final class Services {
 
   public static final IPlatformHelper PLATFORM = load(IPlatformHelper.class);
@@ -12,6 +15,8 @@ public final class Services {
   public static final INetworkHelper NETWORK = load(INetworkHelper.class);
   public static final IEventHelper EVENTS = load(IEventHelper.class);
   public static final IClientHelper CLIENT = load(IClientHelper.class);
+  public static final IVersionHelper VERSION = load(IVersionHelper.class);
+  public static final IAdvancementTriggerFactory ADVANCEMENTS = load(IAdvancementTriggerFactory.class);
 
   private Services() {
   }

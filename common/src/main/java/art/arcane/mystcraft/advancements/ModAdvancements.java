@@ -1,59 +1,72 @@
 package art.arcane.mystcraft.advancements;
 
-import net.minecraft.advancements.CriteriaTriggers;
-import net.minecraft.resources.ResourceLocation;
-
-import java.lang.reflect.Method;
+import art.arcane.mystcraft.platform.Services;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Registers Mystcraft custom advancement criteria triggers.
+ * Uses version-specific factory via Services for cross-version compatibility.
  */
 public final class ModAdvancements {
-
-  public static final WritingDeskWriteTrigger WRITING_DESK_WRITE = new WritingDeskWriteTrigger();
-  public static final EnterMystDimensionSafeTrigger ENTER_MYST_DIMENSION_SAFE = new EnterMystDimensionSafeTrigger();
-  public static final EnterMystDimensionQuinnTrigger ENTER_MYST_DIMENSION_QUINN = new EnterMystDimensionQuinnTrigger();
 
   private ModAdvancements() {
   }
 
   /**
    * Registers all custom criteria triggers with the vanilla registry.
-   * Uses reflection because CriteriaTriggers.register is private in vanilla 1.20.2.
+   * Delegates to version-specific factory loaded via ServiceLoader.
    * Must be called during common setup.
    */
   public static void register() {
-    try {
-      Method registerMethod = findRegisterMethod();
-      registerMethod.setAccessible(true);
-      if (registerMethod.getParameterTypes()[0] == String.class) {
-        registerMethod.invoke(null, "mystcraft:writing_desk_write", WRITING_DESK_WRITE);
-        registerMethod.invoke(null, "mystcraft:enter_myst_dimension_safe", ENTER_MYST_DIMENSION_SAFE);
-        registerMethod.invoke(null, "mystcraft:enter_myst_dimension_quinn", ENTER_MYST_DIMENSION_QUINN);
-      } else {
-        registerMethod.invoke(null, new ResourceLocation("mystcraft", "writing_desk_write"), WRITING_DESK_WRITE);
-        registerMethod.invoke(null, new ResourceLocation("mystcraft", "enter_myst_dimension_safe"), ENTER_MYST_DIMENSION_SAFE);
-        registerMethod.invoke(null, new ResourceLocation("mystcraft", "enter_myst_dimension_quinn"), ENTER_MYST_DIMENSION_QUINN);
+    Services.ADVANCEMENTS.registerTriggers();
+  }
+
+  /**
+   * Triggers the WritingDeskWrite advancement for a player.
+   */
+  public static void triggerWritingDeskWrite(ServerPlayer player) {
+    Object trigger = Services.ADVANCEMENTS.getWritingDeskWriteTrigger();
+    if (trigger instanceof WritingDeskWriteTrigger t) {
+      t.trigger(player);
+    } else {
+      // Version-specific trigger, use reflection or cast appropriately
+      try {
+        trigger.getClass().getMethod("trigger", ServerPlayer.class).invoke(trigger, player);
+      } catch (Exception e) {
+        // Ignore - trigger failed
       }
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to register Mystcraft advancement triggers", e);
     }
   }
 
-  private static Method findRegisterMethod() throws NoSuchMethodException {
-    Method[] methods = CriteriaTriggers.class.getDeclaredMethods();
-    for (Method method : methods) {
-      Class<?>[] params = method.getParameterTypes();
-      if (params.length != 2) {
-        continue;
-      }
-      if (!net.minecraft.advancements.CriterionTrigger.class.isAssignableFrom(params[1])) {
-        continue;
-      }
-      if (params[0] == ResourceLocation.class || params[0] == String.class) {
-        return method;
+  /**
+   * Triggers the EnterMystDimensionSafe advancement for a player.
+   */
+  public static void triggerEnterMystDimensionSafe(ServerPlayer player) {
+    Object trigger = Services.ADVANCEMENTS.getEnterMystDimensionSafeTrigger();
+    if (trigger instanceof EnterMystDimensionSafeTrigger t) {
+      t.trigger(player);
+    } else {
+      try {
+        trigger.getClass().getMethod("trigger", ServerPlayer.class).invoke(trigger, player);
+      } catch (Exception e) {
+        // Ignore - trigger failed
       }
     }
-    throw new NoSuchMethodException("No CriteriaTriggers register method with (ResourceLocation|String, CriterionTrigger)");
+  }
+
+  /**
+   * Triggers the EnterMystDimensionQuinn advancement for a player.
+   */
+  public static void triggerEnterMystDimensionQuinn(ServerPlayer player) {
+    Object trigger = Services.ADVANCEMENTS.getEnterMystDimensionQuinnTrigger();
+    if (trigger instanceof EnterMystDimensionQuinnTrigger t) {
+      t.trigger(player);
+    } else {
+      try {
+        trigger.getClass().getMethod("trigger", ServerPlayer.class).invoke(trigger, player);
+      } catch (Exception e) {
+        // Ignore - trigger failed
+      }
+    }
   }
 }

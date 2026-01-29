@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.platform.Services;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -8,7 +9,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
@@ -53,13 +53,6 @@ public class AgeManager extends SavedData {
   }
 
   /**
-   * Creates a factory for loading AgeManager.
-   */
-  public static SavedData.Factory<AgeManager> factory() {
-    return new SavedData.Factory<>(AgeManager::new, AgeManager::load, DataFixTypes.LEVEL);
-  }
-
-  /**
    * Loads the age manager data from NBT (static factory method).
    */
   public static AgeManager load(CompoundTag tag) {
@@ -70,13 +63,19 @@ public class AgeManager extends SavedData {
 
   /**
    * Gets the AgeManager for the server.
+   * Uses version-specific SavedData API through Services.VERSION.
    */
   public static AgeManager get(MinecraftServer server) {
     ServerLevel overworld = server.getLevel(Level.OVERWORLD);
     if (overworld == null) {
       throw new IllegalStateException("Overworld not available");
     }
-    return overworld.getDataStorage().computeIfAbsent(factory(), DATA_NAME);
+    return Services.VERSION.computeSavedData(
+            overworld,
+            AgeManager::new,
+            AgeManager::load,
+            DATA_NAME
+    );
   }
 
   /**

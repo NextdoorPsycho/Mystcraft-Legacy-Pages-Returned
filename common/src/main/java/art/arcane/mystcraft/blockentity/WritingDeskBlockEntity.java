@@ -313,7 +313,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
       useInk();
       markForUpdate();
       if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
-        art.arcane.mystcraft.advancements.ModAdvancements.WRITING_DESK_WRITE.trigger(serverPlayer);
+        art.arcane.mystcraft.advancements.ModAdvancements.triggerWritingDeskWrite(serverPlayer);
       }
       return true;
     }
@@ -326,7 +326,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
       consumePaper();
       markForUpdate();
       if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
-        art.arcane.mystcraft.advancements.ModAdvancements.WRITING_DESK_WRITE.trigger(serverPlayer);
+        art.arcane.mystcraft.advancements.ModAdvancements.triggerWritingDeskWrite(serverPlayer);
       }
       return true;
     }

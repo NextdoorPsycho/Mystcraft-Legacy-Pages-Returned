@@ -1,13 +1,13 @@
 package art.arcane.mystcraft.link;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.platform.Services;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
@@ -124,20 +124,19 @@ public class LinkPermissions extends SavedData {
     return list;
   }
 
-  /**
-   * Creates a factory for loading LinkPermissions.
-   */
-  public static SavedData.Factory<LinkPermissions> factory() {
-    return new SavedData.Factory<>(LinkPermissions::create, LinkPermissions::load, DataFixTypes.LEVEL);
-  }
-
   // --- Permission Checks ---
 
   /**
    * Gets the LinkPermissions for a server.
+   * Uses version-specific SavedData API through Services.VERSION.
    */
   public static LinkPermissions get(MinecraftServer server) {
-    return server.overworld().getDataStorage().computeIfAbsent(factory(), DATA_NAME);
+    return Services.VERSION.computeSavedData(
+            server.overworld(),
+            LinkPermissions::create,
+            LinkPermissions::load,
+            DATA_NAME
+    );
   }
 
   @Override

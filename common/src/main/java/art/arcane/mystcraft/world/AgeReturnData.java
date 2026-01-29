@@ -1,12 +1,12 @@
 package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.platform.Services;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,10 +27,6 @@ public class AgeReturnData extends SavedData {
 
   private final Map<UUID, Map<Integer, CompoundTag>> returnLinks = new HashMap<>();
 
-  public static SavedData.Factory<AgeReturnData> factory() {
-    return new SavedData.Factory<>(AgeReturnData::new, AgeReturnData::load, DataFixTypes.LEVEL);
-  }
-
   public static AgeReturnData load(CompoundTag tag) {
     AgeReturnData data = new AgeReturnData();
     data.loadFromTag(tag);
@@ -39,7 +35,12 @@ public class AgeReturnData extends SavedData {
 
   public static AgeReturnData get(MinecraftServer server) {
     ServerLevel overworld = server.overworld();
-    return overworld.getDataStorage().computeIfAbsent(factory(), DATA_NAME);
+    return Services.VERSION.computeSavedData(
+            overworld,
+            AgeReturnData::new,
+            AgeReturnData::load,
+            DATA_NAME
+    );
   }
 
   private void loadFromTag(CompoundTag tag) {

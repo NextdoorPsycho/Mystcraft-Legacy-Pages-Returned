@@ -1,12 +1,12 @@
 package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.platform.Services;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
@@ -29,10 +29,6 @@ public class GuidebookData extends SavedData {
   public GuidebookData() {
   }
 
-  public static SavedData.Factory<GuidebookData> factory() {
-    return new SavedData.Factory<>(GuidebookData::new, GuidebookData::load, DataFixTypes.LEVEL);
-  }
-
   public static GuidebookData load(CompoundTag tag) {
     GuidebookData data = new GuidebookData();
     data.loadFromTag(tag);
@@ -44,7 +40,12 @@ public class GuidebookData extends SavedData {
     if (overworld == null) {
       throw new IllegalStateException("Overworld not available");
     }
-    return overworld.getDataStorage().computeIfAbsent(factory(), DATA_NAME);
+    return Services.VERSION.computeSavedData(
+            overworld,
+            GuidebookData::new,
+            GuidebookData::load,
+            DATA_NAME
+    );
   }
 
   public static GuidebookData get(ServerLevel level) {

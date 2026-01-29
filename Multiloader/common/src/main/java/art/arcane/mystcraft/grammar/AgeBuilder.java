@@ -352,6 +352,8 @@ public class AgeBuilder {
     removeDuplicates();
     enforceSingletons();
 
+    filterUnrequestedVoidTerrain();
+
     String terrainType = findTerrainType();
 
     filterRandomOceanBiomes();
@@ -497,6 +499,47 @@ public class AgeBuilder {
       expandedSymbols.add(fallback);
       LOGGER.debug("[AgeBuilder] Added fallback biome for {} terrain: {}", terrainType, defaultBiome);
     }
+  }
+
+  private void filterUnrequestedVoidTerrain() {
+    boolean hasExplicitVoid = false;
+    for (IAgeSymbol symbol : inputSymbols) {
+      if (symbol.getCategory() == SymbolCategory.TERRAIN
+          && "terrain_void".equals(symbol.getRegistryName().getPath())) {
+        hasExplicitVoid = true;
+        break;
+      }
+    }
+    if (hasExplicitVoid) {
+      return;
+    }
+    boolean removed = false;
+    Iterator<IAgeSymbol> iterator = expandedSymbols.iterator();
+    while (iterator.hasNext()) {
+      IAgeSymbol symbol = iterator.next();
+      if (symbol.getCategory() == SymbolCategory.TERRAIN
+          && "terrain_void".equals(symbol.getRegistryName().getPath())) {
+        iterator.remove();
+        removed = true;
+        LOGGER.debug("[AgeBuilder] Removed randomly-generated void terrain");
+      }
+    }
+    if (removed && !hasTerrainSymbol()) {
+      IAgeSymbol fallback = SymbolRegistry.get(new ResourceLocation("mystcraft", "terrain_normal"));
+      if (fallback != null) {
+        expandedSymbols.add(fallback);
+        LOGGER.debug("[AgeBuilder] Added fallback terrain_normal after removing void terrain");
+      }
+    }
+  }
+
+  private boolean hasTerrainSymbol() {
+    for (IAgeSymbol symbol : expandedSymbols) {
+      if (symbol.getCategory() == SymbolCategory.TERRAIN) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // ===================================================================

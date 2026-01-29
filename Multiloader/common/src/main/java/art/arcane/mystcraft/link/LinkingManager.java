@@ -12,6 +12,7 @@ import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
+import art.arcane.mystcraft.world.AgeReturnData;
 import art.arcane.mystcraft.world.PersonalPocketDimension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -241,6 +242,18 @@ public final class LinkingManager {
 
     // Store momentum if maintaining
     Vec3 momentum = entity.getDeltaMovement();
+
+    // Record return link for Mystcraft Ages (entry point)
+    if (entity instanceof ServerPlayer player) {
+      int targetAgeUID = AgeDimensionFactory.getAgeUID(targetLevel.dimension());
+      if (targetAgeUID > 0) {
+        CompoundTag returnData = new CompoundTag();
+        LinkOptions.setDimensionUID(returnData, getDimensionUID(sourceLevel));
+        LinkOptions.setSpawn(returnData, sourcePos);
+        LinkOptions.setSpawnYaw(returnData, player.getYRot());
+        AgeReturnData.get(server).setReturnLink(player.getUUID(), targetAgeUID, returnData);
+      }
+    }
 
     // Perform the teleport
     teleportEntity(entity, targetLevel, targetVec, targetYaw);

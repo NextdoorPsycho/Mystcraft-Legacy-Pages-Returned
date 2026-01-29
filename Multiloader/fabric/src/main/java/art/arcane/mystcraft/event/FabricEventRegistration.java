@@ -2,6 +2,7 @@ package art.arcane.mystcraft.event;
 
 import art.arcane.mystcraft.command.MystcraftCommands;
 import art.arcane.mystcraft.event.PersonalPocketEscapeHandler;
+import art.arcane.mystcraft.event.AgeReturnHandler;
 import art.arcane.mystcraft.instability.InstabilityManager;
 import art.arcane.mystcraft.network.FabricNetworkEvents;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -39,7 +40,13 @@ public final class FabricEventRegistration {
         ServerLivingEntityEvents.ALLOW_DEATH.register((entity, damageSource, damageAmount) -> {
             if (entity instanceof ServerPlayer player) {
                 if (player.level() instanceof ServerLevel serverLevel) {
-                    return !PersonalPocketEscapeHandler.handleDeath(player, damageSource);
+                    if (PersonalPocketEscapeHandler.handleDeath(player, damageSource)) {
+                        return false;
+                    }
+                    if (AgeReturnHandler.handleDeath(player, damageSource)) {
+                        return false;
+                    }
+                    return true;
                 }
             }
             return true;

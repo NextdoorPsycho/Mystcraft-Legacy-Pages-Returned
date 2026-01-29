@@ -28,10 +28,12 @@ public class NeoForgeMystcraftConfig {
     public static final ModConfigSpec.BooleanValue microDimensionsEnabled;
     public static final ModConfigSpec.IntValue microDimensionRadiusChunks;
     public static final ModConfigSpec.IntValue microDimensionExtraChunks;
+    public static final ModConfigSpec.BooleanValue safeStories;
     public static final ModConfigSpec.ConfigValue<List<? extends String>> disabledSymbols;
 
     // Personal pocket dimension settings
-    public static final ModConfigSpec.IntValue pocketInnerHalfSize;
+    public static final ModConfigSpec.IntValue pocketInnerHalfSizeXZ;
+    public static final ModConfigSpec.IntValue pocketInnerHalfSizeY;
     public static final ModConfigSpec.IntValue pocketInnerThickness;
     public static final ModConfigSpec.IntValue pocketOuterThickness;
     public static final ModConfigSpec.IntValue pocketCenterY;
@@ -104,6 +106,13 @@ public class NeoForgeMystcraftConfig {
                 )
                 .defineInRange("microDimensionExtraChunks", 1, 0, 16);
 
+        safeStories = COMMON_BUILDER
+                .comment(
+                        "If true, players who die or fall into the void in Mystcraft Ages are returned",
+                        "to the location they linked from (fallback to server spawn)."
+                )
+                .define("safeStories", true);
+
         disabledSymbols = COMMON_BUILDER
                 .comment(
                         "List of symbol IDs to disable, e.g. [\"mystcraft:example_symbol_a\", \"mystcraft:example_symbol_b\"].",
@@ -134,17 +143,28 @@ public class NeoForgeMystcraftConfig {
         COMMON_BUILDER.comment(
                 "Personal Pocket Dimension Settings",
                 "Configure the size and materials of personal pocket dimensions.",
-                "The pocket is a hollow cube: inner void surrounded by inner shell then outer shell.",
-                "Total size must fit within Minecraft's build limits (-64 to 320)."
+                "The pocket is a hollow rectangular box: inner void surrounded by inner shell then outer shell.",
+                "XZ (horizontal) and Y (vertical) sizes are configured separately.",
+                "XZ can be up to 8192 blocks (half-size 4096).",
+                "Y is limited to ~4000 blocks due to Minecraft dimension height limits."
         ).push("personal_pocket");
 
-        pocketInnerHalfSize = COMMON_BUILDER
+        pocketInnerHalfSizeXZ = COMMON_BUILDER
                 .comment(
-                        "Half the inner void space in blocks.",
+                        "Half the inner void space horizontally (X and Z axes) in blocks.",
                         "Default: 24 (48 block diameter, 3 chunks).",
-                        "Max: 128 (256 block diameter)."
+                        "Min: 2 (4 block diameter). Max: 4096 (8192 block diameter)."
                 )
-                .defineInRange("innerHalfSize", 24, 8, 128);
+                .defineInRange("innerHalfSizeXZ", 24, 2, 4096);
+
+        pocketInnerHalfSizeY = COMMON_BUILDER
+                .comment(
+                        "Half the inner void space vertically (Y axis) in blocks.",
+                        "Default: 24 (48 block height).",
+                        "Min: 2 (4 block height). Max: 4096 (8192 block height).",
+                        "Note: Minecraft 1.20.2 dimension height is 4064, so ~4048 is the practical max."
+                )
+                .defineInRange("innerHalfSizeY", 24, 2, 4096);
 
         pocketInnerThickness = COMMON_BUILDER
                 .comment(
@@ -163,10 +183,11 @@ public class NeoForgeMystcraftConfig {
         pocketCenterY = COMMON_BUILDER
                 .comment(
                         "Y coordinate of the pocket center.",
-                        "Default: 64.",
-                        "Must allow room for the pocket above and below within build limits."
+                        "Default: 0 (centered in dimension).",
+                        "Valid range: -2032 to 2032 (full dimension height).",
+                        "Pocket will be auto-adjusted to fit within dimension limits."
                 )
-                .defineInRange("centerY", 64, -64, 320);
+                .defineInRange("centerY", 0, -2032, 2032);
 
         pocketInnerBlockPalette = COMMON_BUILDER
                 .comment(

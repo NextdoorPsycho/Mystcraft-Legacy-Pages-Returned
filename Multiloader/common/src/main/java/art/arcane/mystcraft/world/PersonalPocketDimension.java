@@ -1,22 +1,30 @@
 package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.blockentity.BookstandBlockEntity;
 import art.arcane.mystcraft.config.MystcraftConfig;
+import art.arcane.mystcraft.data.LinkOptions;
+import art.arcane.mystcraft.link.LinkingManager;
+import art.arcane.mystcraft.registry.ModBlocks;
+import art.arcane.mystcraft.registry.ModItems;
 import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundInitializeBorderPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.border.WorldBorder;
 import org.jetbrains.annotations.Nullable;
@@ -24,28 +32,97 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Personal pocket dimension: a hollow cube structure.
- * Inner space is configurable (default 3x3 chunks = 48 blocks of void).
- * Surrounded by configurable wood shell then bedrock shell.
+ * Personal pocket dimension: a hollow rectangular structure.
+ * Inner space is configurable separately for XZ (horizontal) and Y (vertical).
+ * XZ can be up to 8192 blocks (half-size 4096).
+ * Y is limited by Minecraft's dimension height limits.
+ * Surrounded by configurable inner shell then outer shell.
  * Spawn point is at the bottom of the hollow interior.
+ *
+ * Size validation automatically caps to Minecraft version limits:
+ * - 1.20.2+: max dimension height 4064 (min_y -2032 to max_y 2032)
+ * - Earlier versions may have smaller limits; values will be capped accordingly.
  */
 public final class PersonalPocketDimension {
 
   private static final int PERSONAL_UID_OFFSET = 1_000_000_000;
   private static final int PERSONAL_UID_RANGE = 1_000_000_000;
 
-  /** Minecraft build limits. */
-  public static final int MIN_BUILD_Y = -64;
-  public static final int MAX_BUILD_Y = 320;
+  /**
+   * Minecraft dimension limits for personal pockets.
+   * These represent the maximum possible range in 1.20.2+ with custom dimension types.
+   * For personal pockets, we use a dimension type configured to these limits.
+   */
+  public static final int MIN_BUILD_Y = -2032;
+  public static final int MAX_BUILD_Y = 2032;
+  public static final int DIMENSION_HEIGHT = MAX_BUILD_Y - MIN_BUILD_Y; // 4064
+
+  /** Absolute minimum inner half-size (4 block diameter minimum). */
+  public static final int MIN_HALF_SIZE = 2;
+
+  /** Maximum half-size for config (8192 block diameter). */
+  public static final int MAX_HALF_SIZE = 4096;
+
+  /** Track if we've logged version-based capping warnings. */
+  private static boolean loggedYCap = false;
+  private static boolean loggedXZCap = false;
 
   private PersonalPocketDimension() {
   }
 
-  // --- Configurable dimensions with validation ---
+  // --- Dimension limit detection ---
 
-  /** Half the inner void space (from config, clamped to valid range). */
-  public static int getInnerHalfSize() {
-    return Math.max(8, Math.min(128, MystcraftConfig.pocketInnerHalfSize.get()));
+  /**
+   * Returns the maximum supported Y half-size based on Minecraft's dimension limits.
+   * Accounts for shell thickness to ensure the complete pocket fits within limits.
+   * This automatically adapts to the version's capabilities.
+   */
+  public static int getMaxSupportedHalfSizeY() {
+    int shellThickness = getInnerThickness() + getOuterThickness();
+    int availableHeight = DIMENSION_HEIGHT - (shellThickness * 2);
+    return Math.max(MIN_HALF_SIZE, availableHeight / 2);
+  }
+
+  // --- Configurable dimensions with validation and fallback ---
+
+  /** Half the inner void space horizontally (X/Z axes). Range: 2-4096 (4 to 8192 blocks). */
+  public static int getInnerHalfSizeXZ() {
+    int requested = MystcraftConfig.pocketInnerHalfSizeXZ.get();
+    int clamped = Math.max(MIN_HALF_SIZE, Math.min(MAX_HALF_SIZE, requested));
+
+    if (clamped != requested && !loggedXZCap) {
+      Mystcraft.LOGGER.warn("[PersonalPocket] XZ half-size {} exceeds limits, capped to {} (max diameter: {} blocks)",
+          requested, clamped, clamped * 2);
+      loggedXZCap = true;
+    }
+
+    return clamped;
+  }
+
+  /**
+   * Half the inner void space vertically (Y axis).
+   * Capped to config limit (4096) and then further to Minecraft's dimension height if needed.
+   */
+  public static int getInnerHalfSizeY() {
+    int requested = MystcraftConfig.pocketInnerHalfSizeY.get();
+    int maxSupported = Math.min(MAX_HALF_SIZE, getMaxSupportedHalfSizeY());
+    int clamped = Math.max(MIN_HALF_SIZE, Math.min(maxSupported, requested));
+
+    if (clamped != requested && !loggedYCap) {
+      if (requested > MAX_HALF_SIZE) {
+        Mystcraft.LOGGER.warn("[PersonalPocket] Y half-size {} exceeds config limit, capped to {} (max diameter: {} blocks)",
+            requested, clamped, clamped * 2);
+      } else {
+        Mystcraft.LOGGER.warn("[PersonalPocket] Y half-size {} exceeds Minecraft dimension limits, capped to {} (max height: {} blocks)",
+            requested, clamped, clamped * 2);
+        Mystcraft.LOGGER.info("[PersonalPocket] Minecraft 1.20.2 max dimension height: {} blocks. " +
+            "With shell thickness {}, max inner Y half-size is {}.",
+            DIMENSION_HEIGHT, getInnerThickness() + getOuterThickness(), getMaxSupportedHalfSizeY());
+      }
+      loggedYCap = true;
+    }
+
+    return clamped;
   }
 
   /** Inner shell thickness (from config, clamped to valid range). */
@@ -61,54 +138,69 @@ public final class PersonalPocketDimension {
   /** Center Y coordinate (from config, adjusted if needed to fit within build limits). */
   public static int getCenterY() {
     int requestedCenterY = MystcraftConfig.pocketCenterY.get();
-    int totalHalfSize = getTotalHalfSize();
+    int totalHalfSizeY = getTotalHalfSizeY();
 
-    // Ensure pocket fits within build limits
-    int minCenterY = MIN_BUILD_Y + totalHalfSize;
-    int maxCenterY = MAX_BUILD_Y - totalHalfSize;
+    // Ensure pocket fits within dimension build limits
+    int minCenterY = MIN_BUILD_Y + totalHalfSizeY;
+    int maxCenterY = MAX_BUILD_Y - totalHalfSizeY;
 
     if (maxCenterY < minCenterY) {
       // Pocket too large to fit - use midpoint and log warning
-      Mystcraft.LOGGER.warn("[PersonalPocket] Pocket too large ({} blocks) to fit in build limits, centering at Y=128", totalHalfSize * 2);
-      return 128;
+      Mystcraft.LOGGER.warn("[PersonalPocket] Pocket Y size ({} blocks) too large for dimension, centering at Y=0", totalHalfSizeY * 2);
+      return 0;
     }
 
     return Math.max(minCenterY, Math.min(maxCenterY, requestedCenterY));
   }
 
-  /** Total half-size from center to outer edge. */
-  public static int getTotalHalfSize() {
-    return getInnerHalfSize() + getInnerThickness() + getOuterThickness();
+  /** Total half-size from center to outer edge (horizontal). */
+  public static int getTotalHalfSizeXZ() {
+    return getInnerHalfSizeXZ() + getInnerThickness() + getOuterThickness();
   }
 
-  /** Inner void size (diameter) - used for world border. */
-  public static int getInnerSize() {
-    return getInnerHalfSize() * 2;
+  /** Total half-size from center to outer edge (vertical). */
+  public static int getTotalHalfSizeY() {
+    return getInnerHalfSizeY() + getInnerThickness() + getOuterThickness();
   }
 
-  /** Total pocket size (diameter including walls). */
-  public static int getPocketSize() {
-    return getTotalHalfSize() * 2;
+  /** Inner void size horizontally (diameter) - used for world border. */
+  public static int getInnerSizeXZ() {
+    return getInnerHalfSizeXZ() * 2;
+  }
+
+  /** Inner void size vertically (diameter). */
+  public static int getInnerSizeY() {
+    return getInnerHalfSizeY() * 2;
+  }
+
+  /** Total pocket size horizontally (diameter including walls). */
+  public static int getPocketSizeXZ() {
+    return getTotalHalfSizeXZ() * 2;
+  }
+
+  /** Total pocket size vertically (diameter including walls). */
+  public static int getPocketSizeY() {
+    return getTotalHalfSizeY() * 2;
   }
 
   /** Bottom of inner void (spawn floor). */
   public static int getInnerMinY() {
-    return getCenterY() - getInnerHalfSize();
+    return getCenterY() - getInnerHalfSizeY();
   }
 
   /** Top of inner void. */
   public static int getInnerMaxY() {
-    return getCenterY() + getInnerHalfSize() - 1;
+    return getCenterY() + getInnerHalfSizeY() - 1;
   }
 
-  /** Minimum Y before boundary triggers (bottom of bedrock). */
+  /** Minimum Y before boundary triggers (bottom of outer shell). */
   public static int getBoundaryMinY() {
-    return getCenterY() - getTotalHalfSize();
+    return getCenterY() - getTotalHalfSizeY();
   }
 
-  /** Maximum Y before boundary triggers (top of bedrock). */
+  /** Maximum Y before boundary triggers (top of outer shell). */
   public static int getBoundaryMaxY() {
-    return getCenterY() + getTotalHalfSize() - 1;
+    return getCenterY() + getTotalHalfSizeY() - 1;
   }
 
   /** Gets the configured inner block palette, falling back to oak_planks if all invalid. */
@@ -161,9 +253,19 @@ public final class PersonalPocketDimension {
     return uid;
   }
 
-  /** Returns spawn position 2 blocks above the bottom floor of the inner void. */
+  /** Returns spawn position beside the bookstand (offset by 1 block on X axis). */
   public static BlockPos getPocketSpawn() {
-    return new BlockPos(0, getInnerMinY() + 2, 0);
+    return new BlockPos(1, getInnerMinY() + 1, 0);
+  }
+
+  /** Returns the position for the bookstand (center of the pocket floor). */
+  public static BlockPos getBookstandPos() {
+    return new BlockPos(0, getInnerMinY() + 1, 0);
+  }
+
+  /** Returns the position for the floor block under the bookstand. */
+  public static BlockPos getFloorBlockPos() {
+    return new BlockPos(0, getInnerMinY(), 0);
   }
 
   public static boolean isPersonalPocket(ServerLevel level) {
@@ -172,14 +274,14 @@ public final class PersonalPocketDimension {
   }
 
   /**
-   * Checks if a position is outside the entire pocket structure (beyond bedrock).
+   * Checks if a position is outside the entire pocket structure (beyond outer shell).
    * This is a failsafe - players should never reach here normally.
-   * Teleports them back if they somehow clip through the bedrock walls.
+   * Teleports them back if they somehow clip through the outer walls.
    */
   public static boolean isOutsideBoundary(double x, double z) {
-    int totalHalfSize = getTotalHalfSize();
-    return x < -totalHalfSize || x >= totalHalfSize ||
-           z < -totalHalfSize || z >= totalHalfSize;
+    int totalHalfSizeXZ = getTotalHalfSizeXZ();
+    return x < -totalHalfSizeXZ || x >= totalHalfSizeXZ ||
+           z < -totalHalfSizeXZ || z >= totalHalfSizeXZ;
   }
 
   /**
@@ -236,7 +338,69 @@ public final class PersonalPocketDimension {
     configurePersonalRules(level);
     enforceBorder(level);
 
+    // Place the return bookstand with linkbook pointing back to where the player came from
+    placeReturnBookstand(level, owner);
+
     return level;
+  }
+
+  /**
+   * Places a bookstand in the center of the pocket floor with a linkbook
+   * that links back to where the player entered from.
+   */
+  private static void placeReturnBookstand(ServerLevel level, UUID owner) {
+    // Get the return link data (stored before pocket creation)
+    CompoundTag returnLink = PersonalPocketData.get(level.getServer()).getReturnLink(owner);
+    if (returnLink == null) {
+      // Fallback to overworld spawn if no return link exists
+      ServerLevel overworld = level.getServer().overworld();
+      returnLink = new CompoundTag();
+      LinkOptions.setDimensionUID(returnLink, LinkingManager.getDimensionUID(overworld));
+      LinkOptions.setSpawn(returnLink, overworld.getSharedSpawnPos());
+      LinkOptions.setSpawnYaw(returnLink, 0.0f);
+      Mystcraft.LOGGER.warn("[PersonalPocket] No return link found for {}, using overworld spawn", owner);
+    }
+
+    // Place floor block at center
+    BlockPos floorPos = getFloorBlockPos();
+    level.setBlock(floorPos, Blocks.SMOOTH_STONE.defaultBlockState(), 2);
+
+    // Place bookstand on top of floor
+    BlockPos bookstandPos = getBookstandPos();
+    BlockState bookstandState = ModBlocks.BOOKSTAND.get().defaultBlockState();
+    level.setBlock(bookstandPos, bookstandState, 2);
+
+    // Get the bookstand block entity and put a linkbook on it
+    BlockEntity blockEntity = level.getBlockEntity(bookstandPos);
+    if (blockEntity instanceof BookstandBlockEntity bookstand) {
+      // Create the return linkbook
+      ItemStack linkbook = new ItemStack(ModItems.LINKBOOK.get());
+      CompoundTag tag = linkbook.getOrCreateTag();
+
+      // Copy return link data to the linkbook
+      Integer dimUID = LinkOptions.getDimensionUID(returnLink);
+      if (dimUID != null) {
+        LinkOptions.setDimensionUID(tag, dimUID);
+      }
+      BlockPos spawnPos = LinkOptions.getSpawn(returnLink);
+      if (spawnPos != null) {
+        LinkOptions.setSpawn(tag, spawnPos);
+      }
+      Float yaw = LinkOptions.getSpawnYaw(returnLink);
+      if (yaw != null) {
+        LinkOptions.setSpawnYaw(tag, yaw);
+      }
+      LinkOptions.setDisplayName(tag, "Return Home");
+      tag.putBoolean("NoDecay", true);
+
+      // Place the linkbook on the bookstand
+      bookstand.setBook(linkbook);
+
+      Mystcraft.LOGGER.info("[PersonalPocket] Placed return bookstand at {} with linkbook pointing to UID {}",
+          bookstandPos, dimUID);
+    } else {
+      Mystcraft.LOGGER.warn("[PersonalPocket] Failed to get bookstand block entity at {}", bookstandPos);
+    }
   }
 
   private static AgeDirectorImpl buildPersonalDirector(MinecraftServer server) {
@@ -334,7 +498,7 @@ public final class PersonalPocketDimension {
       border.setCenter(0.0, 0.0);
       changed = true;
     }
-    int borderSize = getInnerSize() + 2; // +1 on each side
+    int borderSize = getInnerSizeXZ() + 2; // +1 on each side
     if (border.getSize() != borderSize) {
       Mystcraft.LOGGER.info("[PersonalPocket] Setting world border size from {} to {}", border.getSize(), borderSize);
       border.setSize(borderSize);

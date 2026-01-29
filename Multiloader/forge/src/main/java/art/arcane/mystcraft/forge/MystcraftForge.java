@@ -176,6 +176,7 @@ public class MystcraftForge {
         art.arcane.mystcraft.config.MystcraftConfig.microDimensionsEnabled = ForgeMystcraftConfig.microDimensionsEnabled::get;
         art.arcane.mystcraft.config.MystcraftConfig.microDimensionRadiusChunks = ForgeMystcraftConfig.microDimensionRadiusChunks::get;
         art.arcane.mystcraft.config.MystcraftConfig.microDimensionExtraChunks = ForgeMystcraftConfig.microDimensionExtraChunks::get;
+        art.arcane.mystcraft.config.MystcraftConfig.safeStories = ForgeMystcraftConfig.safeStories::get;
         art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols =
                 () -> List.copyOf(ForgeMystcraftConfig.disabledSymbols.get());
         art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = ForgeMystcraftConfig.instabilityEnabled::get;
@@ -194,7 +195,8 @@ public class MystcraftForge {
         art.arcane.mystcraft.config.MystcraftConfig.chanceLightning = ForgeMystcraftConfig.chanceLightning::get;
         art.arcane.mystcraft.config.MystcraftConfig.chanceMeteor = ForgeMystcraftConfig.chanceMeteor::get;
         art.arcane.mystcraft.config.MystcraftConfig.chancePlayerEffect = ForgeMystcraftConfig.chancePlayerEffect::get;
-        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerHalfSize = ForgeMystcraftConfig.pocketInnerHalfSize::get;
+        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerHalfSizeXZ = ForgeMystcraftConfig.pocketInnerHalfSizeXZ::get;
+        art.arcane.mystcraft.config.MystcraftConfig.pocketInnerHalfSizeY = ForgeMystcraftConfig.pocketInnerHalfSizeY::get;
         art.arcane.mystcraft.config.MystcraftConfig.pocketInnerThickness = ForgeMystcraftConfig.pocketInnerThickness::get;
         art.arcane.mystcraft.config.MystcraftConfig.pocketOuterThickness = ForgeMystcraftConfig.pocketOuterThickness::get;
         art.arcane.mystcraft.config.MystcraftConfig.pocketCenterY = ForgeMystcraftConfig.pocketCenterY::get;

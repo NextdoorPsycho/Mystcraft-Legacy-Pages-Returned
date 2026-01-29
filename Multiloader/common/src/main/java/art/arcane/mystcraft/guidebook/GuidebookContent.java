@@ -1072,7 +1072,8 @@ public class GuidebookContent {
                 "deleteAgesOnStartup: false (dev only)\n" +
                 "microDimensionsEnabled: false\n" +
                 "microDimensionRadiusChunks: 0\n" +
-                "microDimensionExtraChunks: 1")
+                "microDimensionExtraChunks: 1\n" +
+                "safeStories: true")
         .addPage("Instability Settings",
             "instabilityEnabled: true (master switch)\n" +
                 "deathEffectsEnabled: true\n" +

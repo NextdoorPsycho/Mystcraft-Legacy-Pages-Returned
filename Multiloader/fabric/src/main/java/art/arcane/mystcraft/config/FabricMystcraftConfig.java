@@ -27,12 +27,14 @@ public class FabricMystcraftConfig {
     public static final BooleanValue microDimensionsEnabled = new BooleanValue(false);
     public static final IntValue microDimensionRadiusChunks = new IntValue(0);
     public static final IntValue microDimensionExtraChunks = new IntValue(1);
+    public static final BooleanValue safeStories = new BooleanValue(true);
 
     // --- Personal Pocket Dimension ---
-    public static final IntValue pocketInnerHalfSize = new IntValue(24);
+    public static final IntValue pocketInnerHalfSizeXZ = new IntValue(24);
+    public static final IntValue pocketInnerHalfSizeY = new IntValue(24);
     public static final IntValue pocketInnerThickness = new IntValue(3);
     public static final IntValue pocketOuterThickness = new IntValue(5);
-    public static final IntValue pocketCenterY = new IntValue(64);
+    public static final IntValue pocketCenterY = new IntValue(0);
     public static final StringListValue pocketInnerBlockPalette = new StringListValue(new ArrayList<>(List.of(
             "minecraft:oak_planks",
             "minecraft:spruce_planks",
@@ -132,14 +134,22 @@ public class FabricMystcraftConfig {
                 "Additional chunk rings generated beyond the border for visual continuity.");
         microDimensionExtraChunks.set(config.getOrElse("general.microDimensionExtraChunks", microDimensionExtraChunks.defaultValue));
 
+        setCommentAndDefault(config, "general.safeStories", safeStories.defaultValue,
+                "If true, players who die or fall into the void in Mystcraft Ages are returned to where they linked from.");
+        safeStories.set(config.getOrElse("general.safeStories", safeStories.defaultValue));
+
         setCommentAndDefault(config, "general.disabledSymbols", new ArrayList<>(DEFAULT_DISABLED_SYMBOLS),
                 "List of symbol IDs to disable. Disabled symbols are hidden from books and not registered at runtime.");
         disabledSymbols.set(config.getOrElse("general.disabledSymbols", new ArrayList<>(DEFAULT_DISABLED_SYMBOLS)));
 
         // --- Personal Pocket ---
-        setCommentAndDefault(config, "personal_pocket.innerHalfSize", pocketInnerHalfSize.defaultValue,
-                "Half the inner void space in blocks. Default: 24 (48 block diameter, 3 chunks).");
-        pocketInnerHalfSize.set(config.getOrElse("personal_pocket.innerHalfSize", pocketInnerHalfSize.defaultValue));
+        setCommentAndDefault(config, "personal_pocket.innerHalfSizeXZ", pocketInnerHalfSizeXZ.defaultValue,
+                "Half the inner void space horizontally (X/Z axes). Range: 2-4096. Default: 24 (48 block diameter).");
+        pocketInnerHalfSizeXZ.set(config.getOrElse("personal_pocket.innerHalfSizeXZ", pocketInnerHalfSizeXZ.defaultValue));
+
+        setCommentAndDefault(config, "personal_pocket.innerHalfSizeY", pocketInnerHalfSizeY.defaultValue,
+                "Half the inner void space vertically (Y axis). Range: 2-4096. Minecraft 1.20.2 max is ~4048 due to dimension height.");
+        pocketInnerHalfSizeY.set(config.getOrElse("personal_pocket.innerHalfSizeY", pocketInnerHalfSizeY.defaultValue));
 
         setCommentAndDefault(config, "personal_pocket.innerThickness", pocketInnerThickness.defaultValue,
                 "Thickness of the inner shell surrounding the void. Default: 3 blocks.");
@@ -150,7 +160,7 @@ public class FabricMystcraftConfig {
         pocketOuterThickness.set(config.getOrElse("personal_pocket.outerThickness", pocketOuterThickness.defaultValue));
 
         setCommentAndDefault(config, "personal_pocket.centerY", pocketCenterY.defaultValue,
-                "Y coordinate of the pocket center. Must allow room for the pocket within build limits.");
+                "Y coordinate of the pocket center. Range: -2032 to 2032. Default: 0 (centered in dimension).");
         pocketCenterY.set(config.getOrElse("personal_pocket.centerY", pocketCenterY.defaultValue));
 
         setCommentAndDefault(config, "personal_pocket.innerBlockPalette", new ArrayList<>(pocketInnerBlockPalette.defaultValue),

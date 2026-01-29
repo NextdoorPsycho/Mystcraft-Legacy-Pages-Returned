@@ -678,8 +678,48 @@ public class AgeDimensionFactory {
       return platformSpawn;
     }
 
+    // Void dimension fallback - place a single stone block for the player to stand on
+    BlockPos voidSpawn = buildVoidSpawnBlock(level, BlockPos.ZERO);
+    if (voidSpawn != null) {
+      if (ageData != null) {
+        ageData.setSpawn(voidSpawn.getX(), voidSpawn.getY(), voidSpawn.getZ());
+      }
+      return voidSpawn;
+    }
+
     // Last resort: return world spawn
     return worldSpawn;
+  }
+
+  /**
+   * Places a single stone block for void dimensions with nothing to stand on.
+   * Used as a last resort when no terrain, fluid, or solid ground exists.
+   */
+  @Nullable
+  private static BlockPos buildVoidSpawnBlock(@NotNull ServerLevel level, @NotNull BlockPos center) {
+    if (!level.hasChunk(center.getX() >> 4, center.getZ() >> 4)) {
+      return null;
+    }
+
+    int minY = level.getMinBuildHeight();
+    int maxY = level.getMaxBuildHeight();
+
+    // Place the stone block in the middle of the safe Y range
+    int safeMinY = minY + SPAWN_EDGE_MARGIN;
+    int safeMaxY = maxY - SPAWN_EDGE_MARGIN;
+    int spawnY = (safeMinY + safeMaxY) / 2;
+
+    // Clamp to a reasonable height if the dimension is very tall
+    spawnY = Math.max(safeMinY, Math.min(128, spawnY));
+
+    BlockPos stonePos = new BlockPos(center.getX(), spawnY, center.getZ());
+    BlockPos spawnPos = stonePos.above();
+
+    // Place a single stone block
+    level.setBlock(stonePos, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+
+    Mystcraft.LOGGER.info("Built void spawn block at {} (void dimension fallback)", stonePos);
+    return spawnPos;
   }
 
   /**
@@ -717,6 +757,7 @@ public class AgeDimensionFactory {
   /**
    * Finds a fluid surface near the given position and builds a 3x3 stone platform on top.
    * Returns the spawn position one block above the platform center, or null if no fluid found.
+   * Respects the spawn edge margin.
    */
   @Nullable
   private static BlockPos buildSpawnPlatform(@NotNull ServerLevel level, @NotNull BlockPos center) {
@@ -726,12 +767,14 @@ public class AgeDimensionFactory {
 
     int minY = level.getMinBuildHeight();
     int maxY = level.getMaxBuildHeight();
-    int startY = Math.min(maxY - 1, 128);
+    int safeMinY = minY + SPAWN_EDGE_MARGIN;
+    int safeMaxY = maxY - SPAWN_EDGE_MARGIN;
+    int startY = Math.min(safeMaxY - 1, 128);
     int cx = center.getX();
     int cz = center.getZ();
 
     // Search downward for the top of a fluid column
-    for (int y = startY; y > minY; y--) {
+    for (int y = startY; y > safeMinY; y--) {
       BlockPos pos = new BlockPos(cx, y, cz);
       var state = level.getBlockState(pos);
       var aboveState = level.getBlockState(pos.above());
@@ -759,16 +802,22 @@ public class AgeDimensionFactory {
     return null;
   }
 
+  /** Avoid spawning players in the upper/lower edges of the dimension. */
+  private static final int SPAWN_EDGE_MARGIN = 50;
+
   /**
    * Checks if a position is safe for spawning.
    * Safe means: solid non-bedrock ground with at least 2 air blocks above.
+   * Avoids upper/lower 50 blocks of the dimension to keep spawns in reasonable areas.
    */
   public static boolean isSafeSpawn(@NotNull ServerLevel level, @NotNull BlockPos pos) {
     int minY = level.getMinBuildHeight();
     int maxY = level.getMaxBuildHeight();
 
-    // Check Y bounds
-    if (pos.getY() < minY + 1 || pos.getY() >= maxY - 2) {
+    // Check Y bounds - avoid upper/lower 50 blocks of the dimension
+    int safeMinY = minY + SPAWN_EDGE_MARGIN;
+    int safeMaxY = maxY - SPAWN_EDGE_MARGIN;
+    if (pos.getY() < safeMinY || pos.getY() >= safeMaxY) {
       return false;
     }
 
@@ -852,6 +901,7 @@ public class AgeDimensionFactory {
    * Finds the surface Y coordinate at a given X/Z position.
    * Returns the position of the first air block above solid ground.
    * Returns null if the chunk is not loaded (to avoid deadlocking the server thread).
+   * Avoids upper/lower 50 blocks of the dimension.
    */
   @Nullable
   private static BlockPos findSurfaceY(@NotNull ServerLevel level, int x, int z, int minY, int maxY) {
@@ -860,11 +910,15 @@ public class AgeDimensionFactory {
       return null;
     }
 
-    // Start from a reasonable height and search down
-    int startY = Math.min(maxY - 1, 128);
+    // Apply edge margins to avoid spawning near dimension boundaries
+    int safeMinY = minY + SPAWN_EDGE_MARGIN;
+    int safeMaxY = maxY - SPAWN_EDGE_MARGIN;
+
+    // Start from safe upper bound and search down
+    int startY = Math.min(safeMaxY - 1, 128);
 
     // First pass: search downward from reasonable height
-    for (int y = startY; y > minY; y--) {
+    for (int y = startY; y > safeMinY; y--) {
       BlockPos pos = new BlockPos(x, y, z);
       BlockPos below = pos.below();
 

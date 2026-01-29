@@ -19,6 +19,7 @@ public final class MystcraftConfig {
   public static Supplier<Boolean> microDimensionsEnabled = () -> false;
   public static Supplier<Integer> microDimensionRadiusChunks = () -> 0;
   public static Supplier<Integer> microDimensionExtraChunks = () -> 1;
+  public static Supplier<Boolean> safeStories = () -> true;
   // Ore block terrain symbols are disabled by default as they are overpowered
   public static Supplier<List<String>> disabledSymbols = () -> List.of(
       // Ore storage blocks
@@ -39,10 +40,11 @@ public final class MystcraftConfig {
   );
 
   // Personal Pocket Dimension
-  public static Supplier<Integer> pocketInnerHalfSize = () -> 24;
+  public static Supplier<Integer> pocketInnerHalfSizeXZ = () -> 24;
+  public static Supplier<Integer> pocketInnerHalfSizeY = () -> 24;
   public static Supplier<Integer> pocketInnerThickness = () -> 3;
   public static Supplier<Integer> pocketOuterThickness = () -> 5;
-  public static Supplier<Integer> pocketCenterY = () -> 64;
+  public static Supplier<Integer> pocketCenterY = () -> 0;
   public static Supplier<List<String>> pocketInnerBlockPalette = () -> List.of(
       "minecraft:oak_planks",
       "minecraft:spruce_planks",

@@ -1057,8 +1057,8 @@ public class AgeChunkGenerator extends ChunkGenerator {
   }
 
   private void generatePersonalTerrain(ChunkAccess chunk, RandomSource random) {
-    // Personal pocket: hollow cube structure
-    // Inner void: configurable size, centered at configurable Y
+    // Personal pocket: hollow rectangular structure
+    // Inner void: configurable separately for XZ (horizontal) and Y (vertical)
     // Inner shell: configurable thickness with simplex-like pattern from configured palette
     // Outer shell: configurable thickness with configured block
 
@@ -1067,24 +1067,26 @@ public class AgeChunkGenerator extends ChunkGenerator {
     int chunkMinX = chunkX << 4;
     int chunkMinZ = chunkZ << 4;
 
-    // Cube parameters from PersonalPocketDimension config
-    int innerHalf = art.arcane.mystcraft.world.PersonalPocketDimension.getInnerHalfSize();
+    // Rectangular parameters from PersonalPocketDimension config
+    int innerHalfXZ = art.arcane.mystcraft.world.PersonalPocketDimension.getInnerHalfSizeXZ();
+    int innerHalfY = art.arcane.mystcraft.world.PersonalPocketDimension.getInnerHalfSizeY();
     int innerThick = art.arcane.mystcraft.world.PersonalPocketDimension.getInnerThickness();
-    int totalHalf = art.arcane.mystcraft.world.PersonalPocketDimension.getTotalHalfSize();
+    int totalHalfXZ = art.arcane.mystcraft.world.PersonalPocketDimension.getTotalHalfSizeXZ();
+    int totalHalfY = art.arcane.mystcraft.world.PersonalPocketDimension.getTotalHalfSizeY();
     int centerY = art.arcane.mystcraft.world.PersonalPocketDimension.getCenterY();
 
-    // Cube boundaries in world coordinates
-    int cubeMinX = -totalHalf;
-    int cubeMaxX = totalHalf - 1;
-    int cubeMinZ = -totalHalf;
-    int cubeMaxZ = totalHalf - 1;
-    int cubeMinY = centerY - totalHalf;
-    int cubeMaxY = centerY + totalHalf - 1;
+    // Rectangular boundaries in world coordinates
+    int boxMinX = -totalHalfXZ;
+    int boxMaxX = totalHalfXZ - 1;
+    int boxMinZ = -totalHalfXZ;
+    int boxMaxZ = totalHalfXZ - 1;
+    int boxMinY = centerY - totalHalfY;
+    int boxMaxY = centerY + totalHalfY - 1;
 
-    // Quick bounds check - skip chunks entirely outside the cube
-    if (chunkMinX > cubeMaxX || chunkMinX + 15 < cubeMinX ||
-        chunkMinZ > cubeMaxZ || chunkMinZ + 15 < cubeMinZ) {
-      return; // Chunk is outside cube, leave as void
+    // Quick bounds check - skip chunks entirely outside the box
+    if (chunkMinX > boxMaxX || chunkMinX + 15 < boxMinX ||
+        chunkMinZ > boxMaxZ || chunkMinZ + 15 < boxMinZ) {
+      return; // Chunk is outside box, leave as void
     }
 
     BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -1096,25 +1098,29 @@ public class AgeChunkGenerator extends ChunkGenerator {
 
     for (int localX = 0; localX < 16; localX++) {
       int worldX = chunkMinX + localX;
-      if (worldX < cubeMinX || worldX > cubeMaxX) continue;
+      if (worldX < boxMinX || worldX > boxMaxX) continue;
 
       for (int localZ = 0; localZ < 16; localZ++) {
         int worldZ = chunkMinZ + localZ;
-        if (worldZ < cubeMinZ || worldZ > cubeMaxZ) continue;
+        if (worldZ < boxMinZ || worldZ > boxMaxZ) continue;
 
-        for (int worldY = cubeMinY; worldY <= cubeMaxY; worldY++) {
+        for (int worldY = boxMinY; worldY <= boxMaxY; worldY++) {
           // Calculate distance from center for each axis
           int distX = Math.abs(worldX);
           int distY = Math.abs(worldY - centerY);
           int distZ = Math.abs(worldZ);
 
-          // Determine which layer this block is in based on max distance (cube shape)
-          int maxDist = Math.max(Math.max(distX, distY), distZ);
+          // Determine which layer this block is in (rectangular shell logic)
+          // For each axis, calculate how far into the shells we are
+          int layerX = distX < innerHalfXZ ? 0 : distX - innerHalfXZ;
+          int layerY = distY < innerHalfY ? 0 : distY - innerHalfY;
+          int layerZ = distZ < innerHalfXZ ? 0 : distZ - innerHalfXZ;
+          int shellLayer = Math.max(Math.max(layerX, layerY), layerZ);
 
-          if (maxDist < innerHalf) {
+          if (shellLayer == 0) {
             // Inside inner void - leave as air
             continue;
-          } else if (maxDist < innerHalf + innerThick) {
+          } else if (shellLayer <= innerThick) {
             // Inner shell layer - use simplex-like pattern for variety
             BlockState innerBlock = getSimplexInnerBlock(worldX, worldY, worldZ, innerBlocks);
             pos.set(localX, worldY, localZ);

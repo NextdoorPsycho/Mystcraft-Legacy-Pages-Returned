@@ -1,5 +1,7 @@
 {
   "variants": {
-    "": { "model": "mystcraft:block/blockstarfissure_placeholder" }
+    "": {
+      "model": "mystcraft:block/blockstarfissure_placeholder"
+    }
   }
 }

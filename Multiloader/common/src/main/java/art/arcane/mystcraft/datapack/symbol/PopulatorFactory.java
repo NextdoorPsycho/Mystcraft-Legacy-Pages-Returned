@@ -7,5 +7,5 @@ import com.google.gson.JsonObject;
  * Factory for creating populators from datapack JSON.
  */
 public interface PopulatorFactory {
-    IPopulate create(long seed, JsonObject json);
+  IPopulate create(long seed, JsonObject json);
 }

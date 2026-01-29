@@ -13,36 +13,36 @@ import net.minecraft.world.item.ItemStack;
  */
 public class LinkBookActivatePacket {
 
-    private final InteractionHand hand;
+  private final InteractionHand hand;
 
-    public LinkBookActivatePacket(InteractionHand hand) {
-        this.hand = hand;
-    }
+  public LinkBookActivatePacket(InteractionHand hand) {
+    this.hand = hand;
+  }
 
-    public static void encode(LinkBookActivatePacket packet, FriendlyByteBuf buf) {
-        buf.writeEnum(packet.hand);
-    }
+  public static void encode(LinkBookActivatePacket packet, FriendlyByteBuf buf) {
+    buf.writeEnum(packet.hand);
+  }
 
-    public static LinkBookActivatePacket decode(FriendlyByteBuf buf) {
-        InteractionHand hand = buf.readEnum(InteractionHand.class);
-        return new LinkBookActivatePacket(hand);
-    }
+  public static LinkBookActivatePacket decode(FriendlyByteBuf buf) {
+    InteractionHand hand = buf.readEnum(InteractionHand.class);
+    return new LinkBookActivatePacket(hand);
+  }
 
-    public static void handle(LinkBookActivatePacket packet, PacketContext ctx) {
-        ctx.enqueueWork(() -> {
-            ServerPlayer player = ctx.getServerPlayer();
-            if (player == null) return;
+  public static void handle(LinkBookActivatePacket packet, PacketContext ctx) {
+    ctx.enqueueWork(() -> {
+      ServerPlayer player = ctx.getServerPlayer();
+      if (player == null) return;
 
-            ItemStack heldItem = player.getItemInHand(packet.hand);
+      ItemStack heldItem = player.getItemInHand(packet.hand);
 
-            // Handle linkbook activation
-            if (heldItem.getItem() instanceof LinkbookItem linkbook) {
-                linkbook.activate(heldItem, player.level(), player);
-            }
-            // Handle agebook activation - call activate() directly
-            else if (heldItem.getItem() instanceof AgebookItem agebook) {
-                agebook.activate(heldItem, player.level(), player);
-            }
-        });
-    }
+      // Handle linkbook activation
+      if (heldItem.getItem() instanceof LinkbookItem linkbook) {
+        linkbook.activate(heldItem, player.level(), player);
+      }
+      // Handle agebook activation - call activate() directly
+      else if (heldItem.getItem() instanceof AgebookItem agebook) {
+        agebook.activate(heldItem, player.level(), player);
+      }
+    });
+  }
 }

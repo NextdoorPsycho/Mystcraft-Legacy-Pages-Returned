@@ -14,31 +14,31 @@ import net.minecraft.world.level.chunk.LevelChunk;
  */
 public class EffectScorched implements IEnvironmentalEffect {
 
-    private static final float BASE_CHANCE = 0.008f;
+  private static final float BASE_CHANCE = 0.008f;
 
-    @Override
-    public void tick(ServerLevel level, LevelChunk chunk, float instability) {
-        if (instability < 70.0f) return;
-        float intensity = Math.min((instability - 70.0f) / 30.0f, 1.0f);
+  @Override
+  public void tick(ServerLevel level, LevelChunk chunk, float instability) {
+    if (instability < 70.0f) return;
+    float intensity = Math.min((instability - 70.0f) / 30.0f, 1.0f);
 
-        if (level.random.nextFloat() >= BASE_CHANCE * intensity) {
-            return;
-        }
-
-        // Pick a random position in the chunk
-        int x = chunk.getPos().getMinBlockX() + level.random.nextInt(16);
-        int z = chunk.getPos().getMinBlockZ() + level.random.nextInt(16);
-        int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
-
-        BlockPos pos = new BlockPos(x, y, z);
-        BlockState stateBelow = level.getBlockState(pos.below());
-
-        // Only place fire if there's a solid block below and air at position
-        if (level.getBlockState(pos).isAir() && stateBelow.isSolidRender(level, pos.below())) {
-            // Check if fire can survive here
-            if (BaseFireBlock.canBePlacedAt(level, pos, net.minecraft.core.Direction.UP)) {
-                level.setBlock(pos, Blocks.FIRE.defaultBlockState(), 3);
-            }
-        }
+    if (level.random.nextFloat() >= BASE_CHANCE * intensity) {
+      return;
     }
+
+    // Pick a random position in the chunk
+    int x = chunk.getPos().getMinBlockX() + level.random.nextInt(16);
+    int z = chunk.getPos().getMinBlockZ() + level.random.nextInt(16);
+    int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
+
+    BlockPos pos = new BlockPos(x, y, z);
+    BlockState stateBelow = level.getBlockState(pos.below());
+
+    // Only place fire if there's a solid block below and air at position
+    if (level.getBlockState(pos).isAir() && stateBelow.isSolidRender(level, pos.below())) {
+      // Check if fire can survive here
+      if (BaseFireBlock.canBePlacedAt(level, pos, net.minecraft.core.Direction.UP)) {
+        level.setBlock(pos, Blocks.FIRE.defaultBlockState(), 3);
+      }
+    }
+  }
 }

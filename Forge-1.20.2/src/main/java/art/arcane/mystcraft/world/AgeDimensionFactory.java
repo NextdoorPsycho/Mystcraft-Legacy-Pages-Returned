@@ -291,6 +291,7 @@ public class AgeDimensionFactory {
             AgeData ageData = AgeData.get(newLevel);
             ageData.setAgeUID(ageUID);
             ageData.setAgeUUID(ageUUID);
+            AgeTrackingData.get(server).ensureCreated(ageUID, System.currentTimeMillis());
 
             return newLevel;
 
@@ -558,6 +559,53 @@ public class AgeDimensionFactory {
     public static boolean isMystcraftAge(@NotNull ResourceKey<Level> dimensionKey) {
         return dimensionKey.location().getNamespace().equals(Mystcraft.MOD_ID)
                 && dimensionKey.location().getPath().startsWith(DIMENSION_PREFIX);
+    }
+
+    /**
+     * Unloads a Mystcraft Age dimension from the server if it's currently loaded.
+     */
+    @SuppressWarnings("unchecked")
+    public static boolean unloadAgeDimension(@NotNull MinecraftServer server, @NotNull ResourceKey<Level> dimensionKey) {
+        if (levelsField == null) {
+            Mystcraft.LOGGER.error("Reflection fields not initialized");
+            return false;
+        }
+
+        try {
+            Map<ResourceKey<Level>, ServerLevel> levels =
+                    (Map<ResourceKey<Level>, ServerLevel>) levelsField.get(server);
+            ServerLevel level = levels.get(dimensionKey);
+            if (level == null) {
+                return false;
+            }
+
+            if (!level.players().isEmpty()) {
+                Mystcraft.LOGGER.warn("Refusing to unload Age {} while players are present",
+                        dimensionKey.location());
+                return false;
+            }
+
+            MinecraftForge.EVENT_BUS.post(new LevelEvent.Unload(level));
+            AgePopulationHandler.clearDimensionTracking(level.dimension().location().hashCode());
+
+            levels.remove(dimensionKey);
+            if (markWorldsDirtyMethod != null) {
+                markWorldsDirtyMethod.invoke(server);
+            }
+
+            try {
+                Method closeMethod = level.getClass().getMethod("close");
+                closeMethod.invoke(level);
+            } catch (NoSuchMethodException ignored) {
+                // Older mappings might not expose close().
+            }
+
+            Mystcraft.LOGGER.info("Unloaded Age dimension {}", dimensionKey.location());
+            return true;
+        } catch (Exception e) {
+            Mystcraft.LOGGER.error("Failed to unload Age dimension {}", dimensionKey.location(), e);
+            return false;
+        }
     }
 
     /**

@@ -9,10 +9,10 @@ import art.arcane.mystcraft.instability.effects.EffectMeteor;
  */
 public class ProviderMeteor implements IInstabilityProvider {
 
-    @Override
-    public void addEffects(InstabilityDirector director, Integer level) {
-        for (int i = 0; i < level; i++) {
-            director.registerEffect(new EffectMeteor());
-        }
+  @Override
+  public void addEffects(InstabilityDirector director, Integer level) {
+    for (int i = 0; i < level; i++) {
+      director.registerEffect(new EffectMeteor());
     }
+  }
 }

@@ -9,6 +9,9 @@
     "Map"
   ],
   "logic": [
-    { "type": "set_biome_controller", "value": "shuffle" }
+    {
+      "type": "set_biome_controller",
+      "value": "shuffle"
+    }
   ]
 }

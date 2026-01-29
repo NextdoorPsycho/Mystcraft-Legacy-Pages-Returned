@@ -11,25 +11,25 @@ import java.util.List;
  */
 public class BiomeControllerSingle extends BiomeControllerBase {
 
-    private final Holder<Biome> singleBiome;
+  private final Holder<Biome> singleBiome;
 
-    public BiomeControllerSingle(Holder<Biome> biome, long seed) {
-        super(Collections.singletonList(biome), seed);
-        this.singleBiome = biome;
-    }
+  public BiomeControllerSingle(Holder<Biome> biome, long seed) {
+    super(Collections.singletonList(biome), seed);
+    this.singleBiome = biome;
+  }
 
-    public BiomeControllerSingle(List<Holder<Biome>> biomes, long seed) {
-        super(biomes.isEmpty() ? Collections.emptyList() : Collections.singletonList(biomes.get(0)), seed);
-        this.singleBiome = biomes.isEmpty() ? null : biomes.get(0);
-    }
+  public BiomeControllerSingle(List<Holder<Biome>> biomes, long seed) {
+    super(biomes.isEmpty() ? Collections.emptyList() : Collections.singletonList(biomes.get(0)), seed);
+    this.singleBiome = biomes.isEmpty() ? null : biomes.get(0);
+  }
 
-    @Override
-    public Holder<Biome> getBiomeAtCoords(int x, int z) {
-        return singleBiome;
-    }
+  @Override
+  public Holder<Biome> getBiomeAtCoords(int x, int z) {
+    return singleBiome;
+  }
 
-    @Override
-    public String getType() {
-        return "single";
-    }
+  @Override
+  public String getType() {
+    return "single";
+  }
 }

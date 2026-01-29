@@ -1,7 +1,6 @@
 {
   "itemGroup.mystcraft": "Mystcraft",
   "itemGroup.mystcraft_pages": "Mystcraft Pages",
-
   "block.mystcraft.blockinkmixer": "Ink Mixer",
   "block.mystcraft.blockbookbinder": "Book Binder",
   "block.mystcraft.blockbookreceptacle": "Book Receptacle",
@@ -14,12 +13,10 @@
   "block.mystcraft.writingdesk": "Writing Desk",
   "block.mystcraft.blockstarfissure": "Star Fissure",
   "block.mystcraft.fluidblockblackink": "Black Ink",
-
   "item.mystcraft.page": "Page",
   "item.mystcraft.page.blank": "Blank Page",
   "item.mystcraft.page.panel": "Link Panel",
   "item.mystcraft.page.symbol": "Page (%s)",
-
   "item.mystcraft.agebook": "Descriptive Book",
   "item.mystcraft.agebook.age": "Age: %d",
   "item.mystcraft.agebook.unwritten": "Unwritten Age",
@@ -33,50 +30,39 @@
   "item.mystcraft.agebook.link_failed": "Link failed: %s",
   "item.mystcraft.agebook.no_age": "Book has no Age assigned",
   "item.mystcraft.agebook.no_panel": "Book requires a Link Panel as first page",
-
   "item.mystcraft.linkbook": "Linking Book",
   "item.mystcraft.linkbook.destination": "Destination: %d, %d, %d",
   "item.mystcraft.linkbook.dimension": "Dimension: %d",
   "item.mystcraft.linkbook.invalid": "Invalid link destination",
   "item.mystcraft.linkbook.linking": "Linking...",
-
   "item.mystcraft.linkbook_unlinked": "Unlinked Link Book",
   "item.mystcraft.personal_link_book": "Personal Link Book",
   "item.mystcraft.personal_link_book.tooltip": "Somewhat of a memoir... Just dont call me Quinn.",
-
   "item.mystcraft.booster": "Sealed Notebook",
   "item.mystcraft.booster.opened": "Received %d pages!",
-
   "item.mystcraft.folder": "Collation Folder",
   "item.mystcraft.folder.pages": "Pages: %d/%d",
   "item.mystcraft.folder.empty": "Empty",
   "item.mystcraft.folder.open": "Opening folder...",
-
   "item.mystcraft.portfolio": "Symbol Portfolio",
   "item.mystcraft.portfolio.pages": "Pages: %d/%d",
   "item.mystcraft.portfolio.empty": "Empty",
   "item.mystcraft.portfolio.open": "Opening portfolio...",
-
   "item.mystcraft.inkvial": "Ink Vial",
   "item.mystcraft.inkvial.amount": "Ink: %d/%d",
   "item.mystcraft.inkvial.color": "Color: %s",
   "item.mystcraft.inkvial.empty": "Empty",
-
   "item.mystcraft.glasses": "Glasses",
   "item.mystcraft.ink_bucket": "Black Ink Bucket",
   "item.mystcraft.guidebook": "The Art of Writing",
   "item.mystcraft.guidebook.tooltip": "A comprehensive guide to Mystcraft",
-
   "gui.mystcraft.guidebook.title": "The Art of Writing",
   "gui.mystcraft.guidebook.subtitle": "A Guide to Age Creation",
   "gui.mystcraft.guidebook.contents": "Contents",
-
   "fluid_type.mystcraft.black_ink": "Black Ink",
-
   "entity.mystcraft.linkbook": "Book",
   "entity.mystcraft.falling_block": "Falling Block",
   "entity.mystcraft.meteor": "Meteor",
-
   "subtitles.mystcraft.linking.pop": "Linking Pop",
   "subtitles.mystcraft.linking.link": "Linking",
   "subtitles.mystcraft.linking.link-disarm": "Link Disarm",
@@ -85,21 +71,18 @@
   "subtitles.mystcraft.linking.link-fissure": "Star Fissure",
   "subtitles.mystcraft.linking.link-portal": "Link Portal",
   "subtitles.mystcraft.entity.meteor.roar": "Meteor Roar",
-
   "container.mystcraft.ink_mixer": "Ink Mixer",
   "container.mystcraft.book_binder": "Book Binder",
   "container.mystcraft.link_modifier": "Link Modifier",
   "container.mystcraft.writing_desk": "Writing Desk",
   "container.mystcraft.folder": "Collation Folder",
   "container.mystcraft.portfolio": "Symbol Portfolio",
-
   "gui.mystcraft.ink_mixer.has_ink": "Ink Ready",
   "gui.mystcraft.book_binder.pages": "Pages: %d",
   "gui.mystcraft.book_binder.ready": "Ready to Bind",
   "gui.mystcraft.link_modifier.ready": "Ready to Modify",
   "gui.mystcraft.writing_desk.ready": "Ready to Write",
   "gui.mystcraft.writing_desk.needs_ink": "Needs Ink",
-
   "gui.mystcraft.book.link": "Link",
   "gui.mystcraft.book.age": "Age: %d",
   "gui.mystcraft.book.dimension": "Dimension: %d",
@@ -108,7 +91,6 @@
   "gui.mystcraft.book.by": "by",
   "gui.mystcraft.book.pages": "Pages: %d",
   "gui.mystcraft.book.unwritten": "Unwritten",
-
   "myst.symbol.mystcraft.biome_single": "Single Biome",
   "myst.symbol.mystcraft.biome_native": "Native Biomes",
   "myst.symbol.mystcraft.biome_tiny": "Tiny Biomes",
@@ -118,7 +100,6 @@
   "myst.symbol.mystcraft.biome_huge": "Huge Biomes",
   "myst.symbol.mystcraft.biome_tiled": "Tiled Biomes",
   "myst.symbol.mystcraft.biome_grid": "Grid Biomes",
-
   "myst.symbol.mystcraft.terrain_normal": "Normal Terrain",
   "myst.symbol.mystcraft.terrain_amplified": "Amplified Terrain",
   "myst.symbol.mystcraft.terrain_flat": "Flat Terrain",
@@ -141,7 +122,6 @@
   "myst.symbol.mystcraft.terrain_slime": "Slime Terrain",
   "myst.symbol.mystcraft.terrain_decay": "Decay Terrain",
   "myst.symbol.mystcraft.terrain_library": "Library Terrain",
-
   "myst.symbol.mystcraft.sun_normal": "Normal Sun",
   "myst.symbol.mystcraft.sun_dark": "Dark Sun",
   "myst.symbol.mystcraft.sun_large": "Large Sun",
@@ -161,7 +141,6 @@
   "myst.symbol.mystcraft.stars_dark": "No Stars",
   "myst.symbol.mystcraft.stars_dense": "Dense Stars",
   "myst.symbol.mystcraft.stars_sparse": "Sparse Stars",
-
   "myst.symbol.mystcraft.weather_normal": "Normal Weather",
   "myst.symbol.mystcraft.weather_off": "Clear Weather",
   "myst.symbol.mystcraft.weather_always": "Eternal Weather",
@@ -171,7 +150,6 @@
   "myst.symbol.mystcraft.weather_cloudy": "Cloudy Skies",
   "myst.symbol.mystcraft.weather_fast": "Fast Weather",
   "myst.symbol.mystcraft.weather_slow": "Slow Weather",
-
   "myst.symbol.mystcraft.caves": "Caves",
   "myst.symbol.mystcraft.ravines": "Ravines",
   "myst.symbol.mystcraft.floating_islands": "Floating Islands",
@@ -194,13 +172,11 @@
   "myst.symbol.mystcraft.biome_shuffle": "Biome Shuffle",
   "myst.symbol.mystcraft.block_shuffle_terrain": "Terrain Block Shuffle",
   "myst.symbol.mystcraft.block_shuffle_global": "Global Block Shuffle",
-
   "myst.symbol.mystcraft.villages": "Villages",
   "myst.symbol.mystcraft.dungeons": "Dungeons",
   "myst.symbol.mystcraft.mineshafts": "Mineshafts",
   "myst.symbol.mystcraft.strongholds": "Strongholds",
   "myst.symbol.mystcraft.nether_fortress": "Nether Fortress",
-
   "myst.symbol.mystcraft.env_accelerated": "Accelerated",
   "myst.symbol.mystcraft.env_meteors": "Meteors",
   "myst.symbol.mystcraft.env_lightning": "Lightning",
@@ -210,7 +186,6 @@
   "myst.symbol.mystcraft.env_shorter_days": "Shorter Days",
   "myst.symbol.mystcraft.env_slow_time": "Slow Time",
   "myst.symbol.mystcraft.env_static_time": "Static Time",
-
   "myst.symbol.mystcraft.mod_north": "North",
   "myst.symbol.mystcraft.mod_east": "East",
   "myst.symbol.mystcraft.mod_south": "South",
@@ -223,7 +198,6 @@
   "myst.symbol.mystcraft.mod_half": "Half Length",
   "myst.symbol.mystcraft.mod_full": "Full Length",
   "myst.symbol.mystcraft.mod_double": "Double Length",
-
   "myst.symbol.mystcraft.color_red": "Red",
   "myst.symbol.mystcraft.color_orange": "Orange",
   "myst.symbol.mystcraft.color_yellow": "Yellow",
@@ -269,11 +243,9 @@
   "myst.symbol.mystcraft.clouds_none": "No Clouds",
   "myst.symbol.mystcraft.horizon_low": "Low Horizon",
   "myst.symbol.mystcraft.horizon_high": "High Horizon",
-
   "myst.symbol.mystcraft.lighting_normal": "Normal Lighting",
   "myst.symbol.mystcraft.lighting_bright": "Bright Lighting",
   "myst.symbol.mystcraft.lighting_dark": "Dark Lighting",
-
   "myst.symbol.mystcraft.color_sky": "Sky Color",
   "myst.symbol.mystcraft.color_sky_natural": "Natural Sky Color",
   "myst.symbol.mystcraft.color_sky_night": "Night Sky Color",
@@ -291,14 +263,12 @@
   "myst.symbol.mystcraft.color_horizon_natural": "Natural Horizon Color",
   "myst.symbol.mystcraft.color_sunset": "Sunset Color",
   "myst.symbol.mystcraft.color_sunset_natural": "Natural Sunset Color",
-
   "myst.symbol.mystcraft.star_fissure": "Star Fissure",
   "myst.symbol.mystcraft.obelisks": "Obelisks",
   "myst.symbol.mystcraft.anti_pvp": "Peaceful",
   "myst.symbol.mystcraft.hide_horizon": "Hidden Horizon",
   "myst.symbol.mystcraft.crystal_formation": "Crystal Formation",
   "myst.symbol.mystcraft.rainbow": "Rainbow",
-
   "linkeffect.mystcraft.intralinking": "Intra-Linking",
   "linkeffect.mystcraft.intralinkingonly": "Intra-Linking Only",
   "linkeffect.mystcraft.generateplatform": "Generate Platform",
@@ -306,7 +276,6 @@
   "linkeffect.mystcraft.disarm": "Disarm",
   "linkeffect.mystcraft.relative": "Relative Positioning",
   "linkeffect.mystcraft.following": "Following",
-
   "myst.symbol.mystcraft.biome_plains": "Plains Biome",
   "myst.symbol.mystcraft.biome_forest": "Forest Biome",
   "myst.symbol.mystcraft.biome_taiga": "Taiga Biome",
@@ -369,8 +338,6 @@
   "myst.symbol.mystcraft.biome_end_midlands": "End Midlands Biome",
   "myst.symbol.mystcraft.biome_end_barrens": "End Barrens Biome",
   "myst.symbol.mystcraft.biome_small_end_islands": "Small End Islands Biome",
-
-
   "myst.symbol.mystcraft.pillager_outposts": "Pillager Outposts",
   "myst.symbol.mystcraft.ruined_portals": "Ruined Portals",
   "myst.symbol.mystcraft.ocean_monuments": "Ocean Monuments",
@@ -387,14 +354,11 @@
   "myst.symbol.mystcraft.ocean_ruins": "Ocean Ruins",
   "myst.symbol.mystcraft.buried_treasure": "Buried Treasure",
   "myst.symbol.mystcraft.nether_fossils": "Nether Fossils",
-
   "myst.symbol.mystcraft.weather_thunder": "Eternal Thunder",
   "myst.symbol.mystcraft.weather_blizzard": "Blizzard",
-
   "myst.symbol.mystcraft.dripstone_caves": "Dripstone Caves",
   "myst.symbol.mystcraft.lush_caves": "Lush Caves",
   "myst.symbol.mystcraft.deep_dark": "Deep Dark",
-
   "myst.symbol.mystcraft.no_ores": "No Ores",
   "myst.symbol.mystcraft.no_coal_ore": "No Coal Ore",
   "myst.symbol.mystcraft.no_iron_ore": "No Iron Ore",
@@ -412,7 +376,6 @@
   "myst.symbol.mystcraft.extra_diamond_ore": "Extra Diamond Ore",
   "myst.symbol.mystcraft.extra_lapis_ore": "Extra Lapis Ore",
   "myst.symbol.mystcraft.extra_emerald_ore": "Extra Emerald Ore",
-
   "myst.symbol.mystcraft.gradient_sunset": "Sunset Gradient",
   "myst.symbol.mystcraft.gradient_dawn": "Dawn Gradient",
   "myst.symbol.mystcraft.gradient_dusk": "Dusk Gradient",
@@ -420,12 +383,9 @@
   "myst.symbol.mystcraft.gradient_blood_sky": "Blood Sky Gradient",
   "myst.symbol.mystcraft.gradient_builder": "Gradient Builder",
   "myst.symbol.mystcraft.gradient_apply_sunset": "Apply Sunset Gradient",
-
   "myst.symbol.mystcraft.lighting_nether": "Nether Lighting",
-
   "structure.mystcraft.scattered_library": "Scattered Library",
   "structure.mystcraft.archivist_house": "Archivist House",
-
   "advancements.mystcraft.root.title": "Mystcraft",
   "advancements.mystcraft.root.description": "The Art of Writing Ages",
   "advancements.mystcraft.linkbook.title": "Linking Book",
@@ -440,27 +400,22 @@
   "advancements.mystcraft.dimension.description": "Enter a Mystcraft Age with a Linking Book in your inventory",
   "advancements.mystcraft.quinn.title": "The Stranger",
   "advancements.mystcraft.quinn.description": "Enter a Mystcraft Age without a Linking Book",
-
   "mystcraft.death.low.release": "The Age releases its grip on %s. Their story here fades to silence.",
   "mystcraft.death.low.ink_dries": "The ink dries on %s's chapter. The Age turns the page.",
   "mystcraft.death.low.thread_unravels": "%s's narrative thread unravels from this Age.",
-
   "mystcraft.death.medium.shudders": "The Age shudders as %s falls. The words blur.",
   "mystcraft.death.medium.stricken": "The writing trembles. %s's presence is stricken from the page.",
   "mystcraft.death.medium.no_mourn": "%s is struck from the narrative. The Age does not mourn.",
-
   "mystcraft.death.high.devours": "The collapsing Age devours %s. Another sentence lost to the void.",
   "mystcraft.death.high.ink_runs_black": "The ink runs black. %s is consumed by a story that was never meant to be.",
   "mystcraft.death.high.reality_tears": "Reality tears apart around %s. The Age swallows what remains.",
   "mystcraft.death.high.already_dying": "%s's story ends in a dimension that was already dying.",
-
   "mystcraft.death.cause.void_fall": "The ground beneath %s was never truly written.",
   "mystcraft.death.cause.fire": "The Age's fever burns %s from the narrative.",
   "mystcraft.death.cause.magic": "Dark words seep through the page and claim %s.",
   "mystcraft.death.cause.explosion": "The Age punctuates %s's story with destruction.",
   "mystcraft.death.cause.mob": "The Age's creatures enforce the author's grim intent upon %s.",
   "mystcraft.death.cause.decay": "The rot between the words reaches %s at last.",
-
   "mystcraft.death.repeat.remembers": "The Age remembers %s's failures. It hungers for the pattern.",
   "mystcraft.death.repeat.ink_knows": "Again %s falls. The ink knows their name now.",
   "mystcraft.death.repeat.how_many": "How many times must %s's story end here?"

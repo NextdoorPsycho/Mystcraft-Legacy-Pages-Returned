@@ -7,41 +7,41 @@ package art.arcane.mystcraft.guidebook;
  */
 public class GuidebookPage {
 
-    private final String title;
-    private final String content;
-    private final boolean stabilityIndicators;
+  private final String title;
+  private final String content;
+  private final boolean stabilityIndicators;
 
-    public GuidebookPage(String title, String content) {
-        this(title, content, false);
-    }
+  public GuidebookPage(String title, String content) {
+    this(title, content, false);
+  }
 
-    public GuidebookPage(String title, String content, boolean stabilityIndicators) {
-        this.title = title;
-        this.content = content;
-        this.stabilityIndicators = stabilityIndicators;
-    }
+  public GuidebookPage(String title, String content, boolean stabilityIndicators) {
+    this.title = title;
+    this.content = content;
+    this.stabilityIndicators = stabilityIndicators;
+  }
 
-    public String getTitle() {
-        return title;
-    }
+  public static GuidebookPage of(String title, String content) {
+    return new GuidebookPage(title, content);
+  }
 
-    public String getContent() {
-        return content;
-    }
+  public static GuidebookPage withStability(String title, String content) {
+    return new GuidebookPage(title, content, true);
+  }
 
-    public boolean hasStabilityIndicators() {
-        return stabilityIndicators;
-    }
+  public static GuidebookPage textOnly(String content) {
+    return new GuidebookPage(null, content);
+  }
 
-    public static GuidebookPage of(String title, String content) {
-        return new GuidebookPage(title, content);
-    }
+  public String getTitle() {
+    return title;
+  }
 
-    public static GuidebookPage withStability(String title, String content) {
-        return new GuidebookPage(title, content, true);
-    }
+  public String getContent() {
+    return content;
+  }
 
-    public static GuidebookPage textOnly(String content) {
-        return new GuidebookPage(null, content);
-    }
+  public boolean hasStabilityIndicators() {
+    return stabilityIndicators;
+  }
 }

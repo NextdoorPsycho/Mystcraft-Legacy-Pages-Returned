@@ -9,40 +9,40 @@ import java.util.List;
  */
 public class GuidebookChapter {
 
-    private final String title;
-    private final List<GuidebookPage> pages;
+  private final String title;
+  private final List<GuidebookPage> pages;
 
-    public GuidebookChapter(String title) {
-        this.title = title;
-        this.pages = new ArrayList<>();
-    }
+  public GuidebookChapter(String title) {
+    this.title = title;
+    this.pages = new ArrayList<>();
+  }
 
-    public String getTitle() {
-        return title;
-    }
+  public static GuidebookChapter create(String title) {
+    return new GuidebookChapter(title);
+  }
 
-    public List<GuidebookPage> getPages() {
-        return pages;
-    }
+  public String getTitle() {
+    return title;
+  }
 
-    public GuidebookChapter addPage(GuidebookPage page) {
-        this.pages.add(page);
-        return this;
-    }
+  public List<GuidebookPage> getPages() {
+    return pages;
+  }
 
-    public GuidebookChapter addPage(String title, String content) {
-        return addPage(GuidebookPage.of(title, content));
-    }
+  public GuidebookChapter addPage(GuidebookPage page) {
+    this.pages.add(page);
+    return this;
+  }
 
-    public GuidebookChapter addStabilityPage(String title, String content) {
-        return addPage(GuidebookPage.withStability(title, content));
-    }
+  public GuidebookChapter addPage(String title, String content) {
+    return addPage(GuidebookPage.of(title, content));
+  }
 
-    public GuidebookChapter addTextPage(String content) {
-        return addPage(GuidebookPage.textOnly(content));
-    }
+  public GuidebookChapter addStabilityPage(String title, String content) {
+    return addPage(GuidebookPage.withStability(title, content));
+  }
 
-    public static GuidebookChapter create(String title) {
-        return new GuidebookChapter(title);
-    }
+  public GuidebookChapter addTextPage(String content) {
+    return addPage(GuidebookPage.textOnly(content));
+  }
 }

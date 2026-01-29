@@ -33,6 +33,8 @@ public class FabricMystcraftConfig {
     public static final BooleanValue giveGuidebookOnFirstSpawn = new BooleanValue(true);
     public static final IntValue maxSymbolsPerBook = new IntValue(50);
     public static final BooleanValue deleteAgesOnStartup = new BooleanValue(false);
+    public static final BooleanValue enablePersonalLinkBooks = new BooleanValue(true);
+    public static final BooleanValue allowGravityBlocksInAges = new BooleanValue(false);
 
     // --- Instability ---
     public static final BooleanValue instabilityEnabled = new BooleanValue(true);
@@ -98,6 +100,8 @@ public class FabricMystcraftConfig {
             readBoolean(json, "giveGuidebookOnFirstSpawn", giveGuidebookOnFirstSpawn);
             readInt(json, "maxSymbolsPerBook", maxSymbolsPerBook);
             readBoolean(json, "deleteAgesOnStartup", deleteAgesOnStartup);
+            readBoolean(json, "enablePersonalLinkBooks", enablePersonalLinkBooks);
+            readBoolean(json, "allowGravityBlocksInAges", allowGravityBlocksInAges);
 
             // Instability
             readBoolean(json, "instabilityEnabled", instabilityEnabled);
@@ -138,6 +142,8 @@ public class FabricMystcraftConfig {
         json.addProperty("giveGuidebookOnFirstSpawn", giveGuidebookOnFirstSpawn.get());
         json.addProperty("maxSymbolsPerBook", maxSymbolsPerBook.get());
         json.addProperty("deleteAgesOnStartup", deleteAgesOnStartup.get());
+        json.addProperty("enablePersonalLinkBooks", enablePersonalLinkBooks.get());
+        json.addProperty("allowGravityBlocksInAges", allowGravityBlocksInAges.get());
 
         // Instability
         json.addProperty("instabilityEnabled", instabilityEnabled.get());

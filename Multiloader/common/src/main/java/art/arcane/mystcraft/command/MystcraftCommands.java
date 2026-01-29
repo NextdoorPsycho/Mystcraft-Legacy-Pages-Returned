@@ -158,7 +158,7 @@ public class MystcraftCommands {
                                 .executes(MystcraftCommands::dumpCurrentAgeToFile)
                                 .then(Commands.argument("ageId", IntegerArgumentType.integer(0))
                                         .suggests(AGE_SUGGESTIONS)
-                                        .executes(MystcraftCommands::dumpAgeToFile)))))
+                                        .executes(MystcraftCommands::dumpAgeToFile))))
                 .then(Commands.literal("debug")
                         .requires(source -> source.hasPermission(2))
                         .then(Commands.literal("age")
@@ -290,8 +290,8 @@ public class MystcraftCommands {
                         .executes(MystcraftCommands::reprofileCurrent)
                         .then(Commands.argument("ageId", IntegerArgumentType.integer(1))
                                 .suggests(AGE_SUGGESTIONS)
-                                .executes(MystcraftCommands::reprofileAge)))
-        );
+                                .executes(MystcraftCommands::reprofileAge))
+        ));
     }
 
     /**
@@ -761,9 +761,9 @@ public class MystcraftCommands {
             out.append("terrain_type: ").append(director.getTerrainType()).append("\n");
             out.append("has_sea: ").append(director.hasSea()).append("\n");
             out.append("star_fissure_enabled: ").append(director.isStarFissureEnabled()).append("\n");
-            out.append("floating_islands_enabled: ").append(director.isFloatingIslandsEnabled()).append("\n");
-            out.append("caves_enabled: ").append(director.isCavesEnabled()).append("\n");
-            out.append("ravines_enabled: ").append(director.isRavinesEnabled()).append("\n");
+            out.append("floating_islands_enabled: ").append(director.areFloatingIslandsEnabled()).append("\n");
+            out.append("caves_enabled: ").append(director.areCavesEnabled()).append("\n");
+            out.append("ravines_enabled: ").append(director.areRavinesEnabled()).append("\n");
         }
 
         String filename = "age_" + ageUID + "_dump.txt";
@@ -944,17 +944,17 @@ public class MystcraftCommands {
 
     private static List<ResourceLocation> collectPresetSymbols(AgePresets.Preset preset, RandomSource random) {
         List<ResourceLocation> symbols = new ArrayList<>();
-        for (String symbolId : preset.fixedSymbols) {
+        for (String symbolId : preset.fixedSymbols()) {
             ResourceLocation id = new ResourceLocation(symbolId);
             if (SymbolRegistry.get(id) != null) {
                 symbols.add(id);
             }
         }
 
-        for (AgePresets.RandomPool pool : preset.randomPools) {
-            List<String> available = new ArrayList<>(pool.options);
+        for (AgePresets.RandomPool pool : preset.randomPools()) {
+            List<String> available = new ArrayList<>(pool.options());
             Collections.shuffle(available, new java.util.Random(random.nextLong()));
-            int count = Math.min(pool.pickCount, available.size());
+            int count = Math.min(pool.pickCount(), available.size());
             for (int i = 0; i < count; i++) {
                 ResourceLocation id = new ResourceLocation(available.get(i));
                 if (SymbolRegistry.get(id) != null) {
@@ -1070,18 +1070,18 @@ public class MystcraftCommands {
         // --- Core symbols: terrain, biome controller, biome ---
 
         IAgeSymbol terrain = pickWeightedTerrain(random);
-        if (terrain != null && budget > 0 && addSymbolPage(pages, seen, terrain)) {
+        if (budget > 0 && addSymbolPage(pages, seen, terrain)) {
             budget--;
         }
 
         IAgeSymbol controller = pickUniformFromCategory(SymbolCategory.BIOME_CONTROLLER, random);
-        if (controller != null && budget > 0 && addSymbolPage(pages, seen, controller)) {
+        if (budget > 0 && addSymbolPage(pages, seen, controller)) {
             budget--;
         }
 
         if (budget > 0) {
             IAgeSymbol biome = pickWeightedBiome(random);
-            if (biome != null && addSymbolPage(pages, seen, biome)) {
+            if (addSymbolPage(pages, seen, biome)) {
                 budget--;
             }
         }
@@ -1089,7 +1089,7 @@ public class MystcraftCommands {
         // Optional second biome for variety (avoid oceans)
         if (budget > 0 && random.nextFloat() < 0.5f) {
             IAgeSymbol biome = pickWeightedBiome(random);
-            if (biome != null && addSymbolPage(pages, seen, biome)) {
+            if (addSymbolPage(pages, seen, biome)) {
                 budget--;
             }
         }
@@ -1128,7 +1128,7 @@ public class MystcraftCommands {
 
         if (budget > 0) {
             IAgeSymbol weather = pickUniformFromCategory(SymbolCategory.WEATHER, random);
-            if (weather != null && addSymbolPage(pages, seen, weather)) {
+            if (addSymbolPage(pages, seen, weather)) {
                 budget--;
             }
         }
@@ -1136,7 +1136,7 @@ public class MystcraftCommands {
         // --- Lighting: rarely dark, others even ---
         if (budget > 0) {
             IAgeSymbol lighting = pickWeightedFromCategory(SymbolCategory.LIGHTING, random, MystcraftCommands::lightingWeight);
-            if (lighting != null && addSymbolPage(pages, seen, lighting)) {
+            if (addSymbolPage(pages, seen, lighting)) {
                 budget--;
             }
         }
@@ -1172,7 +1172,7 @@ public class MystcraftCommands {
         if (budget > 0 && !seen.contains(new ResourceLocation("mystcraft", "star_fissure"))) {
             if (random.nextBoolean()) {
                 IAgeSymbol starFissure = SymbolRegistry.get(new ResourceLocation("mystcraft", "star_fissure"));
-                if (starFissure != null && addSymbolPage(pages, seen, starFissure)) {
+                if (addSymbolPage(pages, seen, starFissure)) {
                     budget--;
                 }
             }
@@ -1185,7 +1185,7 @@ public class MystcraftCommands {
         // --- Terrain block modifier: frequently weird ---
         if (budget > 0 && random.nextFloat() < 0.6f) {
             IAgeSymbol modifier = pickRandomTerrainBlock(random);
-            if (modifier != null && addSymbolPage(pages, seen, modifier)) {
+            if (addSymbolPage(pages, seen, modifier)) {
                 budget--;
             }
         }
@@ -1370,7 +1370,7 @@ public class MystcraftCommands {
             IAgeSymbol pick = (weightFn == null)
                     ? candidates.get(random.nextInt(candidates.size()))
                     : pickWeightedFromCategory(category, random, weightFn);
-            if (pick != null && addSymbolPage(pages, seen, pick)) {
+            if (addSymbolPage(pages, seen, pick)) {
                 budget--;
             }
         }
@@ -1390,7 +1390,7 @@ public class MystcraftCommands {
         if (pool.isEmpty()) return budget;
         for (int i = 0; i < count && budget > 0; i++) {
             IAgeSymbol pick = pickWeightedOre(pool, random);
-            if (pick != null && addSymbolPage(pages, seen, pick)) {
+            if (addSymbolPage(pages, seen, pick)) {
                 budget--;
             }
         }
@@ -1513,7 +1513,7 @@ public class MystcraftCommands {
         pages.add(Page.createLinkPage());
 
         // Add fixed symbols
-        for (String symbolId : preset.fixedSymbols) {
+        for (String symbolId : preset.fixedSymbols()) {
             ResourceLocation id = new ResourceLocation(symbolId);
             if (SymbolRegistry.get(id) != null) {
                 pages.add(Page.createSymbolPage(id));
@@ -1523,10 +1523,10 @@ public class MystcraftCommands {
         }
 
         // Add random picks from each pool
-        for (AgePresets.RandomPool pool : preset.randomPools) {
-            List<String> available = new ArrayList<>(pool.options);
+        for (AgePresets.RandomPool pool : preset.randomPools()) {
+            List<String> available = new ArrayList<>(pool.options());
             Collections.shuffle(available, new java.util.Random(random.nextLong()));
-            int count = Math.min(pool.pickCount, available.size());
+            int count = Math.min(pool.pickCount(), available.size());
             for (int i = 0; i < count; i++) {
                 ResourceLocation id = new ResourceLocation(available.get(i));
                 if (SymbolRegistry.get(id) != null) {
@@ -1539,14 +1539,14 @@ public class MystcraftCommands {
 
         // Create the book
         ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
-        AgebookItem.create(agebook, player, pages, preset.displayName);
+        AgebookItem.create(agebook, player, pages, preset.displayName());
 
         if (!player.getInventory().add(agebook)) {
             player.drop(agebook, false);
         }
 
         int symbolCount = pages.size() - 1;
-        source.sendSuccess(() -> Component.literal("Created preset book '" + preset.displayName + "' with " + symbolCount + " symbols"), true);
+        source.sendSuccess(() -> Component.literal("Created preset book '" + preset.displayName() + "' with " + symbolCount + " symbols"), true);
         return 1;
     }
 
@@ -1563,7 +1563,7 @@ public class MystcraftCommands {
         }
 
         List<ResourceLocation> symbols = collectPresetSymbols(preset, player.getRandom());
-        return createAgeFromSymbolsInternal(source, player, symbols, preset.displayName, teleport);
+        return createAgeFromSymbolsInternal(source, player, symbols, preset.displayName(), teleport);
     }
 
     private static int createAgeFromSymbols(CommandContext<CommandSourceStack> context, boolean teleport, String name) throws CommandSyntaxException {

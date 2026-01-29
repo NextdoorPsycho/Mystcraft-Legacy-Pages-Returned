@@ -36,6 +36,9 @@
         "mystcraft:nether_fossils"
       ]
     },
-    { "type": "add_instability", "value": 6.0 }
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
   ]
 }

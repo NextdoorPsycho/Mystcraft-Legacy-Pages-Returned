@@ -16,32 +16,32 @@ import org.jetbrains.annotations.NotNull;
  */
 public class GuidebookItem extends Item {
 
-    public GuidebookItem(Properties properties) {
-        super(properties);
+  public GuidebookItem(Properties properties) {
+    super(properties);
+  }
+
+  @Override
+  @NotNull
+  public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+    ItemStack stack = player.getItemInHand(hand);
+
+    if (level.isClientSide) {
+      openGuidebook();
     }
 
-    @Override
-    @NotNull
-    public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
+    return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+  }
 
-        if (level.isClientSide) {
-            openGuidebook();
-        }
-
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+  private void openGuidebook() {
+    try {
+      Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+      Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
+      Class<?> screenClass = Class.forName("art.arcane.mystcraft.client.screen.GuidebookScreen");
+      Object screen = screenClass.getConstructor().newInstance();
+      Class<?> screenBaseClass = Class.forName("net.minecraft.client.gui.screens.Screen");
+      minecraftClass.getMethod("setScreen", screenBaseClass).invoke(minecraft, screen);
+    } catch (ReflectiveOperationException e) {
+      throw new RuntimeException("Failed to open Mystcraft guidebook screen", e);
     }
-
-    private void openGuidebook() {
-        try {
-            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
-            Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
-            Class<?> screenClass = Class.forName("art.arcane.mystcraft.client.screen.GuidebookScreen");
-            Object screen = screenClass.getConstructor().newInstance();
-            Class<?> screenBaseClass = Class.forName("net.minecraft.client.gui.screens.Screen");
-            minecraftClass.getMethod("setScreen", screenBaseClass).invoke(minecraft, screen);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Failed to open Mystcraft guidebook screen", e);
-        }
-    }
+  }
 }

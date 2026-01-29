@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.registry;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.data.Page;
@@ -52,7 +53,9 @@ public final class ModCreativeTabs {
                     output.accept(FabricModItems.AGEBOOK.get());
                     output.accept(FabricModItems.LINKBOOK.get());
                     output.accept(FabricModItems.LINKBOOK_UNLINKED.get());
-                    output.accept(FabricModItems.PERSONAL_LINK_BOOK.get());
+                    if (MystcraftConfig.enablePersonalLinkBooks.get()) {
+                        output.accept(FabricModItems.PERSONAL_LINK_BOOK.get());
+                    }
 
                     // Page storage items
                     output.accept(FabricModItems.PAGE.get());

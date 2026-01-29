@@ -11,16 +11,16 @@ import net.minecraft.world.item.Item;
  */
 public class GlassesItem extends Item implements Equipable {
 
-    public GlassesItem(Properties properties) {
-        super(properties);
-    }
+  public GlassesItem(Properties properties) {
+    super(properties);
+  }
 
-    @Override
-    public EquipmentSlot getEquipmentSlot() {
-        return EquipmentSlot.HEAD;
-    }
+  @Override
+  public EquipmentSlot getEquipmentSlot() {
+    return EquipmentSlot.HEAD;
+  }
 
-    // Client-side rendering implemented in:
-    // - GlassesOverlay.java - Shows age info, instability, and symbol visibility
-    // - InstabilityEffects.java - Visual effects based on instability level
+  // Client-side rendering implemented in:
+  // - GlassesOverlay.java - Shows age info, instability, and symbol visibility
+  // - InstabilityEffects.java - Visual effects based on instability level
 }

@@ -9,10 +9,10 @@ import art.arcane.mystcraft.instability.effects.EffectExplosion;
  */
 public class ProviderExplosion implements IInstabilityProvider {
 
-    @Override
-    public void addEffects(InstabilityDirector director, Integer level) {
-        for (int i = 0; i < level; i++) {
-            director.registerEffect(new EffectExplosion());
-        }
+  @Override
+  public void addEffects(InstabilityDirector director, Integer level) {
+    for (int i = 0; i < level; i++) {
+      director.registerEffect(new EffectExplosion());
     }
+  }
 }

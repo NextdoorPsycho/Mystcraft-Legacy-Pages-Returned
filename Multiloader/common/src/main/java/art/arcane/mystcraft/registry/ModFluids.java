@@ -1,8 +1,9 @@
 package art.arcane.mystcraft.registry;
 
-import java.util.function.Supplier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.material.FlowingFluid;
+
+import java.util.function.Supplier;
 
 /**
  * Common accessor for registered fluids.
@@ -10,10 +11,10 @@ import net.minecraft.world.level.material.FlowingFluid;
  */
 public final class ModFluids {
 
-    public static Supplier<FlowingFluid> BLACK_INK_SOURCE;
-    public static Supplier<FlowingFluid> BLACK_INK_FLOWING;
-    public static Supplier<Item> BLACK_INK_BUCKET;
+  public static Supplier<FlowingFluid> BLACK_INK_SOURCE;
+  public static Supplier<FlowingFluid> BLACK_INK_FLOWING;
+  public static Supplier<Item> BLACK_INK_BUCKET;
 
-    private ModFluids() {
-    }
+  private ModFluids() {
+  }
 }

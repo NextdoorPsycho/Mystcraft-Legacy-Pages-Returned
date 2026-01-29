@@ -23,169 +23,165 @@ import org.jetbrains.annotations.NotNull;
  */
 public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
 
-    private static final String TAG_INVENTORY = "inventory";
-
-    private final SimpleContainer inventory = new SimpleContainer(1) {
-        @Override
-        public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
-            return isValidPortalActivator(stack);
-        }
-
-        @Override
-        public int getMaxStackSize() {
-            return 1;
-        }
-
-        @Override
-        public void setChanged() {
-            super.setChanged();
-            BookReceptacleBlockEntity.this.setChanged();
-            handleBookChange();
-        }
-    };
-
-    private boolean loading = false;
-
-    public BookReceptacleBlockEntity(BlockPos pos, BlockState blockState) {
-        super(ModBlockEntities.BOOK_RECEPTACLE.get(), pos, blockState);
-    }
-
-    /**
-     * Gets the inventory container for external access.
-     */
-    public Container getInventory() {
-        return inventory;
+  private static final String TAG_INVENTORY = "inventory";
+  private boolean loading = false;  private final SimpleContainer inventory = new SimpleContainer(1) {
+    @Override
+    public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
+      return isValidPortalActivator(stack);
     }
 
     @Override
-    protected void writeNbt(CompoundTag tag) {
-        super.writeNbt(tag);
-        ListTag itemList = new ListTag();
-        for (int i = 0; i < inventory.getContainerSize(); i++) {
-            ItemStack stack = inventory.getItem(i);
-            if (!stack.isEmpty()) {
-                CompoundTag itemTag = new CompoundTag();
-                itemTag.putInt("Slot", i);
-                stack.save(itemTag);
-                itemList.add(itemTag);
-            }
-        }
-        tag.put(TAG_INVENTORY, itemList);
+    public int getMaxStackSize() {
+      return 1;
     }
 
     @Override
-    protected void readNbt(CompoundTag tag) {
-        loading = true;
-        super.readNbt(tag);
-        inventory.clearContent();
-        ListTag itemList = tag.getList(TAG_INVENTORY, Tag.TAG_COMPOUND);
-        for (int i = 0; i < itemList.size(); i++) {
-            CompoundTag itemTag = itemList.getCompound(i);
-            int slot = itemTag.getInt("Slot");
-            if (slot >= 0 && slot < inventory.getContainerSize()) {
-                inventory.setItem(slot, ItemStack.of(itemTag));
-            }
-        }
-        loading = false;
+    public void setChanged() {
+      super.setChanged();
+      BookReceptacleBlockEntity.this.setChanged();
+      handleBookChange();
+    }
+  };
+
+  public BookReceptacleBlockEntity(BlockPos pos, BlockState blockState) {
+    super(ModBlockEntities.BOOK_RECEPTACLE.get(), pos, blockState);
+  }
+
+  /**
+   * Checks if a stack can activate a portal.
+   * Valid items are Linkbooks and Agebooks with link data.
+   */
+  public static boolean isValidPortalActivator(ItemStack stack) {
+    if (stack.isEmpty()) {
+      return false;
+    }
+    // Accept linkbooks and agebooks
+    return stack.getItem() instanceof LinkbookItem || stack.getItem() instanceof AgebookItem;
+  }
+
+  /**
+   * Gets the inventory container for external access.
+   */
+  public Container getInventory() {
+    return inventory;
+  }
+
+  @Override
+  protected void writeNbt(CompoundTag tag) {
+    super.writeNbt(tag);
+    ListTag itemList = new ListTag();
+    for (int i = 0; i < inventory.getContainerSize(); i++) {
+      ItemStack stack = inventory.getItem(i);
+      if (!stack.isEmpty()) {
+        CompoundTag itemTag = new CompoundTag();
+        itemTag.putInt("Slot", i);
+        stack.save(itemTag);
+        itemList.add(itemTag);
+      }
+    }
+    tag.put(TAG_INVENTORY, itemList);
+  }
+
+  @Override
+  protected void readNbt(CompoundTag tag) {
+    loading = true;
+    super.readNbt(tag);
+    inventory.clearContent();
+    ListTag itemList = tag.getList(TAG_INVENTORY, Tag.TAG_COMPOUND);
+    for (int i = 0; i < itemList.size(); i++) {
+      CompoundTag itemTag = itemList.getCompound(i);
+      int slot = itemTag.getInt("Slot");
+      if (slot >= 0 && slot < inventory.getContainerSize()) {
+        inventory.setItem(slot, ItemStack.of(itemTag));
+      }
+    }
+    loading = false;
+  }
+
+  /**
+   * Gets the book in this receptacle.
+   */
+  @NotNull
+  public ItemStack getBook() {
+    return inventory.getItem(0);
+  }
+
+  /**
+   * Sets the book in this receptacle.
+   */
+  public void setBook(@NotNull ItemStack book) {
+    inventory.setItem(0, book);
+  }
+
+  /**
+   * Checks if there's a book in this receptacle.
+   */
+  public boolean hasBook() {
+    return !inventory.getItem(0).isEmpty();
+  }
+
+  /**
+   * Called when the book changes.
+   * Handles portal activation/deactivation.
+   */
+  private void handleBookChange() {
+    if (level == null || level.isClientSide || loading) {
+      return;
     }
 
-    /**
-     * Checks if a stack can activate a portal.
-     * Valid items are Linkbooks and Agebooks with link data.
-     */
-    public static boolean isValidPortalActivator(ItemStack stack) {
-        if (stack.isEmpty()) {
-            return false;
-        }
-        // Accept linkbooks and agebooks
-        if (stack.getItem() instanceof LinkbookItem || stack.getItem() instanceof AgebookItem) {
-            return true;
-        }
-        return false;
+    markForUpdate();
+
+    ItemStack book = getBook();
+    if (!book.isEmpty() && isValidPortalActivator(book)) {
+      // Activate portal
+      PortalUtils.firePortal(level, worldPosition);
+    } else {
+      // Deactivate portal
+      PortalUtils.shutdownPortal(level, worldPosition);
+    }
+  }
+
+  /**
+   * Gets the portal color from the book.
+   */
+  public int getPortalColor() {
+    ItemStack book = getBook();
+    if (book.isEmpty()) {
+      return 0xFFFFFF; // White default
     }
 
-    /**
-     * Gets the book in this receptacle.
-     */
-    @NotNull
-    public ItemStack getBook() {
-        return inventory.getItem(0);
+    // Get color from book's link data
+    CompoundTag tag = book.getTag();
+    if (tag != null) {
+      Integer color = LinkOptions.getLinkColor(tag);
+      if (color != null) {
+        return color;
+      }
     }
 
-    /**
-     * Sets the book in this receptacle.
-     */
-    public void setBook(@NotNull ItemStack book) {
-        inventory.setItem(0, book);
+    // Default Mystcraft blue if no custom color
+    return 0x4444FF;
+  }
+
+  /**
+   * Drops the book when the block is broken.
+   */
+  public void dropContents() {
+    if (level != null && !level.isClientSide) {
+      ItemStack book = getBook();
+      if (!book.isEmpty()) {
+        Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), book);
+        setBook(ItemStack.EMPTY);
+      }
     }
+  }
 
-    /**
-     * Checks if there's a book in this receptacle.
-     */
-    public boolean hasBook() {
-        return !inventory.getItem(0).isEmpty();
-    }
+  /**
+   * Calculates redstone signal based on book presence.
+   */
+  public int getAnalogOutputSignal() {
+    return hasBook() ? 15 : 0;
+  }
 
-    /**
-     * Called when the book changes.
-     * Handles portal activation/deactivation.
-     */
-    private void handleBookChange() {
-        if (level == null || level.isClientSide || loading) {
-            return;
-        }
 
-        markForUpdate();
-
-        ItemStack book = getBook();
-        if (!book.isEmpty() && isValidPortalActivator(book)) {
-            // Activate portal
-            PortalUtils.firePortal(level, worldPosition);
-        } else {
-            // Deactivate portal
-            PortalUtils.shutdownPortal(level, worldPosition);
-        }
-    }
-
-    /**
-     * Gets the portal color from the book.
-     */
-    public int getPortalColor() {
-        ItemStack book = getBook();
-        if (book.isEmpty()) {
-            return 0xFFFFFF; // White default
-        }
-
-        // Get color from book's link data
-        CompoundTag tag = book.getTag();
-        if (tag != null) {
-            Integer color = LinkOptions.getLinkColor(tag);
-            if (color != null) {
-                return color;
-            }
-        }
-
-        // Default Mystcraft blue if no custom color
-        return 0x4444FF;
-    }
-
-    /**
-     * Drops the book when the block is broken.
-     */
-    public void dropContents() {
-        if (level != null && !level.isClientSide) {
-            ItemStack book = getBook();
-            if (!book.isEmpty()) {
-                Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), book);
-                setBook(ItemStack.EMPTY);
-            }
-        }
-    }
-
-    /**
-     * Calculates redstone signal based on book presence.
-     */
-    public int getAnalogOutputSignal() {
-        return hasBook() ? 15 : 0;
-    }
 }

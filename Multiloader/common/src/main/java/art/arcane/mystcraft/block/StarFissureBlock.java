@@ -29,103 +29,103 @@ import org.jetbrains.annotations.Nullable;
  */
 public class StarFissureBlock extends BaseEntityBlock {
 
-    private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 1.6, 16);
+  private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 1.6, 16);
 
-    public StarFissureBlock(Properties properties) {
-        super(properties);
+  public StarFissureBlock(Properties properties) {
+    super(properties);
+  }
+
+  @Override
+  public RenderShape getRenderShape(BlockState state) {
+    return RenderShape.ENTITYBLOCK_ANIMATED;
+  }
+
+  @Override
+  public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    return SHAPE;
+  }
+
+  @Override
+  public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    return Shapes.empty();
+  }
+
+  @Nullable
+  @Override
+  public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+    return new StarFissureBlockEntity(pos, state);
+  }
+
+  @Nullable
+  @Override
+  public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+    return null;
+  }
+
+  @Override
+  public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+    if (level.isClientSide) {
+      return;
     }
 
-    @Override
-    public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+    // Only teleport entities that have been in the block for a moment
+    // This prevents instant teleportation on touch
+    if (entity.isPassenger() || entity.isVehicle()) {
+      return;
     }
 
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+    // Teleport to overworld spawn
+    teleportToOverworld(level, entity);
+  }
+
+  /**
+   * Teleports an entity to the overworld spawn.
+   */
+  private void teleportToOverworld(Level level, Entity entity) {
+    if (!(level instanceof ServerLevel serverLevel)) {
+      return;
     }
 
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return Shapes.empty();
+    // Get the overworld
+    ServerLevel overworld = serverLevel.getServer().getLevel(Level.OVERWORLD);
+    if (overworld == null) {
+      return;
     }
 
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new StarFissureBlockEntity(pos, state);
+    // Play departure sound
+    serverLevel.playSound(null, entity.blockPosition(), ModSounds.LINKING_FISSURE.get(),
+        SoundSource.BLOCKS, 1.0f, 1.0f);
+
+    // Already in overworld - teleport to world spawn
+    if (level.dimension() == Level.OVERWORLD) {
+      BlockPos spawn = overworld.getSharedSpawnPos();
+      entity.teleportTo(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5);
+      // Play arrival sound
+      serverLevel.playSound(null, spawn, ModSounds.LINKING_LINK.get(),
+          SoundSource.BLOCKS, 1.0f, 1.0f);
+      return;
     }
 
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return null;
+    // Teleport to overworld
+    if (entity instanceof ServerPlayer player) {
+      // Use the player's respawn point or world spawn
+      BlockPos respawnPos = player.getRespawnPosition();
+      if (respawnPos == null || player.getRespawnDimension() != Level.OVERWORLD) {
+        respawnPos = overworld.getSharedSpawnPos();
+      }
+      player.teleportTo(overworld, respawnPos.getX() + 0.5, respawnPos.getY(), respawnPos.getZ() + 0.5,
+          entity.getYRot(), entity.getXRot());
+      // Play arrival sound in overworld
+      overworld.playSound(null, respawnPos, ModSounds.LINKING_LINK.get(),
+          SoundSource.BLOCKS, 1.0f, 1.0f);
+    } else {
+      // For non-player entities, teleport to world spawn
+      BlockPos spawn = overworld.getSharedSpawnPos();
+      entity.changeDimension(overworld);
+      entity.teleportTo(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5);
+      // Play arrival sound
+      overworld.playSound(null, spawn, ModSounds.LINKING_LINK.get(),
+          SoundSource.BLOCKS, 1.0f, 1.0f);
     }
-
-    @Override
-    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-        if (level.isClientSide) {
-            return;
-        }
-
-        // Only teleport entities that have been in the block for a moment
-        // This prevents instant teleportation on touch
-        if (entity.isPassenger() || entity.isVehicle()) {
-            return;
-        }
-
-        // Teleport to overworld spawn
-        teleportToOverworld(level, entity);
-    }
-
-    /**
-     * Teleports an entity to the overworld spawn.
-     */
-    private void teleportToOverworld(Level level, Entity entity) {
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return;
-        }
-
-        // Get the overworld
-        ServerLevel overworld = serverLevel.getServer().getLevel(Level.OVERWORLD);
-        if (overworld == null) {
-            return;
-        }
-
-        // Play departure sound
-        serverLevel.playSound(null, entity.blockPosition(), ModSounds.LINKING_FISSURE.get(),
-                SoundSource.BLOCKS, 1.0f, 1.0f);
-
-        // Already in overworld - teleport to world spawn
-        if (level.dimension() == Level.OVERWORLD) {
-            BlockPos spawn = overworld.getSharedSpawnPos();
-            entity.teleportTo(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5);
-            // Play arrival sound
-            serverLevel.playSound(null, spawn, ModSounds.LINKING_LINK.get(),
-                    SoundSource.BLOCKS, 1.0f, 1.0f);
-            return;
-        }
-
-        // Teleport to overworld
-        if (entity instanceof ServerPlayer player) {
-            // Use the player's respawn point or world spawn
-            BlockPos respawnPos = player.getRespawnPosition();
-            if (respawnPos == null || player.getRespawnDimension() != Level.OVERWORLD) {
-                respawnPos = overworld.getSharedSpawnPos();
-            }
-            player.teleportTo(overworld, respawnPos.getX() + 0.5, respawnPos.getY(), respawnPos.getZ() + 0.5,
-                    entity.getYRot(), entity.getXRot());
-            // Play arrival sound in overworld
-            overworld.playSound(null, respawnPos, ModSounds.LINKING_LINK.get(),
-                    SoundSource.BLOCKS, 1.0f, 1.0f);
-        } else {
-            // For non-player entities, teleport to world spawn
-            BlockPos spawn = overworld.getSharedSpawnPos();
-            entity.changeDimension(overworld);
-            entity.teleportTo(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5);
-            // Play arrival sound
-            overworld.playSound(null, spawn, ModSounds.LINKING_LINK.get(),
-                    SoundSource.BLOCKS, 1.0f, 1.0f);
-        }
-    }
+  }
 }

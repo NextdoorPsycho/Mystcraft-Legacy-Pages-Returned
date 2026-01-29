@@ -21,66 +21,66 @@ import org.jetbrains.annotations.NotNull;
  */
 public class LecternBlockEntity extends BookstandBlockEntity {
 
-    /**
-     * The yaw snap increment for lecterns (90 degrees).
-     */
-    private static final int LECTERN_YAW_SNAP = 90;
+  /**
+   * The yaw snap increment for lecterns (90 degrees).
+   */
+  private static final int LECTERN_YAW_SNAP = 90;
 
-    public LecternBlockEntity(BlockPos pos, BlockState blockState) {
-        super(ModBlockEntities.LECTERN.get(), pos, blockState);
+  public LecternBlockEntity(BlockPos pos, BlockState blockState) {
+    super(ModBlockEntities.LECTERN.get(), pos, blockState);
+  }
+
+  /**
+   * Checks if a stack is valid for the lectern.
+   * Lecterns accept linkbooks, agebooks, pages, and filled maps.
+   */
+  public static boolean isValidLecternItem(ItemStack stack) {
+    if (stack.isEmpty()) {
+      return false;
+    }
+    return stack.getItem() instanceof LinkbookItem
+        || stack.getItem() instanceof AgebookItem
+        || stack.getItem() instanceof PageItem
+        || stack.getItem() == Items.FILLED_MAP;
+  }
+
+  /**
+   * Called every tick to update map data for nearby players.
+   */
+  public static void serverTick(Level level, BlockPos pos, BlockState state, LecternBlockEntity blockEntity) {
+    if (level.isClientSide) {
+      return;
     }
 
-    @Override
-    protected int getYawSnap() {
-        return LECTERN_YAW_SNAP;
-    }
+    ItemStack display = blockEntity.getDisplayItem();
+    if (!display.isEmpty() && display.getItem() instanceof MapItem) {
+      MapItemSavedData mapData = MapItem.getSavedData(display, level);
+      if (mapData != null) {
+        // Send map updates to all players in the level
+        for (var player : level.players()) {
+          if (player instanceof ServerPlayer serverPlayer) {
+            mapData.tickCarriedBy(serverPlayer, display);
 
-    /**
-     * Checks if a stack is valid for the lectern.
-     * Lecterns accept linkbooks, agebooks, pages, and filled maps.
-     */
-    public static boolean isValidLecternItem(ItemStack stack) {
-        if (stack.isEmpty()) {
-            return false;
-        }
-        return stack.getItem() instanceof LinkbookItem
-                || stack.getItem() instanceof AgebookItem
-                || stack.getItem() instanceof PageItem
-                || stack.getItem() == Items.FILLED_MAP;
-    }
-
-    /**
-     * Gets the display item (alias for getBook for API consistency).
-     */
-    @NotNull
-    public ItemStack getDisplayItem() {
-        return getBook();
-    }
-
-    /**
-     * Called every tick to update map data for nearby players.
-     */
-    public static void serverTick(Level level, BlockPos pos, BlockState state, LecternBlockEntity blockEntity) {
-        if (level.isClientSide) {
-            return;
-        }
-
-        ItemStack display = blockEntity.getDisplayItem();
-        if (!display.isEmpty() && display.getItem() instanceof MapItem) {
-            MapItemSavedData mapData = MapItem.getSavedData(display, level);
-            if (mapData != null) {
-                // Send map updates to all players in the level
-                for (var player : level.players()) {
-                    if (player instanceof ServerPlayer serverPlayer) {
-                        mapData.tickCarriedBy(serverPlayer, display);
-
-                        var updatePacket = mapData.getUpdatePacket(MapItem.getMapId(display), serverPlayer);
-                        if (updatePacket != null) {
-                            serverPlayer.connection.send(updatePacket);
-                        }
-                    }
-                }
+            var updatePacket = mapData.getUpdatePacket(MapItem.getMapId(display), serverPlayer);
+            if (updatePacket != null) {
+              serverPlayer.connection.send(updatePacket);
             }
+          }
         }
+      }
     }
+  }
+
+  @Override
+  protected int getYawSnap() {
+    return LECTERN_YAW_SNAP;
+  }
+
+  /**
+   * Gets the display item (alias for getBook for API consistency).
+   */
+  @NotNull
+  public ItemStack getDisplayItem() {
+    return getBook();
+  }
 }

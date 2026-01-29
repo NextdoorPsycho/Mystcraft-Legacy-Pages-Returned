@@ -241,6 +241,18 @@ public class AgeManager extends SavedData {
     }
 
     /**
+     * Removes a registered age.
+     */
+    public void removeAge(int uid) {
+        ResourceLocation dimension = ageUIDtoDimension.remove(uid);
+        if (dimension != null) {
+            dimensionToAgeUID.remove(dimension);
+        }
+        ageUUIDtoUID.entrySet().removeIf(entry -> entry.getValue().equals(uid));
+        setDirty();
+    }
+
+    /**
      * Clears all registered ages and resets the UID counter to 1000.
      */
     public void clearAllAges() {

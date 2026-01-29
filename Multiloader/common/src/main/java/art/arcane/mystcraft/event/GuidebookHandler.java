@@ -14,25 +14,25 @@ import net.minecraft.world.item.ItemStack;
  */
 public class GuidebookHandler {
 
-    /**
-     * Gives the guidebook to a player on first login if configured.
-     */
-    public static void onPlayerLoggedIn(ServerPlayer player) {
-        if (!MystcraftConfig.giveGuidebookOnFirstSpawn.get()) return;
+  /**
+   * Gives the guidebook to a player on first login if configured.
+   */
+  public static void onPlayerLoggedIn(ServerPlayer player) {
+    if (!MystcraftConfig.giveGuidebookOnFirstSpawn.get()) return;
 
-        MinecraftServer server = player.getServer();
-        if (server == null) return;
+    MinecraftServer server = player.getServer();
+    if (server == null) return;
 
-        GuidebookData data = GuidebookData.get(server);
-        if (data.hasReceived(player.getUUID())) return;
+    GuidebookData data = GuidebookData.get(server);
+    if (data.hasReceived(player.getUUID())) return;
 
-        // Create and give the guidebook
-        ItemStack guidebook = new ItemStack(ModItems.GUIDEBOOK.get());
-        if (!player.getInventory().add(guidebook)) {
-            player.drop(guidebook, false);
-        }
-
-        data.markReceived(player.getUUID());
-        Mystcraft.LOGGER.debug("Gave Mystcraft guidebook to new player: {}", player.getName().getString());
+    // Create and give the guidebook
+    ItemStack guidebook = new ItemStack(ModItems.GUIDEBOOK.get());
+    if (!player.getInventory().add(guidebook)) {
+      player.drop(guidebook, false);
     }
+
+    data.markReceived(player.getUUID());
+    Mystcraft.LOGGER.debug("Gave Mystcraft guidebook to new player: {}", player.getName().getString());
+  }
 }

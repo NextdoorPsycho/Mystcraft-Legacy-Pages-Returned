@@ -13,19 +13,19 @@ import net.minecraft.world.entity.Entity;
  */
 public class NoopEntityRenderer<T extends Entity> extends EntityRenderer<T> {
 
-    public NoopEntityRenderer(EntityRendererProvider.Context context) {
-        super(context);
-        this.shadowRadius = 0.0F;
-    }
+  public NoopEntityRenderer(EntityRendererProvider.Context context) {
+    super(context);
+    this.shadowRadius = 0.0F;
+  }
 
-    @Override
-    public void render(T entity, float entityYaw, float partialTicks,
-                       PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        // No-op - render nothing
-    }
+  @Override
+  public void render(T entity, float entityYaw, float partialTicks,
+                     PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+    // No-op - render nothing
+  }
 
-    @Override
-    public ResourceLocation getTextureLocation(T entity) {
-        return null;
-    }
+  @Override
+  public ResourceLocation getTextureLocation(T entity) {
+    return null;
+  }
 }

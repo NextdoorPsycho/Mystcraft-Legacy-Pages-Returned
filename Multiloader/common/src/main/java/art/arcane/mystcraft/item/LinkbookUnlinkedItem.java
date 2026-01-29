@@ -8,7 +8,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -26,96 +25,100 @@ import java.util.List;
  */
 public class LinkbookUnlinkedItem extends Item {
 
-    public LinkbookUnlinkedItem(Properties properties) {
-        super(properties.stacksTo(16));
+  public LinkbookUnlinkedItem(Properties properties) {
+    super(properties.stacksTo(16));
+  }
+
+  /**
+   * Creates an unlinked book with a link panel's properties.
+   */
+  public static ItemStack createItem(@NotNull ItemStack linkpanel, @NotNull ItemStack covermat) {
+    ItemStack linkbook = new ItemStack(ModItems.LINKBOOK_UNLINKED.get());
+    CompoundTag prev = linkpanel.getTag();
+    if (prev == null) {
+      prev = new CompoundTag();
+    }
+    linkbook.setTag(prev.copy());
+    return linkbook;
+  }
+
+  @Override
+  public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+    // Show link panel properties in tooltip
+    if (stack.getTag() != null) {
+      Page.getTooltip(stack, tooltip);
+    }
+  }
+
+  @Override
+  @NotNull
+  public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+    ItemStack inHand = player.getItemInHand(hand);
+
+    // Only convert if on server and holding exactly 1
+    if (level.isClientSide || inHand.getCount() > 1) {
+      return InteractionResultHolder.pass(inHand);
     }
 
-    @Override
-    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
-        // Show link panel properties in tooltip
-        if (stack.getTag() != null) {
-            Page.getTooltip(stack, tooltip);
-        }
+    // Create a new linked linkbook
+    ItemStack linkBook = new ItemStack(ModItems.LINKBOOK.get());
+
+    initializeLinkbook(linkBook, level, player);
+    Page.applyLinkPanel(inHand, linkBook);
+    player.setItemInHand(hand, linkBook);
+    inHand.setCount(0);
+
+    return InteractionResultHolder.pass(linkBook);
+  }
+
+  /**
+   * Initializes a linkbook with the player's current position and dimension.
+   */
+  private void initializeLinkbook(ItemStack linkBook, Level level, Player player) {
+    CompoundTag tag = new CompoundTag();
+
+    // Set spawn position to player's current position
+    LinkOptions.setSpawn(tag, player.blockPosition());
+    LinkOptions.setSpawnYaw(tag, player.getYRot());
+
+    // Set dimension UID
+    int dimId = LinkingManager.getDimensionUID(level);
+    LinkOptions.setDimensionUID(tag, dimId);
+
+    // Set a default display name based on dimension
+    String dimName = getDimensionDisplayName(level);
+    LinkOptions.setDisplayName(tag, dimName);
+
+    linkBook.setTag(tag);
+  }
+
+  /**
+   * Gets a display name for the dimension.
+   */
+  private String getDimensionDisplayName(Level level) {
+    ResourceKey<Level> dimension = level.dimension();
+    if (dimension == Level.OVERWORLD) {
+      return "Overworld";
+    } else if (dimension == Level.NETHER) {
+      return "The Nether";
+    } else if (dimension == Level.END) {
+      return "The End";
     }
+    // For custom dimensions, use the path
+    return dimension.location().getPath();
+  }
 
-    @Override
-    @NotNull
-    public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
-        ItemStack inHand = player.getItemInHand(hand);
+  // --- Custom Entity on Q-Drop ---
 
-        // Only convert if on server and holding exactly 1
-        if (level.isClientSide || inHand.getCount() > 1) {
-            return InteractionResultHolder.pass(inHand);
-        }
+  public boolean hasCustomEntity(@NotNull ItemStack stack) {
+    return true;
+  }
 
-        // Create a new linked linkbook
-        ItemStack linkBook = new ItemStack(ModItems.LINKBOOK.get());
-
-        initializeLinkbook(linkBook, level, player);
-        Page.applyLinkPanel(inHand, linkBook);
-        player.setItemInHand(hand, linkBook);
-        inHand.setCount(0);
-
-        return InteractionResultHolder.pass(linkBook);
-    }
-
-    /** Initializes a linkbook with the player's current position and dimension. */
-    private void initializeLinkbook(ItemStack linkBook, Level level, Player player) {
-        CompoundTag tag = new CompoundTag();
-
-        // Set spawn position to player's current position
-        LinkOptions.setSpawn(tag, player.blockPosition());
-        LinkOptions.setSpawnYaw(tag, player.getYRot());
-
-        // Set dimension UID
-        int dimId = LinkingManager.getDimensionUID(level);
-        LinkOptions.setDimensionUID(tag, dimId);
-
-        // Set a default display name based on dimension
-        String dimName = getDimensionDisplayName(level);
-        LinkOptions.setDisplayName(tag, dimName);
-
-        linkBook.setTag(tag);
-    }
-
-    /**
-     * Gets a display name for the dimension.
-     */
-    private String getDimensionDisplayName(Level level) {
-        ResourceKey<Level> dimension = level.dimension();
-        if (dimension == Level.OVERWORLD) {
-            return "Overworld";
-        } else if (dimension == Level.NETHER) {
-            return "The Nether";
-        } else if (dimension == Level.END) {
-            return "The End";
-        }
-        // For custom dimensions, use the path
-        return dimension.location().getPath();
-    }
-
-    /** Creates an unlinked book with a link panel's properties. */
-    public static ItemStack createItem(@NotNull ItemStack linkpanel, @NotNull ItemStack covermat) {
-        ItemStack linkbook = new ItemStack(ModItems.LINKBOOK_UNLINKED.get());
-        CompoundTag prev = linkpanel.getTag();
-        if (prev == null) {
-            prev = new CompoundTag();
-        }
-        linkbook.setTag(prev.copy());
-        return linkbook;
-    }
-
-    // --- Custom Entity on Q-Drop ---
-
-    public boolean hasCustomEntity(@NotNull ItemStack stack) {
-        return true;
-    }
-
-    @Nullable
-    public net.minecraft.world.entity.Entity createEntity(Level level, net.minecraft.world.entity.Entity location, @NotNull ItemStack stack) {
-        art.arcane.mystcraft.entity.LinkbookEntity entity = new art.arcane.mystcraft.entity.LinkbookEntity(level, location.getX(), location.getY(), location.getZ());
-        entity.setBookItem(stack.copy());
-        entity.setDeltaMovement(location.getDeltaMovement());
-        return entity;
-    }
+  @Nullable
+  public net.minecraft.world.entity.Entity createEntity(Level level, net.minecraft.world.entity.Entity location, @NotNull ItemStack stack) {
+    art.arcane.mystcraft.entity.LinkbookEntity entity = new art.arcane.mystcraft.entity.LinkbookEntity(level, location.getX(), location.getY(), location.getZ());
+    entity.setBookItem(stack.copy());
+    entity.setDeltaMovement(location.getDeltaMovement());
+    return entity;
+  }
 }

@@ -8,15 +8,23 @@ import net.minecraft.server.level.ServerLevel;
  */
 public interface IEventHelper {
 
-    /** Registers all server-side event handlers (tick, level load, commands, etc.). */
-    void registerServerEvents();
+  /**
+   * Registers all server-side event handlers (tick, level load, commands, etc.).
+   */
+  void registerServerEvents();
 
-    /** Registers all client-side event handlers (rendering, overlays, colors, etc.). */
-    void registerClientEvents();
+  /**
+   * Registers all client-side event handlers (rendering, overlays, colors, etc.).
+   */
+  void registerClientEvents();
 
-    /** Registers all common event handlers (player events, entity events, etc.). */
-    void registerCommonEvents();
+  /**
+   * Registers all common event handlers (player events, entity events, etc.).
+   */
+  void registerCommonEvents();
 
-    /** Fires a platform-specific level load event for a dynamically created dimension. */
-    void fireLevelLoadEvent(ServerLevel level);
+  /**
+   * Fires a platform-specific level load event for a dynamically created dimension.
+   */
+  void fireLevelLoadEvent(ServerLevel level);
 }

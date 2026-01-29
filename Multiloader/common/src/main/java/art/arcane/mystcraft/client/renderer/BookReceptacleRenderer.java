@@ -26,74 +26,74 @@ import org.jetbrains.annotations.NotNull;
  */
 public class BookReceptacleRenderer implements BlockEntityRenderer<BookReceptacleBlockEntity> {
 
-    private static final ResourceLocation LINKBOOK_TEXTURE =
-            new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/linkbook.png");
-    private static final ResourceLocation AGEBOOK_TEXTURE =
-            new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/agebook.png");
+  private static final ResourceLocation LINKBOOK_TEXTURE =
+      new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/linkbook.png");
+  private static final ResourceLocation AGEBOOK_TEXTURE =
+      new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/agebook.png");
 
-    private final BookModel bookModel;
+  private final BookModel bookModel;
 
-    public BookReceptacleRenderer(BlockEntityRendererProvider.Context context) {
-        this.bookModel = new BookModel(context.bakeLayer(ModelLayers.BOOK));
+  public BookReceptacleRenderer(BlockEntityRendererProvider.Context context) {
+    this.bookModel = new BookModel(context.bakeLayer(ModelLayers.BOOK));
+  }
+
+  @Override
+  public void render(@NotNull BookReceptacleBlockEntity blockEntity, float partialTick, @NotNull PoseStack poseStack,
+                     @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+
+    ItemStack book = blockEntity.getBook();
+    if (book.isEmpty()) {
+      return;
     }
 
-    @Override
-    public void render(@NotNull BookReceptacleBlockEntity blockEntity, float partialTick, @NotNull PoseStack poseStack,
-                       @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-
-        ItemStack book = blockEntity.getBook();
-        if (book.isEmpty()) {
-            return;
-        }
-
-        if (!(book.getItem() instanceof LinkbookItem) && !(book.getItem() instanceof AgebookItem)) {
-            return;
-        }
-
-        Direction facing = blockEntity.getBlockState().getValue(BookReceptacleBlock.FACING);
-
-        poseStack.pushPose();
-
-        // Translate to center of block (matches old: x + 0.5, y + 0.5, z + 0.5)
-        poseStack.translate(0.5, 0.5, 0.5);
-
-        // Apply rotation based on facing - matches old RenderBookReceptacle switch
-        switch (facing) {
-            case DOWN -> {
-                // No rotation needed (default orientation)
-            }
-            case UP -> {
-                poseStack.mulPose(Axis.XN.rotationDegrees(90));
-                poseStack.mulPose(Axis.YP.rotationDegrees(90));
-            }
-            case NORTH -> {
-                poseStack.mulPose(Axis.YN.rotationDegrees(90));
-            }
-            case SOUTH -> {
-                poseStack.mulPose(Axis.YP.rotationDegrees(90));
-            }
-            case WEST -> {
-                // No Y rotation (matches old default)
-            }
-            case EAST -> {
-                poseStack.mulPose(Axis.YP.rotationDegrees(180));
-            }
-        }
-
-        poseStack.scale(0.8f, 0.8f, 0.8f); // Book display scale
-
-        bookModel.setupAnim(0, 0, 0, 0.0f); // Closed state
-
-        // Choose texture based on book type
-        ResourceLocation bookTexture = (book.getItem() instanceof AgebookItem)
-                ? AGEBOOK_TEXTURE
-                : LINKBOOK_TEXTURE;
-
-        // Render the book model
-        VertexConsumer bookConsumer = bufferSource.getBuffer(RenderType.entitySolid(bookTexture));
-        bookModel.render(poseStack, bookConsumer, packedLight, OverlayTexture.NO_OVERLAY,
-                1.0f, 1.0f, 1.0f, 1.0f);
-
-        poseStack.popPose();
+    if (!(book.getItem() instanceof LinkbookItem) && !(book.getItem() instanceof AgebookItem)) {
+      return;
     }
+
+    Direction facing = blockEntity.getBlockState().getValue(BookReceptacleBlock.FACING);
+
+    poseStack.pushPose();
+
+    // Translate to center of block (matches old: x + 0.5, y + 0.5, z + 0.5)
+    poseStack.translate(0.5, 0.5, 0.5);
+
+    // Apply rotation based on facing - matches old RenderBookReceptacle switch
+    switch (facing) {
+      case DOWN -> {
+        // No rotation needed (default orientation)
+      }
+      case UP -> {
+        poseStack.mulPose(Axis.XN.rotationDegrees(90));
+        poseStack.mulPose(Axis.YP.rotationDegrees(90));
+      }
+      case NORTH -> {
+        poseStack.mulPose(Axis.YN.rotationDegrees(90));
+      }
+      case SOUTH -> {
+        poseStack.mulPose(Axis.YP.rotationDegrees(90));
+      }
+      case WEST -> {
+        // No Y rotation (matches old default)
+      }
+      case EAST -> {
+        poseStack.mulPose(Axis.YP.rotationDegrees(180));
+      }
+    }
+
+    poseStack.scale(0.8f, 0.8f, 0.8f); // Book display scale
+
+    bookModel.setupAnim(0, 0, 0, 0.0f); // Closed state
+
+    // Choose texture based on book type
+    ResourceLocation bookTexture = (book.getItem() instanceof AgebookItem)
+        ? AGEBOOK_TEXTURE
+        : LINKBOOK_TEXTURE;
+
+    // Render the book model
+    VertexConsumer bookConsumer = bufferSource.getBuffer(RenderType.entitySolid(bookTexture));
+    bookModel.render(poseStack, bookConsumer, packedLight, OverlayTexture.NO_OVERLAY,
+        1.0f, 1.0f, 1.0f, 1.0f);
+
+    poseStack.popPose();
+  }
 }

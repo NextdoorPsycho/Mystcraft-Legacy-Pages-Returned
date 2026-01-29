@@ -11,49 +11,49 @@ import java.util.List;
  */
 public class MystGuiPanel extends MystGuiElement {
 
-    private AbstractContainerScreen<?> screen;
+  private AbstractContainerScreen<?> screen;
 
-    public MystGuiPanel(int left, int top, int width, int height) {
-        super(left, top, width, height);
-    }
+  public MystGuiPanel(int left, int top, int width, int height) {
+    super(left, top, width, height);
+  }
 
-    /**
-     * Sets the screen this panel is attached to.
-     */
-    public void setScreen(AbstractContainerScreen<?> screen) {
-        this.screen = screen;
-    }
+  /**
+   * Gets the screen this panel is attached to.
+   */
+  @Nullable
+  public AbstractContainerScreen<?> getScreen() {
+    return screen;
+  }
 
-    /**
-     * Gets the screen this panel is attached to.
-     */
-    @Nullable
-    public AbstractContainerScreen<?> getScreen() {
-        return screen;
-    }
+  /**
+   * Sets the screen this panel is attached to.
+   */
+  public void setScreen(AbstractContainerScreen<?> screen) {
+    this.screen = screen;
+  }
 
-    /**
-     * Adds a child element to this panel.
-     * Alias for addElement for convenience.
-     */
-    public void addChild(MystGuiElement element) {
-        addElement(element);
-    }
+  /**
+   * Adds a child element to this panel.
+   * Alias for addElement for convenience.
+   */
+  public void addChild(MystGuiElement element) {
+    addElement(element);
+  }
 
-    /**
-     * Removes a child element from this panel.
-     * Alias for removeElement for convenience.
-     */
-    public void removeChild(MystGuiElement element) {
-        removeElement(element);
-    }
+  /**
+   * Removes a child element from this panel.
+   * Alias for removeElement for convenience.
+   */
+  public void removeChild(MystGuiElement element) {
+    removeElement(element);
+  }
 
-    /**
-     * Gets tooltip for the element at the mouse position.
-     * Alias for getTooltipInfo for convenience.
-     */
-    @Nullable
-    public List<Component> getTooltip(int mouseX, int mouseY) {
-        return getTooltipInfo(mouseX, mouseY);
-    }
+  /**
+   * Gets tooltip for the element at the mouse position.
+   * Alias for getTooltipInfo for convenience.
+   */
+  @Nullable
+  public List<Component> getTooltip(int mouseX, int mouseY) {
+    return getTooltipInfo(mouseX, mouseY);
+  }
 }

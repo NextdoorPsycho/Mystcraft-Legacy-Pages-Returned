@@ -23,6 +23,8 @@ import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.logging.LogUtils;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
+import art.arcane.mystcraft.world.AgePerformanceTracker;
+import art.arcane.mystcraft.world.AgeTrackingData;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -142,6 +144,8 @@ public class Mystcraft {
         if (MystcraftConfig.deleteAgesOnStartup.get()) {
             deleteAllAges(event.getServer());
         }
+
+        AgePerformanceTracker.logWorstAges(event.getServer());
     }
 
     /**
@@ -204,12 +208,20 @@ public class Mystcraft {
             return;
         }
 
+        // Ensure tracking data has a creation time for this age
+        var ageData = art.arcane.mystcraft.world.AgeData.getIfPresent(serverLevel);
+        if (ageData != null && ageData.getAgeUID() > 0) {
+            AgeTrackingData.get(serverLevel.getServer()).ensureCreated(ageData.getAgeUID(), System.currentTimeMillis());
+        }
+
         // Check if the chunk generator needs director reconstruction
         ChunkGenerator generator = serverLevel.getChunkSource().getGenerator();
         if (generator instanceof AgeChunkGenerator ageGen && ageGen.needsDirectorReconstruction()) {
             LOGGER.info("Reconstructing director for Mystcraft Age: {}", serverLevel.dimension().location());
             ageGen.reconstructDirectorFromAgeData(serverLevel);
         }
+
+        AgePerformanceTracker.logWorstAges(serverLevel.getServer());
     }
 
     // Client-side setup is handled separately via Mod.EventBusSubscriber

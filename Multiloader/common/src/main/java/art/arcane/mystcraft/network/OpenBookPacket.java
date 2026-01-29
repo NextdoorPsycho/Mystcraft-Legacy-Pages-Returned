@@ -13,34 +13,34 @@ import net.minecraft.world.item.ItemStack;
  */
 public record OpenBookPacket(InteractionHand hand, boolean performLink) {
 
-    public static void encode(OpenBookPacket packet, FriendlyByteBuf buf) {
-        buf.writeEnum(packet.hand);
-        buf.writeBoolean(packet.performLink);
-    }
+  public static void encode(OpenBookPacket packet, FriendlyByteBuf buf) {
+    buf.writeEnum(packet.hand);
+    buf.writeBoolean(packet.performLink);
+  }
 
-    public static OpenBookPacket decode(FriendlyByteBuf buf) {
-        return new OpenBookPacket(buf.readEnum(InteractionHand.class), buf.readBoolean());
-    }
+  public static OpenBookPacket decode(FriendlyByteBuf buf) {
+    return new OpenBookPacket(buf.readEnum(InteractionHand.class), buf.readBoolean());
+  }
 
-    public static void handle(OpenBookPacket packet, PacketContext ctx) {
-        ctx.enqueueWork(() -> {
-            ServerPlayer player = ctx.getServerPlayer();
-            if (player == null) return;
+  public static void handle(OpenBookPacket packet, PacketContext ctx) {
+    ctx.enqueueWork(() -> {
+      ServerPlayer player = ctx.getServerPlayer();
+      if (player == null) return;
 
-            ItemStack stack = player.getItemInHand(packet.hand);
-            if (stack.isEmpty()) return;
+      ItemStack stack = player.getItemInHand(packet.hand);
+      if (stack.isEmpty()) return;
 
-            // Validate item type
-            if (!(stack.getItem() instanceof AgebookItem) &&
-                !(stack.getItem() instanceof LinkbookItem)) {
-                return;
-            }
+      // Validate item type
+      if (!(stack.getItem() instanceof AgebookItem) &&
+          !(stack.getItem() instanceof LinkbookItem)) {
+        return;
+      }
 
-            if (packet.performLink) {
-                // Use the item to perform the link
-                stack.getItem().use(player.level(), player, packet.hand);
-            }
-            // If not performing link, the client handles displaying the book UI
-        });
-    }
+      if (packet.performLink) {
+        // Use the item to perform the link
+        stack.getItem().use(player.level(), player, packet.hand);
+      }
+      // If not performing link, the client handles displaying the book UI
+    });
+  }
 }

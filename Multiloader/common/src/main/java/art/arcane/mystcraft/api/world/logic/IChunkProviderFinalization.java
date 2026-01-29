@@ -8,13 +8,13 @@ import net.minecraft.world.level.chunk.ChunkAccess;
  */
 public interface IChunkProviderFinalization {
 
-    /**
-     * Performs final modifications to a completed chunk.
-     * Called after terrain generation and all alterations are complete.
-     *
-     * @param chunk The completed chunk
-     * @param chunkX The chunk X coordinate
-     * @param chunkZ The chunk Z coordinate
-     */
-    void finalizeChunk(ChunkAccess chunk, int chunkX, int chunkZ);
+  /**
+   * Performs final modifications to a completed chunk.
+   * Called after terrain generation and all alterations are complete.
+   *
+   * @param chunk  The completed chunk
+   * @param chunkX The chunk X coordinate
+   * @param chunkZ The chunk Z coordinate
+   */
+  void finalizeChunk(ChunkAccess chunk, int chunkX, int chunkZ);
 }

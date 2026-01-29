@@ -7,19 +7,19 @@ import net.minecraft.resources.ResourceLocation;
  */
 public interface IGrammarBinding {
 
-    /**
-     * Returns how this symbol should bind into the grammar system.
-     */
-    GrammarBindingMode getGrammarBindingMode();
+  /**
+   * Returns how this symbol should bind into the grammar system.
+   */
+  GrammarBindingMode getGrammarBindingMode();
 
-    /**
-     * Returns the grammar token to use when {@link #getGrammarBindingMode()} is CUSTOM.
-     */
-    ResourceLocation getGrammarToken();
+  /**
+   * Returns the grammar token to use when {@link #getGrammarBindingMode()} is CUSTOM.
+   */
+  ResourceLocation getGrammarToken();
 
-    /**
-     * Returns the grammar rank to use when {@link #getGrammarBindingMode()} is CUSTOM.
-     * Null falls back to the symbol's card rank.
-     */
-    Integer getGrammarRank();
+  /**
+   * Returns the grammar rank to use when {@link #getGrammarBindingMode()} is CUSTOM.
+   * Null falls back to the symbol's card rank.
+   */
+  Integer getGrammarRank();
 }

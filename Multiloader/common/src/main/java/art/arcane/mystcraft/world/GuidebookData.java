@@ -21,66 +21,66 @@ import java.util.UUID;
  */
 public class GuidebookData extends SavedData {
 
-    private static final String DATA_NAME = Mystcraft.MOD_ID + "_guidebook";
-    private static final String TAG_PLAYERS = "Players";
+  private static final String DATA_NAME = Mystcraft.MOD_ID + "_guidebook";
+  private static final String TAG_PLAYERS = "Players";
 
-    private final Set<UUID> playersGiven = new HashSet<>();
+  private final Set<UUID> playersGiven = new HashSet<>();
 
-    public GuidebookData() {
+  public GuidebookData() {
+  }
+
+  public static SavedData.Factory<GuidebookData> factory() {
+    return new SavedData.Factory<>(GuidebookData::new, GuidebookData::load, DataFixTypes.LEVEL);
+  }
+
+  public static GuidebookData load(CompoundTag tag) {
+    GuidebookData data = new GuidebookData();
+    data.loadFromTag(tag);
+    return data;
+  }
+
+  public static GuidebookData get(MinecraftServer server) {
+    ServerLevel overworld = server.getLevel(Level.OVERWORLD);
+    if (overworld == null) {
+      throw new IllegalStateException("Overworld not available");
     }
+    return overworld.getDataStorage().computeIfAbsent(factory(), DATA_NAME);
+  }
 
-    public static SavedData.Factory<GuidebookData> factory() {
-        return new SavedData.Factory<>(GuidebookData::new, GuidebookData::load, DataFixTypes.LEVEL);
-    }
+  public static GuidebookData get(ServerLevel level) {
+    return get(level.getServer());
+  }
 
-    public static GuidebookData load(CompoundTag tag) {
-        GuidebookData data = new GuidebookData();
-        data.loadFromTag(tag);
-        return data;
+  private void loadFromTag(CompoundTag tag) {
+    playersGiven.clear();
+    ListTag list = tag.getList(TAG_PLAYERS, Tag.TAG_STRING);
+    for (int i = 0; i < list.size(); i++) {
+      try {
+        playersGiven.add(UUID.fromString(list.getString(i)));
+      } catch (IllegalArgumentException ignored) {
+        // Skip malformed entries
+      }
     }
+  }
 
-    private void loadFromTag(CompoundTag tag) {
-        playersGiven.clear();
-        ListTag list = tag.getList(TAG_PLAYERS, Tag.TAG_STRING);
-        for (int i = 0; i < list.size(); i++) {
-            try {
-                playersGiven.add(UUID.fromString(list.getString(i)));
-            } catch (IllegalArgumentException ignored) {
-                // Skip malformed entries
-            }
-        }
+  @Override
+  @NotNull
+  public CompoundTag save(@NotNull CompoundTag tag) {
+    ListTag list = new ListTag();
+    for (UUID uuid : playersGiven) {
+      list.add(net.minecraft.nbt.StringTag.valueOf(uuid.toString()));
     }
+    tag.put(TAG_PLAYERS, list);
+    return tag;
+  }
 
-    @Override
-    @NotNull
-    public CompoundTag save(@NotNull CompoundTag tag) {
-        ListTag list = new ListTag();
-        for (UUID uuid : playersGiven) {
-            list.add(net.minecraft.nbt.StringTag.valueOf(uuid.toString()));
-        }
-        tag.put(TAG_PLAYERS, list);
-        return tag;
-    }
+  public boolean hasReceived(UUID playerId) {
+    return playersGiven.contains(playerId);
+  }
 
-    public static GuidebookData get(MinecraftServer server) {
-        ServerLevel overworld = server.getLevel(Level.OVERWORLD);
-        if (overworld == null) {
-            throw new IllegalStateException("Overworld not available");
-        }
-        return overworld.getDataStorage().computeIfAbsent(factory(), DATA_NAME);
+  public void markReceived(UUID playerId) {
+    if (playersGiven.add(playerId)) {
+      setDirty();
     }
-
-    public static GuidebookData get(ServerLevel level) {
-        return get(level.getServer());
-    }
-
-    public boolean hasReceived(UUID playerId) {
-        return playersGiven.contains(playerId);
-    }
-
-    public void markReceived(UUID playerId) {
-        if (playersGiven.add(playerId)) {
-            setDirty();
-        }
-    }
+  }
 }

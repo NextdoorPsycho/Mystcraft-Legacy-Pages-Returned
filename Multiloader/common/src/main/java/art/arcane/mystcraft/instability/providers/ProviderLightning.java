@@ -9,10 +9,10 @@ import art.arcane.mystcraft.instability.effects.EffectLightning;
  */
 public class ProviderLightning implements IInstabilityProvider {
 
-    @Override
-    public void addEffects(InstabilityDirector director, Integer level) {
-        for (int i = 0; i < level; i++) {
-            director.registerEffect(new EffectLightning());
-        }
+  @Override
+  public void addEffects(InstabilityDirector director, Integer level) {
+    for (int i = 0; i < level; i++) {
+      director.registerEffect(new EffectLightning());
     }
+  }
 }

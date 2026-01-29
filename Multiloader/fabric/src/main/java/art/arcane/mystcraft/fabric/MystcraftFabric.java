@@ -186,6 +186,8 @@ public class MystcraftFabric implements ModInitializer {
         art.arcane.mystcraft.config.MystcraftConfig.giveGuidebookOnFirstSpawn = () -> FabricMystcraftConfig.giveGuidebookOnFirstSpawn.get();
         art.arcane.mystcraft.config.MystcraftConfig.maxSymbolsPerBook = () -> FabricMystcraftConfig.maxSymbolsPerBook.get();
         art.arcane.mystcraft.config.MystcraftConfig.deleteAgesOnStartup = () -> FabricMystcraftConfig.deleteAgesOnStartup.get();
+        art.arcane.mystcraft.config.MystcraftConfig.enablePersonalLinkBooks = () -> FabricMystcraftConfig.enablePersonalLinkBooks.get();
+        art.arcane.mystcraft.config.MystcraftConfig.allowGravityBlocksInAges = () -> FabricMystcraftConfig.allowGravityBlocksInAges.get();
         art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols = () -> FabricMystcraftConfig.disabledSymbols.get();
         art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = () -> FabricMystcraftConfig.instabilityEnabled.get();
         art.arcane.mystcraft.config.MystcraftConfig.deathEffectsEnabled = () -> FabricMystcraftConfig.deathEffectsEnabled.get();

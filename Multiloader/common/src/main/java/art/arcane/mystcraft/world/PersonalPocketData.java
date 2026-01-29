@@ -19,66 +19,66 @@ import java.util.UUID;
  */
 public class PersonalPocketData extends SavedData {
 
-    private static final String DATA_NAME = Mystcraft.MOD_ID + "_personal_pocket";
-    private static final String TAG_RETURNS = "Returns";
-    private static final String TAG_PLAYER = "Player";
-    private static final String TAG_LINK = "Link";
+  private static final String DATA_NAME = Mystcraft.MOD_ID + "_personal_pocket";
+  private static final String TAG_RETURNS = "Returns";
+  private static final String TAG_PLAYER = "Player";
+  private static final String TAG_LINK = "Link";
 
-    private final Map<UUID, CompoundTag> returnLinks = new HashMap<>();
+  private final Map<UUID, CompoundTag> returnLinks = new HashMap<>();
 
-    public static SavedData.Factory<PersonalPocketData> factory() {
-        return new SavedData.Factory<>(PersonalPocketData::new, PersonalPocketData::load, DataFixTypes.LEVEL);
+  public static SavedData.Factory<PersonalPocketData> factory() {
+    return new SavedData.Factory<>(PersonalPocketData::new, PersonalPocketData::load, DataFixTypes.LEVEL);
+  }
+
+  public static PersonalPocketData load(CompoundTag tag) {
+    PersonalPocketData data = new PersonalPocketData();
+    data.loadFromTag(tag);
+    return data;
+  }
+
+  public static PersonalPocketData get(MinecraftServer server) {
+    ServerLevel overworld = server.overworld();
+    return overworld.getDataStorage().computeIfAbsent(factory(), DATA_NAME);
+  }
+
+  private void loadFromTag(CompoundTag tag) {
+    returnLinks.clear();
+    if (!tag.contains(TAG_RETURNS)) {
+      return;
     }
-
-    public static PersonalPocketData load(CompoundTag tag) {
-        PersonalPocketData data = new PersonalPocketData();
-        data.loadFromTag(tag);
-        return data;
+    ListTag list = tag.getList(TAG_RETURNS, Tag.TAG_COMPOUND);
+    for (int i = 0; i < list.size(); i++) {
+      CompoundTag entry = list.getCompound(i);
+      if (!entry.contains(TAG_PLAYER) || !entry.contains(TAG_LINK)) {
+        continue;
+      }
+      UUID playerId = UUID.fromString(entry.getString(TAG_PLAYER));
+      CompoundTag link = entry.getCompound(TAG_LINK);
+      returnLinks.put(playerId, link.copy());
     }
+  }
 
-    public static PersonalPocketData get(MinecraftServer server) {
-        ServerLevel overworld = server.overworld();
-        return overworld.getDataStorage().computeIfAbsent(factory(), DATA_NAME);
+  @Override
+  public CompoundTag save(CompoundTag tag) {
+    ListTag list = new ListTag();
+    for (Map.Entry<UUID, CompoundTag> entry : returnLinks.entrySet()) {
+      CompoundTag item = new CompoundTag();
+      item.putString(TAG_PLAYER, entry.getKey().toString());
+      item.put(TAG_LINK, entry.getValue().copy());
+      list.add(item);
     }
+    tag.put(TAG_RETURNS, list);
+    return tag;
+  }
 
-    private void loadFromTag(CompoundTag tag) {
-        returnLinks.clear();
-        if (!tag.contains(TAG_RETURNS)) {
-            return;
-        }
-        ListTag list = tag.getList(TAG_RETURNS, Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag entry = list.getCompound(i);
-            if (!entry.contains(TAG_PLAYER) || !entry.contains(TAG_LINK)) {
-                continue;
-            }
-            UUID playerId = UUID.fromString(entry.getString(TAG_PLAYER));
-            CompoundTag link = entry.getCompound(TAG_LINK);
-            returnLinks.put(playerId, link.copy());
-        }
-    }
+  public void setReturnLink(UUID playerId, CompoundTag linkData) {
+    returnLinks.put(playerId, linkData.copy());
+    setDirty();
+  }
 
-    @Override
-    public CompoundTag save(CompoundTag tag) {
-        ListTag list = new ListTag();
-        for (Map.Entry<UUID, CompoundTag> entry : returnLinks.entrySet()) {
-            CompoundTag item = new CompoundTag();
-            item.putString(TAG_PLAYER, entry.getKey().toString());
-            item.put(TAG_LINK, entry.getValue().copy());
-            list.add(item);
-        }
-        tag.put(TAG_RETURNS, list);
-        return tag;
-    }
-
-    public void setReturnLink(UUID playerId, CompoundTag linkData) {
-        returnLinks.put(playerId, linkData.copy());
-        setDirty();
-    }
-
-    @Nullable
-    public CompoundTag getReturnLink(UUID playerId) {
-        CompoundTag data = returnLinks.get(playerId);
-        return data != null ? data.copy() : null;
-    }
+  @Nullable
+  public CompoundTag getReturnLink(UUID playerId) {
+    CompoundTag data = returnLinks.get(playerId);
+    return data != null ? data.copy() : null;
+  }
 }

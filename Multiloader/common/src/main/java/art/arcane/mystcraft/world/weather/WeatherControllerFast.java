@@ -11,112 +11,107 @@ import java.util.Random;
  */
 public class WeatherControllerFast implements IWeatherController {
 
-    public static final String TYPE = "fast";
+  public static final String TYPE = "fast";
+  // Fast timing: 1/4 of normal duration
+  private static final int RAIN_DURATION_BASE = 3000;
+  private static final int RAIN_DURATION_VARIANCE = 3000;
+  private static final int RAIN_COOLDOWN_BASE = 3000;
+  private static final int RAIN_COOLDOWN_VARIANCE = 42000;
+  private static final int THUNDER_DURATION_BASE = 900;
+  private static final int THUNDER_DURATION_VARIANCE = 3000;
+  private static final int THUNDER_COOLDOWN_BASE = 3000;
+  private static final int THUNDER_COOLDOWN_VARIANCE = 42000;
+  private final Random random = new Random();
+  private float rainLevel = 0.0f;
+  private float thunderLevel = 0.0f;
+  private boolean raining = false;
+  private boolean thundering = false;
+  private int rainTime = 0;
+  private int thunderTime = 0;
 
-    private final Random random = new Random();
+  public WeatherControllerFast() {
+    rainTime = RAIN_COOLDOWN_BASE + random.nextInt(RAIN_COOLDOWN_VARIANCE);
+    thunderTime = THUNDER_COOLDOWN_BASE + random.nextInt(THUNDER_COOLDOWN_VARIANCE);
+  }
 
-    private float rainLevel = 0.0f;
-    private float thunderLevel = 0.0f;
-    private boolean raining = false;
-    private boolean thundering = false;
-
-    private int rainTime = 0;
-    private int thunderTime = 0;
-
-    // Fast timing: 1/4 of normal duration
-    private static final int RAIN_DURATION_BASE = 3000;
-    private static final int RAIN_DURATION_VARIANCE = 3000;
-    private static final int RAIN_COOLDOWN_BASE = 3000;
-    private static final int RAIN_COOLDOWN_VARIANCE = 42000;
-
-    private static final int THUNDER_DURATION_BASE = 900;
-    private static final int THUNDER_DURATION_VARIANCE = 3000;
-    private static final int THUNDER_COOLDOWN_BASE = 3000;
-    private static final int THUNDER_COOLDOWN_VARIANCE = 42000;
-
-    public WeatherControllerFast() {
-        rainTime = RAIN_COOLDOWN_BASE + random.nextInt(RAIN_COOLDOWN_VARIANCE);
-        thunderTime = THUNDER_COOLDOWN_BASE + random.nextInt(THUNDER_COOLDOWN_VARIANCE);
-    }
-
-    @Override
-    public void updateWeather(ServerLevel level) {
-        // Update rain timer (faster cycles)
-        if (rainTime > 0) {
-            rainTime--;
-            if (rainTime <= 0) {
-                raining = !raining;
-                if (raining) {
-                    rainTime = RAIN_DURATION_BASE + random.nextInt(RAIN_DURATION_VARIANCE);
-                } else {
-                    rainTime = RAIN_COOLDOWN_BASE + random.nextInt(RAIN_COOLDOWN_VARIANCE);
-                }
-            }
-        }
-
-        // Update thunder timer
-        if (raining && thunderTime > 0) {
-            thunderTime--;
-            if (thunderTime <= 0) {
-                thundering = !thundering;
-                if (thundering) {
-                    thunderTime = THUNDER_DURATION_BASE + random.nextInt(THUNDER_DURATION_VARIANCE);
-                } else {
-                    thunderTime = THUNDER_COOLDOWN_BASE + random.nextInt(THUNDER_COOLDOWN_VARIANCE);
-                }
-            }
-        } else if (!raining) {
-            thundering = false;
-        }
-
-        // Faster transitions (2x speed)
+  @Override
+  public void updateWeather(ServerLevel level) {
+    // Update rain timer (faster cycles)
+    if (rainTime > 0) {
+      rainTime--;
+      if (rainTime <= 0) {
+        raining = !raining;
         if (raining) {
-            rainLevel = Math.min(1.0f, rainLevel + 0.02f);
+          rainTime = RAIN_DURATION_BASE + random.nextInt(RAIN_DURATION_VARIANCE);
         } else {
-            rainLevel = Math.max(0.0f, rainLevel - 0.02f);
+          rainTime = RAIN_COOLDOWN_BASE + random.nextInt(RAIN_COOLDOWN_VARIANCE);
         }
+      }
+    }
 
-        if (thundering && raining) {
-            thunderLevel = Math.min(1.0f, thunderLevel + 0.02f);
+    // Update thunder timer
+    if (raining && thunderTime > 0) {
+      thunderTime--;
+      if (thunderTime <= 0) {
+        thundering = !thundering;
+        if (thundering) {
+          thunderTime = THUNDER_DURATION_BASE + random.nextInt(THUNDER_DURATION_VARIANCE);
         } else {
-            thunderLevel = Math.max(0.0f, thunderLevel - 0.02f);
+          thunderTime = THUNDER_COOLDOWN_BASE + random.nextInt(THUNDER_COOLDOWN_VARIANCE);
         }
-
-        level.setWeatherParameters(
-                raining ? 0 : rainTime,
-                raining ? rainTime : 0,
-                raining,
-                thundering
-        );
+      }
+    } else if (!raining) {
+      thundering = false;
     }
 
-    @Override
-    public boolean isRaining() {
-        return rainLevel > 0.0f;
+    // Faster transitions (2x speed)
+    if (raining) {
+      rainLevel = Math.min(1.0f, rainLevel + 0.02f);
+    } else {
+      rainLevel = Math.max(0.0f, rainLevel - 0.02f);
     }
 
-    @Override
-    public boolean isThundering() {
-        return thunderLevel > 0.0f;
+    if (thundering && raining) {
+      thunderLevel = Math.min(1.0f, thunderLevel + 0.02f);
+    } else {
+      thunderLevel = Math.max(0.0f, thunderLevel - 0.02f);
     }
 
-    @Override
-    public float getRainLevel() {
-        return rainLevel;
-    }
+    level.setWeatherParameters(
+        raining ? 0 : rainTime,
+        raining ? rainTime : 0,
+        raining,
+        thundering
+    );
+  }
 
-    @Override
-    public float getThunderLevel() {
-        return thunderLevel;
-    }
+  @Override
+  public boolean isRaining() {
+    return rainLevel > 0.0f;
+  }
 
-    @Override
-    public boolean canWeatherChange() {
-        return true;
-    }
+  @Override
+  public boolean isThundering() {
+    return thunderLevel > 0.0f;
+  }
 
-    @Override
-    public String getType() {
-        return TYPE;
-    }
+  @Override
+  public float getRainLevel() {
+    return rainLevel;
+  }
+
+  @Override
+  public float getThunderLevel() {
+    return thunderLevel;
+  }
+
+  @Override
+  public boolean canWeatherChange() {
+    return true;
+  }
+
+  @Override
+  public String getType() {
+    return TYPE;
+  }
 }

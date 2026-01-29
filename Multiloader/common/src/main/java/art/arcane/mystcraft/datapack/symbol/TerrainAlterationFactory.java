@@ -7,5 +7,5 @@ import com.google.gson.JsonObject;
  * Factory for creating terrain alterations from datapack JSON.
  */
 public interface TerrainAlterationFactory {
-    ITerrainAlteration create(long seed, JsonObject json);
+  ITerrainAlteration create(long seed, JsonObject json);
 }

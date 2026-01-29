@@ -9,10 +9,10 @@ import art.arcane.mystcraft.instability.effects.EffectExtraTicks;
  */
 public class ProviderExtraTicks implements IInstabilityProvider {
 
-    @Override
-    public void addEffects(InstabilityDirector director, Integer level) {
-        for (int i = 0; i < level; i++) {
-            director.registerEffect(new EffectExtraTicks());
-        }
+  @Override
+  public void addEffects(InstabilityDirector director, Integer level) {
+    for (int i = 0; i < level; i++) {
+      director.registerEffect(new EffectExtraTicks());
     }
+  }
 }

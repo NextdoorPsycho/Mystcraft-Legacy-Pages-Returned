@@ -6,21 +6,33 @@ package art.arcane.mystcraft.platform.services;
  */
 public interface IClientHelper {
 
-    /** Registers menu screen factories (binds MenuType to Screen). */
-    void registerMenuScreens();
+  /**
+   * Registers menu screen factories (binds MenuType to Screen).
+   */
+  void registerMenuScreens();
 
-    /** Registers block entity renderers. */
-    void registerBlockEntityRenderers();
+  /**
+   * Registers block entity renderers.
+   */
+  void registerBlockEntityRenderers();
 
-    /** Registers entity renderers. */
-    void registerEntityRenderers();
+  /**
+   * Registers entity renderers.
+   */
+  void registerEntityRenderers();
 
-    /** Registers model layer definitions. */
-    void registerModelLayers();
+  /**
+   * Registers model layer definitions.
+   */
+  void registerModelLayers();
 
-    /** Registers item and block color handlers. */
-    void registerColorHandlers();
+  /**
+   * Registers item and block color handlers.
+   */
+  void registerColorHandlers();
 
-    /** Registers custom render types for blocks. */
-    void registerRenderTypes();
+  /**
+   * Registers custom render types for blocks.
+   */
+  void registerRenderTypes();
 }

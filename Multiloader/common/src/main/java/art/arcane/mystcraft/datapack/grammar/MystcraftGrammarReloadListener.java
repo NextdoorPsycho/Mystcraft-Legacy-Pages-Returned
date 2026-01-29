@@ -13,16 +13,16 @@ import java.util.Map;
  */
 public class MystcraftGrammarReloadListener extends SimpleJsonResourceReloadListener {
 
-    private static final Gson GSON = new Gson();
+  private static final Gson GSON = new Gson();
 
-    public MystcraftGrammarReloadListener() {
-        super(GSON, "mystcraft/grammar");
-    }
+  public MystcraftGrammarReloadListener() {
+    super(GSON, "mystcraft/grammar");
+  }
 
-    @Override
-    protected void apply(Map<ResourceLocation, JsonElement> object,
-                         net.minecraft.server.packs.resources.ResourceManager resourceManager,
-                         ProfilerFiller profiler) {
-        GrammarDatapackLoader.setRules(object);
-    }
+  @Override
+  protected void apply(Map<ResourceLocation, JsonElement> object,
+                       net.minecraft.server.packs.resources.ResourceManager resourceManager,
+                       ProfilerFiller profiler) {
+    GrammarDatapackLoader.setRules(object);
+  }
 }

@@ -6,17 +6,17 @@ package art.arcane.mystcraft.api.instability;
  */
 public interface InstabilityDirector {
 
-    /**
-     * Gets the current instability score for this Age.
-     *
-     * @return The instability score (higher = more unstable)
-     */
-    int getInstabilityScore();
+  /**
+   * Gets the current instability score for this Age.
+   *
+   * @return The instability score (higher = more unstable)
+   */
+  int getInstabilityScore();
 
-    /**
-     * Registers an environmental effect to be active in this Age.
-     *
-     * @param effect The effect to register
-     */
-    void registerEffect(IEnvironmentalEffect effect);
+  /**
+   * Registers an environmental effect to be active in this Age.
+   *
+   * @param effect The effect to register
+   */
+  void registerEffect(IEnvironmentalEffect effect);
 }

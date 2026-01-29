@@ -172,6 +172,8 @@ public class MystcraftForge {
         art.arcane.mystcraft.config.MystcraftConfig.giveGuidebookOnFirstSpawn = ForgeMystcraftConfig.giveGuidebookOnFirstSpawn::get;
         art.arcane.mystcraft.config.MystcraftConfig.maxSymbolsPerBook = ForgeMystcraftConfig.maxSymbolsPerBook::get;
         art.arcane.mystcraft.config.MystcraftConfig.deleteAgesOnStartup = ForgeMystcraftConfig.deleteAgesOnStartup::get;
+        art.arcane.mystcraft.config.MystcraftConfig.enablePersonalLinkBooks = ForgeMystcraftConfig.enablePersonalLinkBooks::get;
+        art.arcane.mystcraft.config.MystcraftConfig.allowGravityBlocksInAges = ForgeMystcraftConfig.allowGravityBlocksInAges::get;
         art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols =
                 () -> List.copyOf(ForgeMystcraftConfig.disabledSymbols.get());
         art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = ForgeMystcraftConfig.instabilityEnabled::get;

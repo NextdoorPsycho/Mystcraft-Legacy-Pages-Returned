@@ -21,117 +21,117 @@ import net.minecraft.world.phys.Vec3;
  */
 public class MystcraftFallingBlockEntity extends Entity {
 
-    private BlockState blockState = Blocks.STONE.defaultBlockState();
-    private BlockPos startPos = BlockPos.ZERO;
-    private int time;
+  private BlockState blockState = Blocks.STONE.defaultBlockState();
+  private BlockPos startPos = BlockPos.ZERO;
+  private int time;
 
-    public MystcraftFallingBlockEntity(EntityType<?> type, Level level) {
-        super(type, level);
+  public MystcraftFallingBlockEntity(EntityType<?> type, Level level) {
+    super(type, level);
+  }
+
+  public MystcraftFallingBlockEntity(Level level, double x, double y, double z, BlockState state) {
+    this(ModEntities.FALLING_BLOCK.get(), level);
+    setPos(x, y, z);
+    this.blockState = state;
+    this.blocksBuilding = true;
+    setDeltaMovement(Vec3.ZERO);
+    this.xo = x;
+    this.yo = y;
+    this.zo = z;
+    setStartPos(blockPosition());
+  }
+
+  @Override
+  protected void defineSynchedData() {
+    // No synched data needed
+  }
+
+  @Override
+  public void tick() {
+    if (blockState.isAir()) {
+      discard();
+      return;
     }
 
-    public MystcraftFallingBlockEntity(Level level, double x, double y, double z, BlockState state) {
-        this(ModEntities.FALLING_BLOCK.get(), level);
-        setPos(x, y, z);
-        this.blockState = state;
-        this.blocksBuilding = true;
-        setDeltaMovement(Vec3.ZERO);
-        this.xo = x;
-        this.yo = y;
-        this.zo = z;
-        setStartPos(blockPosition());
+    time++;
+    if (!isNoGravity()) {
+      setDeltaMovement(getDeltaMovement().add(0.0, -0.04, 0.0));
     }
 
-    @Override
-    protected void defineSynchedData() {
-        // No synched data needed
+    move(MoverType.SELF, getDeltaMovement());
+
+    // Handle landing
+    if (onGround()) {
+      if (!level().isClientSide) {
+        land();
+      }
+      return;
     }
 
-    @Override
-    public void tick() {
-        if (blockState.isAir()) {
-            discard();
-            return;
+    // Apply drag
+    setDeltaMovement(getDeltaMovement().scale(0.98));
+
+    if (time > 600) {
+      discard();
+    }
+  }
+
+  /**
+   * Called when the falling block lands on the ground.
+   */
+  private void land() {
+    BlockPos landingPos = blockPosition();
+    BlockState atPos = level().getBlockState(landingPos);
+
+    // Check if we can place the block here
+    if (atPos.canBeReplaced() || atPos.isAir()) {
+      // Place the block
+      if (level().setBlock(landingPos, blockState, Block.UPDATE_ALL)) {
+        // Handle falling block landing callback
+        if (blockState.getBlock() instanceof FallingBlock fallingBlock) {
+          fallingBlock.onLand(level(), landingPos, blockState, atPos, null);
         }
-
-        time++;
-        if (!isNoGravity()) {
-            setDeltaMovement(getDeltaMovement().add(0.0, -0.04, 0.0));
+        // Handle waterlogging if landing in water
+        if (atPos.getFluidState().isSource() &&
+            blockState.hasProperty(BlockStateProperties.WATERLOGGED)) {
+          level().setBlock(landingPos,
+              blockState.setValue(BlockStateProperties.WATERLOGGED, true),
+              Block.UPDATE_ALL);
         }
-
-        move(MoverType.SELF, getDeltaMovement());
-
-        // Handle landing
-        if (onGround()) {
-            if (!level().isClientSide) {
-                land();
-            }
-            return;
-        }
-
-        // Apply drag
-        setDeltaMovement(getDeltaMovement().scale(0.98));
-
-        if (time > 600) {
-            discard();
-        }
+      }
+    } else {
+      // Can't place - drop as item
+      Block.dropResources(blockState, level(), landingPos);
     }
 
-    /**
-     * Called when the falling block lands on the ground.
-     */
-    private void land() {
-        BlockPos landingPos = blockPosition();
-        BlockState atPos = level().getBlockState(landingPos);
+    discard();
+  }
 
-        // Check if we can place the block here
-        if (atPos.canBeReplaced() || atPos.isAir()) {
-            // Place the block
-            if (level().setBlock(landingPos, blockState, Block.UPDATE_ALL)) {
-                // Handle falling block landing callback
-                if (blockState.getBlock() instanceof FallingBlock fallingBlock) {
-                    fallingBlock.onLand(level(), landingPos, blockState, atPos, null);
-                }
-                // Handle waterlogging if landing in water
-                if (atPos.getFluidState().isSource() &&
-                    blockState.hasProperty(BlockStateProperties.WATERLOGGED)) {
-                    level().setBlock(landingPos,
-                            blockState.setValue(BlockStateProperties.WATERLOGGED, true),
-                            Block.UPDATE_ALL);
-                }
-            }
-        } else {
-            // Can't place - drop as item
-            Block.dropResources(blockState, level(), landingPos);
-        }
-
-        discard();
+  @Override
+  protected void readAdditionalSaveData(CompoundTag tag) {
+    blockState = NbtUtils.readBlockState(level().holderLookup(net.minecraft.core.registries.Registries.BLOCK), tag.getCompound("BlockState"));
+    time = tag.getInt("Time");
+    if (tag.contains("StartPos")) {
+      startPos = NbtUtils.readBlockPos(tag.getCompound("StartPos"));
     }
+  }
 
-    @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
-        blockState = NbtUtils.readBlockState(level().holderLookup(net.minecraft.core.registries.Registries.BLOCK), tag.getCompound("BlockState"));
-        time = tag.getInt("Time");
-        if (tag.contains("StartPos")) {
-            startPos = NbtUtils.readBlockPos(tag.getCompound("StartPos"));
-        }
-    }
+  @Override
+  protected void addAdditionalSaveData(CompoundTag tag) {
+    tag.put("BlockState", NbtUtils.writeBlockState(blockState));
+    tag.putInt("Time", time);
+    tag.put("StartPos", NbtUtils.writeBlockPos(startPos));
+  }
 
-    @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
-        tag.put("BlockState", NbtUtils.writeBlockState(blockState));
-        tag.putInt("Time", time);
-        tag.put("StartPos", NbtUtils.writeBlockPos(startPos));
-    }
+  public BlockState getBlockState() {
+    return blockState;
+  }
 
-    public BlockState getBlockState() {
-        return blockState;
-    }
+  public BlockPos getStartPos() {
+    return startPos;
+  }
 
-    public BlockPos getStartPos() {
-        return startPos;
-    }
-
-    private void setStartPos(BlockPos pos) {
-        this.startPos = pos;
-    }
+  private void setStartPos(BlockPos pos) {
+    this.startPos = pos;
+  }
 }

@@ -25,6 +25,8 @@ public class ForgeMystcraftConfig {
     public static final ForgeConfigSpec.BooleanValue giveGuidebookOnFirstSpawn;
     public static final ForgeConfigSpec.IntValue maxSymbolsPerBook;
     public static final ForgeConfigSpec.BooleanValue deleteAgesOnStartup;
+    public static final ForgeConfigSpec.BooleanValue enablePersonalLinkBooks;
+    public static final ForgeConfigSpec.BooleanValue allowGravityBlocksInAges;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> disabledSymbols;
     // Instability settings
     public static final ForgeConfigSpec.BooleanValue instabilityEnabled;
@@ -70,6 +72,14 @@ public class ForgeMystcraftConfig {
         deleteAgesOnStartup = COMMON_BUILDER
                 .comment("If true, all Mystcraft Ages will be deleted every time the server starts. Use for development/testing.")
                 .define("deleteAgesOnStartup", false);
+
+        enablePersonalLinkBooks = COMMON_BUILDER
+                .comment("If true, personal link books and personal pocket dimensions are enabled.")
+                .define("enablePersonalLinkBooks", true);
+
+        allowGravityBlocksInAges = COMMON_BUILDER
+                .comment("If true, gravity blocks (sand, gravel, anvils, concrete powder) can fall in Mystcraft Ages.")
+                .define("allowGravityBlocksInAges", false);
 
         disabledSymbols = COMMON_BUILDER
                 .comment(

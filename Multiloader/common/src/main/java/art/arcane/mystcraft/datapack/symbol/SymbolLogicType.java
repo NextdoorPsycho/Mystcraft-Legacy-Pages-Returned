@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
  * Parses a JSON object into a SymbolLogic instance.
  */
 public interface SymbolLogicType {
-    ResourceLocation getId();
-    SymbolLogic parse(JsonObject json);
+  ResourceLocation id();
+
+  SymbolLogic parse(JsonObject json);
 }

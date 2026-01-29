@@ -22,6 +22,12 @@ public class MystcraftConfig {
     public static final ForgeConfigSpec.BooleanValue giveGuidebookOnFirstSpawn;
     public static final ForgeConfigSpec.IntValue maxSymbolsPerBook;
     public static final ForgeConfigSpec.BooleanValue deleteAgesOnStartup;
+    public static final ForgeConfigSpec.BooleanValue cleanupEnabled;
+    public static final ForgeConfigSpec.IntValue ageCleanupGraceMinutes;
+    public static final ForgeConfigSpec.IntValue ageCleanupMinAccessMinutes;
+    public static final ForgeConfigSpec.IntValue ageCleanupCheckIntervalTicks;
+    public static final ForgeConfigSpec.BooleanValue trackAgePerformance;
+    public static final ForgeConfigSpec.IntValue performanceReportLimit;
     // Instability settings
     public static final ForgeConfigSpec.BooleanValue instabilityEnabled;
     public static final ForgeConfigSpec.BooleanValue deathEffectsEnabled;
@@ -66,6 +72,38 @@ public class MystcraftConfig {
         deleteAgesOnStartup = COMMON_BUILDER
                 .comment("If true, all Mystcraft Ages will be deleted every time the server starts. Use for development/testing.")
                 .define("deleteAgesOnStartup", false);
+
+        COMMON_BUILDER.pop();
+
+        // --- Cleanup & Profiling ---
+        COMMON_BUILDER.comment(
+                "Age Cleanup & Profiling",
+                "Tracks access and performance impact for Mystcraft Ages and can auto-delete short-lived ages."
+        ).push("age_tracking");
+
+        cleanupEnabled = COMMON_BUILDER
+                .comment("If true, periodically deletes Ages that are barely used shortly after creation.")
+                .define("cleanupEnabled", true);
+
+        ageCleanupGraceMinutes = COMMON_BUILDER
+                .comment("Grace period in minutes after Age creation before cleanup may delete it.")
+                .defineInRange("cleanupGraceMinutes", 120, 1, 10080);
+
+        ageCleanupMinAccessMinutes = COMMON_BUILDER
+                .comment("Minimum total access time in minutes required to keep an Age after the grace period.")
+                .defineInRange("cleanupMinAccessMinutes", 5, 0, 10080);
+
+        ageCleanupCheckIntervalTicks = COMMON_BUILDER
+                .comment("How often (in ticks) to check for Ages that should be deleted. 20 ticks = 1 second.")
+                .defineInRange("cleanupCheckIntervalTicks", 1200, 20, 72000);
+
+        trackAgePerformance = COMMON_BUILDER
+                .comment("If true, track per-Age tick time and log the worst performers on startup.")
+                .define("trackAgePerformance", true);
+
+        performanceReportLimit = COMMON_BUILDER
+                .comment("How many Ages to include when logging worst performance by average tick time.")
+                .defineInRange("performanceReportLimit", 5, 1, 50);
 
         COMMON_BUILDER.pop();
 

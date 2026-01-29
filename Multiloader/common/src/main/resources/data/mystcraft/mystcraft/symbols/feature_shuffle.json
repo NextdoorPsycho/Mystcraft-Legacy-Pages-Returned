@@ -26,6 +26,9 @@
         "mystcraft:star_fissure"
       ]
     },
-    { "type": "add_instability", "value": 4.0 }
+    {
+      "type": "add_instability",
+      "value": 4.0
+    }
   ]
 }

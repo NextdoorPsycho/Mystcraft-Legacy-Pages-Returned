@@ -34,123 +34,123 @@ import org.jetbrains.annotations.Nullable;
  */
 public class MystcraftLecternBlock extends BaseEntityBlock {
 
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+  public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-    private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 14, 16);
+  private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 14, 16);
 
-    public MystcraftLecternBlock(Properties properties) {
-        super(properties);
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+  public MystcraftLecternBlock(Properties properties) {
+    super(properties);
+    registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+  }
+
+  @Override
+  protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+    builder.add(FACING);
+  }
+
+  @Override
+  public BlockState getStateForPlacement(BlockPlaceContext context) {
+    return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+  }
+
+  @Override
+  public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    return SHAPE;
+  }
+
+  @Override
+  public RenderShape getRenderShape(BlockState state) {
+    // Use ENTITYBLOCK_ANIMATED - the BlockEntityRenderer handles all rendering
+    return RenderShape.ENTITYBLOCK_ANIMATED;
+  }
+
+  @Override
+  public boolean useShapeForLightOcclusion(BlockState state) {
+    return true;
+  }
+
+  @Nullable
+  @Override
+  public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+    return new LecternBlockEntity(pos, state);
+  }
+
+  @Nullable
+  @Override
+  public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+    // Only tick on server side for map updates
+    if (level.isClientSide) {
+      return null;
+    }
+    return createTickerHelper(type, art.arcane.mystcraft.registry.ModBlockEntities.LECTERN.get(),
+        LecternBlockEntity::serverTick);
+  }
+
+  @Override
+  @NotNull
+  public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    BlockEntity blockEntity = level.getBlockEntity(pos);
+    if (!(blockEntity instanceof LecternBlockEntity lectern)) {
+      return InteractionResult.PASS;
     }
 
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
+    ItemStack held = player.getItemInHand(hand);
 
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
-    }
-
-    @Override
-    public RenderShape getRenderShape(BlockState state) {
-        // Use ENTITYBLOCK_ANIMATED - the BlockEntityRenderer handles all rendering
-        return RenderShape.ENTITYBLOCK_ANIMATED;
-    }
-
-    @Override
-    public boolean useShapeForLightOcclusion(BlockState state) {
-        return true;
-    }
-
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new LecternBlockEntity(pos, state);
-    }
-
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        // Only tick on server side for map updates
+    if (lectern.hasBook()) {
+      // Book is on lectern
+      if (player.isShiftKeyDown() && held.isEmpty()) {
+        // Shift + empty hand = pick up book (server only)
+        if (!level.isClientSide) {
+          player.setItemInHand(hand, lectern.getBook());
+          lectern.setBook(ItemStack.EMPTY);
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
+      } else {
+        // Open book GUI on client side
         if (level.isClientSide) {
-            return null;
+          art.arcane.mystcraft.client.screen.BookScreen.openForBlock(lectern.getBook(), pos);
         }
-        return createTickerHelper(type, art.arcane.mystcraft.registry.ModBlockEntities.LECTERN.get(),
-                LecternBlockEntity::serverTick);
-    }
-
-    @Override
-    @NotNull
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!(blockEntity instanceof LecternBlockEntity lectern)) {
-            return InteractionResult.PASS;
+        return InteractionResult.sidedSuccess(level.isClientSide);
+      }
+    } else {
+      // No book on lectern
+      if (!held.isEmpty() && BookstandBlockEntity.isValidBook(held)) {
+        // Place book on lectern (server only)
+        if (!level.isClientSide) {
+          ItemStack bookCopy = held.copy();
+          bookCopy.setCount(1);
+          held.shrink(1);
+          lectern.setBook(bookCopy);
         }
-
-        ItemStack held = player.getItemInHand(hand);
-
-        if (lectern.hasBook()) {
-            // Book is on lectern
-            if (player.isShiftKeyDown() && held.isEmpty()) {
-                // Shift + empty hand = pick up book (server only)
-                if (!level.isClientSide) {
-                    player.setItemInHand(hand, lectern.getBook());
-                    lectern.setBook(ItemStack.EMPTY);
-                }
-                return InteractionResult.sidedSuccess(level.isClientSide);
-            } else {
-                // Open book GUI on client side
-                if (level.isClientSide) {
-                    art.arcane.mystcraft.client.screen.BookScreen.openForBlock(lectern.getBook(), pos);
-                }
-                return InteractionResult.sidedSuccess(level.isClientSide);
-            }
-        } else {
-            // No book on lectern
-            if (!held.isEmpty() && BookstandBlockEntity.isValidBook(held)) {
-                // Place book on lectern (server only)
-                if (!level.isClientSide) {
-                    ItemStack bookCopy = held.copy();
-                    bookCopy.setCount(1);
-                    held.shrink(1);
-                    lectern.setBook(bookCopy);
-                }
-                return InteractionResult.sidedSuccess(level.isClientSide);
-            }
-            return InteractionResult.PASS;
-        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
+      }
+      return InteractionResult.PASS;
     }
+  }
 
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof LecternBlockEntity lectern) {
-                lectern.dropContents();
-                level.updateNeighbourForOutputSignal(pos, this);
-            }
-            super.onRemove(state, level, pos, newState, isMoving);
-        }
+  @Override
+  public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+    if (!state.is(newState.getBlock())) {
+      BlockEntity blockEntity = level.getBlockEntity(pos);
+      if (blockEntity instanceof LecternBlockEntity lectern) {
+        lectern.dropContents();
+        level.updateNeighbourForOutputSignal(pos, this);
+      }
+      super.onRemove(state, level, pos, newState, isMoving);
     }
+  }
 
-    @Override
-    public boolean hasAnalogOutputSignal(BlockState state) {
-        return true;
-    }
+  @Override
+  public boolean hasAnalogOutputSignal(BlockState state) {
+    return true;
+  }
 
-    @Override
-    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof LecternBlockEntity lectern) {
-            return lectern.getAnalogOutputSignal();
-        }
-        return 0;
+  @Override
+  public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+    BlockEntity blockEntity = level.getBlockEntity(pos);
+    if (blockEntity instanceof LecternBlockEntity lectern) {
+      return lectern.getAnalogOutputSignal();
     }
+    return 0;
+  }
 }

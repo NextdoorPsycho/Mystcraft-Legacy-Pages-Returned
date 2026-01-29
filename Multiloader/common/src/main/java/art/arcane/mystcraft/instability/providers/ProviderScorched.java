@@ -9,10 +9,10 @@ import art.arcane.mystcraft.instability.effects.EffectScorched;
  */
 public class ProviderScorched implements IInstabilityProvider {
 
-    @Override
-    public void addEffects(InstabilityDirector director, Integer level) {
-        for (int i = 0; i < level; i++) {
-            director.registerEffect(new EffectScorched());
-        }
+  @Override
+  public void addEffects(InstabilityDirector director, Integer level) {
+    for (int i = 0; i < level; i++) {
+      director.registerEffect(new EffectScorched());
     }
+  }
 }

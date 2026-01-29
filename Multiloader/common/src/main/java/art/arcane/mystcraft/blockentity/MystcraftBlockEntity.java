@@ -16,61 +16,63 @@ import org.jetbrains.annotations.Nullable;
  */
 public abstract class MystcraftBlockEntity extends BlockEntity {
 
-    public MystcraftBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
-        super(type, pos, blockState);
-    }
+  public MystcraftBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
+    super(type, pos, blockState);
+  }
 
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        writeNbt(tag);
-    }
+  @Override
+  protected void saveAdditional(CompoundTag tag) {
+    super.saveAdditional(tag);
+    writeNbt(tag);
+  }
 
-    @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        readNbt(tag);
-    }
+  @Override
+  public void load(CompoundTag tag) {
+    super.load(tag);
+    readNbt(tag);
+  }
 
-    /**
-     * Override to save custom data to NBT.
-     */
-    protected void writeNbt(CompoundTag tag) {
-        // Override in subclasses
-    }
+  /**
+   * Override to save custom data to NBT.
+   */
+  protected void writeNbt(CompoundTag tag) {
+    // Override in subclasses
+  }
 
-    /**
-     * Override to load custom data from NBT.
-     */
-    protected void readNbt(CompoundTag tag) {
-        // Override in subclasses
-    }
+  /**
+   * Override to load custom data from NBT.
+   */
+  protected void readNbt(CompoundTag tag) {
+    // Override in subclasses
+  }
 
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        writeNbt(tag);
-        return tag;
-    }
+  @Override
+  public CompoundTag getUpdateTag() {
+    CompoundTag tag = super.getUpdateTag();
+    writeNbt(tag);
+    return tag;
+  }
 
-    @Nullable
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
+  @Nullable
+  @Override
+  public Packet<ClientGamePacketListener> getUpdatePacket() {
+    return ClientboundBlockEntityDataPacket.create(this);
+  }
 
-    /**
-     * Marks this block entity as dirty and sends an update to clients.
-     */
-    protected void sync() {
-        setChanged();
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+  /**
+   * Marks this block entity as dirty and sends an update to clients.
+   */
+  protected void sync() {
+    setChanged();
+    if (level != null && !level.isClientSide) {
+      level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
+  }
 
-    /** Alias for sync(). */
-    protected void markForUpdate() {
-        sync();
-    }
+  /**
+   * Alias for sync().
+   */
+  protected void markForUpdate() {
+    sync();
+  }
 }

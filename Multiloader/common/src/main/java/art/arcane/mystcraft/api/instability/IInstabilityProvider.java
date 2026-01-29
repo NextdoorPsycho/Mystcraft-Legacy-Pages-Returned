@@ -6,11 +6,11 @@ package art.arcane.mystcraft.api.instability;
  */
 public interface IInstabilityProvider {
 
-    /**
-     * Adds effects to the instability director based on the current level.
-     *
-     * @param director The instability director to register effects with
-     * @param level    The activation level (number of times this provider's card was drawn)
-     */
-    void addEffects(InstabilityDirector director, Integer level);
+  /**
+   * Adds effects to the instability director based on the current level.
+   *
+   * @param director The instability director to register effects with
+   * @param level    The activation level (number of times this provider's card was drawn)
+   */
+  void addEffects(InstabilityDirector director, Integer level);
 }

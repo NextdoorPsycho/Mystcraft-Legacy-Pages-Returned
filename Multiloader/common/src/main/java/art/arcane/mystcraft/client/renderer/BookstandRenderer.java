@@ -27,69 +27,69 @@ import org.jetbrains.annotations.NotNull;
  */
 public class BookstandRenderer implements BlockEntityRenderer<BookstandBlockEntity> {
 
-    private static final ResourceLocation TEXTURE =
-            new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/bookstand.png");
-    private static final ResourceLocation LINKBOOK_TEXTURE =
-            new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/linkbook.png");
-    private static final ResourceLocation AGEBOOK_TEXTURE =
-            new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/agebook.png");
+  private static final ResourceLocation TEXTURE =
+      new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/bookstand.png");
+  private static final ResourceLocation LINKBOOK_TEXTURE =
+      new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/linkbook.png");
+  private static final ResourceLocation AGEBOOK_TEXTURE =
+      new ResourceLocation(Mystcraft.MOD_ID, "textures/entity/agebook.png");
 
-    private final BookstandModel model;
-    private final BookModel bookModel;
+  private final BookstandModel model;
+  private final BookModel bookModel;
 
-    public BookstandRenderer(BlockEntityRendererProvider.Context context) {
-        this.model = new BookstandModel(context.bakeLayer(BookstandModel.LAYER_LOCATION));
-        this.bookModel = new BookModel(context.bakeLayer(ModelLayers.BOOK));
+  public BookstandRenderer(BlockEntityRendererProvider.Context context) {
+    this.model = new BookstandModel(context.bakeLayer(BookstandModel.LAYER_LOCATION));
+    this.bookModel = new BookModel(context.bakeLayer(ModelLayers.BOOK));
+  }
+
+  @Override
+  public void render(@NotNull BookstandBlockEntity blockEntity, float partialTick, @NotNull PoseStack poseStack,
+                     @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+
+    // Get facing direction - block faces toward player when placed
+    Direction facing = blockEntity.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
+
+    // Calculate rotation - add 180 to make the model face toward the player instead of away
+    float rotation = facing.toYRot() + 180;
+
+    // Render the stand model
+    poseStack.pushPose();
+    poseStack.translate(0.5, 0.5, 0.5);
+    poseStack.mulPose(Axis.ZP.rotationDegrees(180)); // Flip like original (Z axis)
+    poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
+
+    VertexConsumer vertexConsumer = bufferSource.getBuffer(model.renderType(TEXTURE));
+    model.renderToBuffer(poseStack, vertexConsumer, packedLight, packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+    poseStack.popPose();
+
+    // Render the open book on top
+    ItemStack book = blockEntity.getBook();
+    if (!book.isEmpty() && (book.getItem() instanceof LinkbookItem || book.getItem() instanceof AgebookItem)) {
+      poseStack.pushPose();
+
+      // Position the book on top of the stand
+      poseStack.translate(0.5, 0.55, 0.5);
+
+      // Rotate based on block facing - book faces same direction as stand
+      // Original: rotate(90 + 45 * rotationIndex, 0, -1, 0) then rotate(120, 0, 0, 1)
+      poseStack.mulPose(Axis.YN.rotationDegrees(90 + rotation));
+      poseStack.mulPose(Axis.ZP.rotationDegrees(120));
+
+      poseStack.scale(0.8f, 0.8f, 0.8f); // Book display scale
+
+      bookModel.setupAnim(0, 0, 0, 1.05f); // Open state
+
+      // Choose texture based on book type
+      ResourceLocation bookTexture = (book.getItem() instanceof AgebookItem)
+          ? AGEBOOK_TEXTURE
+          : LINKBOOK_TEXTURE;
+
+      // Render the open book model
+      VertexConsumer bookConsumer = bufferSource.getBuffer(RenderType.entitySolid(bookTexture));
+      bookModel.render(poseStack, bookConsumer, packedLight, OverlayTexture.NO_OVERLAY,
+          1.0f, 1.0f, 1.0f, 1.0f);
+
+      poseStack.popPose();
     }
-
-    @Override
-    public void render(@NotNull BookstandBlockEntity blockEntity, float partialTick, @NotNull PoseStack poseStack,
-                       @NotNull MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-
-        // Get facing direction - block faces toward player when placed
-        Direction facing = blockEntity.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
-
-        // Calculate rotation - add 180 to make the model face toward the player instead of away
-        float rotation = facing.toYRot() + 180;
-
-        // Render the stand model
-        poseStack.pushPose();
-        poseStack.translate(0.5, 0.5, 0.5);
-        poseStack.mulPose(Axis.ZP.rotationDegrees(180)); // Flip like original (Z axis)
-        poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
-
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(model.renderType(TEXTURE));
-        model.renderToBuffer(poseStack, vertexConsumer, packedLight, packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
-        poseStack.popPose();
-
-        // Render the open book on top
-        ItemStack book = blockEntity.getBook();
-        if (!book.isEmpty() && (book.getItem() instanceof LinkbookItem || book.getItem() instanceof AgebookItem)) {
-            poseStack.pushPose();
-
-            // Position the book on top of the stand
-            poseStack.translate(0.5, 0.55, 0.5);
-
-            // Rotate based on block facing - book faces same direction as stand
-            // Original: rotate(90 + 45 * rotationIndex, 0, -1, 0) then rotate(120, 0, 0, 1)
-            poseStack.mulPose(Axis.YN.rotationDegrees(90 + rotation));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(120));
-
-            poseStack.scale(0.8f, 0.8f, 0.8f); // Book display scale
-
-            bookModel.setupAnim(0, 0, 0, 1.05f); // Open state
-
-            // Choose texture based on book type
-            ResourceLocation bookTexture = (book.getItem() instanceof AgebookItem)
-                    ? AGEBOOK_TEXTURE
-                    : LINKBOOK_TEXTURE;
-
-            // Render the open book model
-            VertexConsumer bookConsumer = bufferSource.getBuffer(RenderType.entitySolid(bookTexture));
-            bookModel.render(poseStack, bookConsumer, packedLight, OverlayTexture.NO_OVERLAY,
-                    1.0f, 1.0f, 1.0f, 1.0f);
-
-            poseStack.popPose();
-        }
-    }
+  }
 }

@@ -115,6 +115,11 @@ public final class ForgeMystcraftNetwork_1_20_1 {
         BlockBookActivatePacket::encode, BlockBookActivatePacket::decode, wrap(BlockBookActivatePacket::handle),
         Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
+    // Client -> Server: Sync pocket head palette
+    CHANNEL.registerMessage(packetId++, PocketHeadSyncPacket.class,
+        PocketHeadSyncPacket::encode, PocketHeadSyncPacket::decode, wrap(PocketHeadSyncPacket::handle),
+        Optional.of(NetworkDirection.PLAY_TO_SERVER));
+
     // Server -> Client: Sync Mystcraft book in vanilla lectern
     CHANNEL.registerMessage(packetId++, LecternBookSyncPacket.class,
         LecternBookSyncPacket::encode, LecternBookSyncPacket::decode, wrap(LecternBookSyncPacket::handle),

@@ -38,16 +38,7 @@ public final class PocketHeadUtils {
       new PaletteEntry("minecraft:brown_wool", 0x835432),
       new PaletteEntry("minecraft:green_wool", 0x5E7C16),
       new PaletteEntry("minecraft:red_wool", 0xB02E26),
-      new PaletteEntry("minecraft:black_wool", 0x1D1D21),
-      new PaletteEntry("minecraft:oak_planks", 0xC6A86A),
-      new PaletteEntry("minecraft:spruce_planks", 0x6B4F2A),
-      new PaletteEntry("minecraft:birch_planks", 0xD7CE8D),
-      new PaletteEntry("minecraft:jungle_planks", 0xB88757),
-      new PaletteEntry("minecraft:acacia_planks", 0xB96A50),
-      new PaletteEntry("minecraft:dark_oak_planks", 0x4F3A1D),
-      new PaletteEntry("minecraft:mangrove_planks", 0x773F32),
-      new PaletteEntry("minecraft:cherry_planks", 0xE8B6B3),
-      new PaletteEntry("minecraft:bamboo_planks", 0xD1C04A)
+      new PaletteEntry("minecraft:black_wool", 0x1D1D21)
   };
 
   private PocketHeadUtils() {
@@ -76,6 +67,46 @@ public final class PocketHeadUtils {
     return mapFacesToBlocks(facePixels);
   }
 
+  public static Map<AgeData.PocketHeadFace, List<String>> buildPocketHeadBlocksByName(MinecraftServer server, String name) {
+    GameProfile profile = resolveProfileByName(server, name);
+    if (profile == null) {
+      Mystcraft.LOGGER.warn("[PocketHead] Unable to resolve profile for {}", name);
+      return null;
+    }
+
+    String skinUrl = getSkinUrl(server, profile);
+    if (skinUrl == null) {
+      Mystcraft.LOGGER.warn("[PocketHead] No skin URL for {}", profile.getName());
+      return null;
+    }
+
+    BufferedImage skin = downloadSkin(skinUrl);
+    if (skin == null) {
+      Mystcraft.LOGGER.warn("[PocketHead] Failed to download skin for {}", profile.getName());
+      return null;
+    }
+
+    Map<AgeData.PocketHeadFace, int[]> facePixels = extractHeadFaces(skin);
+    return mapFacesToBlocks(facePixels);
+  }
+
+  public static Map<AgeData.PocketHeadFace, List<String>> mapFacesToBlocksFromPixels(Map<AgeData.PocketHeadFace, int[]> facePixels) {
+    return mapFacesToBlocks(facePixels);
+  }
+
+  public static boolean isValidHeadBlockMap(Map<AgeData.PocketHeadFace, List<String>> blocks) {
+    if (blocks == null || blocks.size() != AgeData.PocketHeadFace.values().length) {
+      return false;
+    }
+    for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
+      List<String> list = blocks.get(face);
+      if (list == null || list.size() != FACE_PIXELS) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private static GameProfile resolveProfile(MinecraftServer server, UUID owner) {
     Optional<GameProfile> cached = server.getProfileCache().get(owner);
     GameProfile profile = cached.orElseGet(() -> new GameProfile(owner, ""));
@@ -88,6 +119,26 @@ public final class PocketHeadUtils {
       }
     } catch (Exception e) {
       Mystcraft.LOGGER.debug("[PocketHead] fillProfileProperties unavailable or failed for {}", owner);
+    }
+    return profile;
+  }
+
+  @Nullable
+  private static GameProfile resolveProfileByName(MinecraftServer server, String name) {
+    Optional<GameProfile> cached = server.getProfileCache().get(name);
+    if (cached.isEmpty()) {
+      return null;
+    }
+    GameProfile profile = cached.get();
+    try {
+      Object sessionService = server.getSessionService();
+      java.lang.reflect.Method fill = sessionService.getClass().getMethod("fillProfileProperties", GameProfile.class, boolean.class);
+      Object filled = fill.invoke(sessionService, profile, true);
+      if (filled instanceof GameProfile filledProfile) {
+        return filledProfile;
+      }
+    } catch (Exception e) {
+      Mystcraft.LOGGER.debug("[PocketHead] fillProfileProperties unavailable or failed for {}", name);
     }
     return profile;
   }

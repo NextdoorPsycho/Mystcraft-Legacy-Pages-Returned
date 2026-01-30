@@ -11,6 +11,7 @@ import art.arcane.mystcraft.instability.InstabilityManager;
 import art.arcane.mystcraft.network.ForgeMystcraftNetwork;
 import art.arcane.mystcraft.network.SymbolSyncPacket;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
+import art.arcane.mystcraft.client.PocketHeadClientSync;
 import art.arcane.mystcraft.platform.services.IEventHelper;
 import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.registry.MystcraftRegistries;
@@ -43,6 +44,7 @@ import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorList;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.common.BasicItemListing;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
@@ -115,6 +117,9 @@ public class ForgeEventHelper implements IEventHelper {
     if (FMLEnvironment.dist == Dist.CLIENT) {
       MinecraftForge.EVENT_BUS.addListener(this::onComputeFogColor);
       MinecraftForge.EVENT_BUS.addListener(this::onRenderFog);
+      MinecraftForge.EVENT_BUS.addListener(this::onClientLoggedIn);
+      MinecraftForge.EVENT_BUS.addListener(this::onClientLoggedOut);
+      MinecraftForge.EVENT_BUS.addListener(this::onClientTick);
     }
   }
 
@@ -152,6 +157,21 @@ public class ForgeEventHelper implements IEventHelper {
   private void onAddReloadListeners(AddReloadListenerEvent event) {
     event.addListener(new MystcraftGrammarReloadListener());
     event.addListener(new MystcraftSymbolReloadListener());
+  }
+
+  // ==================== Client Networking Sync ====================
+
+  private void onClientLoggedIn(ClientPlayerNetworkEvent.LoggedInEvent event) {
+    PocketHeadClientSync.requestSend();
+  }
+
+  private void onClientLoggedOut(ClientPlayerNetworkEvent.LoggedOutEvent event) {
+    PocketHeadClientSync.reset();
+  }
+
+  private void onClientTick(TickEvent.ClientTickEvent event) {
+    if (event.phase != TickEvent.Phase.END) return;
+    PocketHeadClientSync.tick();
   }
 
   // ==================== Player Login/Dimension Change Events ====================

@@ -7,9 +7,12 @@ import art.arcane.mystcraft.client.render.DrawableWordManager;
 import art.arcane.mystcraft.client.render.PageItemRendererBEWLR;
 import art.arcane.mystcraft.client.renderer.*;
 import art.arcane.mystcraft.client.screen.*;
+import art.arcane.mystcraft.client.PocketHeadClientSync;
 import art.arcane.mystcraft.network.FabricMystcraftNetwork;
 import art.arcane.mystcraft.registry.FabricRegistries;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.*;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
 
@@ -25,6 +28,11 @@ public class MystcraftFabricClient implements ClientModInitializer {
 
     // Register client-side network receivers for S->C packets
     FabricMystcraftNetwork.registerClient();
+
+    // Client -> Server head palette sync (dev/offline-safe)
+    ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> PocketHeadClientSync.requestSend());
+    ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> PocketHeadClientSync.reset());
+    ClientTickEvents.END_CLIENT_TICK.register(client -> PocketHeadClientSync.tick());
 
     // Initialize client-side systems
     DrawableWordManager.initialize();

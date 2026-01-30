@@ -122,6 +122,12 @@ public final class NeoForgeMystcraftNetwork {
         .consumerMainThread(wrap(BlockBookActivatePacket::handle))
         .add();
 
+    CHANNEL.messageBuilder(PocketHeadSyncPacket.class, packetId++, PlayNetworkDirection.PLAY_TO_SERVER)
+        .encoder(PocketHeadSyncPacket::encode)
+        .decoder(PocketHeadSyncPacket::decode)
+        .consumerMainThread(wrap(PocketHeadSyncPacket::handle))
+        .add();
+
     CHANNEL.messageBuilder(LecternBookSyncPacket.class, packetId++, PlayNetworkDirection.PLAY_TO_CLIENT)
         .encoder(LecternBookSyncPacket::encode)
         .decoder(LecternBookSyncPacket::decode)

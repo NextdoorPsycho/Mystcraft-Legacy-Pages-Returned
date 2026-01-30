@@ -14,6 +14,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundInitializeBorderPacket;
 import net.minecraft.resources.ResourceLocation;
@@ -257,8 +258,8 @@ public final class PersonalPocketDimension {
     }
 
     if (palette.isEmpty()) {
-      Mystcraft.LOGGER.warn("[PersonalPocket] No valid inner blocks configured, using oak_planks");
-      palette.add(Blocks.OAK_PLANKS.defaultBlockState());
+      Mystcraft.LOGGER.warn("[PersonalPocket] No valid inner blocks configured, using white_wool");
+      palette.add(Blocks.WHITE_WOOL.defaultBlockState());
     }
 
     return palette;
@@ -347,11 +348,13 @@ public final class PersonalPocketDimension {
       ServerLevel existing = server.getLevel(net.minecraft.resources.ResourceKey.create(Registries.DIMENSION, dimLoc));
       if (existing != null) {
         Mystcraft.LOGGER.debug("[PersonalPocket] Using loaded pocket {} for {}", dimLoc, owner);
+        ensureHeadBlocks(existing, owner);
         return existing;
       }
       ServerLevel loaded = AgeDimensionFactory.getOrCreateAgeDimension(server, ageUID);
       if (loaded != null) {
         Mystcraft.LOGGER.info("[PersonalPocket] Loaded pocket {} for {}", dimLoc, owner);
+        ensureHeadBlocks(loaded, owner);
         return loaded;
       }
       Mystcraft.LOGGER.warn("[PersonalPocket] Failed to load existing pocket {} for {}, recreating", dimLoc, owner);
@@ -377,25 +380,7 @@ public final class PersonalPocketDimension {
     BlockPos spawn = getPocketSpawn();
     ageData.setSpawn(spawn.getX(), spawn.getY(), spawn.getZ());
 
-    if (!ageData.hasPocketHeadBlocks()) {
-      java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> headBlocks =
-          PocketHeadUtils.buildPocketHeadBlocks(server, owner);
-      if (headBlocks != null) {
-        for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
-          java.util.List<String> blocks = headBlocks.get(face);
-          if (blocks != null) {
-            ageData.setPocketHeadBlocks(face, blocks);
-          }
-        }
-        Mystcraft.LOGGER.info("[PersonalPocket] Applied head-based wall palette for {}", owner);
-        net.minecraft.world.level.chunk.ChunkGenerator generator = level.getChunkSource().getGenerator();
-        if (generator instanceof AgeChunkGenerator ageGen) {
-          ageGen.refreshPocketHeadBlocks(level);
-        }
-      } else {
-        Mystcraft.LOGGER.warn("[PersonalPocket] Failed to generate head palette for {}", owner);
-      }
-    }
+    ensureHeadBlocks(level, owner);
 
     configurePersonalRules(level);
     enforceBorder(level);
@@ -463,6 +448,182 @@ public final class PersonalPocketDimension {
     } else {
       Mystcraft.LOGGER.warn("[PersonalPocket] Failed to get bookstand block entity at {}", bookstandPos);
     }
+  }
+
+  public static int reskinPocket(ServerLevel level) {
+    AgeData ageData = AgeData.getIfPresent(level);
+    if (ageData == null || !ageData.hasPocketHeadBlocks()) {
+      return 0;
+    }
+    int innerHalfXZ = getInnerHalfSizeXZ();
+    int innerHalfY = getInnerHalfSizeY();
+    int centerY = getCenterY();
+    int boundaryXZ = innerHalfXZ + 1;
+    int boundaryY = innerHalfY + 1;
+
+    int minX = -innerHalfXZ;
+    int maxX = innerHalfXZ;
+    int minZ = -innerHalfXZ;
+    int maxZ = innerHalfXZ;
+    int minY = centerY - innerHalfY;
+    int maxY = centerY + innerHalfY;
+
+    int spanXZ = maxX - minX + 1;
+    int spanY = maxY - minY + 1;
+
+    int placed = 0;
+    placed += reskinFace(level, ageData, AgeData.PocketHeadFace.FRONT, minX, maxX, minY, maxY,
+        boundaryXZ, 0, spanXZ, spanY);
+    placed += reskinFace(level, ageData, AgeData.PocketHeadFace.BACK, minX, maxX, minY, maxY,
+        -boundaryXZ, 0, spanXZ, spanY);
+    placed += reskinFace(level, ageData, AgeData.PocketHeadFace.RIGHT, minZ, maxZ, minY, maxY,
+        0, boundaryXZ, spanXZ, spanY);
+    placed += reskinFace(level, ageData, AgeData.PocketHeadFace.LEFT, minZ, maxZ, minY, maxY,
+        0, -boundaryXZ, spanXZ, spanY);
+    placed += reskinTopBottom(level, ageData, AgeData.PocketHeadFace.TOP, minX, maxX, minZ, maxZ,
+        centerY + boundaryY, spanXZ);
+    placed += reskinTopBottom(level, ageData, AgeData.PocketHeadFace.BOTTOM, minX, maxX, minZ, maxZ,
+        centerY - boundaryY, spanXZ);
+    return placed;
+  }
+
+  private static int reskinFace(ServerLevel level, AgeData ageData, AgeData.PocketHeadFace face,
+                                int minU, int maxU, int minY, int maxY,
+                                int fixedZ, int fixedX, int spanXZ, int spanY) {
+    java.util.List<String> blocks = ageData.getPocketHeadBlocks(face);
+    if (blocks == null || blocks.size() != 64) {
+      return 0;
+    }
+    int placed = 0;
+    BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+    for (int uWorld = minU; uWorld <= maxU; uWorld++) {
+      for (int y = minY; y <= maxY; y++) {
+        int u;
+        int v = maxY - y;
+        if (face == AgeData.PocketHeadFace.FRONT) {
+          u = uWorld - minU;
+          pos.set(uWorld, y, fixedZ);
+        } else if (face == AgeData.PocketHeadFace.BACK) {
+          u = (spanXZ - 1) - (uWorld - minU);
+          pos.set(uWorld, y, fixedZ);
+        } else if (face == AgeData.PocketHeadFace.RIGHT) {
+          u = (spanXZ - 1) - (uWorld - minU);
+          pos.set(fixedX, y, uWorld);
+        } else {
+          u = uWorld - minU;
+          pos.set(fixedX, y, uWorld);
+        }
+        BlockState state = sampleFace(blocks, u, v, spanXZ, spanY);
+        level.setBlock(pos, state, 2);
+        placed++;
+      }
+    }
+    return placed;
+  }
+
+  private static int reskinTopBottom(ServerLevel level, AgeData ageData, AgeData.PocketHeadFace face,
+                                     int minX, int maxX, int minZ, int maxZ,
+                                     int fixedY, int spanXZ) {
+    java.util.List<String> blocks = ageData.getPocketHeadBlocks(face);
+    if (blocks == null || blocks.size() != 64) {
+      return 0;
+    }
+    int placed = 0;
+    BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+    for (int x = minX; x <= maxX; x++) {
+      for (int z = minZ; z <= maxZ; z++) {
+        int u = x - minX;
+        int v = face == AgeData.PocketHeadFace.TOP ? (z - minZ) : (spanXZ - 1) - (z - minZ);
+        BlockState state = sampleFace(blocks, u, v, spanXZ, spanXZ);
+        pos.set(x, fixedY, z);
+        level.setBlock(pos, state, 2);
+        placed++;
+      }
+    }
+    return placed;
+  }
+
+  private static BlockState sampleFace(java.util.List<String> blocks, int u, int v, int width, int height) {
+    int px = Math.max(0, Math.min(7, (u * 8) / Math.max(1, width)));
+    int py = Math.max(0, Math.min(7, (v * 8) / Math.max(1, height)));
+    String id = blocks.get(py * 8 + px);
+    ResourceLocation loc = ResourceLocation.tryParse(id);
+    if (loc != null) {
+      Block block = BuiltInRegistries.BLOCK.get(loc);
+      if (block != null && block != Blocks.AIR) {
+        return block.defaultBlockState();
+      }
+    }
+    return Blocks.WHITE_WOOL.defaultBlockState();
+  }
+
+  private static void ensureHeadBlocks(ServerLevel level, UUID owner) {
+    AgeData ageData = AgeData.get(level);
+    if (ageData == null) {
+      return;
+    }
+
+    boolean needsRebuild = !ageData.hasPocketHeadBlocks() || hasNonWoolHeadBlocks(ageData);
+    if (!needsRebuild) {
+      return;
+    }
+
+    java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> headBlocks =
+        PersonalPocketData.get(level.getServer()).getHeadBlocks(owner);
+    if (headBlocks == null) {
+      headBlocks = PocketHeadUtils.buildPocketHeadBlocks(level.getServer(), owner);
+    }
+    if (headBlocks == null) {
+      headBlocks = buildSolidWoolHeadBlocks();
+      Mystcraft.LOGGER.warn("[PersonalPocket] Using fallback wool head palette for {}", owner);
+    }
+
+    for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
+      java.util.List<String> blocks = headBlocks.get(face);
+      if (blocks != null) {
+        ageData.setPocketHeadBlocks(face, blocks);
+      }
+    }
+    PersonalPocketData.get(level.getServer()).setHeadBlocks(owner, headBlocks);
+    Mystcraft.LOGGER.info("[PersonalPocket] Applied head-based wall palette for {}", owner);
+    net.minecraft.world.level.chunk.ChunkGenerator generator = level.getChunkSource().getGenerator();
+    if (generator instanceof AgeChunkGenerator ageGen) {
+      ageGen.refreshPocketHeadBlocks(level);
+    }
+  }
+
+  @Nullable
+  public static ServerLevel getIfLoaded(MinecraftServer server, UUID owner) {
+    int ageUID = getPersonalAgeUid(owner);
+    return AgeManager.get(server).getAgeLevel(server, ageUID);
+  }
+
+  private static boolean hasNonWoolHeadBlocks(AgeData ageData) {
+    for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
+      java.util.List<String> blocks = ageData.getPocketHeadBlocks(face);
+      if (blocks == null || blocks.size() != 64) {
+        return true;
+      }
+      for (String id : blocks) {
+        if (id == null || !id.endsWith("_wool")) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private static java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> buildSolidWoolHeadBlocks() {
+    java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> result =
+        new java.util.EnumMap<>(AgeData.PocketHeadFace.class);
+    java.util.List<String> face = new java.util.ArrayList<>(64);
+    for (int i = 0; i < 64; i++) {
+      face.add("minecraft:white_wool");
+    }
+    for (AgeData.PocketHeadFace faceId : AgeData.PocketHeadFace.values()) {
+      result.put(faceId, new java.util.ArrayList<>(face));
+    }
+    return result;
   }
 
   private static AgeDirectorImpl buildPersonalDirector(MinecraftServer server) {

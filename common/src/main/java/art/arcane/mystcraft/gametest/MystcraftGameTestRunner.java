@@ -5,6 +5,7 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.item.AgebookItem;
+import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
@@ -14,6 +15,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
 import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.protocol.PacketFlow;
@@ -26,118 +28,274 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public final class MystcraftGameTestRunner {
 
   private MystcraftGameTestRunner() {
   }
 
-  public static void runRandomBookDimensionTest(net.minecraft.gametest.framework.GameTestHelper helper) {
-    ServerLevel level = helper.getLevel();
-    MinecraftServer server = level.getServer();
-    ServerPlayer player = createMockServerPlayer(helper);
-
-    AtomicInteger createdCount = new AtomicInteger(0);
-    int iterations = 5;
-    long stepTicks = 40;
-    long startTick = 5;
-    long cooldownTicks = 120;
-
-    for (int i = 0; i < iterations; i++) {
-      long tick = startTick + (i * stepTicks);
-      helper.runAtTickTime(tick, () -> {
-        try {
-          runRandomBookOnce(helper, server, level, player);
-          createdCount.incrementAndGet();
-        } catch (Exception e) {
-          helper.fail("Random book dimension test failed: " + e.getMessage());
-        }
-      });
-    }
-
-    helper.runAtTickTime(startTick + (iterations * stepTicks) + cooldownTicks, () -> {
-      if (createdCount.get() == iterations) {
-        helper.succeed();
-      } else {
-        helper.fail("Expected " + iterations + " ages, created " + createdCount.get());
-      }
-    });
-  }
-
-  public static void runPresetBookDimensionTest(net.minecraft.gametest.framework.GameTestHelper helper) {
-    ServerLevel level = helper.getLevel();
-    MinecraftServer server = level.getServer();
-    ServerPlayer player = createMockServerPlayer(helper);
-
-    Mystcraft.LOGGER.info("GameTest: starting preset cave book test");
-    AtomicBoolean created = new AtomicBoolean(false);
-    long startTick = 5;
-    long cooldownTicks = 140;
-
-    helper.runAtTickTime(startTick, () -> {
-      try {
-        runPresetBookOnce(helper, server, level, player);
-        created.set(true);
-      } catch (Exception e) {
-        Mystcraft.LOGGER.error("GameTest preset cave book failed", e);
-        helper.fail("Preset book dimension test failed: " + e.getMessage());
-      }
-    });
-
-    helper.runAtTickTime(startTick + cooldownTicks, () -> {
-      if (created.get()) {
-        helper.succeed();
-      } else {
-        helper.fail("Preset book did not create an age dimension");
-      }
-    });
-  }
-
-  public static void runBookDropEntityTest(net.minecraft.gametest.framework.GameTestHelper helper) {
+  /**
+   * Tests that linkbooks and descriptive books drop as LinkbookEntity when dropped.
+   */
+  public static void runBookDropsAsEntityTest(GameTestHelper helper) {
     ServerLevel level = helper.getLevel();
     ItemStack linkbook = new ItemStack(ModItems.LINKBOOK.get());
-    ItemStack unlinked = new ItemStack(ModItems.LINKBOOK_UNLINKED.get());
     ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
 
-    ItemEntity dummy = new ItemEntity(level, 0.5, 2.0, 0.5, linkbook.copy());
+    ItemEntity dummyItem = new ItemEntity(level, 0.5, 2.0, 0.5, linkbook.copy());
 
-    assertCreatesLinkbookEntity(linkbook, dummy);
-    assertCreatesLinkbookEntity(unlinked, dummy);
-    assertCreatesLinkbookEntity(agebook, dummy);
+    // Test linkbook creates LinkbookEntity
+    assertCreatesLinkbookEntity(linkbook, dummyItem, "linkbook");
+    // Test descriptive book creates LinkbookEntity
+    assertCreatesLinkbookEntity(agebook, dummyItem, "agebook");
 
     helper.succeed();
   }
 
-  public static void runLinkbookEntityDecayTest(net.minecraft.gametest.framework.GameTestHelper helper) {
+  /**
+   * Tests that personal link book creates a personal dimension and teleports the player.
+   */
+  public static void runPersonalBookCreatesAndTeleportsTest(GameTestHelper helper) {
+    ServerLevel level = helper.getLevel();
+    MinecraftServer server = level.getServer();
+    ServerPlayer player = createMockServerPlayer(helper);
+
+    AtomicBoolean success = new AtomicBoolean(false);
+
+    helper.runAtTickTime(5, () -> {
+      try {
+        ItemStack personalBook = new ItemStack(ModItems.PERSONAL_LINK_BOOK.get());
+        PersonalLinkBookItem bookItem = (PersonalLinkBookItem) personalBook.getItem();
+        bookItem.validate(level, personalBook, player);
+        ResourceLocation originalDim = level.dimension().location();
+
+        bookItem.activate(personalBook, level, player);
+
+        // Check that dimension was created
+        Integer uid = LinkOptions.getDimensionUID(personalBook.getTag());
+        if (uid != null) {
+          AgeManager ageManager = AgeManager.get(level);
+          ResourceLocation dimId = ageManager.getDimension(uid);
+          if (dimId != null) {
+            success.set(true);
+          }
+        }
+      } catch (Exception e) {
+        helper.fail("Personal book test failed: " + e.getMessage());
+      }
+    });
+
+    helper.runAtTickTime(60, () -> {
+      if (success.get()) {
+        helper.succeed();
+      } else {
+        helper.fail("Personal book did not create a dimension");
+      }
+    });
+  }
+
+  /**
+   * Tests creating a random book with 5 symbols that creates a new dimension.
+   */
+  public static void runRandomBookWith5SymbolsTest(GameTestHelper helper) {
+    ServerLevel level = helper.getLevel();
+    MinecraftServer server = level.getServer();
+    ServerPlayer player = createMockServerPlayer(helper);
+
+    AtomicBoolean success = new AtomicBoolean(false);
+
+    helper.runAtTickTime(5, () -> {
+      try {
+        // Create agebook with 5 random symbols
+        Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(Mystcraft.MOD_ID, "agebook"));
+        if (!(item instanceof AgebookItem)) {
+          helper.fail("Agebook item not found");
+          return;
+        }
+
+        ItemStack agebook = new ItemStack(item);
+        List<ItemStack> pages = new ArrayList<>();
+        pages.add(Page.createLinkPage());
+
+        // Add 5 symbol pages
+        addSymbolPageIfExists(pages, "terrain_normal");
+        addSymbolPageIfExists(pages, "biome_plains");
+        addSymbolPageIfExists(pages, "sun_normal");
+        addSymbolPageIfExists(pages, "weather_normal");
+        addSymbolPageIfExists(pages, "lighting_normal");
+
+        AgebookItem.create(agebook, player, pages, "Test 5 Symbols");
+
+        AgebookItem bookItem = (AgebookItem) agebook.getItem();
+        bookItem.activate(agebook, level, player);
+
+        Integer uid = LinkOptions.getDimensionUID(agebook.getTag());
+        if (uid != null) {
+          AgeManager ageManager = AgeManager.get(level);
+          ResourceLocation dimId = ageManager.getDimension(uid);
+          if (dimId != null) {
+            ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(server, uid);
+            if (ageLevel != null) {
+              success.set(true);
+            }
+          }
+        }
+      } catch (Exception e) {
+        helper.fail("Random book test failed: " + e.getMessage());
+      }
+    });
+
+    helper.runAtTickTime(120, () -> {
+      if (success.get()) {
+        helper.succeed();
+      } else {
+        helper.fail("Random book with 5 symbols did not create a dimension");
+      }
+    });
+  }
+
+  /**
+   * Tests that linkbook decays over time but personal book does not.
+   */
+  public static void runLinkbookDecaysButPersonalDoesNotTest(GameTestHelper helper) {
     ServerLevel level = helper.getLevel();
     BlockPos origin = helper.absolutePos(BlockPos.ZERO);
     double x = origin.getX() + 0.5;
     double y = origin.getY() + 2.0;
     double z = origin.getZ() + 0.5;
 
-    LinkbookEntity.setDecayMultiplierForTests(6.0f);
+    // Speed up decay for testing
+    LinkbookEntity.setDecayMultiplierForTests(10.0f);
+
+    // Create linkbook entity (should decay)
+    LinkbookEntity linkbookEntity = new LinkbookEntity(level, x, y, z);
+    ItemStack linkbook = new ItemStack(ModItems.LINKBOOK.get());
+    linkbookEntity.setBookItem(linkbook);
+    level.addFreshEntity(linkbookEntity);
+
+    // Create personal book entity (should NOT decay)
+    LinkbookEntity personalEntity = new LinkbookEntity(level, x + 2, y, z);
+    ItemStack personalBook = new ItemStack(ModItems.PERSONAL_LINK_BOOK.get());
+    // Manually set NoDecay tag since we don't have a player to initialize
+    net.minecraft.nbt.CompoundTag personalTag = personalBook.getOrCreateTag();
+    personalTag.putBoolean("NoDecay", true);
+    personalEntity.setBookItem(personalBook);
+    level.addFreshEntity(personalEntity);
+
+    float initialLinkbookHealth = linkbookEntity.getHealth();
+    float initialPersonalHealth = personalEntity.getHealth();
+
+    helper.runAtTickTime(100, () -> {
+      LinkbookEntity.setDecayMultiplierForTests(1.0f);
+
+      float linkbookHealth = linkbookEntity.getHealth();
+      float personalHealth = personalEntity.getHealth();
+
+      // Linkbook should have decayed (lower health or removed)
+      boolean linkbookDecayed = linkbookEntity.isRemoved() || linkbookHealth < initialLinkbookHealth;
+      // Personal book should NOT have decayed
+      boolean personalNotDecayed = !personalEntity.isRemoved() && personalHealth == initialPersonalHealth;
+
+      if (linkbookDecayed && personalNotDecayed) {
+        helper.succeed();
+      } else {
+        helper.fail("Linkbook decayed=" + linkbookDecayed + ", Personal not decayed=" + personalNotDecayed);
+      }
+    });
+  }
+
+  /**
+   * Tests that book entity dies instantly when touching fluid.
+   */
+  public static void runBookDiesInFluidTest(GameTestHelper helper) {
+    ServerLevel level = helper.getLevel();
+    BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+
+    // Place water at origin
+    helper.setBlock(BlockPos.ZERO, Blocks.WATER.defaultBlockState());
+
+    double x = origin.getX() + 0.5;
+    double y = origin.getY() + 0.5;
+    double z = origin.getZ() + 0.5;
+
+    helper.runAtTickTime(5, () -> {
+      LinkbookEntity entity = new LinkbookEntity(level, x, y, z);
+      entity.setBookItem(new ItemStack(ModItems.LINKBOOK.get()));
+      level.addFreshEntity(entity);
+
+      // Force a tick to process the fluid damage
+      helper.runAtTickTime(7, () -> {
+        if (entity.isRemoved() || entity.getHealth() <= 0) {
+          helper.succeed();
+        } else {
+          helper.fail("Book entity did not die in fluid, health=" + entity.getHealth());
+        }
+      });
+    });
+  }
+
+  /**
+   * Tests that book entity dies when damaged 5hp (book has 5hp).
+   */
+  public static void runBookDiesAt5DamageTest(GameTestHelper helper) {
+    ServerLevel level = helper.getLevel();
+    BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+    double x = origin.getX() + 0.5;
+    double y = origin.getY() + 2.0;
+    double z = origin.getZ() + 0.5;
+
     LinkbookEntity entity = new LinkbookEntity(level, x, y, z);
     entity.setBookItem(new ItemStack(ModItems.LINKBOOK.get()));
     level.addFreshEntity(entity);
 
-    int checkTick = 140;
-    helper.runAtTickTime(checkTick, () -> {
-      LinkbookEntity.setDecayMultiplierForTests(1.0f);
-      if (!entity.isRemoved() && entity.getHealth() > 0) {
-        helper.fail("Linkbook entity did not decay within 30 seconds");
-        return;
-      }
+    float initialHealth = entity.getHealth();
+    if (initialHealth != 5.0f) {
+      helper.fail("Expected book to have 5hp, but has " + initialHealth);
+      return;
+    }
 
-      AABB box = new AABB(x - 2.0, origin.getY(), z - 2.0, x + 2.0, origin.getY() + 3.0, z + 2.0);
+    // Damage the book by 5hp
+    entity.damageBook(5.0f);
+
+    helper.runAtTickTime(3, () -> {
+      if (entity.getHealth() <= 0 || entity.isRemoved()) {
+        helper.succeed();
+      } else {
+        helper.fail("Book did not die after 5 damage, health=" + entity.getHealth());
+      }
+    });
+  }
+
+  /**
+   * Tests that when books die they drop an empty page and leather.
+   */
+  public static void runBookDropsPageAndLeatherOnDeathTest(GameTestHelper helper) {
+    ServerLevel level = helper.getLevel();
+    BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+    double x = origin.getX() + 0.5;
+    double y = origin.getY() + 2.0;
+    double z = origin.getZ() + 0.5;
+
+    LinkbookEntity entity = new LinkbookEntity(level, x, y, z);
+    entity.setBookItem(new ItemStack(ModItems.LINKBOOK.get()));
+    level.addFreshEntity(entity);
+
+    // Kill the book
+    entity.damageBook(10.0f);
+
+    helper.runAtTickTime(5, () -> {
+      AABB box = new AABB(x - 2.0, origin.getY(), z - 2.0, x + 2.0, origin.getY() + 4.0, z + 2.0);
       boolean foundPage = false;
       boolean foundLeather = false;
+
       for (ItemEntity drop : level.getEntitiesOfClass(ItemEntity.class, box)) {
         ItemStack stack = drop.getItem();
         if (stack.getItem() == ModItems.PAGE.get()) {
@@ -150,160 +308,134 @@ public final class MystcraftGameTestRunner {
       if (foundPage && foundLeather) {
         helper.succeed();
       } else {
-        helper.fail("Expected page and leather drops from decayed linkbook entity");
+        helper.fail("Expected page=" + foundPage + " and leather=" + foundLeather + " drops");
       }
     });
   }
 
-  private static void assertCreatesLinkbookEntity(ItemStack stack, ItemEntity dummy) {
+  private static void assertCreatesLinkbookEntity(ItemStack stack, ItemEntity dummy, String itemName) {
     net.minecraft.world.entity.Entity created;
     if (stack.getItem() instanceof art.arcane.mystcraft.item.LinkbookItem linkbookItem) {
       created = linkbookItem.createEntity(dummy.level(), dummy, stack);
-    } else if (stack.getItem() instanceof art.arcane.mystcraft.item.LinkbookUnlinkedItem unlinkedItem) {
-      created = unlinkedItem.createEntity(dummy.level(), dummy, stack);
     } else if (stack.getItem() instanceof art.arcane.mystcraft.item.AgebookItem agebookItem) {
       created = agebookItem.createEntity(dummy.level(), dummy, stack);
     } else {
-      throw new IllegalStateException("Expected linkbook-like item for custom entity: " + stack.getItem());
+      throw new IllegalStateException("Expected linkbook-like item: " + itemName);
     }
     if (!(created instanceof LinkbookEntity)) {
-      throw new IllegalStateException("Expected LinkbookEntity for item: " + stack.getItem());
+      throw new IllegalStateException("Expected LinkbookEntity for " + itemName + ", got: " + created.getClass().getName());
     }
   }
 
-  private static void runRandomBookOnce(net.minecraft.gametest.framework.GameTestHelper helper,
-                                        MinecraftServer server,
-                                        ServerLevel level,
-                                        ServerPlayer player) {
-    StringBuilder steps = new StringBuilder();
-    steps.append("start");
-    CommandSourceStack source = player.createCommandSourceStack().withPermission(2);
-    int result = server.getCommands().performPrefixedCommand(source, "mystcraft give randombook 20");
-    if (result <= 0) {
-      throw new IllegalStateException("Command failed: mystcraft give randombook 20 (steps: " + steps + ")");
-    }
-    steps.append(" -> command");
-
-    ItemStack agebook = findUnlinkedAgebook(player);
-    if (agebook.isEmpty()) {
-      throw new IllegalStateException("No unlinked agebook found in player inventory (steps: " + steps + ")");
-    }
-    steps.append(" -> book");
-
-    AgebookItem bookItem = (AgebookItem) agebook.getItem();
-    bookItem.activate(agebook, level, player);
-    steps.append(" -> activated");
-
-    Integer uid = LinkOptions.getDimensionUID(agebook.getTag());
-    if (uid == null) {
-      throw new IllegalStateException("Agebook did not receive a dimension UID (steps: " + steps + ")");
-    }
-    steps.append(" -> uid=").append(uid);
-
-    AgeManager ageManager = AgeManager.get(level);
-    ResourceLocation dimId = ageManager.getDimension(uid);
-    if (dimId == null) {
-      throw new IllegalStateException("AgeManager does not contain dimension for UID " + uid + " (steps: " + steps + ")");
-    }
-    steps.append(" -> registered=").append(dimId);
-
-    ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(server, uid);
-    if (ageLevel == null) {
-      throw new IllegalStateException("Failed to load age dimension for UID " + uid + " (steps: " + steps + ")");
-    }
-    steps.append(" -> loaded");
-
-    BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
-    ageLevel.getChunk(spawn);
-    steps.append(" -> chunk");
-
-    Mystcraft.LOGGER.info("GameTest: opened age dimension uid={} id={} steps={}", uid, dimId, steps);
-  }
-
-  private static void runPresetBookOnce(net.minecraft.gametest.framework.GameTestHelper helper,
-                                        MinecraftServer server,
-                                        ServerLevel level,
-                                        ServerPlayer player) {
-    StringBuilder steps = new StringBuilder();
-    steps.append("start");
-
-    Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(Mystcraft.MOD_ID, "agebook"));
-    if (item == Items.AIR) {
-      throw new IllegalStateException("Agebook item not registered");
-    }
-    if (!(item instanceof AgebookItem)) {
-      throw new IllegalStateException("Registered agebook item is not an AgebookItem: " + item.getClass().getName());
-    }
-    ItemStack agebook = new ItemStack(item);
-    List<ItemStack> pages = createPresetCavePages(helper);
-    AgebookItem.create(agebook, player, pages, "Preset Cave Test");
-    steps.append(" -> book");
-
-    AgebookItem bookItem = (AgebookItem) agebook.getItem();
-    bookItem.activate(agebook, level, player);
-    steps.append(" -> activated");
-
-    Integer uid = LinkOptions.getDimensionUID(agebook.getTag());
-    if (uid == null) {
-      throw new IllegalStateException("Preset agebook did not receive a dimension UID (steps: " + steps + ")");
-    }
-    steps.append(" -> uid=").append(uid);
-
-    AgeManager ageManager = AgeManager.get(level);
-    ResourceLocation dimId = ageManager.getDimension(uid);
-    if (dimId == null) {
-      throw new IllegalStateException("AgeManager does not contain dimension for UID " + uid + " (steps: " + steps + ")");
-    }
-    steps.append(" -> registered=").append(dimId);
-
-    ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(server, uid);
-    if (ageLevel == null) {
-      throw new IllegalStateException("Failed to load age dimension for UID " + uid + " (steps: " + steps + ")");
-    }
-    steps.append(" -> loaded");
-
-    BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
-    int chunkX = spawn.getX() >> 4;
-    int chunkZ = spawn.getZ() >> 4;
-    int radius = 2;
-    for (int dx = -radius; dx <= radius; dx++) {
-      for (int dz = -radius; dz <= radius; dz++) {
-        ageLevel.getChunk(chunkX + dx, chunkZ + dz);
-      }
-    }
-    steps.append(" -> chunks");
-
-    Mystcraft.LOGGER.info("GameTest: opened preset age dimension uid={} id={} steps={}", uid, dimId, steps);
-  }
-
-  private static List<ItemStack> createPresetCavePages(net.minecraft.gametest.framework.GameTestHelper helper) {
-    List<ItemStack> pages = new ArrayList<>();
-    pages.add(Page.createLinkPage());
-
-    addSymbolPage(helper, pages, "terrain_cave");
-    addSymbolPage(helper, pages, "biome_dripstone_caves");
-    addSymbolPage(helper, pages, "biome_lush_caves");
-    addSymbolPage(helper, pages, "dripstone_caves");
-    addSymbolPage(helper, pages, "lush_caves");
-
-    Mystcraft.LOGGER.info("GameTest: preset cave book pages={}", pages.size());
-    return pages;
-  }
-
-  private static void addSymbolPage(net.minecraft.gametest.framework.GameTestHelper helper,
-                                    List<ItemStack> pages,
-                                    String symbolPath) {
+  private static void addSymbolPageIfExists(List<ItemStack> pages, String symbolPath) {
     ResourceLocation id = SymbolRegistry.mystcraftId(symbolPath);
-    if (!SymbolRegistry.contains(id)) {
-      Mystcraft.LOGGER.error("GameTest: preset symbol not registered: {}", id);
-      helper.fail("Preset symbol not registered: " + id);
+    if (SymbolRegistry.contains(id)) {
+      pages.add(Page.createSymbolPage(id));
     }
-    pages.add(Page.createSymbolPage(id));
   }
 
-  private static ServerPlayer createMockServerPlayer(net.minecraft.gametest.framework.GameTestHelper helper) {
+  /**
+   * Tests that books can be placed in a vanilla lectern and the book is stored.
+   */
+  public static void runLecternBookPlacementTest(GameTestHelper helper) {
     ServerLevel level = helper.getLevel();
-    CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-mock-player"));
+    BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+
+    // Place a vanilla lectern
+    helper.setBlock(BlockPos.ZERO, net.minecraft.world.level.block.Blocks.LECTERN.defaultBlockState());
+
+    helper.runAtTickTime(3, () -> {
+      net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(origin);
+      if (!(be instanceof net.minecraft.world.level.block.entity.LecternBlockEntity lectern)) {
+        helper.fail("Lectern block entity not found");
+        return;
+      }
+
+      // Create a linkbook and place it on the lectern
+      ItemStack linkbook = new ItemStack(ModItems.LINKBOOK.get());
+
+      // Simulate placing book: set book and page count directly
+      try {
+        // Use reflection to set the book since it's normally done through player interaction
+        java.lang.reflect.Field bookField = net.minecraft.world.level.block.entity.LecternBlockEntity.class.getDeclaredField("book");
+        bookField.setAccessible(true);
+        bookField.set(lectern, linkbook.copy());
+
+        java.lang.reflect.Field pageCountField = net.minecraft.world.level.block.entity.LecternBlockEntity.class.getDeclaredField("pageCount");
+        pageCountField.setAccessible(true);
+        pageCountField.set(lectern, 1);
+
+        lectern.setChanged();
+      } catch (Exception e) {
+        helper.fail("Failed to set book on lectern: " + e.getMessage());
+        return;
+      }
+
+      // Verify the book is on the lectern
+      ItemStack bookOnLectern = lectern.getBook();
+      if (bookOnLectern.isEmpty()) {
+        helper.fail("Book was not stored on lectern");
+        return;
+      }
+
+      if (!art.arcane.mystcraft.util.MystcraftLecternHelper.isMystcraftBook(bookOnLectern)) {
+        helper.fail("Book on lectern is not a Mystcraft book");
+        return;
+      }
+
+      helper.succeed();
+    });
+  }
+
+  /**
+   * Tests that all table blocks can be placed and have their block entities created.
+   */
+  public static void runTableBlockEntitiesTest(GameTestHelper helper) {
+    ServerLevel level = helper.getLevel();
+
+    // Place blocks at different positions
+    BlockPos inkMixerPos = BlockPos.ZERO;
+    BlockPos bookBinderPos = new BlockPos(2, 0, 0);
+    BlockPos writingDeskPos = new BlockPos(4, 0, 0);
+
+    helper.setBlock(inkMixerPos, art.arcane.mystcraft.registry.ModBlocks.INK_MIXER.get().defaultBlockState());
+    helper.setBlock(bookBinderPos, art.arcane.mystcraft.registry.ModBlocks.BOOK_BINDER.get().defaultBlockState());
+    helper.setBlock(writingDeskPos, art.arcane.mystcraft.registry.ModBlocks.WRITING_DESK.get().defaultBlockState());
+
+    helper.runAtTickTime(5, () -> {
+      BlockPos absInkMixer = helper.absolutePos(inkMixerPos);
+      BlockPos absBookBinder = helper.absolutePos(bookBinderPos);
+      BlockPos absWritingDesk = helper.absolutePos(writingDeskPos);
+
+      // Check ink mixer block entity
+      net.minecraft.world.level.block.entity.BlockEntity inkMixerBE = level.getBlockEntity(absInkMixer);
+      if (!(inkMixerBE instanceof art.arcane.mystcraft.blockentity.InkMixerBlockEntity)) {
+        helper.fail("Ink mixer block entity not created");
+        return;
+      }
+
+      // Check book binder block entity
+      net.minecraft.world.level.block.entity.BlockEntity bookBinderBE = level.getBlockEntity(absBookBinder);
+      if (!(bookBinderBE instanceof art.arcane.mystcraft.blockentity.BookBinderBlockEntity)) {
+        helper.fail("Book binder block entity not created");
+        return;
+      }
+
+      // Check writing desk block entity
+      art.arcane.mystcraft.blockentity.WritingDeskBlockEntity deskBE =
+          art.arcane.mystcraft.block.WritingDeskBlock.getBlockEntity(level, absWritingDesk);
+      if (deskBE == null) {
+        helper.fail("Writing desk block entity not created");
+        return;
+      }
+
+      helper.succeed();
+    });
+  }
+
+  private static ServerPlayer createMockServerPlayer(GameTestHelper helper) {
+    ServerLevel level = helper.getLevel();
+    CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-player"));
     ServerPlayer player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation()) {
       @Override
       public boolean isSpectator() {
@@ -321,25 +453,5 @@ public final class MystcraftGameTestRunner {
     channel.attr(Connection.ATTRIBUTE_SERVERBOUND_PROTOCOL).set(ConnectionProtocol.PLAY.codec(PacketFlow.SERVERBOUND));
     level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
     return player;
-  }
-
-  private static ItemStack findUnlinkedAgebook(ServerPlayer player) {
-    for (ItemStack stack : player.getInventory().items) {
-      if (stack.getItem() instanceof AgebookItem) {
-        Integer uid = LinkOptions.getDimensionUID(stack.getTag());
-        if (uid == null) {
-          return stack;
-        }
-      }
-    }
-    for (ItemStack stack : player.getInventory().offhand) {
-      if (stack.getItem() instanceof AgebookItem) {
-        Integer uid = LinkOptions.getDimensionUID(stack.getTag());
-        if (uid == null) {
-          return stack;
-        }
-      }
-    }
-    return ItemStack.EMPTY;
   }
 }

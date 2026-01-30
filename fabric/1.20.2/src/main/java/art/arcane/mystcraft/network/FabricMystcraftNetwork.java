@@ -27,6 +27,7 @@ public final class FabricMystcraftNetwork {
   public static final ResourceLocation LINK_BOOK_ACTIVATE = new ResourceLocation(Mystcraft.MOD_ID, "link_book_activate");
   public static final ResourceLocation ENTITY_BOOK_ACTIVATE = new ResourceLocation(Mystcraft.MOD_ID, "entity_book_activate");
   public static final ResourceLocation BLOCK_BOOK_ACTIVATE = new ResourceLocation(Mystcraft.MOD_ID, "block_book_activate");
+  public static final ResourceLocation POCKET_HEAD_SYNC = new ResourceLocation(Mystcraft.MOD_ID, "pocket_head_sync");
 
   // Server -> Client
   public static final ResourceLocation SYNC_AGE_DATA = new ResourceLocation(Mystcraft.MOD_ID, "sync_age_data");
@@ -78,7 +79,13 @@ public final class FabricMystcraftNetwork {
       BlockBookActivatePacket.handle(packet, ctx);
     });
 
-    Mystcraft.LOGGER.info("[FabricMystcraftNetwork] Registered 13 network channels");
+    ServerPlayNetworking.registerGlobalReceiver(POCKET_HEAD_SYNC, (server, player, handler, buf, responseSender) -> {
+      PocketHeadSyncPacket packet = PocketHeadSyncPacket.decode(buf);
+      PacketContext ctx = createServerContext(server, player);
+      PocketHeadSyncPacket.handle(packet, ctx);
+    });
+
+    Mystcraft.LOGGER.info("[FabricMystcraftNetwork] Registered 14 network channels");
   }
 
   /**
@@ -191,6 +198,15 @@ public final class FabricMystcraftNetwork {
     FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
     BlockBookActivatePacket.encode(packet, buf);
     ClientPlayNetworking.send(BLOCK_BOOK_ACTIVATE, buf);
+  }
+
+  /**
+   * Sends a C->S PocketHeadSyncPacket.
+   */
+  public static void sendToServer(PocketHeadSyncPacket packet) {
+    FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+    PocketHeadSyncPacket.encode(packet, buf);
+    ClientPlayNetworking.send(POCKET_HEAD_SYNC, buf);
   }
 
   /**
@@ -323,6 +339,7 @@ public final class FabricMystcraftNetwork {
     else if (packet instanceof LinkBookActivatePacket p) sendToServer(p);
     else if (packet instanceof EntityBookActivatePacket p) sendToServer(p);
     else if (packet instanceof BlockBookActivatePacket p) sendToServer(p);
+    else if (packet instanceof PocketHeadSyncPacket p) sendToServer(p);
     else {
       Mystcraft.LOGGER.warn("[FabricMystcraftNetwork] Unknown C->S packet type: {}", packet.getClass().getName());
     }

@@ -465,9 +465,9 @@ public class AgeChunkGenerator extends ChunkGenerator {
         ResourceLocation loc = ResourceLocation.tryParse(id);
         if (loc != null) {
           net.minecraft.world.level.block.Block block = BuiltInRegistries.BLOCK.get(loc);
-          states[i] = block != null && block != Blocks.AIR ? block.defaultBlockState() : Blocks.OAK_PLANKS.defaultBlockState();
+          states[i] = block != null && block != Blocks.AIR ? block.defaultBlockState() : Blocks.WHITE_WOOL.defaultBlockState();
         } else {
-          states[i] = Blocks.OAK_PLANKS.defaultBlockState();
+          states[i] = Blocks.WHITE_WOOL.defaultBlockState();
         }
       }
       map.put(face, states);
@@ -1152,16 +1152,18 @@ public class AgeChunkGenerator extends ChunkGenerator {
         if (worldZ < boxMinZ || worldZ > boxMaxZ) continue;
 
         for (int worldY = boxMinY; worldY <= boxMaxY; worldY++) {
-          // Calculate distance from center for each axis
-          int distX = Math.abs(worldX);
-          int distY = Math.abs(worldY - centerY);
-          int distZ = Math.abs(worldZ);
-
           // Determine which layer this block is in (rectangular shell logic)
-          // For each axis, calculate how far into the shells we are
-          int layerX = distX < innerHalfXZ ? 0 : distX - innerHalfXZ;
-          int layerY = distY < innerHalfY ? 0 : distY - innerHalfY;
-          int layerZ = distZ < innerHalfXZ ? 0 : distZ - innerHalfXZ;
+          // Void spans from -innerHalf to innerHalf-1 (exactly 2*innerHalf blocks)
+          // Shell layer 1 starts at innerHalf (positive side) or -innerHalf-1 (negative side)
+          int layerX = worldX >= innerHalfXZ ? worldX - innerHalfXZ + 1
+                     : worldX < -innerHalfXZ ? -innerHalfXZ - worldX
+                     : 0;
+          int layerY = worldY >= centerY + innerHalfY ? worldY - (centerY + innerHalfY) + 1
+                     : worldY < centerY - innerHalfY ? (centerY - innerHalfY) - worldY
+                     : 0;
+          int layerZ = worldZ >= innerHalfXZ ? worldZ - innerHalfXZ + 1
+                     : worldZ < -innerHalfXZ ? -innerHalfXZ - worldZ
+                     : 0;
           int shellLayer = Math.max(Math.max(layerX, layerY), layerZ);
 
           if (shellLayer == 0) {
@@ -1197,20 +1199,24 @@ public class AgeChunkGenerator extends ChunkGenerator {
     if (pocketHeadBlocks == null) {
       return null;
     }
-    int boundaryXZ = innerHalfXZ + 1;
-    int boundaryY = innerHalfY + 1;
 
-    int distX = Math.abs(worldX);
-    int distY = Math.abs(worldY - centerY);
-    int distZ = Math.abs(worldZ);
-
+    // Face detection matches the shell layer 1 boundaries:
+    // Void spans from -innerHalf to innerHalf-1, so shell layer 1 is at:
+    // - Positive side: innerHalf
+    // - Negative side: -innerHalf - 1
     AgeData.PocketHeadFace face = null;
-    if (distY == boundaryY) {
-      face = worldY > centerY ? AgeData.PocketHeadFace.TOP : AgeData.PocketHeadFace.BOTTOM;
-    } else if (distZ == boundaryXZ) {
-      face = worldZ > 0 ? AgeData.PocketHeadFace.FRONT : AgeData.PocketHeadFace.BACK;
-    } else if (distX == boundaryXZ) {
-      face = worldX > 0 ? AgeData.PocketHeadFace.RIGHT : AgeData.PocketHeadFace.LEFT;
+    if (worldY == centerY + innerHalfY) {
+      face = AgeData.PocketHeadFace.TOP;
+    } else if (worldY == centerY - innerHalfY - 1) {
+      face = AgeData.PocketHeadFace.BOTTOM;
+    } else if (worldZ == innerHalfXZ) {
+      face = AgeData.PocketHeadFace.FRONT;
+    } else if (worldZ == -innerHalfXZ - 1) {
+      face = AgeData.PocketHeadFace.BACK;
+    } else if (worldX == innerHalfXZ) {
+      face = AgeData.PocketHeadFace.RIGHT;
+    } else if (worldX == -innerHalfXZ - 1) {
+      face = AgeData.PocketHeadFace.LEFT;
     }
 
     if (face == null) {
@@ -1222,15 +1228,16 @@ public class AgeChunkGenerator extends ChunkGenerator {
       return null;
     }
 
+    // Void spans from -innerHalf to innerHalf-1 (exactly 2*innerHalf blocks)
     int minX = -innerHalfXZ;
-    int maxX = innerHalfXZ;
+    int maxX = innerHalfXZ - 1;
     int minZ = -innerHalfXZ;
-    int maxZ = innerHalfXZ;
+    int maxZ = innerHalfXZ - 1;
     int minY = centerY - innerHalfY;
-    int maxY = centerY + innerHalfY;
+    int maxY = centerY + innerHalfY - 1;
 
-    int spanXZ = maxX - minX + 1;
-    int spanY = maxY - minY + 1;
+    int spanXZ = maxX - minX + 1;  // = 2 * innerHalfXZ
+    int spanY = maxY - minY + 1;   // = 2 * innerHalfY
 
     int u;
     int v;

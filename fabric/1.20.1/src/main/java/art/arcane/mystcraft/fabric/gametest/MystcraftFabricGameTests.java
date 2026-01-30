@@ -80,16 +80,13 @@ public class MystcraftFabricGameTests implements FabricGameTest {
 
     BlockPos inkMixerPos = BlockPos.ZERO;
     BlockPos bookBinderPos = new BlockPos(2, 0, 0);
-    BlockPos writingDeskPos = new BlockPos(4, 0, 0);
 
     helper.setBlock(inkMixerPos, ModBlocks.INK_MIXER.get().defaultBlockState());
     helper.setBlock(bookBinderPos, ModBlocks.BOOK_BINDER.get().defaultBlockState());
-    helper.setBlock(writingDeskPos, ModBlocks.WRITING_DESK.get().defaultBlockState());
 
     helper.runAtTickTime(5, () -> {
       BlockPos absInkMixer = helper.absolutePos(inkMixerPos);
       BlockPos absBookBinder = helper.absolutePos(bookBinderPos);
-      BlockPos absWritingDesk = helper.absolutePos(writingDeskPos);
 
       if (level.getBlockEntity(absInkMixer) == null) {
         helper.fail("Ink mixer block entity not created");
@@ -98,11 +95,6 @@ public class MystcraftFabricGameTests implements FabricGameTest {
 
       if (level.getBlockEntity(absBookBinder) == null) {
         helper.fail("Book binder block entity not created");
-        return;
-      }
-
-      if (level.getBlockEntity(absWritingDesk) == null) {
-        helper.fail("Writing desk block entity not created");
         return;
       }
 

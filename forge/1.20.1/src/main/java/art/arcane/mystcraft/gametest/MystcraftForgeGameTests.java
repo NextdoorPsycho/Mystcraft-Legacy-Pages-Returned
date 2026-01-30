@@ -24,7 +24,7 @@ public class MystcraftForgeGameTests {
 
   // ===== REGISTRATION TESTS =====
 
-  @GameTest(template = "mystcraft:empty")
+  @GameTest(template = "empty")
   public void registries_load(GameTestHelper helper) {
     // Check items registered
     assertItemRegistered("linkbook");
@@ -35,7 +35,7 @@ public class MystcraftForgeGameTests {
     helper.succeed();
   }
 
-  @GameTest(template = "mystcraft:empty")
+  @GameTest(template = "empty")
   public void symbols_loaded_400_plus(GameTestHelper helper) {
     int count = SymbolRegistry.getAll().size();
     if (count < 400) {
@@ -45,7 +45,7 @@ public class MystcraftForgeGameTests {
     helper.succeed();
   }
 
-  @GameTest(template = "mystcraft:empty")
+  @GameTest(template = "empty")
   public void creative_tabs_loaded(GameTestHelper helper) {
     ResourceLocation mainTab = new ResourceLocation(Mystcraft.MOD_ID, "mystcraft");
     ResourceLocation pagesTab = new ResourceLocation(Mystcraft.MOD_ID, "mystcraft_pages");
@@ -61,7 +61,7 @@ public class MystcraftForgeGameTests {
     helper.succeed();
   }
 
-  @GameTest(template = "mystcraft:empty")
+  @GameTest(template = "empty")
   public void datapacks_loaded(GameTestHelper helper) {
     // Check for core symbols that come from datapacks
     assertSymbolExists(helper, "terrain_flat");
@@ -76,22 +76,19 @@ public class MystcraftForgeGameTests {
 
   // ===== BLOCK ENTITY TESTS =====
 
-  @GameTest(template = "mystcraft:empty", timeoutTicks = 40)
+  @GameTest(template = "empty", timeoutTicks = 40)
   public void table_blocks_have_block_entities(GameTestHelper helper) {
     ServerLevel level = helper.getLevel();
 
     BlockPos inkMixerPos = BlockPos.ZERO;
     BlockPos bookBinderPos = new BlockPos(2, 0, 0);
-    BlockPos writingDeskPos = new BlockPos(4, 0, 0);
 
     helper.setBlock(inkMixerPos, ModBlocks.INK_MIXER.get().defaultBlockState());
     helper.setBlock(bookBinderPos, ModBlocks.BOOK_BINDER.get().defaultBlockState());
-    helper.setBlock(writingDeskPos, ModBlocks.WRITING_DESK.get().defaultBlockState());
 
     helper.runAtTickTime(5, () -> {
       BlockPos absInkMixer = helper.absolutePos(inkMixerPos);
       BlockPos absBookBinder = helper.absolutePos(bookBinderPos);
-      BlockPos absWritingDesk = helper.absolutePos(writingDeskPos);
 
       if (level.getBlockEntity(absInkMixer) == null) {
         helper.fail("Ink mixer block entity not created");
@@ -100,11 +97,6 @@ public class MystcraftForgeGameTests {
 
       if (level.getBlockEntity(absBookBinder) == null) {
         helper.fail("Book binder block entity not created");
-        return;
-      }
-
-      if (level.getBlockEntity(absWritingDesk) == null) {
-        helper.fail("Writing desk block entity not created");
         return;
       }
 

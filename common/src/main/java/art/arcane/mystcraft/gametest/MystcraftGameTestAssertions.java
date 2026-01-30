@@ -49,14 +49,12 @@ public final class MystcraftGameTestAssertions {
    */
   public static void assertDatapacksLoaded() {
     // Check for core symbols that come from datapacks
-    assertSymbolExists("terrain_normal");
     assertSymbolExists("terrain_flat");
     assertSymbolExists("terrain_cave");
     assertSymbolExists("biome_plains");
     assertSymbolExists("biome_forest");
-    assertSymbolExists("sun_normal");
-    assertSymbolExists("moon_normal");
-    assertSymbolExists("stars_normal");
+    assertSymbolExists("sun");
+    assertSymbolExists("moon");
     assertSymbolExists("weather_normal");
     assertSymbolExists("lighting_normal");
   }

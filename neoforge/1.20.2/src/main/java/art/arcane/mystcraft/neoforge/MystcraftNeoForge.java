@@ -51,6 +51,10 @@ public class MystcraftNeoForge {
 
     modEventBus.addListener(this::commonSetup);
     modEventBus.addListener(MystcraftRegistries::onBuildCreativeTabContents);
+    modEventBus.addListener((net.neoforged.neoforge.event.RegisterGameTestsEvent event) -> {
+      Mystcraft.LOGGER.info("[Mystcraft] Registering GameTests (NeoForge)");
+      event.register(art.arcane.mystcraft.gametest.MystcraftNeoForgeGameTests.class);
+    });
 
     NeoForge.EVENT_BUS.register(this);
 

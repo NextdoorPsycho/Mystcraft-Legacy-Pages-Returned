@@ -22,3 +22,9 @@ mutable field net/minecraft/world/level/levelgen/structure/pools/StructureTempla
 
 # CriteriaTriggers - Custom advancement triggers (1.20.1 signature)
 accessible method net/minecraft/advancements/CriteriaTriggers register (Lnet/minecraft/advancements/CriterionTrigger;)Lnet/minecraft/advancements/CriterionTrigger;
+
+# LecternBlockEntity - Book placement for Mystcraft books
+accessible field net/minecraft/world/level/block/entity/LecternBlockEntity book Lnet/minecraft/world/item/ItemStack;
+mutable field net/minecraft/world/level/block/entity/LecternBlockEntity book Lnet/minecraft/world/item/ItemStack;
+accessible field net/minecraft/world/level/block/entity/LecternBlockEntity pageCount I
+mutable field net/minecraft/world/level/block/entity/LecternBlockEntity pageCount I

@@ -64,7 +64,7 @@ dependencies {
 }
 
 tasks.named('compileJava', JavaCompile) {
-    // Add common sources with exclusions for 1.20.2-specific classes
+    // Add common sources with exclusions for 1.20.2-specific classes and platform-specific overrides
     source(project(':common').sourceSets.main.allSource.matching {
         exclude '**/gametest/**'
         exclude '**/client/screen/**'
@@ -73,6 +73,8 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
         exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
         exclude '**/advancements/WritingDeskWriteTrigger.java'
+        // Platform-specific packet implementations (use access widener for direct field access)
+        exclude '**/network/LecternBookSyncPacket.java'
     })
     // The module's own src/main/java sources (including 1.20.1-specific screens)
     // are automatically included via sourceSets.main

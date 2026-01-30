@@ -68,7 +68,10 @@ dependencies {
 }
 
 tasks.named('compileJava', JavaCompile) {
-    source(project(':common').sourceSets.main.allSource)
+    source(project(':common').sourceSets.main.allSource.matching {
+        // Platform-specific packet implementations (use access transformer for direct field access)
+        exclude '**/network/LecternBookSyncPacket.java'
+    })
 }
 
 tasks.named('processResources', ProcessResources) {

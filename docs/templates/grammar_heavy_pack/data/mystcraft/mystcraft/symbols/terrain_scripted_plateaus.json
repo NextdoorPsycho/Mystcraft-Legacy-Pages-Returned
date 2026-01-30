@@ -21,11 +21,20 @@
             "a": 62,
             "b": {
               "op": "mul",
-              "a": { "op": "cell", "mode": "square", "size": 96, "seed": 111, "min": 0.0, "max": 1.0 },
+              "a": {
+                "op": "cell",
+                "mode": "square",
+                "size": 96,
+                "seed": 111,
+                "min": 0.0,
+                "max": 1.0
+              },
               "b": 40
             }
           },
-          "b": { "var": "y" }
+          "b": {
+            "var": "y"
+          }
         }
       }
     }

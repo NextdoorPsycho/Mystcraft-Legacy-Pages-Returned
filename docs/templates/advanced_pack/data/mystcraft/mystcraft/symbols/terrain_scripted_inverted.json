@@ -20,19 +20,33 @@
         },
         "density": {
           "op": "sub",
-          "a": { "var": "y" },
+          "a": {
+            "var": "y"
+          },
           "b": {
             "op": "add",
-            "a": { "var": "base_height" },
+            "a": {
+              "var": "base_height"
+            },
             "b": {
               "op": "mul",
-              "a": { "op": "noise2", "scale": 0.01, "octaves": 5, "seed": 1337 },
-              "b": { "var": "height_amp" }
+              "a": {
+                "op": "noise2",
+                "scale": 0.01,
+                "octaves": 5,
+                "seed": 1337
+              },
+              "b": {
+                "var": "height_amp"
+              }
             }
           }
         }
       }
     },
-    { "type": "add_instability", "value": 8.0 }
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
   ]
 }

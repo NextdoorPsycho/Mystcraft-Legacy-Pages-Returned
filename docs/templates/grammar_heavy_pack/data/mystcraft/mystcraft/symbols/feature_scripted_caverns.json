@@ -17,10 +17,21 @@
         "density": {
           "op": "sub",
           "a": 0.4,
-          "b": { "op": "abs", "input": { "op": "noise3", "scale": 0.025, "octaves": 4, "seed": 222 } }
+          "b": {
+            "op": "abs",
+            "input": {
+              "op": "noise3",
+              "scale": 0.025,
+              "octaves": 4,
+              "seed": 222
+            }
+          }
         }
       }
     },
-    { "type": "add_instability", "value": 7.0 }
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
   ]
 }

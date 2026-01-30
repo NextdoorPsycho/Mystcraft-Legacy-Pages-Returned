@@ -1183,14 +1183,14 @@ public class AgeChunkGenerator extends ChunkGenerator {
           // Void spans from -innerHalf to innerHalf-1 (exactly 2*innerHalf blocks)
           // Shell layer 1 starts at innerHalf (positive side) or -innerHalf-1 (negative side)
           int layerX = worldX >= innerHalfXZ ? worldX - innerHalfXZ + 1
-                     : worldX < -innerHalfXZ ? -innerHalfXZ - worldX
-                     : 0;
+              : worldX < -innerHalfXZ ? -innerHalfXZ - worldX
+              : 0;
           int layerY = worldY >= centerY + innerHalfY ? worldY - (centerY + innerHalfY) + 1
-                     : worldY < centerY - innerHalfY ? (centerY - innerHalfY) - worldY
-                     : 0;
+              : worldY < centerY - innerHalfY ? (centerY - innerHalfY) - worldY
+              : 0;
           int layerZ = worldZ >= innerHalfXZ ? worldZ - innerHalfXZ + 1
-                     : worldZ < -innerHalfXZ ? -innerHalfXZ - worldZ
-                     : 0;
+              : worldZ < -innerHalfXZ ? -innerHalfXZ - worldZ
+              : 0;
           int shellLayer = Math.max(Math.max(layerX, layerY), layerZ);
 
           if (shellLayer == 0) {

@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.entity.LecternBlockEntity;
 /**
  * Packet sent from server to client to sync Mystcraft book data in a vanilla lectern.
  * This is needed because vanilla's LecternBlockEntity doesn't sync non-vanilla books.
- *
+ * <p>
  * Fabric-specific implementation using direct field access via access widener.
  */
 public record LecternBookSyncPacket(BlockPos pos, ItemStack book) {

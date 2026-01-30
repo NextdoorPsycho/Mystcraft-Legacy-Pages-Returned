@@ -23,7 +23,11 @@ and a grammar file that can select them.
 3) Generate a random age or craft pages for any of the symbols above.
 
 Notes:
-- If you want grammar to ignore a symbol, remove its `grammar` field or set `"grammar": false`.
-- The "Sky Islets (Feature)" symbol registers a scripted generator; if you want it
-  to act as a true feature instead of base terrain, leave it out or convert it to
+
+- If you want grammar to ignore a symbol, remove its `grammar` field or set
+  `"grammar": false`.
+- The "Sky Islets (Feature)" symbol registers a scripted generator; if you want
+  it
+  to act as a true feature instead of base terrain, leave it out or convert it
+  to
   a populator/alteration instead.

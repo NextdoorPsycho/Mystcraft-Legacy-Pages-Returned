@@ -1,24 +1,16 @@
 package art.arcane.mystcraft.gametest;
 
 import art.arcane.mystcraft.Mystcraft;
-import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
-import art.arcane.mystcraft.world.AgeDimensionFactory;
-import art.arcane.mystcraft.world.AgeManager;
 import com.mojang.authlib.GameProfile;
-import io.netty.channel.embedded.EmbeddedChannel;
-import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
-import net.minecraft.network.ConnectionProtocol;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -32,14 +24,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class MystcraftGameTestRunner {
 
@@ -386,16 +375,6 @@ public final class MystcraftGameTestRunner {
     }
   }
 
-  private static final class TestLinkbookItem extends art.arcane.mystcraft.item.LinkbookItem {
-    private TestLinkbookItem(Properties properties) {
-      super(properties);
-    }
-
-    private void testOnLink(@NotNull ItemStack stack, Level level, Entity entity) {
-      super.onLink(stack, level, entity);
-    }
-  }
-
   private static void addSymbolPageIfExists(List<ItemStack> pages, String symbolPath) {
     ResourceLocation id = SymbolRegistry.mystcraftId(symbolPath);
     if (SymbolRegistry.contains(id)) {
@@ -522,5 +501,15 @@ public final class MystcraftGameTestRunner {
     // Set basic position without full registration
     player.moveTo(level.getSharedSpawnPos(), 0.0F, 0.0F);
     return player;
+  }
+
+  private static final class TestLinkbookItem extends art.arcane.mystcraft.item.LinkbookItem {
+    private TestLinkbookItem(Properties properties) {
+      super(properties);
+    }
+
+    private void testOnLink(@NotNull ItemStack stack, Level level, Entity entity) {
+      super.onLink(stack, level, entity);
+    }
   }
 }

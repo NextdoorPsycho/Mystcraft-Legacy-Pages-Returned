@@ -17,6 +17,7 @@
 package net.fabricmc.fabric.api.gametest.v1;
 
 import java.lang.reflect.Method;
+
 import net.fabricmc.fabric.impl.gametest.FabricGameTestHelper;
 import net.minecraft.class_4516;
 
@@ -24,21 +25,21 @@ import net.minecraft.class_4516;
  * This interface can be optionally implemented on your test class.
  */
 public interface FabricGameTest {
-	/**
-	 * Use in {@link net.minecraft.class_6302} structureName to use an empty 8x8 structure for the test.
-	 */
-	String EMPTY_STRUCTURE = "fabric-gametest-api-v1:empty";
+  /**
+   * Use in {@link net.minecraft.class_6302} structureName to use an empty 8x8 structure for the test.
+   */
+  String EMPTY_STRUCTURE = "fabric-gametest-api-v1:empty";
 
-	/**
-	 * Override this method to implement custom logic to invoke the test method.
-	 * This can be used to run code before or after each test.
-	 * You can also pass in custom objects into the test method if desired.
-	 * The structure will have been placed in the world before this method is invoked.
-	 *
-	 * @param context The vanilla test context
-	 * @param method The test method to invoke
-	 */
-	default void invokeTestMethod(class_4516 context, Method method) {
-		FabricGameTestHelper.invokeTestMethod(context, method, this);
-	}
+  /**
+   * Override this method to implement custom logic to invoke the test method.
+   * This can be used to run code before or after each test.
+   * You can also pass in custom objects into the test method if desired.
+   * The structure will have been placed in the world before this method is invoked.
+   *
+   * @param context The vanilla test context
+   * @param method  The test method to invoke
+   */
+  default void invokeTestMethod(class_4516 context, Method method) {
+    FabricGameTestHelper.invokeTestMethod(context, method, this);
+  }
 }

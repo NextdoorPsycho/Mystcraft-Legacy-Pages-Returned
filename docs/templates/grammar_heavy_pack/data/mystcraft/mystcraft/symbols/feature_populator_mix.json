@@ -21,6 +21,9 @@
         "mystcraft:huge_trees"
       ]
     },
-    { "type": "add_instability", "value": 3.0 }
+    {
+      "type": "add_instability",
+      "value": 3.0
+    }
   ]
 }

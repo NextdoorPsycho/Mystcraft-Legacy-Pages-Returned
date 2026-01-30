@@ -19,6 +19,9 @@
         "mystcraft:deep_lakes"
       ]
     },
-    { "type": "add_instability", "value": 4.0 }
+    {
+      "type": "add_instability",
+      "value": 4.0
+    }
   ]
 }

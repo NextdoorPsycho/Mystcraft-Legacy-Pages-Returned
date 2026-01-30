@@ -21,4 +21,6 @@ This is a ready-to-copy datapack template for scripted terrain.
 4) Edit `terrain_scripted_template.json` to change the density expression.
 
 Notes:
-- If you don’t want grammar picks, remove the `grammar` object or set `"grammar": false`.
+
+- If you don’t want grammar picks, remove the `grammar` object or set
+  `"grammar": false`.

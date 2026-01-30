@@ -9,6 +9,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
 import net.minecraft.gametest.framework.GameTest;
 
 /**
@@ -24,13 +25,13 @@ import net.minecraft.gametest.framework.GameTest;
  * @see GameTestHolder
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE, ElementType.METHOD })
+@Target({ElementType.TYPE, ElementType.METHOD})
 public @interface PrefixGameTestTemplate {
-    /**
-     * Whether to prefix the game test template with the containing class' {@link Class#getSimpleName() simple name}.
-     * For example, true in a class named "MyTest" would result in "mytest.structure" while false would result in "structure".
-     * <p>
-     * Only applies to methods annotated with {@link GameTest}.
-     */
-    boolean value() default true;
+  /**
+   * Whether to prefix the game test template with the containing class' {@link Class#getSimpleName() simple name}.
+   * For example, true in a class named "MyTest" would result in "mytest.structure" while false would result in "structure".
+   * <p>
+   * Only applies to methods annotated with {@link GameTest}.
+   */
+  boolean value() default true;
 }

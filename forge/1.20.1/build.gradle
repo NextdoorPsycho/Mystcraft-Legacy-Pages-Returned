@@ -137,7 +137,7 @@ tasks.named('processResources', ProcessResources) {
             content = content.replace('versionRange = "[48.1.0,)"', 'versionRange = "[47.0.0,)"')
             // Fix description (Gradle's task description leaks through)
             content = content.replace("description = '''Processes main resources.'''",
-                "description = '''Mystcraft 2 Legacy - Pages Returned brings the Myst series to Minecraft, allowing players to write and travel to custom Ages (dimensions).'''")
+                    "description = '''Mystcraft 2 Legacy - Pages Returned brings the Myst series to Minecraft, allowing players to write and travel to custom Ages (dimensions).'''")
             modsToml.text = content
         }
     }

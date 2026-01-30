@@ -3,25 +3,58 @@
     {
       "token": "mystcraft:age",
       "productions": [
-        ["mystcraft:terrain", "mystcraft:biome_controller", "mystcraft:weather"],
-        ["mystcraft:terrain", "mystcraft:biome_controller", "mystcraft:weather", "mystcraft:feature_medium"],
-        ["mystcraft:terrain", "mystcraft:biome_controller", "mystcraft:weather", "mystcraft:feature_large"],
-        ["mystcraft:terrain", "mystcraft:biome_controller", "mystcraft:weather", "mystcraft:feature_large", "mystcraft:feature_medium"]
+        [
+          "mystcraft:terrain",
+          "mystcraft:biome_controller",
+          "mystcraft:weather"
+        ],
+        [
+          "mystcraft:terrain",
+          "mystcraft:biome_controller",
+          "mystcraft:weather",
+          "mystcraft:feature_medium"
+        ],
+        [
+          "mystcraft:terrain",
+          "mystcraft:biome_controller",
+          "mystcraft:weather",
+          "mystcraft:feature_large"
+        ],
+        [
+          "mystcraft:terrain",
+          "mystcraft:biome_controller",
+          "mystcraft:weather",
+          "mystcraft:feature_large",
+          "mystcraft:feature_medium"
+        ]
       ]
     },
     {
       "token": "mystcraft:terrain",
       "productions": [
-        ["mystcraft:terrain"],
-        ["mystcraft:terrain", "mystcraft:feature_large"],
-        ["mystcraft:terrain", "mystcraft:feature_medium"]
+        [
+          "mystcraft:terrain"
+        ],
+        [
+          "mystcraft:terrain",
+          "mystcraft:feature_large"
+        ],
+        [
+          "mystcraft:terrain",
+          "mystcraft:feature_medium"
+        ]
       ]
     },
     {
       "token": "mystcraft:feature_large",
       "productions": [
-        ["mystcraft:feature_large"],
-        ["mystcraft:feature_large", "mystcraft:feature_medium"]
+        [
+          "mystcraft:feature_large"
+        ],
+        [
+          "mystcraft:feature_large",
+          "mystcraft:feature_medium"
+        ]
       ]
     }
   ]

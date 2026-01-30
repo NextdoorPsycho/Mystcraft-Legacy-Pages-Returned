@@ -16,4 +16,5 @@ combine them in multiple ways.
 
 - All symbols allow random generation and have explicit grammar tokens.
 - Tweak ranks in the symbol files to bias selection.
-- Adjust productions in `grammar/world.json` to change how often features appear.
+- Adjust productions in `grammar/world.json` to change how often features
+  appear.

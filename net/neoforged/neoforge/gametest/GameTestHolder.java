@@ -9,6 +9,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestGenerator;
 
@@ -19,8 +20,8 @@ import net.minecraft.gametest.framework.GameTestGenerator;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface GameTestHolder {
-    /**
-     * Used as the default {@link GameTest#templateNamespace() template namespace} for any game tests in the class that do not specify one.
-     */
-    String value() default "minecraft";
+  /**
+   * Used as the default {@link GameTest#templateNamespace() template namespace} for any game tests in the class that do not specify one.
+   */
+  String value() default "minecraft";
 }

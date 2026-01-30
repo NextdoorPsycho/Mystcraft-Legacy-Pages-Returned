@@ -7,7 +7,8 @@ Exact names and locations may vary by loader version.
 
 - Starter guidebook on first spawn
 - Max symbols per book
-- Dropped books become living entities (LinkbookEntity) instead of normal item drops
+- Dropped books become living entities (LinkbookEntity) instead of normal item
+  drops
 - Drop books on read (linking) or keep them in your inventory
 - Allow or disallow unstable Ages
 - Instability multiplier and max allowed instability
@@ -16,12 +17,14 @@ Exact names and locations may vary by loader version.
 
 ## Tips
 
-- If you want safer Ages, reduce instability multiplier and increase allowed symbols.
+- If you want safer Ages, reduce instability multiplier and increase allowed
+  symbols.
 - If you want chaos, raise multipliers and reduce symbol counts.
 - Use blacklists to remove symbols that break balance for your pack.
 
 ## Datapack Overrides
 
 Datapacks can override symbols and grammar:
+
 - `data/<namespace>/mystcraft/symbols/`
 - `data/<namespace>/mystcraft/grammar/`

@@ -12,7 +12,7 @@
 ## Creating an Age (Descriptive Book)
 
 1) Gather pages:
-   - Terrain, Biomes, Weather, Lighting, Features, Structures, Colors.
+    - Terrain, Biomes, Weather, Lighting, Features, Structures, Colors.
 2) Write them into a book in your desired order.
 3) Open the Descriptive Book to link to the new Age.
 
@@ -42,6 +42,7 @@ Link flags can be applied with inks or modifiers (if enabled).
 3) Reload with `/reload`.
 
 See:
+
 - `docs/Datapack-System-Detailed.md`
 - `docs/ScriptedTerrain-Overview.md`
 - `docs/ScriptedTerrain-Reference.md`

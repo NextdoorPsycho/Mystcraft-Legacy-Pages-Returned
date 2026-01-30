@@ -13,8 +13,8 @@ import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundInitializeBorderPacket;
 import net.minecraft.resources.ResourceLocation;
@@ -67,17 +67,19 @@ public final class PersonalPocketDimension {
   private static final int PERSONAL_UID_OFFSET = 1_000_000_000;
   private static final int PERSONAL_UID_RANGE = 1_000_000_000;
   /**
-   * Track if we've logged version-based capping warnings.
-   */
-  private static boolean loggedYCap = false;
-  private static boolean loggedXZCap = false;
-
-  /**
    * Pre-generation cache for head blocks. Stores blocks by ageUID before dimension creation
    * so the chunk generator can access them during initial terrain generation.
    */
   private static final java.util.Map<Integer, java.util.Map<AgeData.PocketHeadFace, java.util.List<String>>> preGenHeadBlocksCache =
       new java.util.concurrent.ConcurrentHashMap<>();
+  /**
+   * Track if we've logged version-based capping warnings.
+   */
+  private static boolean loggedYCap = false;
+  private static boolean loggedXZCap = false;
+
+  private PersonalPocketDimension() {
+  }
 
   /**
    * Gets pre-generation head blocks for the given age UID, if available.
@@ -91,9 +93,6 @@ public final class PersonalPocketDimension {
    */
   public static void clearPreGenHeadBlocks(int ageUID) {
     preGenHeadBlocksCache.remove(ageUID);
-  }
-
-  private PersonalPocketDimension() {
   }
 
   // --- Dimension limit detection ---
@@ -552,7 +551,7 @@ public final class PersonalPocketDimension {
       for (int y = minY; y <= maxY; y++) {
         // UV calculation matching chunk generator
         int u = mirrorU ? ((innerHalfXZ - 1 - x) * 8) / spanXZ
-                        : ((x + innerHalfXZ) * 8) / spanXZ;
+            : ((x + innerHalfXZ) * 8) / spanXZ;
         int v = ((centerY + innerHalfY - 1 - y) * 8) / spanY;
         int px = Math.max(0, Math.min(7, u));
         int py = Math.max(0, Math.min(7, v));
@@ -585,7 +584,7 @@ public final class PersonalPocketDimension {
       for (int y = minY; y <= maxY; y++) {
         // UV calculation matching chunk generator
         int u = mirrorU ? ((innerHalfXZ - 1 - z) * 8) / spanXZ
-                        : ((z + innerHalfXZ) * 8) / spanXZ;
+            : ((z + innerHalfXZ) * 8) / spanXZ;
         int v = ((centerY + innerHalfY - 1 - y) * 8) / spanY;
         int px = Math.max(0, Math.min(7, u));
         int py = Math.max(0, Math.min(7, v));
@@ -614,7 +613,7 @@ public final class PersonalPocketDimension {
         // UV calculation matching chunk generator
         int u = ((x + innerHalfXZ) * 8) / spanXZ;
         int v = flipV ? ((z + innerHalfXZ) * 8) / spanXZ
-                      : ((innerHalfXZ - 1 - z) * 8) / spanXZ;
+            : ((innerHalfXZ - 1 - z) * 8) / spanXZ;
         int px = Math.max(0, Math.min(7, u));
         int py = Math.max(0, Math.min(7, v));
         BlockState state = getBlockFromList(blocks, px, py);

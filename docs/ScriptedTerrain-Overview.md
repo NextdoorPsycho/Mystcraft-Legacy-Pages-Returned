@@ -13,9 +13,9 @@ hex tile plateaus, floating islets, cavern lattices, and more.
 ## How it fits into Ages
 
 1) A symbol JSON registers a scripted terrain generator:
-   - logic.type = "register_terrain_generator"
-   - id = "mystcraft:scripted"
-   - params.density = JSON expression
+    - logic.type = "register_terrain_generator"
+    - id = "mystcraft:scripted"
+    - params.density = JSON expression
 
 2) The generator becomes the active terrain generator for the Age.
 
@@ -27,27 +27,28 @@ hex tile plateaus, floating islets, cavern lattices, and more.
   data/<namespace>/mystcraft/symbols/
 
 Example path:
+
 - data/mystcraft/mystcraft/symbols/terrain_scripted_example.json
 
 ## Minimal symbol example
 
 {
-  "category": "terrain",
-  "card_rank": 4,
-  "instability_cost": 6.0,
-  "display_name": "Scripted Example",
-  "logic": [
-    {
-      "type": "register_terrain_generator",
-      "id": "mystcraft:scripted",
-      "params": {
-        "name": "example",
-        "density": {
-          "op": "sub",
-          "a": 64,
-          "b": { "var": "y" }
-        }
-      }
-    }
-  ]
+"category": "terrain",
+"card_rank": 4,
+"instability_cost": 6.0,
+"display_name": "Scripted Example",
+"logic": [
+{
+"type": "register_terrain_generator",
+"id": "mystcraft:scripted",
+"params": {
+"name": "example",
+"density": {
+"op": "sub",
+"a": 64,
+"b": { "var": "y" }
+}
+}
+}
+]
 }

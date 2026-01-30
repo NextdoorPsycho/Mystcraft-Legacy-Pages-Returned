@@ -1,6 +1,7 @@
 # Project Structure & Docs Layout
 
 ## Project Directory
+
 The project follows a multi-loader structure:
 
 - `common/`

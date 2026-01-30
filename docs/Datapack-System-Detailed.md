@@ -44,7 +44,8 @@ my_mystcraft_pack/
 Symbols define a card/page that can be written into an Age.
 A symbol can set flags, register generators, add instability, etc.
 
-Below is a **fully annotated** symbol that registers a scripted terrain generator
+Below is a **fully annotated** symbol that registers a scripted terrain
+generator
 and uses grammar customization.
 
 ```
@@ -119,28 +120,32 @@ and uses grammar customization.
 - `allow_random`: Can appear in random ages.
 - `can_duplicate`: Can appear more than once in the same age.
 - `grammar`: Controls how the grammar system selects this symbol:
-  - `token`: the grammar token this symbol binds to.
-  - `rank`: weight rank for grammar selection.
+    - `token`: the grammar token this symbol binds to.
+    - `rank`: weight rank for grammar selection.
 - `logic`: List of actions executed when the symbol is applied.
 
 ---
 
 ## 3) Symbol Logic: Common Actions
 
-These are the most useful `logic.type` entries. Each is a JSON object in `logic`.
+These are the most useful `logic.type` entries. Each is a JSON object in
+`logic`.
 
 ### Flags (feature toggles)
+
 ```
 { "type": "set_flag", "flag": "tendrils_enabled", "value": true }
 ```
 
 Common flags include:
+
 - `floating_islands_enabled`, `tendrils_enabled`, `spheres_enabled`
 - `perlin_worms_enabled`, `spikes_enabled`, `crystals_enabled`
 - `deep_lakes_enabled`, `surface_lakes_enabled`
 - structure flags like `villages_enabled`, `strongholds_enabled`
 
 ### Register terrain alteration
+
 ```
 {
   "type": "register_terrain_alteration",
@@ -150,6 +155,7 @@ Common flags include:
 ```
 
 ### Register populator
+
 ```
 {
   "type": "register_populator",
@@ -159,6 +165,7 @@ Common flags include:
 ```
 
 ### Register populator pool (random picks)
+
 ```
 {
   "type": "register_populator_pool",
@@ -172,6 +179,7 @@ Common flags include:
 ```
 
 ### Register terrain generator (scripted)
+
 ```
 {
   "type": "register_terrain_generator",
@@ -243,10 +251,11 @@ Each file defines rules for tokens.
 ```
 
 How to read it:
+
 - `token`: the grammar token being expanded.
 - `productions`: each is a list of tokens.
-  - This example says an age is a terrain + biome controller + weather.
-  - Terrain can optionally add a large feature.
+    - This example says an age is a terrain + biome controller + weather.
+    - Terrain can optionally add a large feature.
 
 ### 4.3 Rank Weights
 
@@ -335,4 +344,5 @@ my_mystcraft_pack/
 - If a world is empty: your density expression is <= 0 everywhere.
 - If the world is solid: density is always > 0.
 - If nothing happens: ensure the symbol is used in the age OR grammar picks it.
-- If grammar ignores a symbol: check `allow_random`, `grammar` binding, and category.
+- If grammar ignores a symbol: check `allow_random`, `grammar` binding, and
+  category.

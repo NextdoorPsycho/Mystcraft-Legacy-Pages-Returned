@@ -25,8 +25,21 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
 
   private static final String TAG_INVENTORY = "inventory";
   private boolean loading = false;
+
   public BookReceptacleBlockEntity(BlockPos pos, BlockState blockState) {
     super(ModBlockEntities.BOOK_RECEPTACLE.get(), pos, blockState);
+  }
+
+  /**
+   * Checks if a stack can activate a portal.
+   * Valid items are Linkbooks and Agebooks with link data.
+   */
+  public static boolean isValidPortalActivator(ItemStack stack) {
+    if (stack.isEmpty()) {
+      return false;
+    }
+    // Accept linkbooks and agebooks
+    return stack.getItem() instanceof LinkbookItem || stack.getItem() instanceof AgebookItem;
   }  private final SimpleContainer inventory = new SimpleContainer(1) {
     @Override
     public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
@@ -45,18 +58,6 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
       handleBookChange();
     }
   };
-
-  /**
-   * Checks if a stack can activate a portal.
-   * Valid items are Linkbooks and Agebooks with link data.
-   */
-  public static boolean isValidPortalActivator(ItemStack stack) {
-    if (stack.isEmpty()) {
-      return false;
-    }
-    // Accept linkbooks and agebooks
-    return stack.getItem() instanceof LinkbookItem || stack.getItem() instanceof AgebookItem;
-  }
 
   /**
    * Gets the inventory container for external access.

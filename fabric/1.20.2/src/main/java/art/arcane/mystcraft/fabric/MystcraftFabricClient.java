@@ -1,13 +1,13 @@
 package art.arcane.mystcraft.fabric;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.client.PocketHeadClientSync;
 import art.arcane.mystcraft.client.model.BookstandModel;
 import art.arcane.mystcraft.client.model.WritingDeskModel;
 import art.arcane.mystcraft.client.render.DrawableWordManager;
 import art.arcane.mystcraft.client.render.PageItemRendererBEWLR;
 import art.arcane.mystcraft.client.renderer.*;
 import art.arcane.mystcraft.client.screen.*;
-import art.arcane.mystcraft.client.PocketHeadClientSync;
 import art.arcane.mystcraft.network.FabricMystcraftNetwork;
 import art.arcane.mystcraft.registry.FabricRegistries;
 import net.fabricmc.api.ClientModInitializer;

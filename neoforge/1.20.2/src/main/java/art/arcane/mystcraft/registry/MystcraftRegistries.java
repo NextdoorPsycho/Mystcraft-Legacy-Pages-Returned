@@ -127,14 +127,11 @@ public final class MystcraftRegistries {
           () -> new InkMixerBlock(BlockBehaviour.Properties.of()
               .mapColor(MapColor.WOOD)
               .strength(2.5F)
-              .requiresCorrectToolForDrops()));  public static final DeferredHolder<Fluid, FlowingFluid> BLACK_INK_SOURCE =
+              .requiresCorrectToolForDrops()));
+  // Block items
+  public static final DeferredHolder<Item, Item> INK_MIXER_ITEM = blockItem("blockinkmixer", INK_MIXER);  public static final DeferredHolder<Fluid, FlowingFluid> BLACK_INK_SOURCE =
       FLUIDS.register("black_ink",
           () -> new BlackInkFluid.Source(BlackInkFluid.createProperties()));
-  // Block items
-  public static final DeferredHolder<Item, Item> INK_MIXER_ITEM = blockItem("blockinkmixer", INK_MIXER);  public static final DeferredHolder<Fluid, FlowingFluid> BLACK_INK_FLOWING =
-      FLUIDS.register("black_ink_flowing",
-          () -> new BlackInkFluid.Flowing(BlackInkFluid.createProperties()));
-
   // ==================== Blocks ====================
   public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<InkMixerBlockEntity>> INK_MIXER_BE =
       BLOCK_ENTITIES.register("ink_mixer",
@@ -144,7 +141,9 @@ public final class MystcraftRegistries {
           () -> new BookBinderBlock(BlockBehaviour.Properties.of()
               .mapColor(MapColor.WOOD)
               .strength(2.5F)
-              .requiresCorrectToolForDrops()));
+              .requiresCorrectToolForDrops()));  public static final DeferredHolder<Fluid, FlowingFluid> BLACK_INK_FLOWING =
+      FLUIDS.register("black_ink_flowing",
+          () -> new BlackInkFluid.Flowing(BlackInkFluid.createProperties()));
   public static final DeferredHolder<Item, Item> BOOK_BINDER_ITEM = blockItem("blockbookbinder", BOOK_BINDER);
   public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BookBinderBlockEntity>> BOOK_BINDER_BE =
       BLOCK_ENTITIES.register("book_binder",
@@ -175,12 +174,7 @@ public final class MystcraftRegistries {
           ImmutableSet.copyOf(BOOKSTAND.get().getStateDefinition().getPossibleStates()),
           1, 1
       )
-  );  public static final DeferredHolder<Block, LiquidBlock> FLUID_INK =
-      BLOCKS.register("fluidblockblackink",
-          () -> new LiquidBlock(BLACK_INK_SOURCE, BlockBehaviour.Properties.copy(Blocks.WATER)
-              .mapColor(MapColor.COLOR_BLACK)
-              .noLootTable()));
-
+  );
   // ==================== Items ====================
   public static final DeferredHolder<VillagerProfession, VillagerProfession> ARCHIVIST = VILLAGER_PROFESSIONS.register(
       "archivist",
@@ -199,7 +193,11 @@ public final class MystcraftRegistries {
               .mapColor(MapColor.STONE)
               .strength(3.0F)
               .requiresCorrectToolForDrops()));
-  public static final DeferredHolder<Item, Item> LINK_MODIFIER_ITEM = blockItem("blocklinkmodifier", LINK_MODIFIER);
+  public static final DeferredHolder<Item, Item> LINK_MODIFIER_ITEM = blockItem("blocklinkmodifier", LINK_MODIFIER);  public static final DeferredHolder<Block, LiquidBlock> FLUID_INK =
+      BLOCKS.register("fluidblockblackink",
+          () -> new LiquidBlock(BLACK_INK_SOURCE, BlockBehaviour.Properties.copy(Blocks.WATER)
+              .mapColor(MapColor.COLOR_BLACK)
+              .noLootTable()));
   public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<LinkModifierBlockEntity>> LINK_MODIFIER_BE =
       BLOCK_ENTITIES.register("link_modifier",
           () -> BlockEntityType.Builder.of(LinkModifierBlockEntity::new, LINK_MODIFIER.get()).build(null));
@@ -228,10 +226,7 @@ public final class MystcraftRegistries {
               .strength(-1.0F, 3600000.0F)
               .noLootTable()
               .randomTicks()));
-  public static final DeferredHolder<Item, Item> DECAY_ITEM = blockItem("blockdecay", DECAY);  public static final DeferredHolder<Item, Item> INK_BUCKET =
-      ITEMS.register("ink_bucket",
-          () -> new BucketItem(BLACK_INK_SOURCE,
-              new Item.Properties().stacksTo(1).craftRemainder(Items.BUCKET)));
+  public static final DeferredHolder<Item, Item> DECAY_ITEM = blockItem("blockdecay", DECAY);
   public static final DeferredHolder<Block, Block> LINK_PORTAL =
       BLOCKS.register("linkportal",
           () -> new LinkPortalBlock(BlockBehaviour.Properties.of()
@@ -255,7 +250,10 @@ public final class MystcraftRegistries {
           () -> BlockEntityType.Builder.of(StarFissureBlockEntity::new, STAR_FISSURE.get()).build(null));
   public static final DeferredHolder<Item, Item> PAGE =
       ITEMS.register("page",
-          () -> new NeoForgePageItem(new Item.Properties().stacksTo(64)));
+          () -> new NeoForgePageItem(new Item.Properties().stacksTo(64)));  public static final DeferredHolder<Item, Item> INK_BUCKET =
+      ITEMS.register("ink_bucket",
+          () -> new BucketItem(BLACK_INK_SOURCE,
+              new Item.Properties().stacksTo(1).craftRemainder(Items.BUCKET)));
   public static final DeferredHolder<Item, Item> AGEBOOK =
       ITEMS.register("agebook",
           () -> new AgebookItem(new Item.Properties().stacksTo(1)));
@@ -271,7 +269,6 @@ public final class MystcraftRegistries {
   public static final DeferredHolder<Item, Item> BOOSTER_PACK =
       ITEMS.register("booster",
           () -> new BoosterPackItem(new Item.Properties().stacksTo(16)));
-
   // ==================== Block Entities ====================
   public static final DeferredHolder<Item, Item> FOLDER =
       ITEMS.register("folder",
@@ -307,7 +304,6 @@ public final class MystcraftRegistries {
               .updateInterval(10)
               .fireImmune()
               .build(new ResourceLocation(Mystcraft.MOD_ID, "meteor").toString()));
-
   // ==================== Entities ====================
   public static final DeferredHolder<EntityType<?>, EntityType<ColoredLightningEntity>> COLORED_LIGHTNING_ENTITY =
       ENTITIES.register("colored_lightning",
@@ -320,7 +316,6 @@ public final class MystcraftRegistries {
   public static final DeferredHolder<SoundEvent, SoundEvent> LINKING_POP = registerSound("linking.pop");
   public static final DeferredHolder<SoundEvent, SoundEvent> LINKING_LINK = registerSound("linking.link");
   public static final DeferredHolder<SoundEvent, SoundEvent> LINKING_DISARM = registerSound("linking.link-disarm");
-
   // ==================== Sounds ====================
   public static final DeferredHolder<SoundEvent, SoundEvent> LINKING_FOLLOWING = registerSound("linking.link-following");
   public static final DeferredHolder<SoundEvent, SoundEvent> LINKING_INTRA = registerSound("linking.link-intra");
@@ -340,7 +335,6 @@ public final class MystcraftRegistries {
   public static final DeferredHolder<MenuType<?>, MenuType<WritingDeskMenu>> WRITING_DESK_MENU =
       MENUS.register("writing_desk",
           () -> IMenuTypeExtension.create(WritingDeskMenu::new));
-
   // ==================== Menus ====================
   public static final DeferredHolder<MenuType<?>, MenuType<FolderMenu>> FOLDER_MENU =
       MENUS.register("folder",
@@ -356,7 +350,6 @@ public final class MystcraftRegistries {
       LOOT_MODIFIERS.register("booster_pack", BoosterPackLootModifier.CODEC);
   public static final DeferredHolder<Codec<? extends ChunkGenerator>, Codec<? extends ChunkGenerator>> AGE_CHUNK_GENERATOR =
       CHUNK_GENERATORS.register("age_chunk_generator", () -> AgeChunkGenerator.CODEC);
-
   // ==================== Loot Modifiers ====================
   public static final DeferredHolder<Codec<? extends BiomeSource>, Codec<? extends BiomeSource>> AGE_BIOME_SOURCE =
       BIOME_SOURCES.register("age_biome_source", () -> AgeBiomeSource.CODEC);
@@ -366,7 +359,6 @@ public final class MystcraftRegistries {
   public static final DeferredHolder<StructureType<?>, StructureType<UndergroundArchiveStructure>> UNDERGROUND_ARCHIVE =
       STRUCTURE_TYPES.register("underground_archive",
           () -> () -> UndergroundArchiveStructure.CODEC);
-
   // ==================== World Gen ====================
   public static final DeferredHolder<StructureType<?>, StructureType<ScatteredLibraryStructure>> SCATTERED_LIBRARY =
       STRUCTURE_TYPES.register("scattered_library",
@@ -398,9 +390,6 @@ public final class MystcraftRegistries {
                 Mystcraft.LOGGER.debug("[MystcraftRegistries] displayItems populated {} symbol pages", count);
               })
               .build());
-
-  // ==================== Structures ====================
-
   private MystcraftRegistries() {
   }
 
@@ -414,8 +403,6 @@ public final class MystcraftRegistries {
     return SOUNDS.register(name.replace('.', '_').replace('-', '_'),
         () -> SoundEvent.createVariableRangeEvent(id));
   }
-
-  // ==================== Villagers ====================
 
   /**
    * Registers all DeferredRegister instances to the mod event bus
@@ -444,6 +431,8 @@ public final class MystcraftRegistries {
 
     Mystcraft.LOGGER.info("Registered all Mystcraft deferred registries");
   }
+
+  // ==================== Structures ====================
 
   /**
    * Populates common registry stubs from NeoForge DeferredHolders.
@@ -570,8 +559,6 @@ public final class MystcraftRegistries {
     art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingBlockHandler = NeoForgeMystcraftNetwork::sendToTrackingBlock;
   }
 
-  // ==================== Creative Tabs ====================
-
   /**
    * Adds symbol pages to the pages tab via NeoForge event.
    */
@@ -587,7 +574,21 @@ public final class MystcraftRegistries {
       }
       Mystcraft.LOGGER.info("[MystcraftRegistries] BuildCreativeModeTabContentsEvent added {} symbol pages", count);
     }
-  }  public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MYSTCRAFT_TAB =
+  }
+
+
+
+  // ==================== Villagers ====================
+
+
+
+
+
+  // ==================== Creative Tabs ====================
+
+
+
+  public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MYSTCRAFT_TAB =
       CREATIVE_TABS.register("mystcraft",
           () -> CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
               .title(Component.translatable("itemGroup." + Mystcraft.MOD_ID))
@@ -614,14 +615,6 @@ public final class MystcraftRegistries {
                 output.accept(DECAY_ITEM.get());
               })
               .build());
-
-
-
-
-
-
-
-
 
 
 }

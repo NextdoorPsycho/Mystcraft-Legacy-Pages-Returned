@@ -66,6 +66,7 @@ public class MystcraftForge {
     ModRegistrations.registerAll(modEventBus);
 
     modEventBus.addListener(this::commonSetup);
+    modEventBus.addListener(this::registerGameTests);
 
     MinecraftForge.EVENT_BUS.register(this);
 
@@ -89,6 +90,11 @@ public class MystcraftForge {
 
       Mystcraft.finishSymbolRegistration();
     });
+  }
+
+  private void registerGameTests(net.minecraftforge.event.RegisterGameTestsEvent event) {
+    Mystcraft.LOGGER.info("[Mystcraft] Registering GameTests");
+    event.register(art.arcane.mystcraft.gametest.MystcraftForgeGameTests.class);
   }
 
   @SubscribeEvent

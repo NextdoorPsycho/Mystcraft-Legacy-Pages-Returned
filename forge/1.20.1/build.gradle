@@ -50,6 +50,7 @@ minecraft {
         }
 
         gameTestServer {
+            property 'forge.gameTestServer', 'true'
             property 'forge.enabledGameTestNamespaces', mod_id
         }
 

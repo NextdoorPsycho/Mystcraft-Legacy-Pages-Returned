@@ -526,6 +526,8 @@ public final class FabricRegistries {
     MystcraftConfig.microDimensionRadiusChunks = () -> FabricMystcraftConfig.microDimensionRadiusChunks.get();
     MystcraftConfig.microDimensionExtraChunks = () -> FabricMystcraftConfig.microDimensionExtraChunks.get();
     MystcraftConfig.safeStories = () -> FabricMystcraftConfig.safeStories.get();
+    MystcraftConfig.droppedBooksBecomeLivingEntities = () -> FabricMystcraftConfig.droppedBooksBecomeLivingEntities.get();
+    MystcraftConfig.dropBooksOnRead = () -> FabricMystcraftConfig.dropBooksOnRead.get();
     MystcraftConfig.disabledSymbols = () -> FabricMystcraftConfig.disabledSymbols.get();
     MystcraftConfig.instabilityEnabled = () -> FabricMystcraftConfig.instabilityEnabled.get();
     MystcraftConfig.deathEffectsEnabled = () -> FabricMystcraftConfig.deathEffectsEnabled.get();

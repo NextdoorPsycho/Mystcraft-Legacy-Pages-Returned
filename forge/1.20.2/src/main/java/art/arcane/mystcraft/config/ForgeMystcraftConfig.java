@@ -29,6 +29,8 @@ public class ForgeMystcraftConfig {
   public static final ForgeConfigSpec.IntValue microDimensionRadiusChunks;
   public static final ForgeConfigSpec.IntValue microDimensionExtraChunks;
   public static final ForgeConfigSpec.BooleanValue safeStories;
+  public static final ForgeConfigSpec.BooleanValue droppedBooksBecomeLivingEntities;
+  public static final ForgeConfigSpec.BooleanValue dropBooksOnRead;
   public static final ForgeConfigSpec.ConfigValue<List<? extends String>> disabledSymbols;
   // Personal pocket dimension settings
   public static final ForgeConfigSpec.IntValue pocketInnerHalfSizeXZ;
@@ -117,6 +119,20 @@ public class ForgeMystcraftConfig {
             "to the location they linked from (fallback to server spawn)."
         )
         .define("safeStories", true);
+
+    droppedBooksBecomeLivingEntities = COMMON_BUILDER
+        .comment(
+            "If true, dropped linkbooks/agebooks become living book entities",
+            "instead of normal item drops."
+        )
+        .define("droppedBooksBecomeLivingEntities", true);
+
+    dropBooksOnRead = COMMON_BUILDER
+        .comment(
+            "If true, reading a linkbook drops it into the world.",
+            "If false, the book stays in your inventory."
+        )
+        .define("dropBooksOnRead", true);
 
     disabledSymbols = COMMON_BUILDER
         .comment(

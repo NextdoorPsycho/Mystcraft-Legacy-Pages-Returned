@@ -42,10 +42,10 @@ TOTAL_FAILED=0
 TOTAL_SKIPPED=0
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}   Mystcraft GameTest Runner${NC}"
+echo -e "${BLUE}   Mystcraft GameTest Runner (Debug)${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
-echo -e "${CYAN}Running tests sequentially (Gradle cache sharing prevents true parallel)${NC}"
+echo -e "${CYAN}Running tests sequentially...${NC}"
 echo ""
 
 # Function to run and parse a single test
@@ -60,44 +60,58 @@ run_test() {
     local errors_file="$TEMP_DIR/${safe_name}_errors.txt"
     local counts_file="$TEMP_DIR/${safe_name}_counts.txt"
 
-    echo -e "${YELLOW}[$display_name]${NC} Starting..."
+    echo -e "${YELLOW}[$display_name]${NC} Starting test run..."
+    echo -e "  > Command: ./gradlew :$module:$version:$task --no-daemon"
 
     > "$results_file"
     > "$errors_file"
 
     local start_time=$(date +%s)
 
-    # Run gradle with timeout
-    if command -v timeout &> /dev/null; then
-        timeout 300 ./gradlew ":$module:$version:$task" --no-daemon 2>&1 > "$log_file"
-        local gradle_exit=$?
-    elif command -v gtimeout &> /dev/null; then
-        gtimeout 300 ./gradlew ":$module:$version:$task" --no-daemon 2>&1 > "$log_file"
-        local gradle_exit=$?
-    else
-        ./gradlew ":$module:$version:$task" --no-daemon 2>&1 > "$log_file"
-        local gradle_exit=$?
-    fi
+    # Run gradle DIRECTLY without timeout wrapper to avoid signal issues
+    ./gradlew ":$module:$version:$task" --no-daemon 2>&1 > "$log_file"
+    local gradle_exit=$?
 
     local end_time=$(date +%s)
     local duration=$((end_time - start_time))
+    
+    echo -e "  > Finished in ${duration}s with exit code $gradle_exit"
 
     # Parse results
     local passed=0
     local failed=0
     local skipped=0
+    local total_tests=0
+    local summary_passed=""
+    local summary_failed=""
+
+    echo -e "  > Parsing logs..."
 
     while IFS= read -r line; do
-        if echo "$line" | grep -qiE "(passed|succeeded|success).*test|test.*passed|test.*succeeded|\[PASS\]|\[SUCCESS\]"; then
+        # Capture batch totals
+        if echo "$line" | grep -qiE "Running test batch" && echo "$line" | grep -qE "\\([0-9]+ tests\\)"; then
+            local batch_total
+            batch_total=$(echo "$line" | grep -oE "\\([0-9]+ tests\\)" | grep -oE "[0-9]+")
+            if [[ -n "$batch_total" ]]; then
+                total_tests=$((total_tests + batch_total))
+            fi
+        fi
+
+        # Capture summary counts
+        if echo "$line" | grep -qiE "All [0-9]+ required tests passed"; then
+            summary_passed=$(echo "$line" | grep -oE "All [0-9]+ required" | grep -oE "[0-9]+")
+            echo "PASS: $line" >> "$results_file"
+        elif echo "$line" | grep -qiE "([0-9]+) tests? failed"; then
+            summary_failed=$(echo "$line" | grep -oE "[0-9]+ tests? failed" | grep -oE "[0-9]+")
+            echo "FAIL: $line" >> "$results_file"
+            echo "$line" >> "$errors_file"
+        elif echo "$line" | grep -qiE "(passed|succeeded|success).*test|test.*passed|test.*succeeded|\\[PASS\\]|\\[SUCCESS\\]"; then
             passed=$((passed + 1))
             echo "PASS: $line" >> "$results_file"
-        elif echo "$line" | grep -qiE "failed.*test|test.*failed|\[FAIL\]|\[FAILED\]|GameTestServer.*failed"; then
+        elif echo "$line" | grep -qiE "failed.*test|test.*failed|\\[FAIL\\]|\\[FAILED\\]|GameTestServer.*failed"; then
             failed=$((failed + 1))
             echo "FAIL: $line" >> "$results_file"
             echo "$line" >> "$errors_file"
-        elif echo "$line" | grep -qiE "skipped|skip"; then
-            skipped=$((skipped + 1))
-            echo "SKIP: $line" >> "$results_file"
         fi
 
         if echo "$line" | grep -qiE "exception|error|at [a-z].*\(.*\.java:[0-9]+\)|caused by"; then
@@ -105,37 +119,43 @@ run_test() {
         fi
     done < "$log_file"
 
-    # Check for summary lines
-    local summary=$(grep -iE "[0-9]+ (tests? )?(passed|failed|succeeded)" "$log_file" | tail -1)
-    if [[ -n "$summary" ]]; then
-        local sum_passed=$(echo "$summary" | grep -oE "[0-9]+ (tests? )?passed" | grep -oE "[0-9]+" | head -1)
-        local sum_failed=$(echo "$summary" | grep -oE "[0-9]+ (tests? )?failed" | grep -oE "[0-9]+" | head -1)
+    # Prefer summary counts when available
+    if [[ -n "$summary_passed" ]]; then
+        passed=$summary_passed
+    fi
+    if [[ -n "$summary_failed" ]]; then
+        failed=$summary_failed
+    fi
 
-        if [[ -n "$sum_passed" ]]; then
-            passed=$sum_passed
+    # Derive skipped from totals if possible
+    if [[ $total_tests -gt 0 ]]; then
+        local derived_skipped=$((total_tests - passed - failed))
+        if [[ $derived_skipped -lt 0 ]]; then
+            derived_skipped=0
         fi
-        if [[ -n "$sum_failed" ]]; then
-            failed=$sum_failed
-        fi
+        skipped=$derived_skipped
     fi
 
     # Store counts
     echo "$passed $failed $skipped $duration $gradle_exit" > "$counts_file"
 
     TOTAL_PASSED=$((TOTAL_PASSED + passed))
-    TOTAL_FAILED=$((TOTAL_FAILED + failed))
+    TOTAL_FAILED=$((TOTAL_FAILED + failed + skipped))
     TOTAL_SKIPPED=$((TOTAL_SKIPPED + skipped))
 
     # Display result
-    if [[ $gradle_exit -ne 0 ]] && [[ $passed -eq 0 ]] && [[ $failed -eq 0 ]]; then
+    if [[ $gradle_exit -ne 0 ]] && [[ $passed -eq 0 ]] && [[ $failed -eq 0 ]] && [[ $skipped -eq 0 ]]; then
         echo -e "${YELLOW}[$display_name]${NC} ${RED}ERROR${NC} (exit: $gradle_exit, ${duration}s)"
-    elif [[ $failed -gt 0 ]]; then
-        echo -e "${YELLOW}[$display_name]${NC} ${RED}$passed passed, $failed failed${NC} (${duration}s)"
+        echo -e "    Check $log_file for details"
+    elif [[ $failed -gt 0 || $skipped -gt 0 ]]; then
+        echo -e "${YELLOW}[$display_name]${NC} ${RED}$passed passed, $failed failed, $skipped skipped${NC} (${duration}s)"
     elif [[ $passed -gt 0 ]]; then
         echo -e "${YELLOW}[$display_name]${NC} ${GREEN}$passed passed, $failed failed${NC} (${duration}s)"
     else
         echo -e "${YELLOW}[$display_name]${NC} ${YELLOW}No test results detected${NC} (${duration}s)"
+        echo -e "    Check $log_file for output"
     fi
+    echo ""
 }
 
 # Run all tests sequentially
@@ -183,7 +203,7 @@ for config in "${CONFIGS[@]}"; do
     fi
 
     status="N/A"
-    if [[ $failed -gt 0 ]]; then
+    if [[ $failed -gt 0 || $skipped -gt 0 ]]; then
         status="FAIL"
     elif [[ $passed -gt 0 ]]; then
         status="PASS"
@@ -195,7 +215,7 @@ for config in "${CONFIGS[@]}"; do
 done
 
 echo "" >> "$OUTPUT_FILE"
-echo "**Total: $TOTAL_PASSED passed, $TOTAL_FAILED failed, $TOTAL_SKIPPED skipped**" >> "$OUTPUT_FILE"
+echo "**Total: $TOTAL_PASSED passed, $TOTAL_FAILED failed (skipped counts as fail), $TOTAL_SKIPPED skipped**" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
 # Detailed results
@@ -225,7 +245,7 @@ for config in "${CONFIGS[@]}"; do
     echo "### $display_name" >> "$OUTPUT_FILE"
     echo "" >> "$OUTPUT_FILE"
 
-    if [[ $failed -gt 0 ]]; then
+    if [[ $failed -gt 0 || $skipped -gt 0 ]]; then
         echo "**Status:** FAILED" >> "$OUTPUT_FILE"
     elif [[ $passed -gt 0 ]]; then
         echo "**Status:** PASSED" >> "$OUTPUT_FILE"

@@ -19,18 +19,22 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
 import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,12 +56,40 @@ public final class MystcraftGameTestRunner {
 
     ItemEntity dummyItem = new ItemEntity(level, 0.5, 2.0, 0.5, linkbook.copy());
 
-    // Test linkbook creates LinkbookEntity
-    assertCreatesLinkbookEntity(linkbook, dummyItem, "linkbook");
-    // Test descriptive book creates LinkbookEntity
-    assertCreatesLinkbookEntity(agebook, dummyItem, "agebook");
+    boolean expectEntity = art.arcane.mystcraft.config.MystcraftConfig.droppedBooksBecomeLivingEntities.get();
+    if (expectEntity) {
+      // Test linkbook creates LinkbookEntity
+      assertCreatesLinkbookEntity(linkbook, dummyItem, "linkbook");
+      // Test descriptive book creates LinkbookEntity
+      assertCreatesLinkbookEntity(agebook, dummyItem, "agebook");
+    } else {
+      // Test linkbook does not create LinkbookEntity
+      assertDoesNotCreateLinkbookEntity(linkbook, dummyItem, "linkbook");
+      // Test descriptive book does not create LinkbookEntity
+      assertDoesNotCreateLinkbookEntity(agebook, dummyItem, "agebook");
+    }
 
     helper.succeed();
+  }
+
+  /**
+   * Tests dropBooksOnRead config on/off for linkbooks.
+   */
+  public static void runDropBooksOnReadConfigTest(GameTestHelper helper) {
+    java.util.function.Supplier<Boolean> originalSupplier = art.arcane.mystcraft.config.MystcraftConfig.dropBooksOnRead;
+    try {
+      // Config ON: book should drop as entity and be removed from inventory
+      art.arcane.mystcraft.config.MystcraftConfig.dropBooksOnRead = () -> true;
+      assertDropBooksOnRead(helper, true);
+
+      // Config OFF: book should stay in inventory and not spawn an entity
+      art.arcane.mystcraft.config.MystcraftConfig.dropBooksOnRead = () -> false;
+      assertDropBooksOnRead(helper, false);
+
+      helper.succeed();
+    } finally {
+      art.arcane.mystcraft.config.MystcraftConfig.dropBooksOnRead = originalSupplier;
+    }
   }
 
   /**
@@ -298,6 +330,69 @@ public final class MystcraftGameTestRunner {
     }
     if (!(created instanceof LinkbookEntity)) {
       throw new IllegalStateException("Expected LinkbookEntity for " + itemName + ", got: " + created.getClass().getName());
+    }
+  }
+
+  private static void assertDoesNotCreateLinkbookEntity(ItemStack stack, ItemEntity dummy, String itemName) {
+    net.minecraft.world.entity.Entity created;
+    if (stack.getItem() instanceof art.arcane.mystcraft.item.LinkbookItem linkbookItem) {
+      created = linkbookItem.createEntity(dummy.level(), dummy, stack);
+    } else if (stack.getItem() instanceof art.arcane.mystcraft.item.AgebookItem agebookItem) {
+      created = agebookItem.createEntity(dummy.level(), dummy, stack);
+    } else {
+      throw new IllegalStateException("Expected linkbook-like item: " + itemName);
+    }
+    if (created != null) {
+      throw new IllegalStateException("Expected no custom entity for " + itemName + ", got: " + created.getClass().getName());
+    }
+  }
+
+  private static void assertDropBooksOnRead(GameTestHelper helper, boolean expectDrop) {
+    ServerLevel level = helper.getLevel();
+    ServerPlayer player = createMockServerPlayer(helper);
+    player.moveTo(0.5, 2.0, 0.5, 0.0F, 0.0F);
+
+    TestLinkbookItem testItem = new TestLinkbookItem(new Item.Properties());
+    ItemStack stack = new ItemStack(testItem);
+    stack.setTag(new CompoundTag());
+
+    int slot = player.getInventory().selected;
+    player.getInventory().setItem(slot, stack);
+
+    AABB box = new AABB(0, 0, 0, 2, 4, 2);
+    int before = level.getEntitiesOfClass(LinkbookEntity.class, box).size();
+
+    testItem.testOnLink(stack, level, player);
+
+    int after = level.getEntitiesOfClass(LinkbookEntity.class, box).size();
+    ItemStack slotStack = player.getInventory().getItem(slot);
+
+    if (expectDrop) {
+      if (after <= before) {
+        helper.fail("Expected LinkbookEntity drop when dropBooksOnRead=true");
+        return;
+      }
+      if (!slotStack.isEmpty()) {
+        helper.fail("Expected linkbook removed from inventory when dropBooksOnRead=true");
+      }
+    } else {
+      if (after != before) {
+        helper.fail("Expected no LinkbookEntity drop when dropBooksOnRead=false");
+        return;
+      }
+      if (slotStack.isEmpty()) {
+        helper.fail("Expected linkbook retained in inventory when dropBooksOnRead=false");
+      }
+    }
+  }
+
+  private static final class TestLinkbookItem extends art.arcane.mystcraft.item.LinkbookItem {
+    private TestLinkbookItem(Properties properties) {
+      super(properties);
+    }
+
+    private void testOnLink(@NotNull ItemStack stack, Level level, Entity entity) {
+      super.onLink(stack, level, entity);
     }
   }
 

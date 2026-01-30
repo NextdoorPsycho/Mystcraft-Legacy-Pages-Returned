@@ -535,6 +535,8 @@ public final class MystcraftRegistries {
     art.arcane.mystcraft.config.MystcraftConfig.microDimensionRadiusChunks = NeoForgeMystcraftConfig.microDimensionRadiusChunks;
     art.arcane.mystcraft.config.MystcraftConfig.microDimensionExtraChunks = NeoForgeMystcraftConfig.microDimensionExtraChunks;
     art.arcane.mystcraft.config.MystcraftConfig.safeStories = NeoForgeMystcraftConfig.safeStories;
+    art.arcane.mystcraft.config.MystcraftConfig.droppedBooksBecomeLivingEntities = NeoForgeMystcraftConfig.droppedBooksBecomeLivingEntities;
+    art.arcane.mystcraft.config.MystcraftConfig.dropBooksOnRead = NeoForgeMystcraftConfig.dropBooksOnRead;
     art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols = () -> List.copyOf(NeoForgeMystcraftConfig.disabledSymbols.get());
     art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = NeoForgeMystcraftConfig.instabilityEnabled;
     art.arcane.mystcraft.config.MystcraftConfig.deathEffectsEnabled = NeoForgeMystcraftConfig.deathEffectsEnabled;

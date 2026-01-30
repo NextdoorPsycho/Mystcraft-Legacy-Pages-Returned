@@ -14,6 +14,7 @@ This index lists the major systems covered in the docs.
 
 - Writing Desk, Book Binder, Ink Mixer
 - Descriptive Book, Linkbook, Pages
+- Personal Link Book (personal pocket dimension)
 - Folders/Portfolios, Booster Packs
 - Guidebook
 

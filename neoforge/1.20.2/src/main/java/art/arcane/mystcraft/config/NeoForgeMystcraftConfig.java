@@ -27,6 +27,8 @@ public class NeoForgeMystcraftConfig {
   public static final ModConfigSpec.IntValue microDimensionRadiusChunks;
   public static final ModConfigSpec.IntValue microDimensionExtraChunks;
   public static final ModConfigSpec.BooleanValue safeStories;
+  public static final ModConfigSpec.BooleanValue droppedBooksBecomeLivingEntities;
+  public static final ModConfigSpec.BooleanValue dropBooksOnRead;
   public static final ModConfigSpec.ConfigValue<List<? extends String>> disabledSymbols;
   // Personal pocket dimension settings
   public static final ModConfigSpec.IntValue pocketInnerHalfSizeXZ;
@@ -90,6 +92,14 @@ public class NeoForgeMystcraftConfig {
     safeStories = COMMON_BUILDER
         .comment("If true, players who die or fall into the void in Mystcraft Ages are returned to their link origin.")
         .define("safeStories", true);
+
+    droppedBooksBecomeLivingEntities = COMMON_BUILDER
+        .comment("If true, dropped linkbooks/agebooks become living book entities instead of normal item drops.")
+        .define("droppedBooksBecomeLivingEntities", true);
+
+    dropBooksOnRead = COMMON_BUILDER
+        .comment("If true, reading a linkbook drops it into the world. If false, it stays in your inventory.")
+        .define("dropBooksOnRead", true);
 
     disabledSymbols = COMMON_BUILDER
         .comment("List of symbol IDs to disable.")

@@ -14,6 +14,15 @@ TLDR: You can do just about everything you could before, it supports newer versi
 
 ---
 
+## Supported Versions
+
+| Version    | Fabric | Forge | NeoForge |
+|:-----------|:------:|:-----:|:--------:|
+| **1.20.1** |   ✅    |   ✅   |    ❌     |
+| **1.20.2** |   ✅    |   ✅   |    ✅     |
+
+---
+
 ## Current Status (Important Notes)
 
 - Block renderers for portals, writing desks, bookstands/lecterns, and similar display blocks are not working as intended yet.
@@ -119,6 +128,39 @@ TLDR: You can do just about everything you could before, it supports newer versi
 - Instability multiplier and max allowed instability
 - Effect thresholds and per-tick chances
 - Symbol blacklisting (disable overpowered symbols)
+
+---
+
+## Development Setup
+
+### Prerequisites
+- **Java:** JDK 17
+- **Minecraft Versions:** 1.20.1, 1.20.2
+
+### Build Commands
+The project uses Gradle.
+
+**Build All:**
+```bash
+./gradlew buildAll
+```
+
+**Run Client (Fabric):**
+```bash
+./gradlew :fabric:1.20.1:runClient
+./gradlew :fabric:1.20.2:runClient
+```
+
+**Run Client (Forge):**
+```bash
+./gradlew :forge:1.20.1:runClient
+./gradlew :forge:1.20.2:runClient
+```
+
+**Run Client (NeoForge):**
+```bash
+./gradlew :neoforge:1.20.2:runClient
+```
 
 ---
 

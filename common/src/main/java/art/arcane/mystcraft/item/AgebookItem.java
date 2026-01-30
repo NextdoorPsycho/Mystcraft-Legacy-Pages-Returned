@@ -478,7 +478,7 @@ public class AgebookItem extends Item {
    * On Forge/NeoForge, subclasses override hasCustomEntity/createEntity.
    */
   public boolean hasCustomEntity(@NotNull ItemStack stack) {
-    return true;
+    return MystcraftConfig.droppedBooksBecomeLivingEntities.get();
   }
 
   /**
@@ -486,6 +486,9 @@ public class AgebookItem extends Item {
    */
   @Nullable
   public Entity createEntity(Level level, Entity location, @NotNull ItemStack stack) {
+    if (!MystcraftConfig.droppedBooksBecomeLivingEntities.get()) {
+      return null;
+    }
     LinkbookEntity entity = new LinkbookEntity(level, location.getX(), location.getY(), location.getZ());
     entity.setBookItem(stack.copy());
     entity.setDeltaMovement(location.getDeltaMovement());

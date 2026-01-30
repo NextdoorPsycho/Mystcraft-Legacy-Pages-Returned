@@ -20,6 +20,8 @@ public final class MystcraftConfig {
   public static Supplier<Integer> microDimensionRadiusChunks = () -> 0;
   public static Supplier<Integer> microDimensionExtraChunks = () -> 1;
   public static Supplier<Boolean> safeStories = () -> true;
+  public static Supplier<Boolean> droppedBooksBecomeLivingEntities = () -> true;
+  public static Supplier<Boolean> dropBooksOnRead = () -> true;
   // Ore block terrain symbols are disabled by default as they are overpowered
   public static Supplier<List<String>> disabledSymbols = () -> List.of(
       // Ore storage blocks

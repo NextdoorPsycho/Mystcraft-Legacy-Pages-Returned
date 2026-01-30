@@ -36,6 +36,11 @@ public class MystcraftGameTests {
     MystcraftGameTestRunner.runBookDropsAsEntityTest(helper);
   }
 
+  @GameTest(template = "empty", timeoutTicks = 40)
+  public void books_drop_on_read_config(GameTestHelper helper) {
+    MystcraftGameTestRunner.runDropBooksOnReadConfigTest(helper);
+  }
+
   // ===== DIMENSION CREATION TESTS =====
 
   @GameTest(template = "empty", timeoutTicks = 200)

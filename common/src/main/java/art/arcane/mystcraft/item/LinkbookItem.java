@@ -210,6 +210,9 @@ public class LinkbookItem extends Item {
    * Returns true unless "following" flag is set (book stays with player).
    */
   public boolean dropItemOnLink(@NotNull ItemStack stack) {
+    if (!art.arcane.mystcraft.config.MystcraftConfig.dropBooksOnRead.get()) {
+      return false;
+    }
     return !LinkOptions.getFlag(stack.getTag(), LinkFlags.FOLLOWING);
   }
 
@@ -293,11 +296,14 @@ public class LinkbookItem extends Item {
   // --- Custom Entity on Q-Drop ---
 
   public boolean hasCustomEntity(@NotNull ItemStack stack) {
-    return true;
+    return art.arcane.mystcraft.config.MystcraftConfig.droppedBooksBecomeLivingEntities.get();
   }
 
   @Nullable
   public Entity createEntity(Level level, Entity location, @NotNull ItemStack stack) {
+    if (!art.arcane.mystcraft.config.MystcraftConfig.droppedBooksBecomeLivingEntities.get()) {
+      return null;
+    }
     LinkbookEntity entity = new LinkbookEntity(level, location.getX(), location.getY(), location.getZ());
     entity.setBookItem(stack.copy());
     entity.setDeltaMovement(location.getDeltaMovement());

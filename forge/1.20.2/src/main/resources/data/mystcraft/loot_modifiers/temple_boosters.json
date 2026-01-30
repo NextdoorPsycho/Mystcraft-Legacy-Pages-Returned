@@ -2,7 +2,7 @@
   "type": "mystcraft:booster_pack",
   "conditions": [
     {
-      "condition": "forge:any_of",
+      "condition": "forge:alternative",
       "terms": [
         {
           "condition": "forge:loot_table_id",

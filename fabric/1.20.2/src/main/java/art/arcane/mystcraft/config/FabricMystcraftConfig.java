@@ -26,6 +26,8 @@ public class FabricMystcraftConfig {
   public static final IntValue microDimensionRadiusChunks = new IntValue(0);
   public static final IntValue microDimensionExtraChunks = new IntValue(1);
   public static final BooleanValue safeStories = new BooleanValue(true);
+  public static final BooleanValue droppedBooksBecomeLivingEntities = new BooleanValue(true);
+  public static final BooleanValue dropBooksOnRead = new BooleanValue(true);
   // --- Personal Pocket Dimension ---
   public static final IntValue pocketInnerHalfSizeXZ = new IntValue(24);
   public static final IntValue pocketInnerHalfSizeY = new IntValue(24);
@@ -134,6 +136,14 @@ public class FabricMystcraftConfig {
     setCommentAndDefault(config, "general.safeStories", safeStories.defaultValue,
         "If true, players who die or fall into the void in Mystcraft Ages are returned to where they linked from.");
     safeStories.set(config.getOrElse("general.safeStories", safeStories.defaultValue));
+
+    setCommentAndDefault(config, "general.droppedBooksBecomeLivingEntities", droppedBooksBecomeLivingEntities.defaultValue,
+        "If true, dropped linkbooks/agebooks become living book entities instead of normal item drops.");
+    droppedBooksBecomeLivingEntities.set(config.getOrElse("general.droppedBooksBecomeLivingEntities", droppedBooksBecomeLivingEntities.defaultValue));
+
+    setCommentAndDefault(config, "general.dropBooksOnRead", dropBooksOnRead.defaultValue,
+        "If true, reading a linkbook drops it into the world. If false, it stays in your inventory.");
+    dropBooksOnRead.set(config.getOrElse("general.dropBooksOnRead", dropBooksOnRead.defaultValue));
 
     setCommentAndDefault(config, "general.disabledSymbols", new ArrayList<>(DEFAULT_DISABLED_SYMBOLS),
         "List of symbol IDs to disable. Disabled symbols are hidden from books and not registered at runtime.");

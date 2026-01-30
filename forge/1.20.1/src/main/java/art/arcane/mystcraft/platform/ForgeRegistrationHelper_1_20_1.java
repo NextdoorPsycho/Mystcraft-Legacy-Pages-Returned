@@ -416,6 +416,8 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
     art.arcane.mystcraft.config.MystcraftConfig.microDimensionRadiusChunks = ForgeMystcraftConfig.microDimensionRadiusChunks::get;
     art.arcane.mystcraft.config.MystcraftConfig.microDimensionExtraChunks = ForgeMystcraftConfig.microDimensionExtraChunks::get;
     art.arcane.mystcraft.config.MystcraftConfig.safeStories = ForgeMystcraftConfig.safeStories::get;
+    art.arcane.mystcraft.config.MystcraftConfig.droppedBooksBecomeLivingEntities = ForgeMystcraftConfig.droppedBooksBecomeLivingEntities::get;
+    art.arcane.mystcraft.config.MystcraftConfig.dropBooksOnRead = ForgeMystcraftConfig.dropBooksOnRead::get;
     art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols =
         () -> List.copyOf(ForgeMystcraftConfig.disabledSymbols.get());
     art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = ForgeMystcraftConfig.instabilityEnabled::get;

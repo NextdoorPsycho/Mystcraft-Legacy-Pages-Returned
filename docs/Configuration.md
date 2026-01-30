@@ -7,6 +7,8 @@ Exact names and locations may vary by loader version.
 
 - Starter guidebook on first spawn
 - Max symbols per book
+- Dropped books become living entities (LinkbookEntity) instead of normal item drops
+- Drop books on read (linking) or keep them in your inventory
 - Allow or disallow unstable Ages
 - Instability multiplier and max allowed instability
 - Effect thresholds and per-tick chances

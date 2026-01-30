@@ -22,6 +22,14 @@ public class FabricAdvancementTriggerFactory_1_20_1 implements IAdvancementTrigg
 
   private static Method findRegisterMethod() throws NoSuchMethodException {
     Method[] methods = CriteriaTriggers.class.getDeclaredMethods();
+    // 1.20.1 uses register(CriterionTrigger) where the trigger has getId()
+    for (Method method : methods) {
+      Class<?>[] params = method.getParameterTypes();
+      if (params.length == 1 && CriterionTrigger.class.isAssignableFrom(params[0])) {
+        return method;
+      }
+    }
+    // Fallback: try 2-param version (shouldn't be needed for 1.20.1)
     for (Method method : methods) {
       Class<?>[] params = method.getParameterTypes();
       if (params.length != 2) {
@@ -34,7 +42,7 @@ public class FabricAdvancementTriggerFactory_1_20_1 implements IAdvancementTrigg
         return method;
       }
     }
-    throw new NoSuchMethodException("No CriteriaTriggers register method with (ResourceLocation|String, CriterionTrigger)");
+    throw new NoSuchMethodException("No CriteriaTriggers register method found");
   }
 
   @Override
@@ -61,7 +69,14 @@ public class FabricAdvancementTriggerFactory_1_20_1 implements IAdvancementTrigg
     try {
       Method registerMethod = findRegisterMethod();
       registerMethod.setAccessible(true);
-      if (registerMethod.getParameterTypes()[0] == String.class) {
+      Class<?>[] params = registerMethod.getParameterTypes();
+
+      if (params.length == 1) {
+        // 1.20.1 style: register(CriterionTrigger) - trigger has getId()
+        registerMethod.invoke(null, writingDeskWriteTrigger);
+        registerMethod.invoke(null, enterMystDimensionSafeTrigger);
+        registerMethod.invoke(null, enterMystDimensionQuinnTrigger);
+      } else if (params[0] == String.class) {
         registerMethod.invoke(null, "mystcraft:writing_desk_write", writingDeskWriteTrigger);
         registerMethod.invoke(null, "mystcraft:enter_myst_dimension_safe", enterMystDimensionSafeTrigger);
         registerMethod.invoke(null, "mystcraft:enter_myst_dimension_quinn", enterMystDimensionQuinnTrigger);

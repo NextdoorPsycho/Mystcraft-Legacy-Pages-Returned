@@ -64,15 +64,18 @@ dependencies {
 }
 
 tasks.named('compileJava', JavaCompile) {
-    source(project(':common').sourceSets.main.allSource)
-    // Exclude 1.20.2-specific classes from common (different API signatures)
-    exclude '**/gametest/**'
-    exclude '**/client/screen/**'
-    exclude '**/client/gui/element/**'
-    // Exclude 1.20.2 advancement triggers (use version-specific ones in fabric/1.20.1)
-    exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
-    exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
-    exclude '**/advancements/WritingDeskWriteTrigger.java'
+    // Add common sources with exclusions for 1.20.2-specific classes
+    source(project(':common').sourceSets.main.allSource.matching {
+        exclude '**/gametest/**'
+        exclude '**/client/screen/**'
+        exclude '**/client/gui/element/**'
+        exclude '**/item/GuidebookItem.java'
+        exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
+        exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
+        exclude '**/advancements/WritingDeskWriteTrigger.java'
+    })
+    // The module's own src/main/java sources (including 1.20.1-specific screens)
+    // are automatically included via sourceSets.main
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -92,7 +95,7 @@ tasks.named('processResources', ProcessResources) {
             'mod_author'             : mod_author,
             'mod_id'                 : mod_id,
             'license'                : license,
-            'description'            : description,
+            'description'            : project.findProperty('description'),
             'credits'                : credits,
             'java_version'           : java_version
     ]
@@ -102,6 +105,17 @@ tasks.named('processResources', ProcessResources) {
     }
 
     inputs.properties(expandProps)
+
+    // Fix the problematic properties that get overridden by Gradle's built-in properties
+    doLast {
+        def fabricModJson = file("${destinationDir}/fabric.mod.json")
+        if (fabricModJson.exists()) {
+            def content = fabricModJson.text
+            content = content.replace('"minecraft": "~1.20.2"', '"minecraft": "~1.20.1"')
+            content = content.replace('"description": "Processes main resources."', '"description": "Mystcraft 2 Legacy - Pages Returned brings the Myst series to Minecraft, allowing players to write and travel to custom Ages (dimensions)."')
+            fabricModJson.text = content
+        }
+    }
 }
 
 tasks.named('sourcesJar', Jar) {

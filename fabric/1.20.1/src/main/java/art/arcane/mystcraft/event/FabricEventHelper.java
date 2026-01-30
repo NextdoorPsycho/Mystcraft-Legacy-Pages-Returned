@@ -37,7 +37,7 @@ import java.lang.reflect.Field;
  */
 public final class FabricEventHelper implements IEventHelper {
 
-  private FabricEventHelper() {
+  public FabricEventHelper() {
   }
 
   // ========== EVENT REGISTRATION ==========

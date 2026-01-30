@@ -33,8 +33,9 @@ minecraft {
             property 'forge.enabledGameTestNamespaces', mod_id
             mods {
                 mystcraft {
+                    // Only include local sourceSets.main - it already contains common sources
+                    // compiled against 1.20.1 jars via the compileJava task configuration
                     source sourceSets.main
-                    source project(':common').sourceSets.main
                 }
             }
         }
@@ -75,15 +76,21 @@ dependencies {
 }
 
 tasks.named('compileJava', JavaCompile) {
-    source(project(':common').sourceSets.main.allSource)
-    // Exclude 1.20.2-specific classes from common (different API signatures)
-    exclude '**/gametest/**'
-    exclude '**/client/screen/**'
-    exclude '**/client/gui/element/**'
-    // Exclude 1.20.2 advancement triggers (use version-specific ones)
-    exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
-    exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
-    exclude '**/advancements/WritingDeskWriteTrigger.java'
+    // Add common sources with exclusions for 1.20.2-specific classes
+    source(project(':common').sourceSets.main.allSource.matching {
+        exclude '**/gametest/**'
+        exclude '**/client/screen/**'
+        exclude '**/client/gui/element/**'
+        exclude '**/item/GuidebookItem.java'
+        exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
+        exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
+        exclude '**/advancements/WritingDeskWriteTrigger.java'
+        // Network packets use FriendlyByteBuf methods that have different signatures in 1.20.1
+        exclude '**/network/*Packet.java'
+        exclude '**/network/PacketContext.java'
+    })
+    // The module's own src/main/java sources (including 1.20.1-specific screens)
+    // are automatically included via sourceSets.main
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -112,6 +119,24 @@ tasks.named('processResources', ProcessResources) {
     }
 
     inputs.properties(expandProps)
+
+    // Fix mods.toml for 1.20.1 (override problematic properties that Gradle expands incorrectly)
+    doLast {
+        def modsToml = file("${destinationDir}/META-INF/mods.toml")
+        if (modsToml.exists()) {
+            def content = modsToml.text
+            // Fix loader version range (Gradle global property [48,) -> [47,))
+            content = content.replace('loaderVersion = "[48,)"', 'loaderVersion = "[47,)"')
+            // Fix minecraft version range (1.20.2 -> 1.20.1)
+            content = content.replace('versionRange = "[1.20.2,1.21)"', 'versionRange = "[1.20.1,1.20.2)"')
+            // Fix forge version range (48.1.0 -> 47.0.0)
+            content = content.replace('versionRange = "[48.1.0,)"', 'versionRange = "[47.0.0,)"')
+            // Fix description (Gradle's task description leaks through)
+            content = content.replace("description = '''Processes main resources.'''",
+                "description = '''Mystcraft 2 Legacy - Pages Returned brings the Myst series to Minecraft, allowing players to write and travel to custom Ages (dimensions).'''")
+            modsToml.text = content
+        }
+    }
 }
 
 tasks.named('sourcesJar', Jar) {

@@ -23,50 +23,42 @@ public final class ModAdvancements {
 
   /**
    * Triggers the WritingDeskWrite advancement for a player.
+   * Uses reflection to avoid direct class references that may not exist in all versions.
    */
   public static void triggerWritingDeskWrite(ServerPlayer player) {
     Object trigger = Services.ADVANCEMENTS.getWritingDeskWriteTrigger();
-    if (trigger instanceof WritingDeskWriteTrigger t) {
-      t.trigger(player);
-    } else {
-      // Version-specific trigger, use reflection or cast appropriately
-      try {
-        trigger.getClass().getMethod("trigger", ServerPlayer.class).invoke(trigger, player);
-      } catch (Exception e) {
-        // Ignore - trigger failed
-      }
-    }
+    if (trigger == null) return;
+    triggerViaReflection(trigger, player);
   }
 
   /**
    * Triggers the EnterMystDimensionSafe advancement for a player.
+   * Uses reflection to avoid direct class references that may not exist in all versions.
    */
   public static void triggerEnterMystDimensionSafe(ServerPlayer player) {
     Object trigger = Services.ADVANCEMENTS.getEnterMystDimensionSafeTrigger();
-    if (trigger instanceof EnterMystDimensionSafeTrigger t) {
-      t.trigger(player);
-    } else {
-      try {
-        trigger.getClass().getMethod("trigger", ServerPlayer.class).invoke(trigger, player);
-      } catch (Exception e) {
-        // Ignore - trigger failed
-      }
-    }
+    if (trigger == null) return;
+    triggerViaReflection(trigger, player);
   }
 
   /**
    * Triggers the EnterMystDimensionQuinn advancement for a player.
+   * Uses reflection to avoid direct class references that may not exist in all versions.
    */
   public static void triggerEnterMystDimensionQuinn(ServerPlayer player) {
     Object trigger = Services.ADVANCEMENTS.getEnterMystDimensionQuinnTrigger();
-    if (trigger instanceof EnterMystDimensionQuinnTrigger t) {
-      t.trigger(player);
-    } else {
-      try {
-        trigger.getClass().getMethod("trigger", ServerPlayer.class).invoke(trigger, player);
-      } catch (Exception e) {
-        // Ignore - trigger failed
-      }
+    if (trigger == null) return;
+    triggerViaReflection(trigger, player);
+  }
+
+  /**
+   * Invokes the trigger method via reflection to avoid compile-time class dependencies.
+   */
+  private static void triggerViaReflection(Object trigger, ServerPlayer player) {
+    try {
+      trigger.getClass().getMethod("trigger", ServerPlayer.class).invoke(trigger, player);
+    } catch (Exception e) {
+      // Silently ignore - trigger not available in this version
     }
   }
 }

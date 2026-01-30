@@ -37,7 +37,8 @@ import java.lang.reflect.Field;
  */
 public final class FabricEventHelper implements IEventHelper {
 
-  private FabricEventHelper() {
+  public FabricEventHelper() {
+    // Public constructor required by ServiceLoader
   }
 
   // ========== EVENT REGISTRATION ==========

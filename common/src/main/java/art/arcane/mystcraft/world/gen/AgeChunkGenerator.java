@@ -1168,13 +1168,11 @@ public class AgeChunkGenerator extends ChunkGenerator {
             // Inside inner void - leave as air
             continue;
           } else if (shellLayer <= innerThick) {
-            // Inner shell layer - use simplex-like pattern for variety
-            BlockState innerBlock = getSimplexInnerBlock(worldX, worldY, worldZ, innerBlocks);
-            if (shellLayer == 1) {
-              BlockState headBlock = getPocketHeadBlock(worldX, worldY, worldZ, innerHalfXZ, innerHalfY, centerY);
-              if (headBlock != null) {
-                innerBlock = headBlock;
-              }
+            // Inner shell layer - prefer head blocks on the inner face
+            BlockState innerBlock = getInnerBlock(innerBlocks);
+            BlockState headBlock = getPocketHeadBlock(worldX, worldY, worldZ, innerHalfXZ, innerHalfY, centerY);
+            if (headBlock != null) {
+              innerBlock = headBlock;
             }
             pos.set(localX, worldY, localZ);
             chunk.setBlockState(pos, innerBlock, false);
@@ -1189,20 +1187,10 @@ public class AgeChunkGenerator extends ChunkGenerator {
   }
 
   /**
-   * Returns an inner block type based on simplex-like noise pattern.
-   * Creates organic-looking variation in the inner shell.
+   * Returns a stable inner block type (no simplex variation).
    */
-  private BlockState getSimplexInnerBlock(int x, int y, int z, BlockState[] innerBlocks) {
-    if (innerBlocks.length == 1) {
-      return innerBlocks[0];
-    }
-    // Simple hash-based noise for block type variation
-    // Creates patches of similar block types
-    double scale = 0.15;
-    long hash = (long) (x * scale) * 73856093L ^ (long) (y * scale) * 19349663L ^ (long) (z * scale) * 83492791L ^ seed;
-    hash = hash * 6364136223846793005L + 1442695040888963407L;
-    int index = (int) ((hash & 0x7FFFFFFFL) % innerBlocks.length);
-    return innerBlocks[index];
+  private BlockState getInnerBlock(BlockState[] innerBlocks) {
+    return innerBlocks.length == 0 ? Blocks.OAK_PLANKS.defaultBlockState() : innerBlocks[0];
   }
 
   private BlockState getPocketHeadBlock(int worldX, int worldY, int worldZ, int innerHalfXZ, int innerHalfY, int centerY) {

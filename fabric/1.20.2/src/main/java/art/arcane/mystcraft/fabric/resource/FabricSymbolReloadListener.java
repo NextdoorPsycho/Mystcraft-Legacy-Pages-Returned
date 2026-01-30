@@ -10,10 +10,10 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class FabricSymbolReloadListener extends MystcraftSymbolReloadListener implements IdentifiableResourceReloadListener {
 
-    private static final ResourceLocation ID = new ResourceLocation(Mystcraft.MOD_ID, "datapack_symbols");
+  private static final ResourceLocation ID = new ResourceLocation(Mystcraft.MOD_ID, "datapack_symbols");
 
-    @Override
-    public ResourceLocation getFabricId() {
-        return ID;
-    }
+  @Override
+  public ResourceLocation getFabricId() {
+    return ID;
+  }
 }

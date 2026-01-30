@@ -22,11 +22,13 @@ public class InstabilityBonusManager {
   private final Set<IInstabilityBonus> bonuses = new HashSet<>();
   private int total;
   private boolean instabilityEnabled = true;
+
   /**
    * Creates a default (zero) bonus manager.
    */
   public InstabilityBonusManager() {
   }
+
   /**
    * Creates a bonus manager for a specific dimension.
    *

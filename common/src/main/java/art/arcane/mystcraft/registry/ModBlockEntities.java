@@ -1,12 +1,6 @@
 package art.arcane.mystcraft.registry;
 
-import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
-import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
-import art.arcane.mystcraft.blockentity.BookstandBlockEntity;
-import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
-import art.arcane.mystcraft.blockentity.LinkModifierBlockEntity;
-import art.arcane.mystcraft.blockentity.StarFissureBlockEntity;
-import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
+import art.arcane.mystcraft.blockentity.*;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
 import java.util.function.Supplier;

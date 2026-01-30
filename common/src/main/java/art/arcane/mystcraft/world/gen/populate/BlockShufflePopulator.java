@@ -25,6 +25,7 @@ public class BlockShufflePopulator implements IPopulate {
   private final Integer minYOverride;
   private final Integer maxYOverride;
   private final float chance;
+
   public BlockShufflePopulator(long seed, Mode mode) {
     this(seed, mode, null);
   }

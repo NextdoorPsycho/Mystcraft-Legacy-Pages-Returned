@@ -75,19 +75,19 @@ tasks.named('processResources', ProcessResources) {
     from sourceSets.main.resources
 
     def expandProps = [
-        'version'                 : version,
-        'group'                   : project.group,
-        'minecraft_version'       : minecraft_version_1_20_2,
-        'minecraft_version_range' : minecraft_version_range_1_20_2,
-        'neoforge_version'        : neoforge_version_1_20_2,
-        'neoforge_loader_version_range': neoforge_loader_version_range_1_20_2,
-        'mod_name'                : mod_name,
-        'mod_author'              : mod_author,
-        'mod_id'                  : mod_id,
-        'license'                 : license,
-        'description'             : description,
-        'credits'                 : credits,
-        'java_version'            : java_version
+            'version'                      : version,
+            'group'                        : project.group,
+            'minecraft_version'            : minecraft_version_1_20_2,
+            'minecraft_version_range'      : minecraft_version_range_1_20_2,
+            'neoforge_version'             : neoforge_version_1_20_2,
+            'neoforge_loader_version_range': neoforge_loader_version_range_1_20_2,
+            'mod_name'                     : mod_name,
+            'mod_author'                   : mod_author,
+            'mod_id'                       : mod_id,
+            'license'                      : license,
+            'description'                  : description,
+            'credits'                      : credits,
+            'java_version'                 : java_version
     ]
 
     filesMatching(['pack.mcmeta', 'META-INF/mods.toml']) {
@@ -113,13 +113,13 @@ jar {
 
     manifest {
         attributes([
-            'Specification-Title'   : mod_name,
-            'Specification-Vendor'  : mod_author,
-            'Specification-Version' : project.jar.archiveVersion,
-            'Implementation-Title'  : project.name,
-            'Implementation-Version': project.jar.archiveVersion,
-            'Implementation-Vendor' : mod_author,
-            'Built-On-Minecraft'    : minecraft_version_1_20_2
+                'Specification-Title'   : mod_name,
+                'Specification-Vendor'  : mod_author,
+                'Specification-Version' : project.jar.archiveVersion,
+                'Implementation-Title'  : project.name,
+                'Implementation-Version': project.jar.archiveVersion,
+                'Implementation-Vendor' : mod_author,
+                'Built-On-Minecraft'    : minecraft_version_1_20_2
         ])
     }
 }

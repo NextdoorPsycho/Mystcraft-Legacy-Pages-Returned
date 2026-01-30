@@ -41,10 +41,10 @@ public class GuidebookData extends SavedData {
       throw new IllegalStateException("Overworld not available");
     }
     return Services.VERSION.computeSavedData(
-            overworld,
-            GuidebookData::new,
-            GuidebookData::load,
-            DATA_NAME
+        overworld,
+        GuidebookData::new,
+        GuidebookData::load,
+        DATA_NAME
     );
   }
 

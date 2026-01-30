@@ -20,9 +20,10 @@ public class MystGuiScrollablePages extends MystGuiElement {
   private static final int PAGE_SLOT_SIZE = 18;
   private static final int PAGE_ICON_SIZE = 16;
   private final PageListHandler handler;
+  private final List<Component> hoverTooltip = new ArrayList<>();
   private int scrollOffset = 0;
   private int hoverIndex = -1;
-  private final List<Component> hoverTooltip = new ArrayList<>();
+
   public MystGuiScrollablePages(PageListHandler handler, int left, int top, int width, int height) {
     super(left, top, width, height);
     this.handler = handler;

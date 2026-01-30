@@ -13,51 +13,54 @@ import net.minecraft.advancements.CriterionTrigger;
  */
 public interface IAdvancementTriggerFactory {
 
-    /**
-     * Creates the EnterMystDimensionSafeTrigger for this version.
-     * Triggers when a player enters a Mystcraft dimension with a return linkbook.
-     *
-     * @return The criterion trigger
-     */
-    CriterionTrigger<?> createEnterMystDimensionSafeTrigger();
+  /**
+   * Creates the EnterMystDimensionSafeTrigger for this version.
+   * Triggers when a player enters a Mystcraft dimension with a return linkbook.
+   *
+   * @return The criterion trigger
+   */
+  CriterionTrigger<?> createEnterMystDimensionSafeTrigger();
 
-    /**
-     * Creates the EnterMystDimensionQuinnTrigger for this version.
-     * Triggers when a player enters a Mystcraft dimension without a return linkbook.
-     *
-     * @return The criterion trigger
-     */
-    CriterionTrigger<?> createEnterMystDimensionQuinnTrigger();
+  /**
+   * Creates the EnterMystDimensionQuinnTrigger for this version.
+   * Triggers when a player enters a Mystcraft dimension without a return linkbook.
+   *
+   * @return The criterion trigger
+   */
+  CriterionTrigger<?> createEnterMystDimensionQuinnTrigger();
 
-    /**
-     * Creates the WritingDeskWriteTrigger for this version.
-     * Triggers when a player writes on a page at the writing desk.
-     *
-     * @return The criterion trigger
-     */
-    CriterionTrigger<?> createWritingDeskWriteTrigger();
+  /**
+   * Creates the WritingDeskWriteTrigger for this version.
+   * Triggers when a player writes on a page at the writing desk.
+   *
+   * @return The criterion trigger
+   */
+  CriterionTrigger<?> createWritingDeskWriteTrigger();
 
-    /**
-     * Registers all advancement triggers with the vanilla CriteriaTriggers registry.
-     * Uses version-appropriate registration method.
-     */
-    void registerTriggers();
+  /**
+   * Registers all advancement triggers with the vanilla CriteriaTriggers registry.
+   * Uses version-appropriate registration method.
+   */
+  void registerTriggers();
 
-    /**
-     * Gets the EnterMystDimensionSafeTrigger instance after registration.
-     * @return The registered trigger, cast appropriately for the version
-     */
-    Object getEnterMystDimensionSafeTrigger();
+  /**
+   * Gets the EnterMystDimensionSafeTrigger instance after registration.
+   *
+   * @return The registered trigger, cast appropriately for the version
+   */
+  Object getEnterMystDimensionSafeTrigger();
 
-    /**
-     * Gets the EnterMystDimensionQuinnTrigger instance after registration.
-     * @return The registered trigger, cast appropriately for the version
-     */
-    Object getEnterMystDimensionQuinnTrigger();
+  /**
+   * Gets the EnterMystDimensionQuinnTrigger instance after registration.
+   *
+   * @return The registered trigger, cast appropriately for the version
+   */
+  Object getEnterMystDimensionQuinnTrigger();
 
-    /**
-     * Gets the WritingDeskWriteTrigger instance after registration.
-     * @return The registered trigger, cast appropriately for the version
-     */
-    Object getWritingDeskWriteTrigger();
+  /**
+   * Gets the WritingDeskWriteTrigger instance after registration.
+   *
+   * @return The registered trigger, cast appropriately for the version
+   */
+  Object getWritingDeskWriteTrigger();
 }

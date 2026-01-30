@@ -5,20 +5,22 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
 import java.util.function.Consumer;
 
-/** Forge-specific PageItem with custom BEWLR renderer. */
+/**
+ * Forge-specific PageItem with custom BEWLR renderer.
+ */
 public class ForgePageItem extends PageItem {
 
-    public ForgePageItem(Properties properties) {
-        super(properties);
-    }
+  public ForgePageItem(Properties properties) {
+    super(properties);
+  }
 
-    @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
-            @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return art.arcane.mystcraft.client.render.PageItemRendererBEWLR.getInstance();
-            }
-        });
-    }
+  @Override
+  public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+    consumer.accept(new IClientItemExtensions() {
+      @Override
+      public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+        return art.arcane.mystcraft.client.render.PageItemRendererBEWLR.getInstance();
+      }
+    });
+  }
 }

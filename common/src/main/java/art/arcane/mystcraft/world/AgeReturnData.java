@@ -36,10 +36,10 @@ public class AgeReturnData extends SavedData {
   public static AgeReturnData get(MinecraftServer server) {
     ServerLevel overworld = server.overworld();
     return Services.VERSION.computeSavedData(
-            overworld,
-            AgeReturnData::new,
-            AgeReturnData::load,
-            DATA_NAME
+        overworld,
+        AgeReturnData::new,
+        AgeReturnData::load,
+        DATA_NAME
     );
   }
 

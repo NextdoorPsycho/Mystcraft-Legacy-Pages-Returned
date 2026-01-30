@@ -14,30 +14,30 @@ import net.minecraft.server.level.ServerPlayer;
  */
 public class EnterMystDimensionSafeTrigger_1_20_1 extends SimpleCriterionTrigger<EnterMystDimensionSafeTrigger_1_20_1.TriggerInstance> {
 
-    private static final ResourceLocation ID = new ResourceLocation("mystcraft", "enter_myst_dimension_safe");
+  private static final ResourceLocation ID = new ResourceLocation("mystcraft", "enter_myst_dimension_safe");
 
-    @Override
-    public ResourceLocation getId() {
-        return ID;
+  @Override
+  public ResourceLocation getId() {
+    return ID;
+  }
+
+  @Override
+  protected TriggerInstance createInstance(JsonObject json, ContextAwarePredicate player, DeserializationContext context) {
+    return new TriggerInstance(player);
+  }
+
+  public void trigger(ServerPlayer player) {
+    this.trigger(player, triggerInstance -> true);
+  }
+
+  public static class TriggerInstance extends AbstractCriterionTriggerInstance {
+
+    public TriggerInstance(ContextAwarePredicate player) {
+      super(ID, player);
     }
 
-    @Override
-    protected TriggerInstance createInstance(JsonObject json, ContextAwarePredicate player, DeserializationContext context) {
-        return new TriggerInstance(player);
+    public static TriggerInstance create() {
+      return new TriggerInstance(ContextAwarePredicate.ANY);
     }
-
-    public void trigger(ServerPlayer player) {
-        this.trigger(player, triggerInstance -> true);
-    }
-
-    public static class TriggerInstance extends AbstractCriterionTriggerInstance {
-
-        public TriggerInstance(ContextAwarePredicate player) {
-            super(ID, player);
-        }
-
-        public static TriggerInstance create() {
-            return new TriggerInstance(ContextAwarePredicate.ANY);
-        }
-    }
+  }
 }

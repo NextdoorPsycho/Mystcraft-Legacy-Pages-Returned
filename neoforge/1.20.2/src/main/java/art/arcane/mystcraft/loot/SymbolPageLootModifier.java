@@ -17,49 +17,51 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
-/** Loot modifier that adds random symbol pages to loot chests. */
+/**
+ * Loot modifier that adds random symbol pages to loot chests.
+ */
 public class SymbolPageLootModifier extends LootModifier {
 
-    public static final Supplier<Codec<SymbolPageLootModifier>> CODEC = Suppliers.memoize(() ->
-            RecordCodecBuilder.create(inst -> codecStart(inst)
-                    .and(Codec.FLOAT.fieldOf("chance").forGetter(m -> m.chance))
-                    .and(Codec.INT.fieldOf("min_pages").forGetter(m -> m.minPages))
-                    .and(Codec.INT.fieldOf("max_pages").forGetter(m -> m.maxPages))
-                    .apply(inst, SymbolPageLootModifier::new)));
+  public static final Supplier<Codec<SymbolPageLootModifier>> CODEC = Suppliers.memoize(() ->
+      RecordCodecBuilder.create(inst -> codecStart(inst)
+          .and(Codec.FLOAT.fieldOf("chance").forGetter(m -> m.chance))
+          .and(Codec.INT.fieldOf("min_pages").forGetter(m -> m.minPages))
+          .and(Codec.INT.fieldOf("max_pages").forGetter(m -> m.maxPages))
+          .apply(inst, SymbolPageLootModifier::new)));
 
-    private final float chance;
-    private final int minPages;
-    private final int maxPages;
+  private final float chance;
+  private final int minPages;
+  private final int maxPages;
 
-    public SymbolPageLootModifier(LootItemCondition[] conditions, float chance, int minPages, int maxPages) {
-        super(conditions);
-        this.chance = chance;
-        this.minPages = minPages;
-        this.maxPages = maxPages;
+  public SymbolPageLootModifier(LootItemCondition[] conditions, float chance, int minPages, int maxPages) {
+    super(conditions);
+    this.chance = chance;
+    this.minPages = minPages;
+    this.maxPages = maxPages;
+  }
+
+  @Override
+  protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
+    if (context.getRandom().nextFloat() > chance) {
+      return generatedLoot;
     }
 
-    @Override
-    protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-        if (context.getRandom().nextFloat() > chance) {
-            return generatedLoot;
-        }
+    int pageCount = minPages + context.getRandom().nextInt(maxPages - minPages + 1);
 
-        int pageCount = minPages + context.getRandom().nextInt(maxPages - minPages + 1);
-
-        for (int i = 0; i < pageCount; i++) {
-            IAgeSymbol symbol = SymbolRegistry.getRandomWeighted(context.getRandom());
-            if (symbol != null) {
-                ItemStack pageStack = new ItemStack(MystcraftRegistries.PAGE.get());
-                Page.setSymbol(pageStack, symbol.getRegistryName());
-                generatedLoot.add(pageStack);
-            }
-        }
-
-        return generatedLoot;
+    for (int i = 0; i < pageCount; i++) {
+      IAgeSymbol symbol = SymbolRegistry.getRandomWeighted(context.getRandom());
+      if (symbol != null) {
+        ItemStack pageStack = new ItemStack(MystcraftRegistries.PAGE.get());
+        Page.setSymbol(pageStack, symbol.getRegistryName());
+        generatedLoot.add(pageStack);
+      }
     }
 
-    @Override
-    public Codec<? extends IGlobalLootModifier> codec() {
-        return CODEC.get();
-    }
+    return generatedLoot;
+  }
+
+  @Override
+  public Codec<? extends IGlobalLootModifier> codec() {
+    return CODEC.get();
+  }
 }

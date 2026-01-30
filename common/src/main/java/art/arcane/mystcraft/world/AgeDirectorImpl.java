@@ -155,6 +155,19 @@ public class AgeDirectorImpl implements AgeDirector {
     this.seed = seed;
   }
 
+  private static boolean isValidReplacementBlock(BlockState block) {
+    if (block == null) return false;
+    if (block.isAir()) return false;
+    if (!block.getFluidState().isEmpty()) return false;
+    return block.isSolid();
+  }
+
+  private static boolean isValidSeaBlock(BlockState block) {
+    if (block == null) return false;
+    if (block.isAir()) return false;
+    return !block.getFluidState().isEmpty() || block.isSolid();
+  }
+
   @Override
   public long getSeed() {
     return seed;
@@ -164,6 +177,8 @@ public class AgeDirectorImpl implements AgeDirector {
   public float getInstability() {
     return instability;
   }
+
+  // --- Terrain ---
 
   /**
    * Sets the instability value directly.
@@ -176,8 +191,6 @@ public class AgeDirectorImpl implements AgeDirector {
   public void addInstability(float amount) {
     this.instability += amount;
   }
-
-  // --- Terrain ---
 
   @Override
   public String getTerrainType() {
@@ -294,19 +307,6 @@ public class AgeDirectorImpl implements AgeDirector {
       return;
     }
     this.subsurfaceBlock = block;
-  }
-
-  private static boolean isValidReplacementBlock(BlockState block) {
-    if (block == null) return false;
-    if (block.isAir()) return false;
-    if (!block.getFluidState().isEmpty()) return false;
-    return block.isSolid();
-  }
-
-  private static boolean isValidSeaBlock(BlockState block) {
-    if (block == null) return false;
-    if (block.isAir()) return false;
-    return !block.getFluidState().isEmpty() || block.isSolid();
   }
 
   // --- Biomes ---
@@ -787,6 +787,11 @@ public class AgeDirectorImpl implements AgeDirector {
     return horizonHeight;
   }
 
+  @Override
+  public void setHorizonHeight(float height) {
+    this.horizonHeight = height;
+  }
+
   public boolean isMicroDimensionsEnabled() {
     return microDimensionsEnabled;
   }
@@ -803,11 +808,6 @@ public class AgeDirectorImpl implements AgeDirector {
     this.microDimensionsEnabled = enabled;
     this.microDimensionRadiusChunks = Math.max(0, radiusChunks);
     this.microDimensionExtraChunks = Math.max(0, extraChunks);
-  }
-
-  @Override
-  public void setHorizonHeight(float height) {
-    this.horizonHeight = height;
   }
 
   @Override

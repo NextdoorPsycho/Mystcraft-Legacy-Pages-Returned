@@ -20,7 +20,12 @@
           "a": 0.45,
           "b": {
             "op": "abs",
-            "input": { "op": "noise3", "scale": 0.03, "octaves": 5, "seed": 4242 }
+            "input": {
+              "op": "noise3",
+              "scale": 0.03,
+              "octaves": 5,
+              "seed": 4242
+            }
           }
         }
       }

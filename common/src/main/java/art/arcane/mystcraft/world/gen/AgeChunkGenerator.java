@@ -16,7 +16,9 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.WorldGenRegion;
@@ -98,6 +100,8 @@ public class AgeChunkGenerator extends ChunkGenerator {
   private volatile NoiseBasedChunkGenerator vanillaDelegate2;
   private volatile RandomState vanillaRandomState2;
   private volatile boolean delegateInitialized = false;
+  private volatile boolean pocketHeadLoaded = false;
+  private java.util.EnumMap<AgeData.PocketHeadFace, BlockState[]> pocketHeadBlocks;
 
   /**
    * Creates a chunk generator from codec deserialization.
@@ -386,6 +390,8 @@ public class AgeChunkGenerator extends ChunkGenerator {
     Mystcraft.LOGGER.debug("[ChunkGen] Age {} reconstructDirectorFromAgeData called on thread: {} | director={}",
         ageUID, Thread.currentThread().getName(), director != null ? "exists" : "null");
 
+    ensurePocketHeadLoaded(level);
+
     if (director != null) {
       return;
     }
@@ -435,6 +441,47 @@ public class AgeChunkGenerator extends ChunkGenerator {
     }
 
     Mystcraft.LOGGER.info("Director reconstructed successfully for age {}", ageUID);
+  }
+
+  public void ensurePocketHeadLoaded(ServerLevel level) {
+    if (pocketHeadLoaded) {
+      return;
+    }
+    AgeData ageData = AgeData.getIfPresent(level);
+    if (ageData == null || !ageData.hasPocketHeadBlocks()) {
+      pocketHeadLoaded = true;
+      return;
+    }
+    java.util.EnumMap<AgeData.PocketHeadFace, BlockState[]> map =
+        new java.util.EnumMap<>(AgeData.PocketHeadFace.class);
+    for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
+      List<String> blocks = ageData.getPocketHeadBlocks(face);
+      if (blocks == null || blocks.size() != 64) {
+        continue;
+      }
+      BlockState[] states = new BlockState[64];
+      for (int i = 0; i < blocks.size(); i++) {
+        String id = blocks.get(i);
+        ResourceLocation loc = ResourceLocation.tryParse(id);
+        if (loc != null) {
+          net.minecraft.world.level.block.Block block = BuiltInRegistries.BLOCK.get(loc);
+          states[i] = block != null && block != Blocks.AIR ? block.defaultBlockState() : Blocks.OAK_PLANKS.defaultBlockState();
+        } else {
+          states[i] = Blocks.OAK_PLANKS.defaultBlockState();
+        }
+      }
+      map.put(face, states);
+    }
+    if (map.size() == AgeData.PocketHeadFace.values().length) {
+      pocketHeadBlocks = map;
+    }
+    pocketHeadLoaded = true;
+  }
+
+  public void refreshPocketHeadBlocks(ServerLevel level) {
+    pocketHeadLoaded = false;
+    pocketHeadBlocks = null;
+    ensurePocketHeadLoaded(level);
   }
 
   @Override
@@ -1123,6 +1170,12 @@ public class AgeChunkGenerator extends ChunkGenerator {
           } else if (shellLayer <= innerThick) {
             // Inner shell layer - use simplex-like pattern for variety
             BlockState innerBlock = getSimplexInnerBlock(worldX, worldY, worldZ, innerBlocks);
+            if (shellLayer == 1) {
+              BlockState headBlock = getPocketHeadBlock(worldX, worldY, worldZ, innerHalfXZ, innerHalfY, centerY);
+              if (headBlock != null) {
+                innerBlock = headBlock;
+              }
+            }
             pos.set(localX, worldY, localZ);
             chunk.setBlockState(pos, innerBlock, false);
           } else {
@@ -1150,6 +1203,90 @@ public class AgeChunkGenerator extends ChunkGenerator {
     hash = hash * 6364136223846793005L + 1442695040888963407L;
     int index = (int) ((hash & 0x7FFFFFFFL) % innerBlocks.length);
     return innerBlocks[index];
+  }
+
+  private BlockState getPocketHeadBlock(int worldX, int worldY, int worldZ, int innerHalfXZ, int innerHalfY, int centerY) {
+    if (pocketHeadBlocks == null) {
+      return null;
+    }
+    int boundaryXZ = innerHalfXZ + 1;
+    int boundaryY = innerHalfY + 1;
+
+    int distX = Math.abs(worldX);
+    int distY = Math.abs(worldY - centerY);
+    int distZ = Math.abs(worldZ);
+
+    AgeData.PocketHeadFace face = null;
+    if (distY == boundaryY) {
+      face = worldY > centerY ? AgeData.PocketHeadFace.TOP : AgeData.PocketHeadFace.BOTTOM;
+    } else if (distZ == boundaryXZ) {
+      face = worldZ > 0 ? AgeData.PocketHeadFace.FRONT : AgeData.PocketHeadFace.BACK;
+    } else if (distX == boundaryXZ) {
+      face = worldX > 0 ? AgeData.PocketHeadFace.RIGHT : AgeData.PocketHeadFace.LEFT;
+    }
+
+    if (face == null) {
+      return null;
+    }
+
+    BlockState[] blocks = pocketHeadBlocks.get(face);
+    if (blocks == null || blocks.length != 64) {
+      return null;
+    }
+
+    int minX = -innerHalfXZ;
+    int maxX = innerHalfXZ;
+    int minZ = -innerHalfXZ;
+    int maxZ = innerHalfXZ;
+    int minY = centerY - innerHalfY;
+    int maxY = centerY + innerHalfY;
+
+    int spanXZ = maxX - minX + 1;
+    int spanY = maxY - minY + 1;
+
+    int u;
+    int v;
+    switch (face) {
+      case FRONT -> {
+        u = worldX - minX;
+        v = maxY - worldY;
+        return sampleFace(blocks, u, v, spanXZ, spanY);
+      }
+      case BACK -> {
+        u = (spanXZ - 1) - (worldX - minX);
+        v = maxY - worldY;
+        return sampleFace(blocks, u, v, spanXZ, spanY);
+      }
+      case RIGHT -> {
+        u = (spanXZ - 1) - (worldZ - minZ);
+        v = maxY - worldY;
+        return sampleFace(blocks, u, v, spanXZ, spanY);
+      }
+      case LEFT -> {
+        u = worldZ - minZ;
+        v = maxY - worldY;
+        return sampleFace(blocks, u, v, spanXZ, spanY);
+      }
+      case TOP -> {
+        u = worldX - minX;
+        v = worldZ - minZ;
+        return sampleFace(blocks, u, v, spanXZ, spanXZ);
+      }
+      case BOTTOM -> {
+        u = worldX - minX;
+        v = (spanXZ - 1) - (worldZ - minZ);
+        return sampleFace(blocks, u, v, spanXZ, spanXZ);
+      }
+      default -> {
+        return null;
+      }
+    }
+  }
+
+  private BlockState sampleFace(BlockState[] blocks, int u, int v, int width, int height) {
+    int px = Math.max(0, Math.min(7, (u * 8) / Math.max(1, width)));
+    int py = Math.max(0, Math.min(7, (v * 8) / Math.max(1, height)));
+    return blocks[py * 8 + px];
   }
 
   private void generateFlatTerrain(ChunkAccess chunk, RandomSource random) {

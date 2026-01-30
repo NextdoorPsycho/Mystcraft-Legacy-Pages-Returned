@@ -14,34 +14,36 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
-/** Loot modifier that adds the Mystcraft Guidebook to loot chests with a configurable chance. */
+/**
+ * Loot modifier that adds the Mystcraft Guidebook to loot chests with a configurable chance.
+ */
 public class GuidebookLootModifier extends LootModifier {
 
-    public static final Supplier<Codec<GuidebookLootModifier>> CODEC = Suppliers.memoize(() ->
-            RecordCodecBuilder.create(inst -> codecStart(inst)
-                    .and(Codec.FLOAT.fieldOf("chance").forGetter(m -> m.chance))
-                    .apply(inst, GuidebookLootModifier::new)));
+  public static final Supplier<Codec<GuidebookLootModifier>> CODEC = Suppliers.memoize(() ->
+      RecordCodecBuilder.create(inst -> codecStart(inst)
+          .and(Codec.FLOAT.fieldOf("chance").forGetter(m -> m.chance))
+          .apply(inst, GuidebookLootModifier::new)));
 
-    private final float chance;
+  private final float chance;
 
-    public GuidebookLootModifier(LootItemCondition[] conditions, float chance) {
-        super(conditions);
-        this.chance = chance;
+  public GuidebookLootModifier(LootItemCondition[] conditions, float chance) {
+    super(conditions);
+    this.chance = chance;
+  }
+
+  @Override
+  protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
+    if (context.getRandom().nextFloat() > chance) {
+      return generatedLoot;
     }
 
-    @Override
-    protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-        if (context.getRandom().nextFloat() > chance) {
-            return generatedLoot;
-        }
+    generatedLoot.add(new ItemStack(MystcraftRegistries.GUIDEBOOK.get()));
 
-        generatedLoot.add(new ItemStack(MystcraftRegistries.GUIDEBOOK.get()));
+    return generatedLoot;
+  }
 
-        return generatedLoot;
-    }
-
-    @Override
-    public Codec<? extends IGlobalLootModifier> codec() {
-        return CODEC.get();
-    }
+  @Override
+  public Codec<? extends IGlobalLootModifier> codec() {
+    return CODEC.get();
+  }
 }

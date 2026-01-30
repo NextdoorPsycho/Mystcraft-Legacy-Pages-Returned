@@ -22,6 +22,7 @@ public final class CFGGrammarGenerator {
   private static Map<ResourceLocation, Map<ResourceLocation, List<List<CFGRule>>>> shortestPaths = null;
 
   private static boolean isFinalized = false;
+
   private CFGGrammarGenerator() {
   }
 
@@ -416,10 +417,10 @@ public final class CFGGrammarGenerator {
     public Map<Integer, Integer> rankWeights = null;
   }
 
-    /**
-     * Helper class for BFS traversal.
-     */
-    private record VisitPair(ResourceLocation target, List<CFGRule> path) {
-    }
+  /**
+   * Helper class for BFS traversal.
+   */
+  private record VisitPair(ResourceLocation target, List<CFGRule> path) {
+  }
 
 }

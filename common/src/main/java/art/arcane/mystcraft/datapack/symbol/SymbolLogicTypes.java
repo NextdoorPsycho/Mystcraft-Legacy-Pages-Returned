@@ -55,6 +55,7 @@ public final class SymbolLogicTypes {
       0xFF4500, 0xFF6347, 0xFF7F50, 0xFFA07A, 0xFFD700, 0xFF8C00, 0xDC143C, 0x8B0000,
       0xFF69B4, 0xDA70D6, 0x4B0082, 0x00FF88
   };
+
   private SymbolLogicTypes() {
   }
 
@@ -137,61 +138,61 @@ public final class SymbolLogicTypes {
     SymbolLogicRegistry.register(new SimpleBooleanType(id, setter));
   }
 
-    private record SimpleStringType(ResourceLocation id, BiConsumer<AgeDirector, String> setter) implements SymbolLogicType {
-        private SimpleStringType(String id, BiConsumer<AgeDirector, String> setter) {
-            this(new ResourceLocation(Mystcraft.MOD_ID, id), setter);
-        }
-
-        @Override
-        public SymbolLogic parse(JsonObject json) {
-            String value = GsonHelper.getAsString(json, "value");
-            return (director, seed) -> setter.accept(director, value);
-        }
+  private record SimpleStringType(ResourceLocation id, BiConsumer<AgeDirector, String> setter) implements SymbolLogicType {
+    private SimpleStringType(String id, BiConsumer<AgeDirector, String> setter) {
+      this(new ResourceLocation(Mystcraft.MOD_ID, id), setter);
     }
 
-    private record SimpleIntType(ResourceLocation id, BiConsumer<AgeDirector, Integer> setter, BiConsumer<AgeDirector, Boolean> naturalSetter) implements SymbolLogicType {
-        private SimpleIntType(String id, BiConsumer<AgeDirector, Integer> setter,
-                              BiConsumer<AgeDirector, Boolean> naturalSetter) {
-            this(new ResourceLocation(Mystcraft.MOD_ID, id), setter, naturalSetter);
-        }
+    @Override
+    public SymbolLogic parse(JsonObject json) {
+      String value = GsonHelper.getAsString(json, "value");
+      return (director, seed) -> setter.accept(director, value);
+    }
+  }
 
-        @Override
-        public SymbolLogic parse(JsonObject json) {
-            int value = GsonHelper.getAsInt(json, "value");
-            boolean hasNatural = naturalSetter != null && json.has("natural");
-            boolean natural = hasNatural && GsonHelper.getAsBoolean(json, "natural");
-            return (director, seed) -> {
-                setter.accept(director, value);
-                if (naturalSetter != null && hasNatural) {
-                    naturalSetter.accept(director, natural);
-                }
-            };
-        }
+  private record SimpleIntType(ResourceLocation id, BiConsumer<AgeDirector, Integer> setter, BiConsumer<AgeDirector, Boolean> naturalSetter) implements SymbolLogicType {
+    private SimpleIntType(String id, BiConsumer<AgeDirector, Integer> setter,
+                          BiConsumer<AgeDirector, Boolean> naturalSetter) {
+      this(new ResourceLocation(Mystcraft.MOD_ID, id), setter, naturalSetter);
     }
 
-    private record SimpleFloatType(ResourceLocation id, BiConsumer<AgeDirector, Float> setter) implements SymbolLogicType {
-        private SimpleFloatType(String id, BiConsumer<AgeDirector, Float> setter) {
-            this(new ResourceLocation(Mystcraft.MOD_ID, id), setter);
+    @Override
+    public SymbolLogic parse(JsonObject json) {
+      int value = GsonHelper.getAsInt(json, "value");
+      boolean hasNatural = naturalSetter != null && json.has("natural");
+      boolean natural = hasNatural && GsonHelper.getAsBoolean(json, "natural");
+      return (director, seed) -> {
+        setter.accept(director, value);
+        if (naturalSetter != null && hasNatural) {
+          naturalSetter.accept(director, natural);
         }
+      };
+    }
+  }
 
-        @Override
-        public SymbolLogic parse(JsonObject json) {
-            float value = GsonHelper.getAsFloat(json, "value");
-            return (director, seed) -> setter.accept(director, value);
-        }
+  private record SimpleFloatType(ResourceLocation id, BiConsumer<AgeDirector, Float> setter) implements SymbolLogicType {
+    private SimpleFloatType(String id, BiConsumer<AgeDirector, Float> setter) {
+      this(new ResourceLocation(Mystcraft.MOD_ID, id), setter);
     }
 
-    private record SimpleBooleanType(ResourceLocation id, BiConsumer<AgeDirector, Boolean> setter) implements SymbolLogicType {
-        private SimpleBooleanType(String id, BiConsumer<AgeDirector, Boolean> setter) {
-            this(new ResourceLocation(Mystcraft.MOD_ID, id), setter);
-        }
-
-        @Override
-        public SymbolLogic parse(JsonObject json) {
-            boolean value = GsonHelper.getAsBoolean(json, "value");
-            return (director, seed) -> setter.accept(director, value);
-        }
+    @Override
+    public SymbolLogic parse(JsonObject json) {
+      float value = GsonHelper.getAsFloat(json, "value");
+      return (director, seed) -> setter.accept(director, value);
     }
+  }
+
+  private record SimpleBooleanType(ResourceLocation id, BiConsumer<AgeDirector, Boolean> setter) implements SymbolLogicType {
+    private SimpleBooleanType(String id, BiConsumer<AgeDirector, Boolean> setter) {
+      this(new ResourceLocation(Mystcraft.MOD_ID, id), setter);
+    }
+
+    @Override
+    public SymbolLogic parse(JsonObject json) {
+      boolean value = GsonHelper.getAsBoolean(json, "value");
+      return (director, seed) -> setter.accept(director, value);
+    }
+  }
 
   private static class AddInstabilityType implements SymbolLogicType {
     private final ResourceLocation id = new ResourceLocation(Mystcraft.MOD_ID, "add_instability");

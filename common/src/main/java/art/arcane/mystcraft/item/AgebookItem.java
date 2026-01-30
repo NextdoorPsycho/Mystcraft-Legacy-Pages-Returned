@@ -2,6 +2,7 @@ package art.arcane.mystcraft.item;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.entity.LinkbookEntity;
@@ -9,7 +10,6 @@ import art.arcane.mystcraft.event.AgeDataSyncHandler;
 import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
-import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeDirectorImpl;

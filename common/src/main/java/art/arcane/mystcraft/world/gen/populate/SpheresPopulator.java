@@ -42,6 +42,7 @@ public class SpheresPopulator implements IPopulate {
   private final int neighborRange;
   private final int minBaseY;
   private final int maxBaseY;
+
   public SpheresPopulator(long seed) {
     this(seed, null);
   }

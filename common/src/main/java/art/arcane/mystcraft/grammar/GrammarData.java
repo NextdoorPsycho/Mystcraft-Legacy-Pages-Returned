@@ -173,6 +173,7 @@ public final class GrammarData {
    * Generates a singular Gradient
    */
   public static final ResourceLocation GRADIENT_BASIC = asMyst("gradient_basic");
+
   private GrammarData() {
   }
 

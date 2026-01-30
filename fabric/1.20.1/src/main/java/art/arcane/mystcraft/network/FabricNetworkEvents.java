@@ -10,16 +10,19 @@ import net.minecraft.server.level.ServerPlayer;
  */
 public final class FabricNetworkEvents {
 
-    private FabricNetworkEvents() {}
+  private FabricNetworkEvents() {
+  }
 
-    /** Registers network-related event callbacks. Call from MystcraftFabric.onInitialize(). */
-    public static void register() {
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            ServerPlayer player = handler.getPlayer();
+  /**
+   * Registers network-related event callbacks. Call from MystcraftFabric.onInitialize().
+   */
+  public static void register() {
+    ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+      ServerPlayer player = handler.getPlayer();
 
-            // Sync symbol registry to the joining player
-            FabricMystcraftNetwork.sendToPlayer(new SymbolSyncPacket(), player);
-            Mystcraft.LOGGER.debug("[FabricNetworkEvents] Sent symbol sync packet to player {}", player.getName().getString());
-        });
-    }
+      // Sync symbol registry to the joining player
+      FabricMystcraftNetwork.sendToPlayer(new SymbolSyncPacket(), player);
+      Mystcraft.LOGGER.debug("[FabricNetworkEvents] Sent symbol sync packet to player {}", player.getName().getString());
+    });
+  }
 }

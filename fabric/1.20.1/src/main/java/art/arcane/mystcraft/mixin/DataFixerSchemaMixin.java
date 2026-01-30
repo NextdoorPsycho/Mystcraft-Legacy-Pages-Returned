@@ -14,16 +14,16 @@ import java.util.function.Supplier;
 @Mixin(V3328.class)
 public abstract class DataFixerSchemaMixin {
 
-    @Inject(method = "registerEntities", at = @At("RETURN"), cancellable = true)
-    private void mystcraft$registerEntities(
-            Schema schema,
-            CallbackInfoReturnable<Map<String, Supplier<TypeTemplate>>> cir
-    ) {
-        Map<String, Supplier<TypeTemplate>> entities = cir.getReturnValue();
-        schema.registerSimple(entities, "mystcraft:linkbook");
-        schema.registerSimple(entities, "mystcraft:falling_block");
-        schema.registerSimple(entities, "mystcraft:meteor");
-        schema.registerSimple(entities, "mystcraft:colored_lightning");
-        cir.setReturnValue(entities);
-    }
+  @Inject(method = "registerEntities", at = @At("RETURN"), cancellable = true)
+  private void mystcraft$registerEntities(
+      Schema schema,
+      CallbackInfoReturnable<Map<String, Supplier<TypeTemplate>>> cir
+  ) {
+    Map<String, Supplier<TypeTemplate>> entities = cir.getReturnValue();
+    schema.registerSimple(entities, "mystcraft:linkbook");
+    schema.registerSimple(entities, "mystcraft:falling_block");
+    schema.registerSimple(entities, "mystcraft:meteor");
+    schema.registerSimple(entities, "mystcraft:colored_lightning");
+    cir.setReturnValue(entities);
+  }
 }

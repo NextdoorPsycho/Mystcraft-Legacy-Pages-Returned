@@ -66,6 +66,57 @@ public final class ScriptExpressionParser {
     };
   }
 
+  private static Cube cubeRound(double x, double y, double z) {
+    long rx = Math.round(x);
+    long ry = Math.round(y);
+    long rz = Math.round(z);
+
+    double xDiff = Math.abs(rx - x);
+    double yDiff = Math.abs(ry - y);
+    double zDiff = Math.abs(rz - z);
+
+    if (xDiff > yDiff && xDiff > zDiff) {
+      rx = -ry - rz;
+    } else if (yDiff > zDiff) {
+      ry = -rx - rz;
+    } else {
+      rz = -rx - ry;
+    }
+    return new Cube(rx, ry, rz);
+  }
+
+  private static double hashToUnit(long x, long z, long seed) {
+    long h = x * 73428767L ^ z * 912931L ^ seed;
+    h ^= (h >>> 33);
+    h *= 0xff51afd7ed558ccdL;
+    h ^= (h >>> 33);
+    h *= 0xc4ceb9fe1a85ec53L;
+    h ^= (h >>> 33);
+    return (h & 0xFFFFFFFFL) / (double) 0x1_0000_0000L;
+  }
+
+  private enum NoiseMode {
+    SIMPLE, FBM, RIDGED
+  }
+
+  private enum CellMode {
+    SQUARE,
+    HEX;
+
+    static CellMode from(String raw) {
+      if (raw == null) return SQUARE;
+      return "hex".equalsIgnoreCase(raw) || "hexagon".equalsIgnoreCase(raw) ? HEX : SQUARE;
+    }
+  }
+
+  private interface Op2 {
+    double apply(double a, double b);
+  }
+
+  private interface Op1 {
+    double apply(double a);
+  }
+
   private record Constant(double value) implements ScriptExpression {
     @Override
     public double eval(ScriptRuntime runtime, double x, double y, double z) {
@@ -90,14 +141,6 @@ public final class ScriptExpressionParser {
         default -> runtime.getParam(name, 0.0D);
       };
     }
-  }
-
-  private interface Op2 {
-    double apply(double a, double b);
-  }
-
-  private interface Op1 {
-    double apply(double a);
   }
 
   private static class Binary implements ScriptExpression {
@@ -218,10 +261,6 @@ public final class ScriptExpressionParser {
     }
   }
 
-  private enum NoiseMode {
-    SIMPLE, FBM, RIDGED
-  }
-
   private static class Noise implements ScriptExpression {
     private final ScriptExpression xExpr;
     private final ScriptExpression yExpr;
@@ -318,16 +357,6 @@ public final class ScriptExpressionParser {
     }
   }
 
-  private enum CellMode {
-    SQUARE,
-    HEX;
-
-    static CellMode from(String raw) {
-      if (raw == null) return SQUARE;
-      return "hex".equalsIgnoreCase(raw) || "hexagon".equalsIgnoreCase(raw) ? HEX : SQUARE;
-    }
-  }
-
   private record CellResult(long cellX, long cellZ, double centerX, double centerZ) {
     static CellResult from(CellMode mode, double x, double z, double size) {
       if (mode == CellMode.HEX) {
@@ -353,34 +382,5 @@ public final class ScriptExpressionParser {
   }
 
   private record Cube(long x, long y, long z) {
-  }
-
-  private static Cube cubeRound(double x, double y, double z) {
-    long rx = Math.round(x);
-    long ry = Math.round(y);
-    long rz = Math.round(z);
-
-    double xDiff = Math.abs(rx - x);
-    double yDiff = Math.abs(ry - y);
-    double zDiff = Math.abs(rz - z);
-
-    if (xDiff > yDiff && xDiff > zDiff) {
-      rx = -ry - rz;
-    } else if (yDiff > zDiff) {
-      ry = -rx - rz;
-    } else {
-      rz = -rx - ry;
-    }
-    return new Cube(rx, ry, rz);
-  }
-
-  private static double hashToUnit(long x, long z, long seed) {
-    long h = x * 73428767L ^ z * 912931L ^ seed;
-    h ^= (h >>> 33);
-    h *= 0xff51afd7ed558ccdL;
-    h ^= (h >>> 33);
-    h *= 0xc4ceb9fe1a85ec53L;
-    h ^= (h >>> 33);
-    return (h & 0xFFFFFFFFL) / (double) 0x1_0000_0000L;
   }
 }

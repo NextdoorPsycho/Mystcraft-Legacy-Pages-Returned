@@ -78,9 +78,11 @@ public class AgeData extends SavedData {
   private static final String TAG_MICRO_DIMENSIONS_ENABLED = "MicroDimensionsEnabled";
   private static final String TAG_MICRO_DIMENSION_RADIUS = "MicroDimensionRadiusChunks";
   private static final String TAG_MICRO_DIMENSION_EXTRA = "MicroDimensionExtraChunks";
+  private static final String TAG_POCKET_HEAD = "PocketHead";
   private final List<String> authors = new ArrayList<>();
   private final List<ItemStack> pages = new ArrayList<>();
   private final List<Integer> grassColors = new ArrayList<>();
+  private final EnumMap<PocketHeadFace, List<String>> pocketHeadBlocks = new EnumMap<>(PocketHeadFace.class);
   // Instability deck order storage (for persistence across sessions)
   private final Map<String, List<String>> deckOrders = new HashMap<>();
   private int ageUID;
@@ -152,10 +154,10 @@ public class AgeData extends SavedData {
    */
   public static AgeData get(ServerLevel level) {
     return Services.VERSION.computeSavedData(
-            level,
-            AgeData::new,
-            AgeData::load,
-            DATA_NAME
+        level,
+        AgeData::new,
+        AgeData::load,
+        DATA_NAME
     );
   }
 
@@ -168,10 +170,10 @@ public class AgeData extends SavedData {
     // Use the computeSavedData method which works across versions
     // In 1.20.2, we could use get() but for cross-version compatibility we just compute
     return Services.VERSION.computeSavedData(
-            level,
-            AgeData::new,
-            AgeData::load,
-            DATA_NAME
+        level,
+        AgeData::new,
+        AgeData::load,
+        DATA_NAME
     );
   }
 
@@ -291,6 +293,26 @@ public class AgeData extends SavedData {
         this.deckOrders.put(deckName, cards);
       }
     }
+
+    // Load personal pocket head blocks
+    pocketHeadBlocks.clear();
+    if (tag.contains(TAG_POCKET_HEAD, Tag.TAG_COMPOUND)) {
+      CompoundTag pocketTag = tag.getCompound(TAG_POCKET_HEAD);
+      for (PocketHeadFace face : PocketHeadFace.values()) {
+        if (!pocketTag.contains(face.getTagKey(), Tag.TAG_LIST)) {
+          continue;
+        }
+        ListTag list = pocketTag.getList(face.getTagKey(), Tag.TAG_STRING);
+        if (list.size() != 64) {
+          continue;
+        }
+        List<String> blocks = new ArrayList<>(64);
+        for (int i = 0; i < list.size(); i++) {
+          blocks.add(list.getString(i));
+        }
+        pocketHeadBlocks.put(face, blocks);
+      }
+    }
   }
 
   @Override
@@ -388,14 +410,32 @@ public class AgeData extends SavedData {
     }
     tag.put(TAG_DECK_ORDERS, decksTag);
 
+    if (!pocketHeadBlocks.isEmpty()) {
+      CompoundTag pocketTag = new CompoundTag();
+      for (PocketHeadFace face : PocketHeadFace.values()) {
+        List<String> blocks = pocketHeadBlocks.get(face);
+        if (blocks == null || blocks.size() != 64) {
+          continue;
+        }
+        ListTag list = new ListTag();
+        for (String blockId : blocks) {
+          list.add(net.minecraft.nbt.StringTag.valueOf(blockId));
+        }
+        pocketTag.put(face.getTagKey(), list);
+      }
+      if (!pocketTag.isEmpty()) {
+        tag.put(TAG_POCKET_HEAD, pocketTag);
+      }
+    }
+
     return tag;
   }
-
-  // Getters and setters
 
   public int getAgeUID() {
     return ageUID;
   }
+
+  // Getters and setters
 
   public void setAgeUID(int ageUID) {
     this.ageUID = ageUID;
@@ -526,11 +566,11 @@ public class AgeData extends SavedData {
     return String.join(", ", authors);
   }
 
-  // --- Age Configuration Getters ---
-
   public String getWeatherType() {
     return weatherType;
   }
+
+  // --- Age Configuration Getters ---
 
   public String getLightingType() {
     return lightingType;
@@ -765,7 +805,25 @@ public class AgeData extends SavedData {
         sunsetColor != -1 ? Integer.toHexString(sunsetColor) : "none");
   }
 
-  // --- Deck Order Methods ---
+  public void setPocketHeadBlocks(PocketHeadFace face, List<String> blockIds) {
+    if (blockIds == null || blockIds.size() != 64) {
+      return;
+    }
+    pocketHeadBlocks.put(face, new ArrayList<>(blockIds));
+    setDirty();
+  }
+
+  // --- Personal Pocket Head ---
+
+  @Nullable
+  public List<String> getPocketHeadBlocks(PocketHeadFace face) {
+    List<String> blocks = pocketHeadBlocks.get(face);
+    return blocks != null ? new ArrayList<>(blocks) : null;
+  }
+
+  public boolean hasPocketHeadBlocks() {
+    return pocketHeadBlocks.size() == PocketHeadFace.values().length;
+  }
 
   /**
    * Gets the saved deck order for a deck.
@@ -778,6 +836,8 @@ public class AgeData extends SavedData {
     List<String> order = deckOrders.get(deckName);
     return order != null ? new ArrayList<>(order) : null;
   }
+
+  // --- Deck Order Methods ---
 
   /**
    * Saves the deck order for persistence.
@@ -796,5 +856,24 @@ public class AgeData extends SavedData {
   public void clearDeckOrders() {
     deckOrders.clear();
     setDirty();
+  }
+
+  public enum PocketHeadFace {
+    FRONT("Front"),
+    BACK("Back"),
+    LEFT("Left"),
+    RIGHT("Right"),
+    TOP("Top"),
+    BOTTOM("Bottom");
+
+    private final String tagKey;
+
+    PocketHeadFace(String tagKey) {
+      this.tagKey = tagKey;
+    }
+
+    public String getTagKey() {
+      return tagKey;
+    }
   }
 }

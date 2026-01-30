@@ -29,6 +29,7 @@ public class ContainerActionPacket {
   private final boolean rightClick;
   private final String stringData;
   private final int intData;
+
   public ContainerActionPacket(Action action, int containerId, boolean rightClick, String stringData, int intData) {
     this.action = action;
     this.containerId = containerId;

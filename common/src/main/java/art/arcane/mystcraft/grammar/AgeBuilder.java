@@ -223,10 +223,10 @@ public class AgeBuilder {
   private final List<IAgeSymbol> inputSymbols;
   private final long seed;
   private final List<ResourceLocation> missingSymbols = new ArrayList<>();
+  private final int providedCount;
   private List<IAgeSymbol> expandedSymbols;
   private AgeDirectorImpl director;
   private float instability;
-  private final int providedCount;
   private int generatedCount;
 
   // ===================================================================

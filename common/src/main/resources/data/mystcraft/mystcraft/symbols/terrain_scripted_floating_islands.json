@@ -19,10 +19,21 @@
           "op": "mul",
           "a": {
             "op": "sub",
-            "a": { "op": "noise3", "scale": 0.02, "octaves": 4, "seed": 7717 },
+            "a": {
+              "op": "noise3",
+              "scale": 0.02,
+              "octaves": 4,
+              "seed": 7717
+            },
             "b": 0.35
           },
-          "b": { "op": "step", "edge": 80, "value": { "var": "y" } }
+          "b": {
+            "op": "step",
+            "edge": 80,
+            "value": {
+              "var": "y"
+            }
+          }
         }
       }
     },

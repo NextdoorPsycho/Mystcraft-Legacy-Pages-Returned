@@ -19,32 +19,32 @@ import java.util.function.Supplier;
  */
 public class GuidebookLootModifier extends LootModifier {
 
-    public static final Supplier<Codec<GuidebookLootModifier>> CODEC = Suppliers.memoize(() ->
-            RecordCodecBuilder.create(inst -> codecStart(inst)
-                    .and(Codec.FLOAT.fieldOf("chance").forGetter(m -> m.chance))
-                    .apply(inst, GuidebookLootModifier::new)));
+  public static final Supplier<Codec<GuidebookLootModifier>> CODEC = Suppliers.memoize(() ->
+      RecordCodecBuilder.create(inst -> codecStart(inst)
+          .and(Codec.FLOAT.fieldOf("chance").forGetter(m -> m.chance))
+          .apply(inst, GuidebookLootModifier::new)));
 
-    private final float chance;
+  private final float chance;
 
-    public GuidebookLootModifier(LootItemCondition[] conditions, float chance) {
-        super(conditions);
-        this.chance = chance;
+  public GuidebookLootModifier(LootItemCondition[] conditions, float chance) {
+    super(conditions);
+    this.chance = chance;
+  }
+
+  @Override
+  protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
+    if (context.getRandom().nextFloat() > chance) {
+      return generatedLoot;
     }
 
-    @Override
-    protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-        if (context.getRandom().nextFloat() > chance) {
-            return generatedLoot;
-        }
+    // Add a guidebook to the loot
+    generatedLoot.add(new ItemStack(ModItems.GUIDEBOOK.get()));
 
-        // Add a guidebook to the loot
-        generatedLoot.add(new ItemStack(ModItems.GUIDEBOOK.get()));
+    return generatedLoot;
+  }
 
-        return generatedLoot;
-    }
-
-    @Override
-    public Codec<? extends IGlobalLootModifier> codec() {
-        return CODEC.get();
-    }
+  @Override
+  public Codec<? extends IGlobalLootModifier> codec() {
+    return CODEC.get();
+  }
 }

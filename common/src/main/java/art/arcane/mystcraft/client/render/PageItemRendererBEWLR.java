@@ -58,6 +58,7 @@ public class PageItemRendererBEWLR extends BlockEntityWithoutLevelRenderer {
   private static int componentImageHeight = 0;
   private static volatile boolean prewarming = false;
   private static volatile boolean prewarmComplete = false;
+
   private PageItemRendererBEWLR() {
     super(Minecraft.getInstance().getBlockEntityRenderDispatcher(),
         Minecraft.getInstance().getEntityModels());

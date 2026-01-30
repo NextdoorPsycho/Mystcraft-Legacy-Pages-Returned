@@ -13,80 +13,81 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
  */
 public class ForgeInstabilityBonuses {
 
-    public static class ForgePlayerKilledBonus {
-        private final PlayerKilledBonus delegate;
+  private ForgeInstabilityBonuses() {
+  }
 
-        public ForgePlayerKilledBonus(PlayerKilledBonus delegate) {
-            this.delegate = delegate;
-            MinecraftForge.EVENT_BUS.register(this);
-        }
+  public static class ForgePlayerKilledBonus {
+    private final PlayerKilledBonus delegate;
 
-        @SubscribeEvent
-        public void onEntityDeath(LivingDeathEvent event) {
-            if (!(event.getEntity() instanceof Player player)) return;
-            Player killer = event.getSource().getEntity() instanceof Player k ? k : null;
-            delegate.onPlayerDeath(player, killer);
-        }
-
-        @SubscribeEvent
-        public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-            if (event.getEntity() instanceof ServerPlayer player) {
-                delegate.onPlayerLogin(player);
-            }
-        }
-
-        @SubscribeEvent
-        public void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
-            if (event.getEntity() instanceof ServerPlayer player) {
-                delegate.onPlayerChangedDimension(player, event.getTo());
-            }
-        }
-
-        public void cleanup() {
-            MinecraftForge.EVENT_BUS.unregister(this);
-        }
+    public ForgePlayerKilledBonus(PlayerKilledBonus delegate) {
+      this.delegate = delegate;
+      MinecraftForge.EVENT_BUS.register(this);
     }
 
-    public static class ForgePlayerSurvivalBonus {
-        private final PlayerSurvivalBonus delegate;
-
-        public ForgePlayerSurvivalBonus(PlayerSurvivalBonus delegate) {
-            this.delegate = delegate;
-            MinecraftForge.EVENT_BUS.register(this);
-        }
-
-        @SubscribeEvent
-        public void onEntityDeath(LivingDeathEvent event) {
-            if (event.getEntity() instanceof Player player) {
-                delegate.onPlayerDeath(player);
-            }
-        }
-
-        @SubscribeEvent
-        public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-            if (event.getEntity() instanceof ServerPlayer player) {
-                delegate.onPlayerLogin(player);
-            }
-        }
-
-        @SubscribeEvent
-        public void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-            if (event.getEntity() instanceof ServerPlayer player) {
-                delegate.onPlayerLogout(player);
-            }
-        }
-
-        @SubscribeEvent
-        public void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
-            if (event.getEntity() instanceof ServerPlayer player) {
-                delegate.onPlayerChangedDimension(player, event.getFrom(), event.getTo());
-            }
-        }
-
-        public void cleanup() {
-            MinecraftForge.EVENT_BUS.unregister(this);
-        }
+    @SubscribeEvent
+    public void onEntityDeath(LivingDeathEvent event) {
+      if (!(event.getEntity() instanceof Player player)) return;
+      Player killer = event.getSource().getEntity() instanceof Player k ? k : null;
+      delegate.onPlayerDeath(player, killer);
     }
 
-    private ForgeInstabilityBonuses() {}
+    @SubscribeEvent
+    public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) {
+        delegate.onPlayerLogin(player);
+      }
+    }
+
+    @SubscribeEvent
+    public void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) {
+        delegate.onPlayerChangedDimension(player, event.getTo());
+      }
+    }
+
+    public void cleanup() {
+      MinecraftForge.EVENT_BUS.unregister(this);
+    }
+  }
+
+  public static class ForgePlayerSurvivalBonus {
+    private final PlayerSurvivalBonus delegate;
+
+    public ForgePlayerSurvivalBonus(PlayerSurvivalBonus delegate) {
+      this.delegate = delegate;
+      MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    @SubscribeEvent
+    public void onEntityDeath(LivingDeathEvent event) {
+      if (event.getEntity() instanceof Player player) {
+        delegate.onPlayerDeath(player);
+      }
+    }
+
+    @SubscribeEvent
+    public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) {
+        delegate.onPlayerLogin(player);
+      }
+    }
+
+    @SubscribeEvent
+    public void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) {
+        delegate.onPlayerLogout(player);
+      }
+    }
+
+    @SubscribeEvent
+    public void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) {
+        delegate.onPlayerChangedDimension(player, event.getFrom(), event.getTo());
+      }
+    }
+
+    public void cleanup() {
+      MinecraftForge.EVENT_BUS.unregister(this);
+    }
+  }
 }

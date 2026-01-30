@@ -28,6 +28,26 @@ public class PerlinNoise {
     }
   }
 
+  private static double fade(double t) {
+    return t * t * t * (t * (t * 6.0D - 15.0D) + 10.0D);
+  }
+
+  private static double lerp(double t, double a, double b) {
+    return a + t * (b - a);
+  }
+
+  private static double grad(int hash, double x, double y, double z) {
+    int h = hash & 15;
+    double u = h < 8 ? x : y;
+    double v = h < 4 ? y : (h == 12 || h == 14 ? x : z);
+    return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+  }
+
+  private static int fastFloor(double value) {
+    int i = (int) value;
+    return value < i ? i - 1 : i;
+  }
+
   public double noise(double x, double y, double z) {
     double xPos = x + xCoord;
     double yPos = y + yCoord;
@@ -69,25 +89,5 @@ public class PerlinNoise {
     double y2 = lerp(v, x3, x4);
 
     return lerp(w, y1, y2);
-  }
-
-  private static double fade(double t) {
-    return t * t * t * (t * (t * 6.0D - 15.0D) + 10.0D);
-  }
-
-  private static double lerp(double t, double a, double b) {
-    return a + t * (b - a);
-  }
-
-  private static double grad(int hash, double x, double y, double z) {
-    int h = hash & 15;
-    double u = h < 8 ? x : y;
-    double v = h < 4 ? y : (h == 12 || h == 14 ? x : z);
-    return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
-  }
-
-  private static int fastFloor(double value) {
-    int i = (int) value;
-    return value < i ? i - 1 : i;
   }
 }

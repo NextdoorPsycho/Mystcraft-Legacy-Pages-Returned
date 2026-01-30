@@ -46,10 +46,10 @@ public interface IClientHelper {
    * In 1.20.1: calls screen.renderBackground(graphics)
    * In 1.20.2: calls screen.renderBackground(graphics, mouseX, mouseY, partialTick)
    *
-   * @param screen The screen to render background for
-   * @param graphics The GuiGraphics context
-   * @param mouseX Mouse X position
-   * @param mouseY Mouse Y position
+   * @param screen      The screen to render background for
+   * @param graphics    The GuiGraphics context
+   * @param mouseX      Mouse X position
+   * @param mouseY      Mouse Y position
    * @param partialTick Partial tick time
    */
   void renderScreenBackground(Screen screen, GuiGraphics graphics, int mouseX, int mouseY, float partialTick);

@@ -14,32 +14,32 @@ import net.minecraft.world.level.block.entity.LecternBlockEntity;
  */
 public record OpenLecternBookPacket(BlockPos pos, ItemStack book) {
 
-    public static void encode(OpenLecternBookPacket packet, FriendlyByteBuf buf) {
-        buf.writeBlockPos(packet.pos);
-        buf.writeItem(packet.book);
+  public static void encode(OpenLecternBookPacket packet, FriendlyByteBuf buf) {
+    buf.writeBlockPos(packet.pos);
+    buf.writeItem(packet.book);
+  }
+
+  public static OpenLecternBookPacket decode(FriendlyByteBuf buf) {
+    return new OpenLecternBookPacket(buf.readBlockPos(), buf.readItem());
+  }
+
+  public static void handle(OpenLecternBookPacket packet, PacketContext ctx) {
+    if (!ctx.isClientSide()) {
+      return;
     }
+    ctx.enqueueWork(() -> {
+      Level level = (Level) ClientAccess.getClientLevel();
+      if (level == null) return;
 
-    public static OpenLecternBookPacket decode(FriendlyByteBuf buf) {
-        return new OpenLecternBookPacket(buf.readBlockPos(), buf.readItem());
-    }
+      // Also update the local lectern's book for consistency
+      if (level.getBlockEntity(packet.pos) instanceof LecternBlockEntity lectern) {
+        LecternBookSyncPacket.setBookOnClient(lectern, packet.book);
+      }
 
-    public static void handle(OpenLecternBookPacket packet, PacketContext ctx) {
-        if (!ctx.isClientSide()) {
-            return;
-        }
-        ctx.enqueueWork(() -> {
-            Level level = (Level) ClientAccess.getClientLevel();
-            if (level == null) return;
-
-            // Also update the local lectern's book for consistency
-            if (level.getBlockEntity(packet.pos) instanceof LecternBlockEntity lectern) {
-                LecternBookSyncPacket.setBookOnClient(lectern, packet.book);
-            }
-
-            // Open the book screen
-            if (MystcraftLecternHelper.isMystcraftBook(packet.book)) {
-                MystcraftLecternHelper.openBookScreenForBlock(packet.book, packet.pos);
-            }
-        });
-    }
+      // Open the book screen
+      if (MystcraftLecternHelper.isMystcraftBook(packet.book)) {
+        MystcraftLecternHelper.openBookScreenForBlock(packet.book, packet.pos);
+      }
+    });
+  }
 }

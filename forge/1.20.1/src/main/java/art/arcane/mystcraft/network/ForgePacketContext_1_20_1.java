@@ -11,31 +11,31 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ForgePacketContext_1_20_1 implements PacketContext {
 
-    private final NetworkEvent.Context ctx;
+  private final NetworkEvent.Context ctx;
 
-    public ForgePacketContext_1_20_1(NetworkEvent.Context ctx) {
-        this.ctx = ctx;
-    }
+  public ForgePacketContext_1_20_1(NetworkEvent.Context ctx) {
+    this.ctx = ctx;
+  }
 
-    @Override
-    @Nullable
-    public Player getPlayer() {
-        return ctx.getSender();
-    }
+  @Override
+  @Nullable
+  public Player getPlayer() {
+    return ctx.getSender();
+  }
 
-    @Override
-    @Nullable
-    public ServerPlayer getServerPlayer() {
-        return ctx.getSender();
-    }
+  @Override
+  @Nullable
+  public ServerPlayer getServerPlayer() {
+    return ctx.getSender();
+  }
 
-    @Override
-    public boolean isClientSide() {
-        return ctx.getDirection().getReceptionSide().isClient();
-    }
+  @Override
+  public boolean isClientSide() {
+    return ctx.getDirection().getReceptionSide().isClient();
+  }
 
-    @Override
-    public void enqueueWork(Runnable work) {
-        ctx.enqueueWork(work);
-    }
+  @Override
+  public void enqueueWork(Runnable work) {
+    ctx.enqueueWork(work);
+  }
 }

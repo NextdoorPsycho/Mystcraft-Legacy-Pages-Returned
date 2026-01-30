@@ -27,11 +27,9 @@ public final class FallingBlockHandler {
     }
 
     BlockState state = entity.getBlockState();
-    if (state != null) {
-      BlockPos pos = entity.blockPosition();
-      if (level.getBlockState(pos).isAir()) {
-        level.setBlock(pos, state, 3);
-      }
+    BlockPos pos = entity.blockPosition();
+    if (level.getBlockState(pos).isAir()) {
+      level.setBlock(pos, state, 3);
     }
 
     entity.discard();

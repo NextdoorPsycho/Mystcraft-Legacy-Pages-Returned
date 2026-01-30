@@ -9,11 +9,7 @@ import art.arcane.mystcraft.network.LinkEffectPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.registry.ModSounds;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
-import art.arcane.mystcraft.world.AgeData;
-import art.arcane.mystcraft.world.AgeDimensionFactory;
-import art.arcane.mystcraft.world.AgeManager;
-import art.arcane.mystcraft.world.AgeReturnData;
-import art.arcane.mystcraft.world.PersonalPocketDimension;
+import art.arcane.mystcraft.world.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -963,8 +959,8 @@ public final class LinkingManager {
   }
 
   /**
-     * Data class for storing passenger information during teleport.
-     */
-    private record PassengerData(Entity passenger, Vec3 offset) {
+   * Data class for storing passenger information during teleport.
+   */
+  private record PassengerData(Entity passenger, Vec3 offset) {
   }
 }

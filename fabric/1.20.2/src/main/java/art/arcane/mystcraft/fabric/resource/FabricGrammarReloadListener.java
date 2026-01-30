@@ -10,10 +10,10 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class FabricGrammarReloadListener extends MystcraftGrammarReloadListener implements IdentifiableResourceReloadListener {
 
-    private static final ResourceLocation ID = new ResourceLocation(Mystcraft.MOD_ID, "datapack_grammar");
+  private static final ResourceLocation ID = new ResourceLocation(Mystcraft.MOD_ID, "datapack_grammar");
 
-    @Override
-    public ResourceLocation getFabricId() {
-        return ID;
-    }
+  @Override
+  public ResourceLocation getFabricId() {
+    return ID;
+  }
 }

@@ -7,6 +7,8 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModItems;
+import art.arcane.mystcraft.util.PocketHeadUtils;
+import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -38,15 +40,12 @@ import java.util.UUID;
  * Y is limited by Minecraft's dimension height limits.
  * Surrounded by configurable inner shell then outer shell.
  * Spawn point is at the bottom of the hollow interior.
- *
+ * <p>
  * Size validation automatically caps to Minecraft version limits:
  * - 1.20.2+: max dimension height 4064 (min_y -2032 to max_y 2032)
  * - Earlier versions may have smaller limits; values will be capped accordingly.
  */
 public final class PersonalPocketDimension {
-
-  private static final int PERSONAL_UID_OFFSET = 1_000_000_000;
-  private static final int PERSONAL_UID_RANGE = 1_000_000_000;
 
   /**
    * Minecraft dimension limits for personal pockets.
@@ -56,14 +55,19 @@ public final class PersonalPocketDimension {
   public static final int MIN_BUILD_Y = -2032;
   public static final int MAX_BUILD_Y = 2032;
   public static final int DIMENSION_HEIGHT = MAX_BUILD_Y - MIN_BUILD_Y; // 4064
-
-  /** Absolute minimum inner half-size (4 block diameter minimum). */
+  /**
+   * Absolute minimum inner half-size (4 block diameter minimum).
+   */
   public static final int MIN_HALF_SIZE = 2;
-
-  /** Maximum half-size for config (8192 block diameter). */
+  /**
+   * Maximum half-size for config (8192 block diameter).
+   */
   public static final int MAX_HALF_SIZE = 4096;
-
-  /** Track if we've logged version-based capping warnings. */
+  private static final int PERSONAL_UID_OFFSET = 1_000_000_000;
+  private static final int PERSONAL_UID_RANGE = 1_000_000_000;
+  /**
+   * Track if we've logged version-based capping warnings.
+   */
   private static boolean loggedYCap = false;
   private static boolean loggedXZCap = false;
 
@@ -85,7 +89,9 @@ public final class PersonalPocketDimension {
 
   // --- Configurable dimensions with validation and fallback ---
 
-  /** Half the inner void space horizontally (X/Z axes). Range: 2-4096 (4 to 8192 blocks). */
+  /**
+   * Half the inner void space horizontally (X/Z axes). Range: 2-4096 (4 to 8192 blocks).
+   */
   public static int getInnerHalfSizeXZ() {
     int requested = MystcraftConfig.pocketInnerHalfSizeXZ.get();
     int clamped = Math.max(MIN_HALF_SIZE, Math.min(MAX_HALF_SIZE, requested));
@@ -116,7 +122,7 @@ public final class PersonalPocketDimension {
         Mystcraft.LOGGER.warn("[PersonalPocket] Y half-size {} exceeds Minecraft dimension limits, capped to {} (max height: {} blocks)",
             requested, clamped, clamped * 2);
         Mystcraft.LOGGER.info("[PersonalPocket] Minecraft 1.20.2 max dimension height: {} blocks. " +
-            "With shell thickness {}, max inner Y half-size is {}.",
+                "With shell thickness {}, max inner Y half-size is {}.",
             DIMENSION_HEIGHT, getInnerThickness() + getOuterThickness(), getMaxSupportedHalfSizeY());
       }
       loggedYCap = true;
@@ -125,17 +131,23 @@ public final class PersonalPocketDimension {
     return clamped;
   }
 
-  /** Inner shell thickness (from config, clamped to valid range). */
+  /**
+   * Inner shell thickness (from config, clamped to valid range).
+   */
   public static int getInnerThickness() {
     return Math.max(1, Math.min(32, MystcraftConfig.pocketInnerThickness.get()));
   }
 
-  /** Outer shell thickness (from config, clamped to valid range). */
+  /**
+   * Outer shell thickness (from config, clamped to valid range).
+   */
   public static int getOuterThickness() {
     return Math.max(1, Math.min(32, MystcraftConfig.pocketOuterThickness.get()));
   }
 
-  /** Center Y coordinate (from config, adjusted if needed to fit within build limits). */
+  /**
+   * Center Y coordinate (from config, adjusted if needed to fit within build limits).
+   */
   public static int getCenterY() {
     int requestedCenterY = MystcraftConfig.pocketCenterY.get();
     int totalHalfSizeY = getTotalHalfSizeY();
@@ -153,57 +165,79 @@ public final class PersonalPocketDimension {
     return Math.max(minCenterY, Math.min(maxCenterY, requestedCenterY));
   }
 
-  /** Total half-size from center to outer edge (horizontal). */
+  /**
+   * Total half-size from center to outer edge (horizontal).
+   */
   public static int getTotalHalfSizeXZ() {
     return getInnerHalfSizeXZ() + getInnerThickness() + getOuterThickness();
   }
 
-  /** Total half-size from center to outer edge (vertical). */
+  /**
+   * Total half-size from center to outer edge (vertical).
+   */
   public static int getTotalHalfSizeY() {
     return getInnerHalfSizeY() + getInnerThickness() + getOuterThickness();
   }
 
-  /** Inner void size horizontally (diameter) - used for world border. */
+  /**
+   * Inner void size horizontally (diameter) - used for world border.
+   */
   public static int getInnerSizeXZ() {
     return getInnerHalfSizeXZ() * 2;
   }
 
-  /** Inner void size vertically (diameter). */
+  /**
+   * Inner void size vertically (diameter).
+   */
   public static int getInnerSizeY() {
     return getInnerHalfSizeY() * 2;
   }
 
-  /** Total pocket size horizontally (diameter including walls). */
+  /**
+   * Total pocket size horizontally (diameter including walls).
+   */
   public static int getPocketSizeXZ() {
     return getTotalHalfSizeXZ() * 2;
   }
 
-  /** Total pocket size vertically (diameter including walls). */
+  /**
+   * Total pocket size vertically (diameter including walls).
+   */
   public static int getPocketSizeY() {
     return getTotalHalfSizeY() * 2;
   }
 
-  /** Bottom of inner void (spawn floor). */
+  /**
+   * Bottom of inner void (spawn floor).
+   */
   public static int getInnerMinY() {
     return getCenterY() - getInnerHalfSizeY();
   }
 
-  /** Top of inner void. */
+  /**
+   * Top of inner void.
+   */
   public static int getInnerMaxY() {
     return getCenterY() + getInnerHalfSizeY() - 1;
   }
 
-  /** Minimum Y before boundary triggers (bottom of outer shell). */
+  /**
+   * Minimum Y before boundary triggers (bottom of outer shell).
+   */
   public static int getBoundaryMinY() {
     return getCenterY() - getTotalHalfSizeY();
   }
 
-  /** Maximum Y before boundary triggers (top of outer shell). */
+  /**
+   * Maximum Y before boundary triggers (top of outer shell).
+   */
   public static int getBoundaryMaxY() {
     return getCenterY() + getTotalHalfSizeY() - 1;
   }
 
-  /** Gets the configured inner block palette, falling back to oak_planks if all invalid. */
+  /**
+   * Gets the configured inner block palette, falling back to oak_planks if all invalid.
+   */
   public static java.util.List<BlockState> getInnerBlockPalette() {
     java.util.List<String> blockIds = MystcraftConfig.pocketInnerBlockPalette.get();
     java.util.List<BlockState> palette = new java.util.ArrayList<>();
@@ -230,7 +264,9 @@ public final class PersonalPocketDimension {
     return palette;
   }
 
-  /** Gets the configured outer block, falling back to bedrock if invalid. */
+  /**
+   * Gets the configured outer block, falling back to bedrock if invalid.
+   */
   public static BlockState getOuterBlock() {
     String blockId = MystcraftConfig.pocketOuterBlock.get();
     ResourceLocation loc = ResourceLocation.tryParse(blockId);
@@ -253,17 +289,23 @@ public final class PersonalPocketDimension {
     return uid;
   }
 
-  /** Returns spawn position beside the bookstand (offset by 1 block on X axis). */
+  /**
+   * Returns spawn position beside the bookstand (offset by 1 block on X axis).
+   */
   public static BlockPos getPocketSpawn() {
     return new BlockPos(1, getInnerMinY() + 1, 0);
   }
 
-  /** Returns the position for the bookstand (center of the pocket floor). */
+  /**
+   * Returns the position for the bookstand (center of the pocket floor).
+   */
   public static BlockPos getBookstandPos() {
     return new BlockPos(0, getInnerMinY() + 1, 0);
   }
 
-  /** Returns the position for the floor block under the bookstand. */
+  /**
+   * Returns the position for the floor block under the bookstand.
+   */
   public static BlockPos getFloorBlockPos() {
     return new BlockPos(0, getInnerMinY(), 0);
   }
@@ -281,7 +323,7 @@ public final class PersonalPocketDimension {
   public static boolean isOutsideBoundary(double x, double z) {
     int totalHalfSizeXZ = getTotalHalfSizeXZ();
     return x < -totalHalfSizeXZ || x >= totalHalfSizeXZ ||
-           z < -totalHalfSizeXZ || z >= totalHalfSizeXZ;
+        z < -totalHalfSizeXZ || z >= totalHalfSizeXZ;
   }
 
   /**
@@ -334,6 +376,26 @@ public final class PersonalPocketDimension {
     ageData.copyFromDirector(director);
     BlockPos spawn = getPocketSpawn();
     ageData.setSpawn(spawn.getX(), spawn.getY(), spawn.getZ());
+
+    if (!ageData.hasPocketHeadBlocks()) {
+      java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> headBlocks =
+          PocketHeadUtils.buildPocketHeadBlocks(server, owner);
+      if (headBlocks != null) {
+        for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
+          java.util.List<String> blocks = headBlocks.get(face);
+          if (blocks != null) {
+            ageData.setPocketHeadBlocks(face, blocks);
+          }
+        }
+        Mystcraft.LOGGER.info("[PersonalPocket] Applied head-based wall palette for {}", owner);
+        net.minecraft.world.level.chunk.ChunkGenerator generator = level.getChunkSource().getGenerator();
+        if (generator instanceof AgeChunkGenerator ageGen) {
+          ageGen.refreshPocketHeadBlocks(level);
+        }
+      } else {
+        Mystcraft.LOGGER.warn("[PersonalPocket] Failed to generate head palette for {}", owner);
+      }
+    }
 
     configurePersonalRules(level);
     enforceBorder(level);

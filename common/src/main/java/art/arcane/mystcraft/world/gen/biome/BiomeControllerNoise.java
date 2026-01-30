@@ -18,6 +18,7 @@ public class BiomeControllerNoise extends BiomeControllerBase {
   private static final int CACHE_MAX_SIZE = 4096;
   private final int cellSize;
   private final Map<Long, Holder<Biome>> cache;
+
   public BiomeControllerNoise(List<Holder<Biome>> biomes, long seed, Scale scale) {
     this(biomes, seed, scale.cellSize);
   }

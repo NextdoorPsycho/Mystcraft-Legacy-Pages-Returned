@@ -51,6 +51,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
   private static final int TOTAL_HEIGHT = WINDOW_SIZE_Y + BUTTONS_SIZE_Y + 1; // 185
   // Symbol cost display
   private static final int INK_COST_PER_SYMBOL = 100; // Base ink cost
+  private final IAgeSymbol hoveredSymbol = null;
   // Panel positions
   private int surfaceLeft;
   private int surfaceTop;
@@ -72,7 +73,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
   private boolean sortAlphabetically = false;
   private boolean showAll = false;
   private String searchText = "";
-  private final IAgeSymbol hoveredSymbol = null;
 
   public WritingDeskScreen(WritingDeskMenu menu, Inventory playerInventory, Component title) {
     super(menu, playerInventory, title);

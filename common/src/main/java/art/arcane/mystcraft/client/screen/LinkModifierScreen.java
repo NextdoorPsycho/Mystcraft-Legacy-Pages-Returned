@@ -33,12 +33,12 @@ public class LinkModifierScreen extends AbstractContainerScreen<LinkModifierMenu
   private static final int WARNING_COLOR_LIGHT = 0xFFFF4444;
   private static final int WARNING_COLOR_DARK = 0xFFAA0000;
   private final List<MystGuiToggleButton> flagButtons = new ArrayList<>();
+  private final boolean isArmed = false;
   private MystGuiPanel rootPanel;
   private MystGuiTextField seedTextField;
   private MystGuiTextField nameTextField;
   private MystGuiToggleButton armKillButton;
   private MystGuiToggleButton confirmKillButton;
-  private final boolean isArmed = false;
   private int warningPulse = 0;
 
   public LinkModifierScreen(LinkModifierMenu menu, Inventory playerInventory, Component title) {

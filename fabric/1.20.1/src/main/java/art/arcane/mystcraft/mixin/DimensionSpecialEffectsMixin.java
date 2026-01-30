@@ -19,14 +19,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(DimensionSpecialEffects.class)
 public class DimensionSpecialEffectsMixin {
 
-    @Shadow
-    @Final
-    private static Object2ObjectMap<ResourceLocation, DimensionSpecialEffects> EFFECTS;
+  @Shadow
+  @Final
+  private static Object2ObjectMap<ResourceLocation, DimensionSpecialEffects> EFFECTS;
 
-    @Inject(method = "<clinit>", at = @At("TAIL"))
-    private static void mystcraft$registerAgeEffects(CallbackInfo ci) {
-        ResourceLocation ageKey = new ResourceLocation(Mystcraft.MOD_ID, "age");
-        EFFECTS.put(ageKey, new AgeDimensionSpecialEffects());
-        Mystcraft.LOGGER.info("[Mystcraft] Registered DimensionSpecialEffects under key '{}'", ageKey);
-    }
+  @Inject(method = "<clinit>", at = @At("TAIL"))
+  private static void mystcraft$registerAgeEffects(CallbackInfo ci) {
+    ResourceLocation ageKey = new ResourceLocation(Mystcraft.MOD_ID, "age");
+    EFFECTS.put(ageKey, new AgeDimensionSpecialEffects());
+    Mystcraft.LOGGER.info("[Mystcraft] Registered DimensionSpecialEffects under key '{}'", ageKey);
+  }
 }

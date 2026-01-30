@@ -248,7 +248,7 @@ public class VerticalTendrilsPopulator implements IPopulate {
   }
 
   private int findCeilingPosition(WorldGenLevel world, int x, int z, long pathSeed,
-                                   int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
+                                  int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
     // Skip if position is outside chunk bounds to avoid accessing unloaded chunks
     if (x < chunkMinX - 1 || x > chunkMaxX + 1 || z < chunkMinZ - 1 || z > chunkMaxZ + 1) {
       return -1;

@@ -35,10 +35,10 @@ public class PersonalPocketData extends SavedData {
   public static PersonalPocketData get(MinecraftServer server) {
     ServerLevel overworld = server.overworld();
     return Services.VERSION.computeSavedData(
-            overworld,
-            PersonalPocketData::new,
-            PersonalPocketData::load,
-            DATA_NAME
+        overworld,
+        PersonalPocketData::new,
+        PersonalPocketData::load,
+        DATA_NAME
     );
   }
 

@@ -16,6 +16,7 @@ public class StarFissureBlockEntity extends MystcraftBlockEntity {
   private FissureState state = FissureState.OPEN;
   private float formProgress = 1.0f; // 0 = closed, 1 = open
   private float animationTick = 0f;
+
   public StarFissureBlockEntity(BlockPos pos, BlockState blockState) {
     super(ModBlockEntities.STAR_FISSURE.get(), pos, blockState);
   }

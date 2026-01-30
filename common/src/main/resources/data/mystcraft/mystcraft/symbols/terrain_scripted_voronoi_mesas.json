@@ -35,10 +35,16 @@
           },
           "b": {
             "op": "add",
-            "a": { "var": "y" },
+            "a": {
+              "var": "y"
+            },
             "b": {
               "op": "mul",
-              "a": { "op": "cell_distance", "mode": "square", "size": 64 },
+              "a": {
+                "op": "cell_distance",
+                "mode": "square",
+                "size": 64
+              },
               "b": 18
             }
           }

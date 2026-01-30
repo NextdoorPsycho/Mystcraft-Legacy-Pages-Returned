@@ -17,16 +17,6 @@ public final class MystcraftNetwork {
   public static BiConsumer<Object, ServerPlayer> sendToPlayerHandler;
   public static Consumer<Object> sendToAllHandler;
   public static BiConsumer<Object, ServerPlayer> sendToTrackingHandler;
-
-  /**
-   * Platform-specific handler for sending packets to players tracking a block position.
-   * BiConsumer takes (packet, level, pos).
-   */
-  @FunctionalInterface
-  public interface TrackingBlockSender {
-    void send(Object packet, ServerLevel level, BlockPos pos);
-  }
-
   public static TrackingBlockSender sendToTrackingBlockHandler;
 
   private MystcraftNetwork() {
@@ -67,5 +57,14 @@ public final class MystcraftNetwork {
     if (sendToTrackingBlockHandler != null) {
       sendToTrackingBlockHandler.send(packet, level, pos);
     }
+  }
+
+  /**
+   * Platform-specific handler for sending packets to players tracking a block position.
+   * BiConsumer takes (packet, level, pos).
+   */
+  @FunctionalInterface
+  public interface TrackingBlockSender {
+    void send(Object packet, ServerLevel level, BlockPos pos);
   }
 }

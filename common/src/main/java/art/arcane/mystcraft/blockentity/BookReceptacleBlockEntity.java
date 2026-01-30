@@ -24,7 +24,10 @@ import org.jetbrains.annotations.NotNull;
 public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
 
   private static final String TAG_INVENTORY = "inventory";
-  private boolean loading = false;  private final SimpleContainer inventory = new SimpleContainer(1) {
+  private boolean loading = false;
+  public BookReceptacleBlockEntity(BlockPos pos, BlockState blockState) {
+    super(ModBlockEntities.BOOK_RECEPTACLE.get(), pos, blockState);
+  }  private final SimpleContainer inventory = new SimpleContainer(1) {
     @Override
     public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
       return isValidPortalActivator(stack);
@@ -42,10 +45,6 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
       handleBookChange();
     }
   };
-
-  public BookReceptacleBlockEntity(BlockPos pos, BlockState blockState) {
-    super(ModBlockEntities.BOOK_RECEPTACLE.get(), pos, blockState);
-  }
 
   /**
    * Checks if a stack can activate a portal.
@@ -182,6 +181,8 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
   public int getAnalogOutputSignal() {
     return hasBook() ? 15 : 0;
   }
+
+
 
 
 }

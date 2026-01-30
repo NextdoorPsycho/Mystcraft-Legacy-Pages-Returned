@@ -14,42 +14,44 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
-/** Loot modifier that adds booster packs to loot chests. */
+/**
+ * Loot modifier that adds booster packs to loot chests.
+ */
 public class BoosterPackLootModifier extends LootModifier {
 
-    public static final Supplier<Codec<BoosterPackLootModifier>> CODEC = Suppliers.memoize(() ->
-            RecordCodecBuilder.create(inst -> codecStart(inst)
-                    .and(Codec.FLOAT.fieldOf("chance").forGetter(m -> m.chance))
-                    .and(Codec.INT.fieldOf("min_count").forGetter(m -> m.minCount))
-                    .and(Codec.INT.fieldOf("max_count").forGetter(m -> m.maxCount))
-                    .apply(inst, BoosterPackLootModifier::new)));
+  public static final Supplier<Codec<BoosterPackLootModifier>> CODEC = Suppliers.memoize(() ->
+      RecordCodecBuilder.create(inst -> codecStart(inst)
+          .and(Codec.FLOAT.fieldOf("chance").forGetter(m -> m.chance))
+          .and(Codec.INT.fieldOf("min_count").forGetter(m -> m.minCount))
+          .and(Codec.INT.fieldOf("max_count").forGetter(m -> m.maxCount))
+          .apply(inst, BoosterPackLootModifier::new)));
 
-    private final float chance;
-    private final int minCount;
-    private final int maxCount;
+  private final float chance;
+  private final int minCount;
+  private final int maxCount;
 
-    public BoosterPackLootModifier(LootItemCondition[] conditions, float chance, int minCount, int maxCount) {
-        super(conditions);
-        this.chance = chance;
-        this.minCount = minCount;
-        this.maxCount = maxCount;
+  public BoosterPackLootModifier(LootItemCondition[] conditions, float chance, int minCount, int maxCount) {
+    super(conditions);
+    this.chance = chance;
+    this.minCount = minCount;
+    this.maxCount = maxCount;
+  }
+
+  @Override
+  protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
+    if (context.getRandom().nextFloat() > chance) {
+      return generatedLoot;
     }
 
-    @Override
-    protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-        if (context.getRandom().nextFloat() > chance) {
-            return generatedLoot;
-        }
+    int count = minCount + context.getRandom().nextInt(maxCount - minCount + 1);
+    ItemStack boosters = new ItemStack(MystcraftRegistries.BOOSTER_PACK.get(), count);
+    generatedLoot.add(boosters);
 
-        int count = minCount + context.getRandom().nextInt(maxCount - minCount + 1);
-        ItemStack boosters = new ItemStack(MystcraftRegistries.BOOSTER_PACK.get(), count);
-        generatedLoot.add(boosters);
+    return generatedLoot;
+  }
 
-        return generatedLoot;
-    }
-
-    @Override
-    public Codec<? extends IGlobalLootModifier> codec() {
-        return CODEC.get();
-    }
+  @Override
+  public Codec<? extends IGlobalLootModifier> codec() {
+    return CODEC.get();
+  }
 }

@@ -22,12 +22,13 @@ public class MystGuiPageSurface extends MystGuiElement {
   public static final float PAGE_WIDTH = 30;
   public static final float PAGE_HEIGHT = PAGE_WIDTH * 4 / 3;
   private final PagesProvider provider;
-  private PositionableItem hoverItem;
   private final List<Component> hoverTooltip = new ArrayList<>();
+  private PositionableItem hoverItem;
   private int scrollOffset = 0;
   private int maxScroll = 0;
   private String searchText = "";
   private boolean mouseDown = false;
+
   public MystGuiPageSurface(PagesProvider provider, int left, int top, int width, int height) {
     super(left, top, width, height);
     this.provider = provider;

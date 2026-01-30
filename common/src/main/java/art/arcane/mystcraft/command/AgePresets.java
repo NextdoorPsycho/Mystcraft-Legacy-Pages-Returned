@@ -1610,14 +1610,14 @@ public final class AgePresets {
   }
 
   /**
-     * A pool of symbols to randomly pick from.
-     */
-    public record RandomPool(int pickCount, List<String> options) {
+   * A pool of symbols to randomly pick from.
+   */
+  public record RandomPool(int pickCount, List<String> options) {
   }
 
   /**
-     * A curated preset definition.
-     */
-    public record Preset(String name, String displayName, List<String> fixedSymbols, List<RandomPool> randomPools) {
+   * A curated preset definition.
+   */
+  public record Preset(String name, String displayName, List<String> fixedSymbols, List<RandomPool> randomPools) {
   }
 }

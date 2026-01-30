@@ -61,9 +61,8 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
       InkMixerBlockEntity.this.markForUpdate();
     }
   };
-
-  private boolean hasInk = false;
   private final Map<String, Float> inkProbabilities = new HashMap<>();
+  private boolean hasInk = false;
   private long nextSeed;
 
   public InkMixerBlockEntity(BlockPos pos, BlockState blockState) {

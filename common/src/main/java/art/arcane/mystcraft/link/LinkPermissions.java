@@ -132,10 +132,10 @@ public class LinkPermissions extends SavedData {
    */
   public static LinkPermissions get(MinecraftServer server) {
     return Services.VERSION.computeSavedData(
-            server.overworld(),
-            LinkPermissions::create,
-            LinkPermissions::load,
-            DATA_NAME
+        server.overworld(),
+        LinkPermissions::create,
+        LinkPermissions::load,
+        DATA_NAME
     );
   }
 

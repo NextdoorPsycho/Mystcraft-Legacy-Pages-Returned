@@ -14,33 +14,33 @@ import java.util.function.Supplier;
  */
 public class NeoForgeVersionHelper implements IVersionHelper {
 
-    @Override
-    public String getMinecraftVersion() {
-        return "1.20.2";
-    }
+  @Override
+  public String getMinecraftVersion() {
+    return "1.20.2";
+  }
 
-    @Override
-    public <T extends SavedData> T computeSavedData(
-            ServerLevel level,
-            Supplier<T> constructor,
-            Function<CompoundTag, T> loader,
-            String name
-    ) {
-        SavedData.Factory<T> factory = new SavedData.Factory<>(
-                constructor,
-                loader,
-                DataFixTypes.LEVEL
-        );
-        return level.getDataStorage().computeIfAbsent(factory, name);
-    }
+  @Override
+  public <T extends SavedData> T computeSavedData(
+      ServerLevel level,
+      Supplier<T> constructor,
+      Function<CompoundTag, T> loader,
+      String name
+  ) {
+    SavedData.Factory<T> factory = new SavedData.Factory<>(
+        constructor,
+        loader,
+        DataFixTypes.LEVEL
+    );
+    return level.getDataStorage().computeIfAbsent(factory, name);
+  }
 
-    @Override
-    public boolean usesNewScrollAPI() {
-        return true;
-    }
+  @Override
+  public boolean usesNewScrollAPI() {
+    return true;
+  }
 
-    @Override
-    public boolean usesNewRenderBackgroundAPI() {
-        return true;
-    }
+  @Override
+  public boolean usesNewRenderBackgroundAPI() {
+    return true;
+  }
 }

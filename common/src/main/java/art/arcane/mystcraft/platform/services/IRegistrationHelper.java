@@ -21,6 +21,7 @@ public interface IRegistrationHelper {
    * Initializes the registration system with the platform's mod event bus.
    * For Forge/NeoForge this is the IEventBus, for Fabric this may be null.
    * Must be called before any registrations.
+   *
    * @param modEventBus Platform-specific event bus (IEventBus for Forge/NeoForge, null for Fabric)
    */
   void initialize(Object modEventBus);

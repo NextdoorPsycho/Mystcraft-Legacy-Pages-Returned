@@ -28,6 +28,7 @@ public final class PersonalPocketEscapeHandler {
 
   /**
    * Handles death in personal pocket. Prevents actual death and teleports player back.
+   *
    * @return true if death was prevented, false if not in personal pocket
    */
   public static boolean handleDeath(ServerPlayer player, DamageSource source) {

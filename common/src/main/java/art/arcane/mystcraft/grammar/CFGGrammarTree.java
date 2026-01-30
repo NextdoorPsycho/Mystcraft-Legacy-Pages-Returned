@@ -18,6 +18,7 @@ public class CFGGrammarTree {
   private final List<GrammarNode> unexplored = new LinkedList<>();
   private List<GrammarNode> subroots = new ArrayList<>();
   private List<ResourceLocation> terminals;
+
   /**
    * Creates a new grammar tree with the given root token.
    */

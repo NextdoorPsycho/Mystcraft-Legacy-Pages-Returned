@@ -69,6 +69,10 @@ public class AgeDimensionFactory {
   private static final String FIELD_LEVELS = "levels";
   private static final String FIELD_STORAGE_SOURCE = "storageSource";
   private static final String FIELD_FROZEN = "frozen";
+  /**
+   * Avoid spawning players in the upper/lower edges of the dimension.
+   */
+  private static final int SPAWN_EDGE_MARGIN = 50;
 
   /**
    * Gets a field value using reflection, trying the field name first.
@@ -347,6 +351,11 @@ public class AgeDimensionFactory {
       ageData.setAgeUID(ageUID);
       ageData.setAgeUUID(ageUUID);
       applyMicroDimensionBorder(newLevel, ageData);
+
+      ChunkGenerator generator = newLevel.getChunkSource().getGenerator();
+      if (generator instanceof AgeChunkGenerator ageGen) {
+        ageGen.ensurePocketHeadLoaded(newLevel);
+      }
 
       return newLevel;
 
@@ -801,9 +810,6 @@ public class AgeDimensionFactory {
 
     return null;
   }
-
-  /** Avoid spawning players in the upper/lower edges of the dimension. */
-  private static final int SPAWN_EDGE_MARGIN = 50;
 
   /**
    * Checks if a position is safe for spawning.

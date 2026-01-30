@@ -1,7 +1,5 @@
 package art.arcane.mystcraft.item;
 
-import art.arcane.mystcraft.client.screen.GuidebookScreen;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -28,13 +26,22 @@ public class GuidebookItem extends Item {
     ItemStack stack = player.getItemInHand(hand);
 
     if (level.isClientSide) {
-      openGuidebook();
+      openGuidebookClient();
     }
 
     return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
   }
 
-  private void openGuidebook() {
-    Minecraft.getInstance().setScreen(new GuidebookScreen());
+  /**
+   * Opens the guidebook screen. This method uses reflection to avoid
+   * loading client classes on the dedicated server.
+   */
+  private void openGuidebookClient() {
+    try {
+      Class<?> clientHelperClass = Class.forName("art.arcane.mystcraft.client.GuidebookClientHelper");
+      clientHelperClass.getMethod("openGuidebook").invoke(null);
+    } catch (Exception e) {
+      // Silently fail - client helper not available
+    }
   }
 }

@@ -72,6 +72,27 @@ public final class PersonalPocketDimension {
   private static boolean loggedYCap = false;
   private static boolean loggedXZCap = false;
 
+  /**
+   * Pre-generation cache for head blocks. Stores blocks by ageUID before dimension creation
+   * so the chunk generator can access them during initial terrain generation.
+   */
+  private static final java.util.Map<Integer, java.util.Map<AgeData.PocketHeadFace, java.util.List<String>>> preGenHeadBlocksCache =
+      new java.util.concurrent.ConcurrentHashMap<>();
+
+  /**
+   * Gets pre-generation head blocks for the given age UID, if available.
+   */
+  public static java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> getPreGenHeadBlocks(int ageUID) {
+    return preGenHeadBlocksCache.get(ageUID);
+  }
+
+  /**
+   * Clears pre-generation cache for the given age UID.
+   */
+  public static void clearPreGenHeadBlocks(int ageUID) {
+    preGenHeadBlocksCache.remove(ageUID);
+  }
+
   private PersonalPocketDimension() {
   }
 
@@ -363,9 +384,20 @@ public final class PersonalPocketDimension {
     AgeDirectorImpl director = buildPersonalDirector(server);
     UUID ageUUID = owner;
 
+    // Build head blocks BEFORE dimension creation so chunk generator can access them
+    java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> headBlocks =
+        PocketHeadUtils.buildPocketHeadBlocks(server, owner);
+    if (headBlocks == null) {
+      headBlocks = buildSolidWoolHeadBlocks();
+      Mystcraft.LOGGER.warn("[PersonalPocket] Using fallback wool head palette for {}", owner);
+    }
+    preGenHeadBlocksCache.put(ageUID, headBlocks);
+    Mystcraft.LOGGER.info("[PersonalPocket] Pre-cached head blocks for ageUID {}", ageUID);
+
     Mystcraft.LOGGER.info("[PersonalPocket] Creating new pocket dimension for {}", owner);
     ServerLevel level = AgeDimensionFactory.createAgeDimension(server, ageUID, ageUUID, director);
     if (level == null) {
+      clearPreGenHeadBlocks(ageUID);
       return null;
     }
 
@@ -458,62 +490,107 @@ public final class PersonalPocketDimension {
     int innerHalfXZ = getInnerHalfSizeXZ();
     int innerHalfY = getInnerHalfSizeY();
     int centerY = getCenterY();
-    int boundaryXZ = innerHalfXZ + 1;
-    int boundaryY = innerHalfY + 1;
 
+    // Shell layer 1 boundaries (matching chunk generator):
+    // - Void spans from -innerHalf to innerHalf-1 (exactly 2*innerHalf blocks)
+    // - Shell layer 1 is at: positive side = innerHalf, negative side = -innerHalf-1
+    int positiveBoundaryXZ = innerHalfXZ;
+    int negativeBoundaryXZ = -innerHalfXZ - 1;
+    int positiveBoundaryY = centerY + innerHalfY;
+    int negativeBoundaryY = centerY - innerHalfY - 1;
+
+    // Inner void coordinates for UV mapping
     int minX = -innerHalfXZ;
-    int maxX = innerHalfXZ;
+    int maxX = innerHalfXZ - 1;
     int minZ = -innerHalfXZ;
-    int maxZ = innerHalfXZ;
+    int maxZ = innerHalfXZ - 1;
     int minY = centerY - innerHalfY;
-    int maxY = centerY + innerHalfY;
+    int maxY = centerY + innerHalfY - 1;
 
-    int spanXZ = maxX - minX + 1;
-    int spanY = maxY - minY + 1;
+    int spanXZ = 2 * innerHalfXZ;
+    int spanY = 2 * innerHalfY;
 
     int placed = 0;
-    placed += reskinFace(level, ageData, AgeData.PocketHeadFace.FRONT, minX, maxX, minY, maxY,
-        boundaryXZ, 0, spanXZ, spanY);
-    placed += reskinFace(level, ageData, AgeData.PocketHeadFace.BACK, minX, maxX, minY, maxY,
-        -boundaryXZ, 0, spanXZ, spanY);
-    placed += reskinFace(level, ageData, AgeData.PocketHeadFace.RIGHT, minZ, maxZ, minY, maxY,
-        0, boundaryXZ, spanXZ, spanY);
-    placed += reskinFace(level, ageData, AgeData.PocketHeadFace.LEFT, minZ, maxZ, minY, maxY,
-        0, -boundaryXZ, spanXZ, spanY);
+    // FRONT (south, +Z) - shell at z = innerHalfXZ
+    placed += reskinFaceZ(level, ageData, AgeData.PocketHeadFace.FRONT, minX, maxX, minY, maxY,
+        positiveBoundaryXZ, spanXZ, spanY, false);
+    // BACK (north, -Z) - shell at z = -innerHalfXZ - 1
+    placed += reskinFaceZ(level, ageData, AgeData.PocketHeadFace.BACK, minX, maxX, minY, maxY,
+        negativeBoundaryXZ, spanXZ, spanY, true);
+    // RIGHT (east, +X) - shell at x = innerHalfXZ
+    placed += reskinFaceX(level, ageData, AgeData.PocketHeadFace.RIGHT, minZ, maxZ, minY, maxY,
+        positiveBoundaryXZ, spanXZ, spanY, true);
+    // LEFT (west, -X) - shell at x = -innerHalfXZ - 1
+    placed += reskinFaceX(level, ageData, AgeData.PocketHeadFace.LEFT, minZ, maxZ, minY, maxY,
+        negativeBoundaryXZ, spanXZ, spanY, false);
+    // TOP - shell at y = centerY + innerHalfY
     placed += reskinTopBottom(level, ageData, AgeData.PocketHeadFace.TOP, minX, maxX, minZ, maxZ,
-        centerY + boundaryY, spanXZ);
+        positiveBoundaryY, spanXZ, false);
+    // BOTTOM - shell at y = centerY - innerHalfY - 1
     placed += reskinTopBottom(level, ageData, AgeData.PocketHeadFace.BOTTOM, minX, maxX, minZ, maxZ,
-        centerY - boundaryY, spanXZ);
+        negativeBoundaryY, spanXZ, true);
     return placed;
   }
 
-  private static int reskinFace(ServerLevel level, AgeData ageData, AgeData.PocketHeadFace face,
-                                int minU, int maxU, int minY, int maxY,
-                                int fixedZ, int fixedX, int spanXZ, int spanY) {
+  /**
+   * Reskin a Z-facing wall (FRONT=south or BACK=north).
+   */
+  private static int reskinFaceZ(ServerLevel level, AgeData ageData, AgeData.PocketHeadFace face,
+                                 int minX, int maxX, int minY, int maxY,
+                                 int fixedZ, int spanXZ, int spanY, boolean mirrorU) {
     java.util.List<String> blocks = ageData.getPocketHeadBlocks(face);
     if (blocks == null || blocks.size() != 64) {
       return 0;
     }
+    int innerHalfXZ = getInnerHalfSizeXZ();
+    int innerHalfY = getInnerHalfSizeY();
+    int centerY = getCenterY();
+
     int placed = 0;
     BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-    for (int uWorld = minU; uWorld <= maxU; uWorld++) {
+    for (int x = minX; x <= maxX; x++) {
       for (int y = minY; y <= maxY; y++) {
-        int u;
-        int v = maxY - y;
-        if (face == AgeData.PocketHeadFace.FRONT) {
-          u = uWorld - minU;
-          pos.set(uWorld, y, fixedZ);
-        } else if (face == AgeData.PocketHeadFace.BACK) {
-          u = (spanXZ - 1) - (uWorld - minU);
-          pos.set(uWorld, y, fixedZ);
-        } else if (face == AgeData.PocketHeadFace.RIGHT) {
-          u = (spanXZ - 1) - (uWorld - minU);
-          pos.set(fixedX, y, uWorld);
-        } else {
-          u = uWorld - minU;
-          pos.set(fixedX, y, uWorld);
-        }
-        BlockState state = sampleFace(blocks, u, v, spanXZ, spanY);
+        // UV calculation matching chunk generator
+        int u = mirrorU ? ((innerHalfXZ - 1 - x) * 8) / spanXZ
+                        : ((x + innerHalfXZ) * 8) / spanXZ;
+        int v = ((centerY + innerHalfY - 1 - y) * 8) / spanY;
+        int px = Math.max(0, Math.min(7, u));
+        int py = Math.max(0, Math.min(7, v));
+        BlockState state = getBlockFromList(blocks, px, py);
+        pos.set(x, y, fixedZ);
+        level.setBlock(pos, state, 2);
+        placed++;
+      }
+    }
+    return placed;
+  }
+
+  /**
+   * Reskin an X-facing wall (RIGHT=east or LEFT=west).
+   */
+  private static int reskinFaceX(ServerLevel level, AgeData ageData, AgeData.PocketHeadFace face,
+                                 int minZ, int maxZ, int minY, int maxY,
+                                 int fixedX, int spanXZ, int spanY, boolean mirrorU) {
+    java.util.List<String> blocks = ageData.getPocketHeadBlocks(face);
+    if (blocks == null || blocks.size() != 64) {
+      return 0;
+    }
+    int innerHalfXZ = getInnerHalfSizeXZ();
+    int innerHalfY = getInnerHalfSizeY();
+    int centerY = getCenterY();
+
+    int placed = 0;
+    BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+    for (int z = minZ; z <= maxZ; z++) {
+      for (int y = minY; y <= maxY; y++) {
+        // UV calculation matching chunk generator
+        int u = mirrorU ? ((innerHalfXZ - 1 - z) * 8) / spanXZ
+                        : ((z + innerHalfXZ) * 8) / spanXZ;
+        int v = ((centerY + innerHalfY - 1 - y) * 8) / spanY;
+        int px = Math.max(0, Math.min(7, u));
+        int py = Math.max(0, Math.min(7, v));
+        BlockState state = getBlockFromList(blocks, px, py);
+        pos.set(fixedX, y, z);
         level.setBlock(pos, state, 2);
         placed++;
       }
@@ -523,18 +600,24 @@ public final class PersonalPocketDimension {
 
   private static int reskinTopBottom(ServerLevel level, AgeData ageData, AgeData.PocketHeadFace face,
                                      int minX, int maxX, int minZ, int maxZ,
-                                     int fixedY, int spanXZ) {
+                                     int fixedY, int spanXZ, boolean flipV) {
     java.util.List<String> blocks = ageData.getPocketHeadBlocks(face);
     if (blocks == null || blocks.size() != 64) {
       return 0;
     }
+    int innerHalfXZ = getInnerHalfSizeXZ();
+
     int placed = 0;
     BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
     for (int x = minX; x <= maxX; x++) {
       for (int z = minZ; z <= maxZ; z++) {
-        int u = x - minX;
-        int v = face == AgeData.PocketHeadFace.TOP ? (z - minZ) : (spanXZ - 1) - (z - minZ);
-        BlockState state = sampleFace(blocks, u, v, spanXZ, spanXZ);
+        // UV calculation matching chunk generator
+        int u = ((x + innerHalfXZ) * 8) / spanXZ;
+        int v = flipV ? ((z + innerHalfXZ) * 8) / spanXZ
+                      : ((innerHalfXZ - 1 - z) * 8) / spanXZ;
+        int px = Math.max(0, Math.min(7, u));
+        int py = Math.max(0, Math.min(7, v));
+        BlockState state = getBlockFromList(blocks, px, py);
         pos.set(x, fixedY, z);
         level.setBlock(pos, state, 2);
         placed++;
@@ -543,9 +626,7 @@ public final class PersonalPocketDimension {
     return placed;
   }
 
-  private static BlockState sampleFace(java.util.List<String> blocks, int u, int v, int width, int height) {
-    int px = Math.max(0, Math.min(7, (u * 8) / Math.max(1, width)));
-    int py = Math.max(0, Math.min(7, (v * 8) / Math.max(1, height)));
+  private static BlockState getBlockFromList(java.util.List<String> blocks, int px, int py) {
     String id = blocks.get(py * 8 + px);
     ResourceLocation loc = ResourceLocation.tryParse(id);
     if (loc != null) {
@@ -563,13 +644,20 @@ public final class PersonalPocketDimension {
       return;
     }
 
+    int ageUID = getPersonalAgeUid(owner);
+
     boolean needsRebuild = !ageData.hasPocketHeadBlocks() || hasNonWoolHeadBlocks(ageData);
     if (!needsRebuild) {
+      // Clear pre-gen cache if we don't need to rebuild
+      clearPreGenHeadBlocks(ageUID);
       return;
     }
 
-    java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> headBlocks =
-        PersonalPocketData.get(level.getServer()).getHeadBlocks(owner);
+    // Check pre-gen cache first (populated before dimension creation)
+    java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> headBlocks = preGenHeadBlocksCache.get(ageUID);
+    if (headBlocks == null) {
+      headBlocks = PersonalPocketData.get(level.getServer()).getHeadBlocks(owner);
+    }
     if (headBlocks == null) {
       headBlocks = PocketHeadUtils.buildPocketHeadBlocks(level.getServer(), owner);
     }
@@ -585,6 +673,10 @@ public final class PersonalPocketDimension {
       }
     }
     PersonalPocketData.get(level.getServer()).setHeadBlocks(owner, headBlocks);
+
+    // Clear pre-gen cache now that blocks are stored in AgeData
+    clearPreGenHeadBlocks(ageUID);
+
     Mystcraft.LOGGER.info("[PersonalPocket] Applied head-based wall palette for {}", owner);
     net.minecraft.world.level.chunk.ChunkGenerator generator = level.getChunkSource().getGenerator();
     if (generator instanceof AgeChunkGenerator ageGen) {

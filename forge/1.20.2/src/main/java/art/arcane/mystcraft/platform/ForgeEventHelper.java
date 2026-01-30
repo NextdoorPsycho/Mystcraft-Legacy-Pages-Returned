@@ -161,11 +161,11 @@ public class ForgeEventHelper implements IEventHelper {
 
   // ==================== Client Networking Sync ====================
 
-  private void onClientLoggedIn(ClientPlayerNetworkEvent.LoggedInEvent event) {
+  private void onClientLoggedIn(ClientPlayerNetworkEvent.LoggingIn event) {
     PocketHeadClientSync.requestSend();
   }
 
-  private void onClientLoggedOut(ClientPlayerNetworkEvent.LoggedOutEvent event) {
+  private void onClientLoggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
     PocketHeadClientSync.reset();
   }
 

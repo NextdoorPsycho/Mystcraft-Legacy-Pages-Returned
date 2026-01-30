@@ -22,6 +22,9 @@
     ],
     "client": [
       "art.arcane.mystcraft.fabric.MystcraftFabricClient"
+    ],
+    "fabric-gametest": [
+      "art.arcane.mystcraft.fabric.gametest.MystcraftFabricGameTests"
     ]
   },
   "mixins": [

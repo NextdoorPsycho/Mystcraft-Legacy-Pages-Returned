@@ -81,7 +81,7 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/gametest/**'
         exclude '**/client/screen/**'
         exclude '**/client/gui/element/**'
-        exclude '**/item/GuidebookItem.java'
+        exclude '**/client/GuidebookClientHelper.java'
         exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
         exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
         exclude '**/advancements/WritingDeskWriteTrigger.java'

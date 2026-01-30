@@ -447,15 +447,42 @@ public class AgeChunkGenerator extends ChunkGenerator {
     if (pocketHeadLoaded) {
       return;
     }
+
+    // Try loading from AgeData first
     AgeData ageData = AgeData.getIfPresent(level);
-    if (ageData == null || !ageData.hasPocketHeadBlocks()) {
+    java.util.Map<AgeData.PocketHeadFace, List<String>> headBlockStrings = null;
+
+    if (ageData != null && ageData.hasPocketHeadBlocks()) {
+      headBlockStrings = new java.util.EnumMap<>(AgeData.PocketHeadFace.class);
+      for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
+        List<String> blocks = ageData.getPocketHeadBlocks(face);
+        if (blocks != null && blocks.size() == 64) {
+          headBlockStrings.put(face, blocks);
+        }
+      }
+      if (headBlockStrings.size() != AgeData.PocketHeadFace.values().length) {
+        headBlockStrings = null;
+      }
+    }
+
+    // If not in AgeData, check pre-generation cache (used during initial dimension creation)
+    if (headBlockStrings == null && ageUID > 0) {
+      headBlockStrings = art.arcane.mystcraft.world.PersonalPocketDimension.getPreGenHeadBlocks(ageUID);
+      if (headBlockStrings != null) {
+        Mystcraft.LOGGER.debug("[ChunkGen] Age {} loaded head blocks from pre-gen cache", ageUID);
+      }
+    }
+
+    if (headBlockStrings == null) {
       pocketHeadLoaded = true;
       return;
     }
+
+    // Convert string block IDs to BlockState array
     java.util.EnumMap<AgeData.PocketHeadFace, BlockState[]> map =
         new java.util.EnumMap<>(AgeData.PocketHeadFace.class);
     for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
-      List<String> blocks = ageData.getPocketHeadBlocks(face);
+      List<String> blocks = headBlockStrings.get(face);
       if (blocks == null || blocks.size() != 64) {
         continue;
       }
@@ -1196,6 +1223,39 @@ public class AgeChunkGenerator extends ChunkGenerator {
   }
 
   private BlockState getPocketHeadBlock(int worldX, int worldY, int worldZ, int innerHalfXZ, int innerHalfY, int centerY) {
+    // Lazy load from pre-gen cache if not already loaded
+    if (pocketHeadBlocks == null && !pocketHeadLoaded && ageUID > 0) {
+      java.util.Map<AgeData.PocketHeadFace, List<String>> preGenBlocks =
+          art.arcane.mystcraft.world.PersonalPocketDimension.getPreGenHeadBlocks(ageUID);
+      if (preGenBlocks != null) {
+        java.util.EnumMap<AgeData.PocketHeadFace, BlockState[]> map =
+            new java.util.EnumMap<>(AgeData.PocketHeadFace.class);
+        for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
+          List<String> blocks = preGenBlocks.get(face);
+          if (blocks == null || blocks.size() != 64) {
+            continue;
+          }
+          BlockState[] states = new BlockState[64];
+          for (int i = 0; i < blocks.size(); i++) {
+            String id = blocks.get(i);
+            ResourceLocation loc = ResourceLocation.tryParse(id);
+            if (loc != null) {
+              net.minecraft.world.level.block.Block block = BuiltInRegistries.BLOCK.get(loc);
+              states[i] = block != null && block != Blocks.AIR ? block.defaultBlockState() : Blocks.WHITE_WOOL.defaultBlockState();
+            } else {
+              states[i] = Blocks.WHITE_WOOL.defaultBlockState();
+            }
+          }
+          map.put(face, states);
+        }
+        if (map.size() == AgeData.PocketHeadFace.values().length) {
+          pocketHeadBlocks = map;
+          Mystcraft.LOGGER.debug("[ChunkGen] Age {} lazy-loaded head blocks from pre-gen cache", ageUID);
+        }
+        pocketHeadLoaded = true;
+      }
+    }
+
     if (pocketHeadBlocks == null) {
       return null;
     }
@@ -1229,58 +1289,50 @@ public class AgeChunkGenerator extends ChunkGenerator {
     }
 
     // Void spans from -innerHalf to innerHalf-1 (exactly 2*innerHalf blocks)
-    int minX = -innerHalfXZ;
-    int maxX = innerHalfXZ - 1;
-    int minZ = -innerHalfXZ;
-    int maxZ = innerHalfXZ - 1;
-    int minY = centerY - innerHalfY;
-    int maxY = centerY + innerHalfY - 1;
+    int spanXZ = 2 * innerHalfXZ;
+    int spanY = 2 * innerHalfY;
 
-    int spanXZ = maxX - minX + 1;  // = 2 * innerHalfXZ
-    int spanY = maxY - minY + 1;   // = 2 * innerHalfY
-
+    // UV coordinates: map world position to 0-7 texture coordinates
+    // All faces oriented so texture appears upright when viewed from inside the room
     int u;
     int v;
     switch (face) {
       case FRONT -> {
-        u = worldX - minX;
-        v = maxY - worldY;
-        return sampleFace(blocks, u, v, spanXZ, spanY);
+        // South wall (+Z): viewer looks south, left=west(-X), right=east(+X)
+        u = ((worldX + innerHalfXZ) * 8) / spanXZ;
+        v = ((centerY + innerHalfY - 1 - worldY) * 8) / spanY;
       }
       case BACK -> {
-        u = (spanXZ - 1) - (worldX - minX);
-        v = maxY - worldY;
-        return sampleFace(blocks, u, v, spanXZ, spanY);
+        // North wall (-Z): viewer looks north, left=east(+X), right=west(-X)
+        u = ((innerHalfXZ - 1 - worldX) * 8) / spanXZ;
+        v = ((centerY + innerHalfY - 1 - worldY) * 8) / spanY;
       }
       case RIGHT -> {
-        u = (spanXZ - 1) - (worldZ - minZ);
-        v = maxY - worldY;
-        return sampleFace(blocks, u, v, spanXZ, spanY);
+        // East wall (+X): viewer looks east, left=north(-Z), right=south(+Z)
+        u = ((innerHalfXZ - 1 - worldZ) * 8) / spanXZ;
+        v = ((centerY + innerHalfY - 1 - worldY) * 8) / spanY;
       }
       case LEFT -> {
-        u = worldZ - minZ;
-        v = maxY - worldY;
-        return sampleFace(blocks, u, v, spanXZ, spanY);
+        // West wall (-X): viewer looks west, left=south(+Z), right=north(-Z)
+        u = ((worldZ + innerHalfXZ) * 8) / spanXZ;
+        v = ((centerY + innerHalfY - 1 - worldY) * 8) / spanY;
       }
       case TOP -> {
-        u = worldX - minX;
-        v = worldZ - minZ;
-        return sampleFace(blocks, u, v, spanXZ, spanXZ);
+        // Ceiling: viewer looks up, texture oriented with north at top
+        u = ((worldX + innerHalfXZ) * 8) / spanXZ;
+        v = ((innerHalfXZ - 1 - worldZ) * 8) / spanXZ;
       }
       case BOTTOM -> {
-        u = worldX - minX;
-        v = (spanXZ - 1) - (worldZ - minZ);
-        return sampleFace(blocks, u, v, spanXZ, spanXZ);
+        // Floor: viewer looks down, texture oriented with south at top
+        u = ((worldX + innerHalfXZ) * 8) / spanXZ;
+        v = ((worldZ + innerHalfXZ) * 8) / spanXZ;
       }
       default -> {
         return null;
       }
     }
-  }
-
-  private BlockState sampleFace(BlockState[] blocks, int u, int v, int width, int height) {
-    int px = Math.max(0, Math.min(7, (u * 8) / Math.max(1, width)));
-    int py = Math.max(0, Math.min(7, (v * 8) / Math.max(1, height)));
+    int px = Math.max(0, Math.min(7, u));
+    int py = Math.max(0, Math.min(7, v));
     return blocks[py * 8 + px];
   }
 

@@ -23,6 +23,11 @@ public final class PocketHeadUtils {
   private static final int FACE_SIZE = 8;
   private static final int FACE_PIXELS = FACE_SIZE * FACE_SIZE;
 
+  // Minecraft skin dimensions
+  private static final int SKIN_WIDTH = 64;
+  private static final int SKIN_HEIGHT_LEGACY = 32;
+  private static final int SKIN_HEIGHT_MODERN = 64;
+
   private static final PaletteEntry[] PALETTE = new PaletteEntry[]{
       new PaletteEntry("minecraft:white_wool", 0xF9FFFE),
       new PaletteEntry("minecraft:orange_wool", 0xF9801D),
@@ -47,47 +52,66 @@ public final class PocketHeadUtils {
 
   public static Map<AgeData.PocketHeadFace, List<String>> buildPocketHeadBlocks(MinecraftServer server, UUID owner) {
     GameProfile profile = resolveProfile(server, owner);
-    if (profile == null) {
-      Mystcraft.LOGGER.warn("[PocketHead] Unable to resolve profile for {}", owner);
-      return null;
+    String skinUrl = null;
+
+    if (profile != null) {
+      skinUrl = getSkinUrl(server, profile);
     }
 
-    String skinUrl = getSkinUrl(server, profile);
+    // Fallback to direct Mojang API if local resolution failed
     if (skinUrl == null) {
-      Mystcraft.LOGGER.warn("[PocketHead] No skin URL for {}", profile.getName());
+      Mystcraft.LOGGER.debug("[PocketHead] Local resolution failed, trying Mojang API for UUID {}", owner);
+      skinUrl = fetchSkinUrlFromMojangApiByUuid(owner);
+    }
+
+    if (skinUrl == null) {
+      Mystcraft.LOGGER.warn("[PocketHead] No skin URL for {}", owner);
       return null;
     }
 
     BufferedImage skin = downloadSkin(skinUrl);
     if (skin == null) {
-      Mystcraft.LOGGER.warn("[PocketHead] Failed to download skin for {}", profile.getName());
+      Mystcraft.LOGGER.warn("[PocketHead] Failed to download skin for {}", owner);
       return null;
     }
 
     Map<AgeData.PocketHeadFace, int[]> facePixels = extractHeadFaces(skin);
+    if (facePixels == null) {
+      return null;
+    }
     return mapFacesToBlocks(facePixels);
   }
 
   public static Map<AgeData.PocketHeadFace, List<String>> buildPocketHeadBlocksByName(MinecraftServer server, String name) {
+    // First try local profile cache
     GameProfile profile = resolveProfileByName(server, name);
-    if (profile == null) {
-      Mystcraft.LOGGER.warn("[PocketHead] Unable to resolve profile for {}", name);
-      return null;
+    String skinUrl = null;
+
+    if (profile != null) {
+      skinUrl = getSkinUrl(server, profile);
     }
 
-    String skinUrl = getSkinUrl(server, profile);
+    // Fallback to direct Mojang API if local resolution failed
     if (skinUrl == null) {
-      Mystcraft.LOGGER.warn("[PocketHead] No skin URL for {}", profile.getName());
+      Mystcraft.LOGGER.debug("[PocketHead] Local resolution failed, trying Mojang API for {}", name);
+      skinUrl = fetchSkinUrlFromMojangApi(name);
+    }
+
+    if (skinUrl == null) {
+      Mystcraft.LOGGER.warn("[PocketHead] No skin URL for {}", name);
       return null;
     }
 
     BufferedImage skin = downloadSkin(skinUrl);
     if (skin == null) {
-      Mystcraft.LOGGER.warn("[PocketHead] Failed to download skin for {}", profile.getName());
+      Mystcraft.LOGGER.warn("[PocketHead] Failed to download skin for {}", name);
       return null;
     }
 
     Map<AgeData.PocketHeadFace, int[]> facePixels = extractHeadFaces(skin);
+    if (facePixels == null) {
+      return null;
+    }
     return mapFacesToBlocks(facePixels);
   }
 
@@ -178,6 +202,100 @@ public final class PocketHeadUtils {
     }
   }
 
+  @Nullable
+  private static String fetchSkinUrlFromMojangApi(String playerName) {
+    // Step 1: Get UUID from username via Mojang API
+    String uuid = fetchUuidFromMojangApi(playerName);
+    if (uuid == null) {
+      Mystcraft.LOGGER.debug("[PocketHead] Could not fetch UUID for player {} from Mojang API", playerName);
+      return null;
+    }
+
+    // Step 2: Get profile with textures from session server
+    HttpURLConnection connection = null;
+    try {
+      String profileUrl = "https://sessionserver.mojang.com/session/minecraft/profile/" + uuid;
+      connection = (HttpURLConnection) new URL(profileUrl).openConnection();
+      connection.setConnectTimeout(5000);
+      connection.setReadTimeout(5000);
+      connection.connect();
+
+      if (connection.getResponseCode() != 200) {
+        Mystcraft.LOGGER.debug("[PocketHead] Session server returned {} for UUID {}", connection.getResponseCode(), uuid);
+        return null;
+      }
+
+      try (InputStream in = connection.getInputStream()) {
+        String response = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        JsonObject root = JsonParser.parseString(response).getAsJsonObject();
+
+        if (!root.has("properties")) {
+          return null;
+        }
+
+        for (JsonElement prop : root.getAsJsonArray("properties")) {
+          JsonObject propObj = prop.getAsJsonObject();
+          if ("textures".equals(propObj.get("name").getAsString())) {
+            String value = propObj.get("value").getAsString();
+            String decoded = new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
+            JsonObject textureRoot = JsonParser.parseString(decoded).getAsJsonObject();
+            JsonObject textures = textureRoot.getAsJsonObject("textures");
+            if (textures != null && textures.has("SKIN")) {
+              JsonObject skin = textures.getAsJsonObject("SKIN");
+              JsonElement urlElement = skin.get("url");
+              if (urlElement != null) {
+                String skinUrl = urlElement.getAsString();
+                Mystcraft.LOGGER.debug("[PocketHead] Found skin URL for {}: {}", playerName, skinUrl);
+                return skinUrl;
+              }
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      Mystcraft.LOGGER.debug("[PocketHead] Error fetching profile from session server for {}: {}", playerName, e.getMessage());
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
+    }
+    return null;
+  }
+
+  @Nullable
+  private static String fetchUuidFromMojangApi(String playerName) {
+    HttpURLConnection connection = null;
+    try {
+      String apiUrl = "https://api.mojang.com/users/profiles/minecraft/" + playerName;
+      connection = (HttpURLConnection) new URL(apiUrl).openConnection();
+      connection.setConnectTimeout(5000);
+      connection.setReadTimeout(5000);
+      connection.connect();
+
+      if (connection.getResponseCode() != 200) {
+        Mystcraft.LOGGER.debug("[PocketHead] Mojang API returned {} for player {}", connection.getResponseCode(), playerName);
+        return null;
+      }
+
+      try (InputStream in = connection.getInputStream()) {
+        String response = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        JsonObject root = JsonParser.parseString(response).getAsJsonObject();
+        if (root.has("id")) {
+          String uuid = root.get("id").getAsString();
+          Mystcraft.LOGGER.debug("[PocketHead] Resolved {} to UUID {}", playerName, uuid);
+          return uuid;
+        }
+      }
+    } catch (Exception e) {
+      Mystcraft.LOGGER.debug("[PocketHead] Error fetching UUID from Mojang API for {}: {}", playerName, e.getMessage());
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
+    }
+    return null;
+  }
+
   private static String getPropertyValue(Property property) {
     try {
       java.lang.reflect.Method method = property.getClass().getMethod("getValue");
@@ -229,51 +347,48 @@ public final class PocketHeadUtils {
   }
 
   private static Map<AgeData.PocketHeadFace, int[]> extractHeadFaces(BufferedImage skin) {
-    boolean hasOverlay = skin.getHeight() >= 64;
+    // Validate skin dimensions - must be standard Minecraft skin size (64x32 legacy or 64x64 modern)
+    int width = skin.getWidth();
+    int height = skin.getHeight();
+
+    if (width != SKIN_WIDTH || (height != SKIN_HEIGHT_LEGACY && height != SKIN_HEIGHT_MODERN)) {
+      Mystcraft.LOGGER.warn("[PocketHead] Invalid skin dimensions: {}x{} (expected {}x{} or {}x{})",
+          width, height, SKIN_WIDTH, SKIN_HEIGHT_LEGACY, SKIN_WIDTH, SKIN_HEIGHT_MODERN);
+      return null;
+    }
+
     Map<AgeData.PocketHeadFace, int[]> faces = new EnumMap<>(AgeData.PocketHeadFace.class);
 
-    faces.put(AgeData.PocketHeadFace.TOP, extractFace(skin, 8, 0, 8, 16, hasOverlay));
-    faces.put(AgeData.PocketHeadFace.BOTTOM, extractFace(skin, 16, 0, 16, 16, hasOverlay));
-    faces.put(AgeData.PocketHeadFace.LEFT, extractFace(skin, 0, 8, 0, 24, hasOverlay));
-    faces.put(AgeData.PocketHeadFace.FRONT, extractFace(skin, 8, 8, 8, 24, hasOverlay));
-    faces.put(AgeData.PocketHeadFace.RIGHT, extractFace(skin, 16, 8, 16, 24, hasOverlay));
-    faces.put(AgeData.PocketHeadFace.BACK, extractFace(skin, 24, 8, 24, 24, hasOverlay));
+    // Minecraft skin head texture layout (base layer only, 8x8 pixels per face):
+    //   X:  0   8  16  24
+    // Y:0     [TOP][BOT]
+    // Y:8 [R ][FRT][L ][BCK]
+    //
+    // Room orientation: head faces SOUTH (+Z), so when inside looking at walls:
+    // - SOUTH wall (FRONT, +Z): see player's FACE -> skin (8,8)
+    // - NORTH wall (BACK, -Z): see player's BACK -> skin (24,8)
+    // - EAST wall (RIGHT, +X): see player's LEFT side -> skin (16,8)
+    // - WEST wall (LEFT, -X): see player's RIGHT side -> skin (0,8)
+    // - TOP/BOTTOM: top/bottom of head
+    faces.put(AgeData.PocketHeadFace.FRONT, extractFace(skin, 8, 8));
+    faces.put(AgeData.PocketHeadFace.BACK, extractFace(skin, 24, 8));
+    faces.put(AgeData.PocketHeadFace.RIGHT, extractFace(skin, 16, 8));
+    faces.put(AgeData.PocketHeadFace.LEFT, extractFace(skin, 0, 8));
+    faces.put(AgeData.PocketHeadFace.TOP, extractFace(skin, 8, 0));
+    faces.put(AgeData.PocketHeadFace.BOTTOM, extractFace(skin, 16, 0));
 
     return faces;
   }
 
-  private static int[] extractFace(BufferedImage skin, int baseX, int baseY, int overlayX, int overlayY, boolean hasOverlay) {
+  private static int[] extractFace(BufferedImage skin, int startX, int startY) {
     int[] pixels = new int[FACE_PIXELS];
     for (int y = 0; y < FACE_SIZE; y++) {
       for (int x = 0; x < FACE_SIZE; x++) {
-        int base = skin.getRGB(baseX + x, baseY + y);
-        int color = base;
-        if (hasOverlay) {
-          int overlay = skin.getRGB(overlayX + x, overlayY + y);
-          int alpha = (overlay >> 24) & 0xFF;
-          if (alpha > 0) {
-            color = blend(base, overlay, alpha);
-          }
-        }
+        int color = skin.getRGB(startX + x, startY + y);
         pixels[y * FACE_SIZE + x] = color & 0xFFFFFF;
       }
     }
     return pixels;
-  }
-
-  private static int blend(int base, int overlay, int alpha) {
-    int br = (base >> 16) & 0xFF;
-    int bg = (base >> 8) & 0xFF;
-    int bb = base & 0xFF;
-    int or = (overlay >> 16) & 0xFF;
-    int og = (overlay >> 8) & 0xFF;
-    int ob = overlay & 0xFF;
-
-    int inv = 255 - alpha;
-    int r = (or * alpha + br * inv) / 255;
-    int g = (og * alpha + bg * inv) / 255;
-    int b = (ob * alpha + bb * inv) / 255;
-    return (r << 16) | (g << 8) | b;
   }
 
   private static Map<AgeData.PocketHeadFace, List<String>> mapFacesToBlocks(Map<AgeData.PocketHeadFace, int[]> facePixels) {

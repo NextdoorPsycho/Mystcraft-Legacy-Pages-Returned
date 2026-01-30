@@ -233,7 +233,11 @@ public class MystcraftCommands {
                         .executes(context -> debugRunPopulator(context, ""))
                         .then(Commands.argument("params", StringArgumentType.greedyString())
                             .executes(context -> debugRunPopulator(context,
-                                StringArgumentType.getString(context, "params"))))))))
+                                StringArgumentType.getString(context, "params")))))))
+            .then(Commands.literal("pocket")
+                .then(Commands.literal("skin")
+                    .then(Commands.argument("playerName", StringArgumentType.string())
+                        .executes(MystcraftCommands::debugPocketSkin)))))
         .then(Commands.literal("give")
             .requires(source -> source.hasPermission(2))
             .then(Commands.literal("randombook")
@@ -892,6 +896,65 @@ public class MystcraftCommands {
     source.sendSuccess(() -> Component.literal("=== Populator Run ==="), false);
     source.sendSuccess(() -> Component.literal("  Populator: " + id), false);
     source.sendSuccess(() -> Component.literal("  Chunk: " + chunkX + ", " + chunkZ), false);
+    return 1;
+  }
+
+  /**
+   * Debug command to test pocket skin display using another player's skin.
+   * Usage: /mystcraft debug pocket skin <playerName>
+   */
+  private static int debugPocketSkin(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.serverLevel();
+    String playerName = StringArgumentType.getString(context, "playerName");
+
+    // Check if in a personal pocket
+    if (!art.arcane.mystcraft.world.PersonalPocketDimension.isPersonalPocket(level)) {
+      source.sendFailure(Component.literal("You must be in a personal pocket dimension to use this command."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.getIfPresent(level);
+    if (ageData == null) {
+      source.sendFailure(Component.literal("No age data found for this dimension."));
+      return 0;
+    }
+
+    source.sendSuccess(() -> Component.literal("Fetching skin for player: " + playerName + "..."), false);
+
+    // Fetch the skin for the given player name
+    java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> headBlocks =
+        art.arcane.mystcraft.util.PocketHeadUtils.buildPocketHeadBlocksByName(
+            source.getServer(), playerName);
+
+    if (headBlocks == null) {
+      source.sendFailure(Component.literal("Failed to fetch skin for player: " + playerName));
+      source.sendFailure(Component.literal("The player may not exist or has no skin."));
+      return 0;
+    }
+
+    // Apply the head blocks to the age data
+    for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
+      java.util.List<String> blocks = headBlocks.get(face);
+      if (blocks != null) {
+        ageData.setPocketHeadBlocks(face, blocks);
+      }
+    }
+
+    // Refresh the chunk generator's cached head blocks
+    if (level.getChunkSource().getGenerator() instanceof AgeChunkGenerator ageGen) {
+      ageGen.refreshPocketHeadBlocks(level);
+    }
+
+    // Re-skin the existing walls
+    int placed = art.arcane.mystcraft.world.PersonalPocketDimension.reskinPocket(level);
+
+    source.sendSuccess(() -> Component.literal("=== Pocket Skin Debug ==="), false);
+    source.sendSuccess(() -> Component.literal("  Player: " + playerName), false);
+    source.sendSuccess(() -> Component.literal("  Blocks updated: " + placed), false);
+    source.sendSuccess(() -> Component.literal("  Skin applied successfully!"), false);
+
     return 1;
   }
 

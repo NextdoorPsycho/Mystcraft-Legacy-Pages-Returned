@@ -17,12 +17,12 @@ public final class NeoForgeClientNetworkEvents {
   }
 
   @SubscribeEvent
-  public static void onClientLoggedIn(ClientPlayerNetworkEvent.LoggedInEvent event) {
+  public static void onClientLoggedIn(ClientPlayerNetworkEvent.LoggingIn event) {
     PocketHeadClientSync.requestSend();
   }
 
   @SubscribeEvent
-  public static void onClientLoggedOut(ClientPlayerNetworkEvent.LoggedOutEvent event) {
+  public static void onClientLoggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
     PocketHeadClientSync.reset();
   }
 

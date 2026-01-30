@@ -164,6 +164,24 @@ The project uses Gradle.
 
 ---
 
+## Access Transformers / Access Wideners
+
+This mod requires access to private Minecraft fields (e.g., `LecternBlockEntity.book`). Each loader has different requirements:
+
+| Loader | File Location | Field Naming |
+|--------|---------------|--------------|
+| **Forge** | `forge/1.20.x/src/main/resources/META-INF/accesstransformer.cfg` | SRG names (`f_59527_`) |
+| **NeoForge** | `neoforge/1.20.2/src/main/resources/META-INF/accesstransformer.cfg` | Mojang names (`book`) |
+| **Fabric** | `fabric/1.20.x/src/main/resources/mystcraft.accesswidener` | Mojang names (`book`) |
+
+**Why different names?** Forge's AT processor runs on the SRG-mapped JAR before remapping to Mojang names. NeoForge and Fabric process ATs after Mojang mapping is applied.
+
+**Important:** The `common/` module contains an AT file with Mojang names. Forge build.gradle files exclude this and use their own SRG-named AT files instead.
+
+When adding new AT entries for Forge, look up the SRG name (format: `f_NNNNN_` for fields, `m_NNNNN_` for methods) from the MCP mappings or Forge decompiled sources.
+
+---
+
 ## Docs
 
 See `docs/README.md` for the full documentation hub, including:

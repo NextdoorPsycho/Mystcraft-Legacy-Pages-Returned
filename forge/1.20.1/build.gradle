@@ -96,7 +96,10 @@ tasks.named('compileJava', JavaCompile) {
 
 tasks.named('processResources', ProcessResources) {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    from project(':common').sourceSets.main.resources
+    from(project(':common').sourceSets.main.resources) {
+        // Exclude common's AT - Forge needs SRG names, common uses Mojang names
+        exclude 'META-INF/accesstransformer.cfg'
+    }
     from sourceSets.main.resources
 
     def expandProps = [

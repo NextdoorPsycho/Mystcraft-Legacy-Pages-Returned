@@ -91,7 +91,7 @@ public final class MystcraftGameTestRunner {
       art.arcane.mystcraft.config.MystcraftConfig.dropBooksOnRead = originalSupplier;
     }
   }
- 
+
   /**
    * Tests that personal link book item is registered and can be instantiated.
    * Note: Full dimension creation requires a fully-initialized player which isn't

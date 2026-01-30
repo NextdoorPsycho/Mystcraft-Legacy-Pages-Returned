@@ -1,19 +1,17 @@
 package art.arcane.mystcraft.network;
 
-import art.arcane.mystcraft.Mystcraft;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 
 /**
  * Packet sent from server to client to sync Mystcraft book data in a vanilla lectern.
  * This is needed because vanilla's LecternBlockEntity doesn't sync non-vanilla books.
  *
- * Forge-specific implementation using ObfuscationReflectionHelper for proper SRG name handling.
+ * Forge-specific implementation using direct field access via access transformer.
  */
 public record LecternBookSyncPacket(BlockPos pos, ItemStack book) {
 
@@ -42,17 +40,11 @@ public record LecternBookSyncPacket(BlockPos pos, ItemStack book) {
   }
 
   /**
-   * Sets the book on a client-side lectern using ObfuscationReflectionHelper.
-   * Uses SRG field names for production environment compatibility.
+   * Sets the book on a client-side lectern using direct field access.
+   * Access transformer makes book and pageCount fields accessible.
    */
   public static void setBookOnClient(LecternBlockEntity lectern, ItemStack book) {
-    try {
-      ObfuscationReflectionHelper.setPrivateValue(
-          LecternBlockEntity.class, lectern, book, "f_59527_");
-      ObfuscationReflectionHelper.setPrivateValue(
-          LecternBlockEntity.class, lectern, 1, "f_59529_");
-    } catch (Exception e) {
-      Mystcraft.LOGGER.error("[LecternBookSyncPacket] Failed to set book on client", e);
-    }
+    lectern.book = book;
+    lectern.pageCount = 1;
   }
 }

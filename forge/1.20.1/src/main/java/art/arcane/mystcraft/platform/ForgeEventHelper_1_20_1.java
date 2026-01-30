@@ -59,7 +59,6 @@ import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerAboutToStartEvent;
 import net.minecraftforge.event.village.VillagerTradesEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -423,15 +422,10 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     var result = MystcraftLecternHelper.handleLecternInteraction(
         level, pos, state, event.getEntity(), event.getHand(),
         (lectern, book, pageCount) -> {
-          try {
-            ObfuscationReflectionHelper.setPrivateValue(
-                LecternBlockEntity.class, lectern, book, "f_59527_");
-            ObfuscationReflectionHelper.setPrivateValue(
-                LecternBlockEntity.class, lectern, pageCount, "f_59529_");
-            Mystcraft.LOGGER.debug("[LecternHandler] Set book on lectern successfully");
-          } catch (Exception e) {
-            Mystcraft.LOGGER.error("[LecternHandler] Failed to set book fields", e);
-          }
+          // Direct field access via access transformer
+          lectern.book = book;
+          lectern.pageCount = pageCount;
+          Mystcraft.LOGGER.debug("[LecternHandler] Set book on lectern successfully");
         });
 
     Mystcraft.LOGGER.debug("[LecternHandler] Result: handled={}, result={}", result.handled, result.result);

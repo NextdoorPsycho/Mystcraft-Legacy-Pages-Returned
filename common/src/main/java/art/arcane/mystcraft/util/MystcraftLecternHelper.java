@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.util;
 
+import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.network.LecternBookSyncPacket;
@@ -79,6 +80,9 @@ public final class MystcraftLecternHelper {
     ItemStack held = player.getItemInHand(hand);
     ItemStack bookOnLectern = lectern.getBook();
 
+    Mystcraft.LOGGER.debug("[LecternHelper] bookOnLectern={}, isMystcraftBook={}, hasBook={}",
+        bookOnLectern, isMystcraftBook(bookOnLectern), state.getValue(LecternBlock.HAS_BOOK));
+
     // Handle Mystcraft book already on lectern (server knows about it)
     if (isMystcraftBook(bookOnLectern)) {
       if (player.isShiftKeyDown() && held.isEmpty()) {
@@ -93,6 +97,7 @@ public final class MystcraftLecternHelper {
 
       // Server: send packet to open book screen (includes book data for sync)
       if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+        Mystcraft.LOGGER.debug("[LecternHelper] Sending OpenLecternBookPacket to {} for pos={}", serverPlayer.getName().getString(), pos);
         MystcraftNetwork.sendToPlayer(new OpenLecternBookPacket(pos, bookOnLectern), serverPlayer);
       }
       return LecternInteractionResult.success(level.isClientSide);

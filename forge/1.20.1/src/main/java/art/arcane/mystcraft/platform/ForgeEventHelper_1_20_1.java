@@ -418,6 +418,8 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
       return;
     }
 
+    Mystcraft.LOGGER.debug("[LecternHandler] Right-click on lectern at {}, isClientSide={}", pos, level.isClientSide);
+
     var result = MystcraftLecternHelper.handleLecternInteraction(
         level, pos, state, event.getEntity(), event.getHand(),
         (lectern, book, pageCount) -> {
@@ -426,11 +428,13 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
                 LecternBlockEntity.class, lectern, book, "f_59527_");
             ObfuscationReflectionHelper.setPrivateValue(
                 LecternBlockEntity.class, lectern, pageCount, "f_59529_");
+            Mystcraft.LOGGER.debug("[LecternHandler] Set book on lectern successfully");
           } catch (Exception e) {
             Mystcraft.LOGGER.error("[LecternHandler] Failed to set book fields", e);
           }
         });
 
+    Mystcraft.LOGGER.debug("[LecternHandler] Result: handled={}, result={}", result.handled, result.result);
     if (result.handled) {
       event.setCanceled(true);
       event.setCancellationResult(result.result);

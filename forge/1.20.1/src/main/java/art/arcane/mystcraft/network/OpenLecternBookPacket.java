@@ -1,7 +1,8 @@
 package art.arcane.mystcraft.network;
 
-import art.arcane.mystcraft.util.ClientAccess;
+import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.util.MystcraftLecternHelper;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
@@ -24,12 +25,19 @@ public record OpenLecternBookPacket(BlockPos pos, ItemStack book) {
   }
 
   public static void handle(OpenLecternBookPacket packet, PacketContext ctx) {
+    Mystcraft.LOGGER.debug("[OpenLecternBookPacket] Received packet for pos={}, book={}, isClientSide={}",
+        packet.pos, packet.book, ctx.isClientSide());
     if (!ctx.isClientSide()) {
+      Mystcraft.LOGGER.debug("[OpenLecternBookPacket] Not client side, ignoring");
       return;
     }
     ctx.enqueueWork(() -> {
-      Level level = (Level) ClientAccess.getClientLevel();
-      if (level == null) return;
+      Minecraft mc = Minecraft.getInstance();
+      Level level = mc.level;
+      if (level == null) {
+        Mystcraft.LOGGER.warn("[OpenLecternBookPacket] Client level is null!");
+        return;
+      }
 
       // Also update the local lectern's book for consistency
       if (level.getBlockEntity(packet.pos) instanceof LecternBlockEntity lectern) {
@@ -37,7 +45,11 @@ public record OpenLecternBookPacket(BlockPos pos, ItemStack book) {
       }
 
       // Open the book screen
-      if (MystcraftLecternHelper.isMystcraftBook(packet.book)) {
+      boolean isMystBook = MystcraftLecternHelper.isMystcraftBook(packet.book);
+      Mystcraft.LOGGER.debug("[OpenLecternBookPacket] isMystcraftBook={}, book item={}",
+          isMystBook, packet.book.getItem().getClass().getName());
+      if (isMystBook) {
+        Mystcraft.LOGGER.debug("[OpenLecternBookPacket] Opening book screen for block at {}", packet.pos);
         MystcraftLecternHelper.openBookScreenForBlock(packet.book, packet.pos);
       }
     });

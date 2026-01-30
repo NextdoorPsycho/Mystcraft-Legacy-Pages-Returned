@@ -1,7 +1,7 @@
 package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
-import art.arcane.mystcraft.util.ClientAccess;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
@@ -31,7 +31,8 @@ public record LecternBookSyncPacket(BlockPos pos, ItemStack book) {
       return;
     }
     ctx.enqueueWork(() -> {
-      Level level = (Level) ClientAccess.getClientLevel();
+      Minecraft mc = Minecraft.getInstance();
+      Level level = mc.level;
       if (level == null) return;
 
       if (level.getBlockEntity(packet.pos) instanceof LecternBlockEntity lectern) {

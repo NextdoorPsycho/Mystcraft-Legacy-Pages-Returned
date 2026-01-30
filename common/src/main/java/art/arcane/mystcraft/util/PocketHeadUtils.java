@@ -203,6 +203,13 @@ public final class PocketHeadUtils {
   }
 
   @Nullable
+  private static String fetchSkinUrlFromMojangApiByUuid(UUID uuid) {
+    // Convert UUID to non-hyphenated string format for Mojang API
+    String uuidStr = uuid.toString().replace("-", "");
+    return fetchSkinUrlFromSessionServer(uuidStr);
+  }
+
+  @Nullable
   private static String fetchSkinUrlFromMojangApi(String playerName) {
     // Step 1: Get UUID from username via Mojang API
     String uuid = fetchUuidFromMojangApi(playerName);
@@ -212,6 +219,11 @@ public final class PocketHeadUtils {
     }
 
     // Step 2: Get profile with textures from session server
+    return fetchSkinUrlFromSessionServer(uuid);
+  }
+
+  @Nullable
+  private static String fetchSkinUrlFromSessionServer(String uuid) {
     HttpURLConnection connection = null;
     try {
       String profileUrl = "https://sessionserver.mojang.com/session/minecraft/profile/" + uuid;
@@ -245,7 +257,7 @@ public final class PocketHeadUtils {
               JsonElement urlElement = skin.get("url");
               if (urlElement != null) {
                 String skinUrl = urlElement.getAsString();
-                Mystcraft.LOGGER.debug("[PocketHead] Found skin URL for {}: {}", playerName, skinUrl);
+                Mystcraft.LOGGER.debug("[PocketHead] Found skin URL for UUID {}: {}", uuid, skinUrl);
                 return skinUrl;
               }
             }
@@ -253,7 +265,7 @@ public final class PocketHeadUtils {
         }
       }
     } catch (Exception e) {
-      Mystcraft.LOGGER.debug("[PocketHead] Error fetching profile from session server for {}: {}", playerName, e.getMessage());
+      Mystcraft.LOGGER.debug("[PocketHead] Error fetching profile from session server for UUID {}: {}", uuid, e.getMessage());
     } finally {
       if (connection != null) {
         connection.disconnect();

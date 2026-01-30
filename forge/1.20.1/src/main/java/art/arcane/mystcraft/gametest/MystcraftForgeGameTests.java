@@ -24,7 +24,7 @@ public class MystcraftForgeGameTests {
 
   // ===== REGISTRATION TESTS =====
 
-  @GameTest(template = "empty")
+  @GameTest(template = "mystcraft:empty")
   public void registries_load(GameTestHelper helper) {
     // Check items registered
     assertItemRegistered("linkbook");
@@ -35,7 +35,7 @@ public class MystcraftForgeGameTests {
     helper.succeed();
   }
 
-  @GameTest(template = "empty")
+  @GameTest(template = "mystcraft:empty")
   public void symbols_loaded_400_plus(GameTestHelper helper) {
     int count = SymbolRegistry.getAll().size();
     if (count < 400) {
@@ -45,7 +45,7 @@ public class MystcraftForgeGameTests {
     helper.succeed();
   }
 
-  @GameTest(template = "empty")
+  @GameTest(template = "mystcraft:empty")
   public void creative_tabs_loaded(GameTestHelper helper) {
     ResourceLocation mainTab = new ResourceLocation(Mystcraft.MOD_ID, "mystcraft");
     ResourceLocation pagesTab = new ResourceLocation(Mystcraft.MOD_ID, "mystcraft_pages");
@@ -61,7 +61,7 @@ public class MystcraftForgeGameTests {
     helper.succeed();
   }
 
-  @GameTest(template = "empty")
+  @GameTest(template = "mystcraft:empty")
   public void datapacks_loaded(GameTestHelper helper) {
     // Check for core symbols that come from datapacks
     assertSymbolExists(helper, "terrain_flat");
@@ -76,7 +76,7 @@ public class MystcraftForgeGameTests {
 
   // ===== BLOCK ENTITY TESTS =====
 
-  @GameTest(template = "empty", timeoutTicks = 40)
+  @GameTest(template = "mystcraft:empty", timeoutTicks = 40)
   public void table_blocks_have_block_entities(GameTestHelper helper) {
     ServerLevel level = helper.getLevel();
 

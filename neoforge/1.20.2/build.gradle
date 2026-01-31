@@ -139,8 +139,3 @@ jar {
 sourcesJar {
     archiveFileName = "Mystcraft Legacy - ${version} - NeoForge-1.20.2-sources.jar"
 }
-
-// Disable NeoForge IDE run configuration generation
-tasks.matching { it.name == 'idePostSync' || it.name.startsWith('createMinecraftArtifacts') || it.name.contains('IdeaRun') }.configureEach {
-    enabled = false
-}

@@ -14,7 +14,7 @@ public final class Mystcraft {
   public static final Logger LOGGER = LogUtils.getLogger();
 
   @Nullable
-  private static MinecraftServer currentServer;
+  private static volatile MinecraftServer currentServer;
 
   private Mystcraft() {
   }

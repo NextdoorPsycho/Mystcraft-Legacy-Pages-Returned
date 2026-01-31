@@ -1,0 +1,17 @@
+{
+  "category": "sea",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": [
+    "Sea",
+    "Ice",
+    "Still",
+    "Order"
+  ],
+  "logic": [
+    {
+      "type": "set_sea_block",
+      "block": "minecraft:blue_ice"
+    }
+  ]
+}

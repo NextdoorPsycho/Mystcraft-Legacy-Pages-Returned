@@ -92,7 +92,7 @@ public class AgeChunkGenerator extends ChunkGenerator {
   // Default block states
   private final BlockState bedrockBlock = Blocks.BEDROCK.defaultBlockState();
   // Director with registered interfaces (symbols register here)
-  private AgeDirectorImpl director;
+  private volatile AgeDirectorImpl director;
   // Vanilla generator delegates - used for normal/amplified terrain
   // volatile for safe double-check locking (no full synchronized needed)
   private volatile NoiseBasedChunkGenerator vanillaDelegate;
@@ -259,106 +259,97 @@ public class AgeChunkGenerator extends ChunkGenerator {
       return;
     }
 
-    // Slow path: double-check locking to avoid full synchronization
-    // on every chunk gen call (which can cause monitor deadlocks with
-    // the server thread's managedBlock task pumping)
-    synchronized (this) {
-      if (delegateInitialized) {
-        return;
-      }
+    // Removed synchronization to prevent deadlocks during server shutdown/save.
+    // Race conditions may cause redundant initialization, but this is safe as delegates are equivalent.
 
-      String threadName = Thread.currentThread().getName();
-      Mystcraft.LOGGER.debug("[ChunkGen] Age {} ensureVanillaDelegate called on thread: {}", ageUID, threadName);
+    String threadName = Thread.currentThread().getName();
+    Mystcraft.LOGGER.debug("[ChunkGen] Age {} ensureVanillaDelegate called on thread: {}", ageUID, threadName);
 
-      if (!usesVanillaDelegate()) {
-        delegateInitialized = true;
-        Mystcraft.LOGGER.debug("[ChunkGen] Age {} does not use vanilla delegate (type: {})", ageUID, terrainType);
-        return;
-      }
-
-      MinecraftServer server = Mystcraft.getCurrentServer();
-      if (server == null) {
-        // Don't set delegateInitialized - retry next call when server may be available
-        Mystcraft.LOGGER.warn("[ChunkGen] Age {} cannot initialize vanilla delegate: server not available (will retry) [thread: {}]",
-            ageUID, threadName);
-        return;
-      }
-      // Note: delegateInitialized set to true at the END of this block,
-      // after vanillaDelegate and vanillaRandomState are fully assigned.
-      // This ensures other threads see the delegate before the flag.
-
-      try {
-        // Get the appropriate NoiseGeneratorSettings for the terrain type
-        Holder<NoiseGeneratorSettings> noiseSettings;
-        var noiseSettingsRegistry = server.registryAccess()
-            .registryOrThrow(Registries.NOISE_SETTINGS);
-        if ("amplified".equals(terrainType)) {
-          noiseSettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.AMPLIFIED);
-        } else if ("nether".equals(terrainType) || "cave".equals(terrainType)) {
-          noiseSettings = createStretchedNetherSettings(noiseSettingsRegistry);
-        } else if ("end".equals(terrainType)) {
-          noiseSettings = createStretchedSettings(
-              noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.END).value());
-        } else {
-          // "normal", "skylands", and fallback all use overworld noise settings
-          noiseSettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
-        }
-
-        // Create vanilla generator with our biome source
-        vanillaDelegate = new NoiseBasedChunkGenerator(biomeSource, noiseSettings);
-
-        // Create a proper RandomState with real noise settings instead of dummy
-        // ServerChunkCache creates RandomState with NoiseGeneratorSettings.dummy() for
-        // non-NoiseBasedChunkGenerator generators, which produces flat terrain.
-        // We need a RandomState built from the actual overworld/amplified noise settings.
-        vanillaRandomState = RandomState.create(
-            noiseSettings.value(),
-            server.registryAccess().lookupOrThrow(Registries.NOISE),
-            seed
-        );
-
-        Mystcraft.LOGGER.debug("[ChunkGen] Age {} initialized vanilla terrain delegate (type: {}, noiseSettings: {})",
-            ageUID, terrainType,
-            "amplified".equals(terrainType) ? "AMPLIFIED" :
-                ("nether".equals(terrainType) || "cave".equals(terrainType)) ? "NETHER" :
-                    "end".equals(terrainType) ? "END" : "OVERWORLD");
-
-        // Initialize secondary delegate for mixed terrain modes (independent try-catch
-        // so primary delegate failure doesn't block generation entirely)
-        if (hasMixMode() && isVanillaDelegateType(secondaryTerrainType)) {
-          try {
-            Holder<NoiseGeneratorSettings> secondarySettings;
-            if ("amplified".equals(secondaryTerrainType)) {
-              secondarySettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.AMPLIFIED);
-            } else if ("nether".equals(secondaryTerrainType) || "cave".equals(secondaryTerrainType)) {
-              secondarySettings = createStretchedNetherSettings(noiseSettingsRegistry);
-            } else if ("end".equals(secondaryTerrainType)) {
-              secondarySettings = createStretchedSettings(
-                  noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.END).value());
-            } else {
-              secondarySettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
-            }
-            vanillaDelegate2 = new NoiseBasedChunkGenerator(biomeSource, secondarySettings);
-            vanillaRandomState2 = RandomState.create(
-                secondarySettings.value(),
-                server.registryAccess().lookupOrThrow(Registries.NOISE),
-                seed
-            );
-            Mystcraft.LOGGER.debug("[ChunkGen] Age {} initialized SECONDARY vanilla terrain delegate (type: {})",
-                ageUID, secondaryTerrainType);
-          } catch (Exception e) {
-            Mystcraft.LOGGER.error("[ChunkGen] Age {} failed to initialize secondary delegate (type: {}), falling back to primary only",
-                ageUID, secondaryTerrainType, e);
-          }
-        }
-      } catch (Exception e) {
-        Mystcraft.LOGGER.error("Failed to initialize vanilla delegate for age {}", ageUID, e);
-      }
-
-      // Always mark as initialized so we don't block all chunk gen threads
-      // retrying forever if something went wrong
+    if (!usesVanillaDelegate()) {
       delegateInitialized = true;
+      Mystcraft.LOGGER.debug("[ChunkGen] Age {} does not use vanilla delegate (type: {})", ageUID, terrainType);
+      return;
     }
+
+    MinecraftServer server = Mystcraft.getCurrentServer();
+    if (server == null) {
+      // Don't set delegateInitialized - retry next call when server may be available
+      Mystcraft.LOGGER.warn("[ChunkGen] Age {} cannot initialize vanilla delegate: server not available (will retry) [thread: {}]",
+          ageUID, threadName);
+      return;
+    }
+
+    try {
+      // Get the appropriate NoiseGeneratorSettings for the terrain type
+      Holder<NoiseGeneratorSettings> noiseSettings;
+      var noiseSettingsRegistry = server.registryAccess()
+          .registryOrThrow(Registries.NOISE_SETTINGS);
+      if ("amplified".equals(terrainType)) {
+        noiseSettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.AMPLIFIED);
+      } else if ("nether".equals(terrainType) || "cave".equals(terrainType)) {
+        noiseSettings = createStretchedNetherSettings(noiseSettingsRegistry);
+      } else if ("end".equals(terrainType)) {
+        noiseSettings = createStretchedSettings(
+            noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.END).value());
+      } else {
+        // "normal", "skylands", and fallback all use overworld noise settings
+        noiseSettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
+      }
+
+      // Create vanilla generator with our biome source
+      vanillaDelegate = new NoiseBasedChunkGenerator(biomeSource, noiseSettings);
+
+      // Create a proper RandomState with real noise settings instead of dummy
+      // ServerChunkCache creates RandomState with NoiseGeneratorSettings.dummy() for
+      // non-NoiseBasedChunkGenerator generators, which produces flat terrain.
+      // We need a RandomState built from the actual overworld/amplified noise settings.
+      vanillaRandomState = RandomState.create(
+          noiseSettings.value(),
+          server.registryAccess().lookupOrThrow(Registries.NOISE),
+          seed
+      );
+
+      Mystcraft.LOGGER.debug("[ChunkGen] Age {} initialized vanilla terrain delegate (type: {}, noiseSettings: {})",
+          ageUID, terrainType,
+          "amplified".equals(terrainType) ? "AMPLIFIED" :
+              ("nether".equals(terrainType) || "cave".equals(terrainType)) ? "NETHER" :
+                  "end".equals(terrainType) ? "END" : "OVERWORLD");
+
+      // Initialize secondary delegate for mixed terrain modes (independent try-catch
+      // so primary delegate failure doesn't block generation entirely)
+      if (hasMixMode() && isVanillaDelegateType(secondaryTerrainType)) {
+        try {
+          Holder<NoiseGeneratorSettings> secondarySettings;
+          if ("amplified".equals(secondaryTerrainType)) {
+            secondarySettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.AMPLIFIED);
+          } else if ("nether".equals(secondaryTerrainType) || "cave".equals(secondaryTerrainType)) {
+            secondarySettings = createStretchedNetherSettings(noiseSettingsRegistry);
+          } else if ("end".equals(secondaryTerrainType)) {
+            secondarySettings = createStretchedSettings(
+                noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.END).value());
+          } else {
+            secondarySettings = noiseSettingsRegistry.getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
+          }
+          vanillaDelegate2 = new NoiseBasedChunkGenerator(biomeSource, secondarySettings);
+          vanillaRandomState2 = RandomState.create(
+              secondarySettings.value(),
+              server.registryAccess().lookupOrThrow(Registries.NOISE),
+              seed
+          );
+          Mystcraft.LOGGER.debug("[ChunkGen] Age {} initialized SECONDARY vanilla terrain delegate (type: {})",
+              ageUID, secondaryTerrainType);
+        } catch (Exception e) {
+          Mystcraft.LOGGER.error("[ChunkGen] Age {} failed to initialize secondary delegate (type: {}), falling back to primary only",
+              ageUID, secondaryTerrainType, e);
+        }
+      }
+    } catch (Exception e) {
+      Mystcraft.LOGGER.error("Failed to initialize vanilla delegate for age {}", ageUID, e);
+    }
+
+    // Always mark as initialized so we don't block all chunk gen threads
+    // retrying forever if something went wrong
+    delegateInitialized = true;
   }
 
   /**
@@ -387,8 +378,14 @@ public class AgeChunkGenerator extends ChunkGenerator {
    * Reconstructs the director from saved AgeData.
    */
   public void reconstructDirectorFromAgeData(ServerLevel level) {
-    Mystcraft.LOGGER.debug("[ChunkGen] Age {} reconstructDirectorFromAgeData called on thread: {} | director={}",
-        ageUID, Thread.currentThread().getName(), director != null ? "exists" : "null");
+    // Ensure we only reconstruct on the main thread to avoid deadlocks
+    // with DimensionDataStorage during world saving.
+    if (!level.getServer().isSameThread()) {
+      return;
+    }
+
+    Mystcraft.LOGGER.debug("[ChunkGen] Age {} reconstructDirectorFromAgeData starting on thread: {}",
+        ageUID, Thread.currentThread().getName());
 
     ensurePocketHeadLoaded(level);
 
@@ -444,6 +441,13 @@ public class AgeChunkGenerator extends ChunkGenerator {
   }
 
   public void ensurePocketHeadLoaded(ServerLevel level) {
+    // If we are not on the main thread, we cannot safely load AgeData as it may deadlock
+    // with the main thread during world saving (DimensionDataStorage lock).
+    // This mostly affects Personal Pocket dimensions during initial generation.
+    if (!level.getServer().isSameThread()) {
+      return;
+    }
+
     if (pocketHeadLoaded) {
       return;
     }

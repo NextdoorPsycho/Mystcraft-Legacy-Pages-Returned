@@ -31,10 +31,7 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
       return;
     }
     ctx.enqueueWork(() -> {
-      // Handle on client
-      if (ClientAccess.getClientLevel() == null) return;
-
-      // Store the age data in client-side cache
+      // Store the age data in client-side cache even if the client level isn't ready yet.
       ClientAgeDataCache.setAgeData(packet.ageUID, packet.data);
 
       // Log received color values for pipeline tracing

@@ -14,6 +14,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -112,8 +113,12 @@ public class AgeManager extends SavedData {
         dimensionToAgeUID.put(dimLoc, uid);
 
         if (ageTag.contains(TAG_UUID)) {
-          UUID uuid = UUID.fromString(ageTag.getString(TAG_UUID));
-          ageUUIDtoUID.put(uuid, uid);
+          try {
+            UUID uuid = UUID.fromString(ageTag.getString(TAG_UUID));
+            ageUUIDtoUID.put(uuid, uid);
+          } catch (IllegalArgumentException e) {
+            Mystcraft.LOGGER.error("Failed to parse UUID for age {}: {}", uid, ageTag.getString(TAG_UUID));
+          }
         }
       }
     }
@@ -122,33 +127,47 @@ public class AgeManager extends SavedData {
   @Override
   @NotNull
   public CompoundTag save(@NotNull CompoundTag tag) {
+    Mystcraft.LOGGER.info("Saving AgeManager data...");
     tag.putInt(TAG_NEXT_UID, nextUID);
 
+    // Create a local copy of the maps to avoid concurrent modification issues
+    // and use a reverse map for UUID lookup to avoid O(N^2) complexity.
+    Map<Integer, ResourceLocation> ageMap;
+    Map<UUID, Integer> uuidMap;
+    synchronized (this) {
+      ageMap = new HashMap<>(ageUIDtoDimension);
+      uuidMap = new HashMap<>(ageUUIDtoUID);
+    }
+
+    Map<Integer, UUID> uidToUUID = new HashMap<>();
+    for (Map.Entry<UUID, Integer> entry : uuidMap.entrySet()) {
+      uidToUUID.put(entry.getValue(), entry.getKey());
+    }
+
     ListTag agesList = new ListTag();
-    for (Map.Entry<Integer, ResourceLocation> entry : ageUIDtoDimension.entrySet()) {
+    for (Map.Entry<Integer, ResourceLocation> entry : ageMap.entrySet()) {
+      int uid = entry.getKey();
       CompoundTag ageTag = new CompoundTag();
-      ageTag.putInt(TAG_UID, entry.getKey());
+      ageTag.putInt(TAG_UID, uid);
       ageTag.putString(TAG_DIMENSION, entry.getValue().toString());
 
-      // Find UUID if available
-      for (Map.Entry<UUID, Integer> uuidEntry : ageUUIDtoUID.entrySet()) {
-        if (uuidEntry.getValue().equals(entry.getKey())) {
-          ageTag.putString(TAG_UUID, uuidEntry.getKey().toString());
-          break;
-        }
+      UUID uuid = uidToUUID.get(uid);
+      if (uuid != null) {
+        ageTag.putString(TAG_UUID, uuid.toString());
       }
 
       agesList.add(ageTag);
     }
     tag.put(TAG_AGES, agesList);
 
+    Mystcraft.LOGGER.info("AgeManager save complete.");
     return tag;
   }
 
   /**
    * Allocates a new age UID.
    */
-  public int allocateUID() {
+  public synchronized int allocateUID() {
     int uid = nextUID++;
     setDirty();
     return uid;
@@ -157,7 +176,7 @@ public class AgeManager extends SavedData {
   /**
    * Registers a new age.
    */
-  public void registerAge(int uid, ResourceLocation dimension, @Nullable UUID uuid) {
+  public synchronized void registerAge(int uid, ResourceLocation dimension, @Nullable UUID uuid) {
     ageUIDtoDimension.put(uid, dimension);
     dimensionToAgeUID.put(dimension, uid);
     if (uuid != null) {
@@ -171,42 +190,42 @@ public class AgeManager extends SavedData {
    * Gets the dimension for an age UID.
    */
   @Nullable
-  public ResourceLocation getDimension(int uid) {
+  public synchronized ResourceLocation getDimension(int uid) {
     return ageUIDtoDimension.get(uid);
   }
 
   /**
    * Gets the age UID for a dimension.
    */
-  public int getAgeUID(ResourceLocation dimension) {
+  public synchronized int getAgeUID(ResourceLocation dimension) {
     return dimensionToAgeUID.getOrDefault(dimension, 0);
   }
 
   /**
    * Gets the age UID for a dimension key.
    */
-  public int getAgeUID(ResourceKey<Level> dimensionKey) {
+  public synchronized int getAgeUID(ResourceKey<Level> dimensionKey) {
     return getAgeUID(dimensionKey.location());
   }
 
   /**
    * Gets the age UID for a UUID.
    */
-  public int getAgeUIDByUUID(UUID uuid) {
+  public synchronized int getAgeUIDByUUID(UUID uuid) {
     return ageUUIDtoUID.getOrDefault(uuid, 0);
   }
 
   /**
    * Checks if a dimension is a Mystcraft age.
    */
-  public boolean isAge(ResourceLocation dimension) {
+  public synchronized boolean isAge(ResourceLocation dimension) {
     return dimensionToAgeUID.containsKey(dimension);
   }
 
   /**
    * Checks if a dimension is a Mystcraft age.
    */
-  public boolean isAge(ResourceKey<Level> dimensionKey) {
+  public synchronized boolean isAge(ResourceKey<Level> dimensionKey) {
     return isAge(dimensionKey.location());
   }
 
@@ -231,21 +250,21 @@ public class AgeManager extends SavedData {
   /**
    * Gets the total number of registered ages.
    */
-  public int getAgeCount() {
+  public synchronized int getAgeCount() {
     return ageUIDtoDimension.size();
   }
 
   /**
    * Gets all registered age UIDs.
    */
-  public Iterable<Integer> getAllAgeUIDs() {
-    return ageUIDtoDimension.keySet();
+  public synchronized Iterable<Integer> getAllAgeUIDs() {
+    return new ArrayList<>(ageUIDtoDimension.keySet());
   }
 
   /**
    * Clears all registered ages and resets the UID counter to 1000.
    */
-  public void clearAllAges() {
+  public synchronized void clearAllAges() {
     ageUIDtoDimension.clear();
     dimensionToAgeUID.clear();
     ageUUIDtoUID.clear();

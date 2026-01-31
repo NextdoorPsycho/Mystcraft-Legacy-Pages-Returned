@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.fabric;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.client.FabricAgeBlockColorHandler;
 import art.arcane.mystcraft.client.PocketHeadClientSync;
 import art.arcane.mystcraft.client.model.BookstandModel;
 import art.arcane.mystcraft.client.model.WritingDeskModel;
@@ -69,6 +70,9 @@ public class MystcraftFabricClient implements ClientModInitializer {
     ColorProviderRegistry.ITEM.register(
         (stack, tintIndex) -> tintIndex == 1 ? 0xFF1A1A1A : 0xFFFFFFFF,
         FabricRegistries.INK_BUCKET.get());
+
+    // Register Mystcraft age-related block/item colors
+    FabricAgeBlockColorHandler.register();
 
     // Register BEWLR for page item
     BuiltinItemRendererRegistry.INSTANCE.register(

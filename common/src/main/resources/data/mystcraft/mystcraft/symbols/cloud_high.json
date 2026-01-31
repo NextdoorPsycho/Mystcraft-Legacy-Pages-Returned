@@ -1,0 +1,17 @@
+{
+  "category": "modifier",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": [
+    "Cloud",
+    "Sky",
+    "Flow",
+    "Form"
+  ],
+  "logic": [
+    {
+      "type": "set_cloud_height",
+      "value": 256.0
+    }
+  ]
+}

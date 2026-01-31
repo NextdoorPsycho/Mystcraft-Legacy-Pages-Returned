@@ -68,14 +68,14 @@ public class AgeDirectorImpl implements AgeDirector {
   private int waterColor = -1;
   private int cloudColor = -1;
   private int nightSkyColor = -1;
-  private boolean skyColorNatural = true;
-  private boolean fogColorNatural = true;
-  private boolean grassColorNatural = true;
-  private boolean foliageColorNatural = true;
-  private boolean waterColorNatural = true;
-  private boolean cloudColorNatural = true;
+  private boolean skyColorNatural = false;
+  private boolean fogColorNatural = false;
+  private boolean grassColorNatural = false;
+  private boolean foliageColorNatural = false;
+  private boolean waterColorNatural = false;
+  private boolean cloudColorNatural = false;
   private int horizonColor = -1;
-  private boolean horizonColorNatural = true;
+  private boolean horizonColorNatural = false;
   // Features
   private boolean cavesEnabled = true;
   private boolean ravinesEnabled = true;

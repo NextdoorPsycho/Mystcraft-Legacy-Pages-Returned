@@ -318,6 +318,7 @@ public class AgeData extends SavedData {
   @Override
   @NotNull
   public CompoundTag save(@NotNull CompoundTag tag) {
+    Mystcraft.LOGGER.info("Saving AgeData for age {}...", ageUID);
     tag.putInt(TAG_AGE_UID, ageUID);
     tag.putString(TAG_AGE_UUID, ageUUID.toString());
     tag.putString(TAG_AGE_NAME, ageName);
@@ -428,6 +429,7 @@ public class AgeData extends SavedData {
       }
     }
 
+    Mystcraft.LOGGER.info("AgeData save complete for age {}.", ageUID);
     return tag;
   }
 

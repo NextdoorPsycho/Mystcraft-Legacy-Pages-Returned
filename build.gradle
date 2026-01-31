@@ -6,79 +6,51 @@ idea {
     project {
         settings {
             runConfigurations {
-                // 1.20.1 runs
-                "Fabric 1.20.1 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':fabric:1.20.1:runClient']
-                }
-                "Fabric 1.20.1 Server"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':fabric:1.20.1:runServer']
-                }
-                "Forge 1.20.1 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:1.20.1:Client']
-                }
-                "Forge 1.20.1 Server"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:1.20.1:Server']
-                }
-                // 1.20.2 runs
-                "Fabric 1.20.2 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':fabric:1.20.2:runClient']
-                }
-                "Fabric 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':fabric:1.20.2:runServer']
-                }
-                "Forge 1.20.2 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:1.20.2:Client']
-                }
-                "Forge 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:1.20.2:Server']
-                }
-                "NeoForge 1.20.2 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':neoforge:1.20.2:runClient']
-                }
-                "NeoForge 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':neoforge:1.20.2:runServer']
-                }
-                // Aggregate tasks
-                "All Clients"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':runAllClients']
-                }
-                "All Servers"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':runAllServers']
-                }
-                "All GameTests"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':runAllGameTests']
-                }
                 // Build tasks
-                "Build All"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':buildAll']
-                }
                 "Build Psycho Jars"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':buildPsychoJars']
                 }
                 "Build XComp Jars"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':buildXCompJars']
                 }
-                "Build 1.20.1"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':build_1_20_1']
+                // Fabric 1.20.1
+                "Fabric 1.20.1 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:1.20.1:runClient']
                 }
-                "Build 1.20.2"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':build_1_20_2']
+                "Fabric 1.20.1 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:1.20.1:runServer']
+                }
+                // Fabric 1.20.2
+                "Fabric 1.20.2 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:1.20.2:runClient']
+                }
+                "Fabric 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:1.20.2:runServer']
+                }
+                // Forge 1.20.1
+                "Forge 1.20.1 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.20.1:runClient']
+                }
+                "Forge 1.20.1 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.20.1:runServer']
+                }
+                // Forge 1.20.2
+                "Forge 1.20.2 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.20.2:runClient']
+                }
+                "Forge 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.20.2:runServer']
+                }
+                // NeoForge 1.20.2
+                "NeoForge 1.20.2 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':neoforge:1.20.2:runClient']
+                }
+                "NeoForge 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':neoforge:1.20.2:runServer']
                 }
             }
         }
     }
-}
-
-tasks.register('runAllClients', Exec) {
-    commandLine 'bash', 'scripts/run-all-clients.sh'
-}
-
-tasks.register('runAllServers', Exec) {
-    commandLine 'bash', 'scripts/run-all-servers.sh'
-}
-
-tasks.register('runAllGameTests', Exec) {
-    commandLine 'bash', 'scripts/run-all-gametests.sh'
 }
 
 tasks.register('cleanLibs') {

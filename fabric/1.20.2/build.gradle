@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.4-SNAPSHOT'
+    id 'fabric-loom' version '1.9-SNAPSHOT'
 }
 
 version = "${project.version}"
@@ -10,8 +10,15 @@ base {
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(java_version_fabric)
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
     withSourcesJar()
+}
+
+// Force Java 17 for all run tasks (client, server, gametest)
+tasks.withType(JavaExec).configureEach {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 loom {
@@ -24,19 +31,19 @@ loom {
         client {
             client()
             setConfigName("Fabric 1.20.2 Client")
-            ideConfigGenerated(true)
+            ideConfigGenerated(false)
             runDir("runs/client")
         }
         server {
             server()
             setConfigName("Fabric 1.20.2 Server")
-            ideConfigGenerated(true)
+            ideConfigGenerated(false)
             runDir("runs/server")
         }
         gametest {
             server()
             setConfigName("Fabric 1.20.2 GameTest")
-            ideConfigGenerated(true)
+            ideConfigGenerated(false)
             runDir("runs/gametest")
             vmArg "-Dfabric-api.gametest"
             vmArg "-Dfabric-api.gametest.report-file=${project.buildDir}/junit.xml"

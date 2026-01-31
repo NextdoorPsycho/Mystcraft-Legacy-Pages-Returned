@@ -68,21 +68,11 @@ dependencies {
 
     compileOnly project(':common')
 
-
-
-    // Floo_Powder
-
-    implementation project(':Floo_Powder:fabric:1.18.2')
-
-    include project(':Floo_Powder:fabric:1.18.2')
-
-    include project(':Floo_Powder:common')
+    // Floo_Powder sources are compiled directly as part of this module
 
 
 
-    // TOML config library
-
- (same as Forge/NeoForge use)
+    // TOML config library (same as Forge/NeoForge use)
     implementation "com.electronwill.night-config:core:3.6.7"
     implementation "com.electronwill.night-config:toml:3.6.7"
     include "com.electronwill.night-config:core:3.6.7"
@@ -94,7 +84,7 @@ tasks.named('compileJava', JavaCompile) {
     source(project(':common').sourceSets.main.allSource.matching {
         exclude '**/gametest/**'
         exclude '**/client/screen/**'
-        exclude '**/client/gui/element/**'
+        // Note: client/gui/element is NOW INCLUDED (uses IFlooGraphics abstraction)
         exclude '**/client/GuidebookClientHelper.java'
         exclude '**/client/render/PageRenderHelper.java'
         exclude '**/client/render/PageItemRendererBEWLR.java'
@@ -234,6 +224,9 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/instability/effects/EffectLightning.java'
         exclude '**/instability/effects/EffectMeteor.java'
     })
+    // Include Floo_Powder common API and adapter sources
+    source(fileTree(rootProject.file('Floo_Powder/common/src/main/java')))
+    source(fileTree(rootProject.file('Floo_Powder/fabric/1.18.2/src/main/java')))
     // The module's own src/main/java sources (including 1.18.2-specific screens)
     // are automatically included via sourceSets.main
 }

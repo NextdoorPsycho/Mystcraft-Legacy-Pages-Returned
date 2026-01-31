@@ -1,8 +1,8 @@
 package art.arcane.mystcraft.client.gui.element;
 
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
-import art.arcane.mystcraft.client.render.PageRenderHelper;
 import art.arcane.mystcraft.data.Page;
+import com.floopowder.api.FlooTextHelper;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.floopowder.api.IFlooGraphics;
 import net.minecraft.network.chat.Component;
@@ -125,12 +125,9 @@ public class MystGuiPageSurface extends MystGuiElement {
   }
 
   private void renderPage(IFlooGraphics graphics, ItemStack stack, int x, int y, int width, int height) {
-    // Use PageRenderHelper to draw the page with D'ni symbols
-    // Get the underlying graphics object (GuiGraphics in 1.20.x, PoseStack in 1.18/1.19)
-    Object underlying = graphics.getUnderlying();
-    if (underlying instanceof net.minecraft.client.gui.GuiGraphics guiGraphics) {
-      PageRenderHelper.drawPage(guiGraphics, stack, x, y, width, height, 0);
-    }
+    // Render the page using IFlooGraphics abstraction
+    // Draw a simple representation - platform-specific versions can override for D'ni symbols
+    graphics.renderItem(stack, x + (width - 16) / 2, y + (height - 16) / 2);
   }
 
   @Nullable
@@ -157,7 +154,7 @@ public class MystGuiPageSurface extends MystGuiElement {
     // Add display name
     String displayName = getDisplayName(stack);
     if (displayName != null) {
-      hoverTooltip.add(Component.literal(displayName));
+      hoverTooltip.add(FlooTextHelper.literal(displayName));
     }
   }
 

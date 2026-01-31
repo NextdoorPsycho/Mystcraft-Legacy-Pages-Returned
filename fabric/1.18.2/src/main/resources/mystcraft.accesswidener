@@ -15,10 +15,9 @@ accessible field net/minecraft/core/MappedRegistry frozen Z
 mutable field net/minecraft/core/MappedRegistry frozen Z
 
 # StructureTemplatePool - Village structure injection
+# Note: templates field doesn't exist in 1.18.2
 accessible field net/minecraft/world/level/levelgen/structure/pools/StructureTemplatePool rawTemplates Ljava/util/List;
 mutable field net/minecraft/world/level/levelgen/structure/pools/StructureTemplatePool rawTemplates Ljava/util/List;
-accessible field net/minecraft/world/level/levelgen/structure/pools/StructureTemplatePool templates Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
-mutable field net/minecraft/world/level/levelgen/structure/pools/StructureTemplatePool templates Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
 
 # CriteriaTriggers - Custom advancement triggers (1.19.2 signature)
 accessible method net/minecraft/advancements/CriteriaTriggers register (Lnet/minecraft/advancements/CriterionTrigger;)Lnet/minecraft/advancements/CriterionTrigger;

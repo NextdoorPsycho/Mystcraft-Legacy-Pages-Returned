@@ -87,9 +87,7 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version_1_18_2}-${forge_version_1_18_2}"
     compileOnly project(':common')
 
-    // Floo_Powder
-    shadow project(':Floo_Powder:forge:1.18.2')
-    shadow project(':Floo_Powder:common')
+    // Floo_Powder sources are compiled directly as part of this module
 
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
 }
@@ -109,7 +107,6 @@ tasks.named('compileJava', JavaCompile) {
     source(project(':common').sourceSets.main.allSource.matching {
         exclude '**/gametest/**'
         exclude '**/client/screen/**'
-        exclude '**/client/gui/element/**'
         exclude '**/client/GuidebookClientHelper.java'
         exclude '**/client/render/PageRenderHelper.java'
         exclude '**/client/render/PageItemRendererBEWLR.java'
@@ -255,6 +252,10 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/instability/effects/EffectLightning.java'
         exclude '**/instability/effects/EffectMeteor.java'
     })
+    // Include Floo_Powder common API
+    source(fileTree(rootProject.file('Floo_Powder/common/src/main/java')))
+    // Include Floo_Powder forge 1.18.2 adapter sources
+    source(fileTree(rootProject.file('Floo_Powder/forge/1.18.2/src/main/java')))
     // The module's own src/main/java sources (including 1.18.2-specific screens)
     // are automatically included via sourceSets.main
 }

@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.client.gui.element;
 
 import art.arcane.mystcraft.Mystcraft;
+import com.floopowder.api.FlooTextHelper;
 import com.floopowder.api.IFlooGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -60,7 +61,7 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
       upArrowColor = 0xFF8080FF; // Blue tint if active is above
     }
     graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + ARROW_HEIGHT, 0xFF303030);
-    graphics.drawCenteredString(mc.font, Component.literal("^"), guiLeft + TAB_WIDTH / 2, tabY + 1, upArrowColor);
+    graphics.drawCenteredString(mc.font, FlooTextHelper.literal("^"), guiLeft + TAB_WIDTH / 2, tabY + 1, upArrowColor);
     tabY += ARROW_HEIGHT;
 
     // Render tabs
@@ -104,7 +105,7 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
       downArrowColor = 0xFF8080FF; // Blue tint if active is below
     }
     graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + ARROW_HEIGHT, 0xFF303030);
-    graphics.drawCenteredString(mc.font, Component.literal("v"), guiLeft + TAB_WIDTH / 2, tabY + 1, downArrowColor);
+    graphics.drawCenteredString(mc.font, FlooTextHelper.literal("v"), guiLeft + TAB_WIDTH / 2, tabY + 1, downArrowColor);
   }
 
   @Override

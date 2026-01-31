@@ -86,11 +86,9 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version_1_20_1}-${forge_version_1_20_1}"
     compileOnly project(':common')
-    
-    // Floo_Powder
-    shadow project(':Floo_Powder:forge:1.20.1')
-    shadow project(':Floo_Powder:common')
-    
+
+    // Floo_Powder sources are compiled directly as part of this module
+
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
 }
 
@@ -108,16 +106,24 @@ tasks.named('compileJava', JavaCompile) {
     // Add common sources with exclusions for 1.20.2-specific classes
     source(project(':common').sourceSets.main.allSource.matching {
         exclude '**/gametest/**'
-        exclude '**/client/screen/**'
-        exclude '**/client/gui/element/**'
+        // Only exclude screens that have platform-specific implementations in forge/1.20.1
+        exclude '**/client/screen/BookScreen.java'
+        exclude '**/client/screen/GuidebookScreen.java'
         exclude '**/client/GuidebookClientHelper.java'
         exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
         exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
         exclude '**/advancements/WritingDeskWriteTrigger.java'
-        // Network packets use FriendlyByteBuf methods that have different signatures in 1.20.1
-        exclude '**/network/*Packet.java'
-        exclude '**/network/PacketContext.java'
+        // Platform-specific packet implementations (use ObfuscationReflectionHelper for SRG names)
+        exclude '**/network/LecternBookSyncPacket.java'
+        // Network packets - forge/1.20.1 has its own implementations
+        exclude '**/network/SyncAgeDataPacket.java'
+        exclude '**/network/PocketHeadSyncPacket.java'
+        exclude '**/network/OpenLecternBookPacket.java'
     })
+    // Include Floo_Powder common API
+    source(fileTree(rootProject.file('Floo_Powder/common/src/main/java')))
+    // Include Floo_Powder forge 1.20.1 adapter sources
+    source(fileTree(rootProject.file('Floo_Powder/forge/1.20.1/src/main/java')))
     // The module's own src/main/java sources (including 1.20.1-specific screens)
     // are automatically included via sourceSets.main
 }

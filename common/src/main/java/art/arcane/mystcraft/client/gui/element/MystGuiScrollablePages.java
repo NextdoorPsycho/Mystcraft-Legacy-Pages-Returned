@@ -3,6 +3,7 @@ package art.arcane.mystcraft.client.gui.element;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import com.floopowder.api.FlooTextHelper;
 import com.floopowder.api.IFlooGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -117,7 +118,7 @@ public class MystGuiScrollablePages extends MystGuiElement {
     if (symbolId != null) {
       IAgeSymbol symbol = SymbolRegistry.get(symbolId);
       if (symbol != null) {
-        hoverTooltip.add(Component.literal(symbol.getLocalizedName()));
+        hoverTooltip.add(FlooTextHelper.literal(symbol.getLocalizedName()));
       }
     }
   }

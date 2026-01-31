@@ -406,52 +406,7 @@ subprojects {
 
     
 
-    // Floo_Powder Module Configuration
-
-    // These modules are intended to be environment-agnostic.
-
-    // Their dependencies (Minecraft, Fabric, Forge) are provided by the consuming platform projects.
-
-    configure(subprojects.findAll { it.path.startsWith(':Floo_Powder') }) {
-
-        // Basic setup for all Floo modules
-
-        apply plugin: 'java-library'
-
-        
-
-        // Ensure they use the same Java version as defined in gradle.properties if available
-
-        java {
-
-            if (project.hasProperty('java_version')) {
-
-                toolchain.languageVersion = JavaLanguageVersion.of(project.property('java_version').toString())
-
-            }
-
-        }
-
-    }
-
-    
-
-    project(':Floo_Powder:fabric:1.18.2') { dependencies { implementation project(':Floo_Powder:common') } }
-
-    project(':Floo_Powder:fabric:1.19.2') { dependencies { implementation project(':Floo_Powder:common') } }
-
-    project(':Floo_Powder:fabric:1.20.1') { dependencies { implementation project(':Floo_Powder:common') } }
-
-    project(':Floo_Powder:fabric:1.20.2') { dependencies { implementation project(':Floo_Powder:common') } }
-
-    project(':Floo_Powder:forge:1.18.2') { dependencies { implementation project(':Floo_Powder:common') } }
-
-    project(':Floo_Powder:forge:1.19.2') { dependencies { implementation project(':Floo_Powder:common') } }
-
-    project(':Floo_Powder:forge:1.20.1') { dependencies { implementation project(':Floo_Powder:common') } }
-
-    project(':Floo_Powder:forge:1.20.2') { dependencies { implementation project(':Floo_Powder:common') } }
-
-    project(':Floo_Powder:neoforge:1.20.2') { dependencies { implementation project(':Floo_Powder:common') } }
+    // Floo_Powder sources are compiled directly as part of each platform module
+    // to avoid circular dependencies with VanillaGradle plugins
 
     

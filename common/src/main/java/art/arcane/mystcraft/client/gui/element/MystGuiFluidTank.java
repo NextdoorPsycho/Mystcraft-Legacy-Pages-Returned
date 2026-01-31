@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.client.gui.element;
 
+import com.floopowder.api.FlooTextHelper;
 import com.floopowder.api.IFlooGraphics;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
@@ -59,6 +60,6 @@ public class MystGuiFluidTank extends MystGuiElement {
   protected List<Component> getOwnTooltip(int mouseX, int mouseY) {
     int amount = amountProvider.get();
     int capacity = capacityProvider.get();
-    return List.of(Component.literal(fluidName + ": " + amount + "/" + capacity + " mB"));
+    return List.of(FlooTextHelper.literal(fluidName + ": " + amount + "/" + capacity + " mB"));
   }
 }

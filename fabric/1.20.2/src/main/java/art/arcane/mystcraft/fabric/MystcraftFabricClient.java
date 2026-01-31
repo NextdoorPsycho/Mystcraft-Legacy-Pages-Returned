@@ -14,7 +14,10 @@ import art.arcane.mystcraft.registry.FabricRegistries;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
+import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
 import net.fabricmc.fabric.api.client.rendering.v1.*;
+import net.minecraft.resources.ResourceLocation;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
 
 /**
@@ -73,6 +76,16 @@ public class MystcraftFabricClient implements ClientModInitializer {
 
     // Register Mystcraft age-related block/item colors
     FabricAgeBlockColorHandler.register();
+
+    // Register fluid render handler for black ink
+    FluidRenderHandlerRegistry.INSTANCE.register(
+        FabricRegistries.BLACK_INK_SOURCE.get(),
+        FabricRegistries.BLACK_INK_FLOWING.get(),
+        new SimpleFluidRenderHandler(
+            new ResourceLocation(Mystcraft.MOD_ID, "blocks/fluid"),
+            new ResourceLocation(Mystcraft.MOD_ID, "blocks/fluid_flow"),
+            0xFF1A1A1A  // Dark gray/black tint
+        ));
 
     // Register BEWLR for page item
     BuiltinItemRendererRegistry.INSTANCE.register(

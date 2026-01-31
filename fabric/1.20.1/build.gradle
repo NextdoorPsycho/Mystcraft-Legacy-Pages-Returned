@@ -63,10 +63,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_1}"
     compileOnly project(':common')
 
-    // Floo_Powder
-    implementation project(':Floo_Powder:fabric:1.20.1')
-    include project(':Floo_Powder:fabric:1.20.1')
-    include project(':Floo_Powder:common')
+    // Floo_Powder sources are compiled directly as part of this module
 
     // TOML config library (same as Forge/NeoForge use)
     implementation "com.electronwill.night-config:core:3.6.7"
@@ -79,8 +76,9 @@ tasks.named('compileJava', JavaCompile) {
     // Add common sources with exclusions for 1.20.2-specific classes and platform-specific overrides
     source(project(':common').sourceSets.main.allSource.matching {
         exclude '**/gametest/**'
-        exclude '**/client/screen/**'
-        exclude '**/client/gui/element/**'
+        // Only exclude screens that have platform-specific implementations in fabric/1.20.1
+        exclude '**/client/screen/BookScreen.java'
+        exclude '**/client/screen/GuidebookScreen.java'
         exclude '**/client/GuidebookClientHelper.java'
         exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
         exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
@@ -88,6 +86,10 @@ tasks.named('compileJava', JavaCompile) {
         // Platform-specific packet implementations (use access widener for direct field access)
         exclude '**/network/LecternBookSyncPacket.java'
     })
+    // Include Floo_Powder common API
+    source(fileTree(rootProject.file('Floo_Powder/common/src/main/java')))
+    // Include Floo_Powder fabric 1.20.1 adapter sources
+    source(fileTree(rootProject.file('Floo_Powder/fabric/1.20.1/src/main/java')))
     // The module's own src/main/java sources (including 1.20.1-specific screens)
     // are automatically included via sourceSets.main
 }

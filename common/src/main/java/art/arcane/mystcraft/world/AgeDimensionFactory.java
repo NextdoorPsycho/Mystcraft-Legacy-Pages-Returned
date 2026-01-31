@@ -213,7 +213,9 @@ public class AgeDimensionFactory {
   ) {
     try {
       // Access server internals via reflection (AT/AW ensures this works at runtime)
-      Executor executor = getFieldValue(server, FIELD_EXECUTOR, Executor.class);
+      // Executor executor = getFieldValue(server, FIELD_EXECUTOR, Executor.class);
+      // Use background executor directly to avoid potential deadlock with Render thread in Integrated Server
+      Executor executor = net.minecraft.Util.backgroundExecutor();
       Map<ResourceKey<Level>, ServerLevel> levels = getFieldValue(server, FIELD_LEVELS, Map.class);
       LevelStorageSource.LevelStorageAccess storageSource = getFieldValue(server, FIELD_STORAGE_SOURCE,
           LevelStorageSource.LevelStorageAccess.class);

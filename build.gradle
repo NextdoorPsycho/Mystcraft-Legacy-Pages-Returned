@@ -194,10 +194,30 @@ subprojects {
         group = 'mystcraft'
         description = 'Deletes the entire saves directory to ensure a fresh start.'
         doLast {
-            def savesDir = project.file('runs/client/saves')
-            if (savesDir.exists()) {
-                savesDir.deleteDir()
-                println "Deleted worlds: ${savesDir}"
+            def paths = [
+                'runs/client/saves',
+                'runs/saves',
+                'run/saves',
+                'run/client/saves'
+            ]
+            
+            paths.each { path ->
+                def dir = project.file(path)
+                println "Checking for worlds at: ${dir.absolutePath}"
+                if (dir.exists()) {
+                    println "Found worlds directory. Deleting..."
+                    try {
+                        if (dir.deleteDir()) {
+                             println "Successfully deleted: ${path}"
+                        } else {
+                             println "Java delete failed. Trying shell force delete..."
+                             project.exec { commandLine 'rm', '-rf', dir.absolutePath }
+                             println "Shell delete command executed for: ${path}"
+                        }
+                    } catch (Exception e) {
+                        println "Error deleting ${path}: ${e.message}"
+                    }
+                }
             }
         }
     }

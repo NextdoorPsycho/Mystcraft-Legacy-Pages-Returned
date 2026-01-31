@@ -1,14 +1,16 @@
 {
   "type": "minecraft:crafting_shapeless",
+  "group": "mystcraft:ink_vial",
   "ingredients": [
     {
-      "item": "minecraft:glass_bottle"
+      "tag": "mystcraft:ink_sacs"
     },
     {
-      "item": "minecraft:ink_sac"
+      "item": "minecraft:lapis_lazuli"
     },
     {
-      "item": "minecraft:ink_sac"
+      "item": "minecraft:potion",
+      "nbt": "{Potion:\"minecraft:water\"}"
     }
   ],
   "result": {

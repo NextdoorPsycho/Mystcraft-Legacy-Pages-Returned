@@ -1,0 +1,251 @@
+plugins {
+    id 'fabric-loom' version '1.9-SNAPSHOT'
+}
+
+version = "${project.version}"
+group = project.group
+
+base {
+    archivesName = "mystcraft_legacy-${version}-${minecraft_version_1_19_2}-fabric"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+    withSourcesJar()
+}
+
+// Force Java 17 for all run tasks (client, server, gametest)
+tasks.withType(JavaExec).configureEach {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+loom {
+    // Use 1.19.2-specific access widener
+    accessWidenerPath = file("src/main/resources/${mod_id}.accesswidener")
+    mixin {
+        defaultRefmapName.set("${mod_id}.refmap.json")
+    }
+
+    runs {
+        client {
+            client()
+            setConfigName("Fabric 1.19.2 Client")
+            ideConfigGenerated(false)
+            runDir("runs/client")
+        }
+        server {
+            server()
+            setConfigName("Fabric 1.19.2 Server")
+            ideConfigGenerated(false)
+            runDir("runs/server")
+        }
+        gametest {
+            server()
+            setConfigName("Fabric 1.19.2 GameTest")
+            ideConfigGenerated(false)
+            runDir("runs/gametest")
+            vmArg "-Dfabric-api.gametest"
+            vmArg "-Dfabric-api.gametest.report-file=${project.buildDir}/junit.xml"
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version_1_19_2}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version_1_19_2}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_19_2}"
+    compileOnly project(':common')
+
+    // TOML config library (same as Forge/NeoForge use)
+    implementation "com.electronwill.night-config:core:3.6.7"
+    implementation "com.electronwill.night-config:toml:3.6.7"
+    include "com.electronwill.night-config:core:3.6.7"
+    include "com.electronwill.night-config:toml:3.6.7"
+}
+
+tasks.named('compileJava', JavaCompile) {
+    // Add common sources with exclusions for 1.20.x-specific classes and platform-specific overrides
+    source(project(':common').sourceSets.main.allSource.matching {
+        exclude '**/gametest/**'
+        exclude '**/client/screen/**'
+        exclude '**/client/gui/element/**'
+        exclude '**/client/GuidebookClientHelper.java'
+        exclude '**/client/render/PageRenderHelper.java'
+        exclude '**/client/render/PageItemRendererBEWLR.java'
+        exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
+        exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
+        exclude '**/advancements/WritingDeskWriteTrigger.java'
+        // Platform-specific packet implementations (use access widener for direct field access)
+        exclude '**/network/LecternBookSyncPacket.java'
+        // GuiGraphics doesn't exist in 1.19.2 - use PoseStack reimplementations
+        exclude '**/platform/services/IClientHelper.java'
+        // 1.20.x uses BuiltInRegistries/Registries which don't exist in 1.19.2
+        exclude '**/world/AgeDimensionFactory.java'
+        exclude '**/world/PersonalPocketDimension.java'
+        exclude '**/world/gen/AgeChunkGenerator.java'
+        exclude '**/world/gen/populate/BlockShufflePopulator.java'
+        exclude '**/world/gen/biome/BiomeControllerBase.java'
+        exclude '**/world/gen/biome/BiomeControllerNative.java'
+        exclude '**/world/gen/biome/AgeBiomeSource.java'
+        exclude '**/datapack/symbol/PopulatorRegistry.java'
+        exclude '**/datapack/symbol/TerrainAlterationRegistry.java'
+        exclude '**/datapack/symbol/SymbolLogicTypes.java'
+        exclude '**/datapack/symbol/SymbolDatapackLoader.java'
+        exclude '**/registry/ModTags.java'
+        exclude '**/data/LinkOptions.java'
+        // 1.20.x uses joml Matrix4f and Axis which don't exist in 1.19.2
+        exclude '**/world/celestial/CelestialStars.java'
+        exclude '**/world/celestial/CelestialMoon.java'
+        exclude '**/world/celestial/CelestialSun.java'
+        exclude '**/client/AgeDimensionSpecialEffects.java'
+        exclude '**/client/renderer/ColoredLightningRenderer.java'
+        exclude '**/client/renderer/MeteorEntityRenderer.java'
+        exclude '**/client/renderer/LinkPortalRenderer.java'
+        exclude '**/client/renderer/StarFissureRenderer.java'
+        exclude '**/client/renderer/WritingDeskRenderer.java'
+        // MapColor vs MaterialColor
+        exclude '**/registry/BlockDefinitions.java'
+        // DamageTypes registry
+        exclude '**/event/AgeDeathHandler.java'
+        // Additional renderers using 1.20.x Axis class
+        exclude '**/client/renderer/LinkbookEntityRenderer.java'
+        exclude '**/client/renderer/BookstandRenderer.java'
+        exclude '**/client/renderer/BookReceptacleRenderer.java'
+        exclude '**/client/renderer/LecternRenderer.java'
+        // Render helpers - use platform-specific versions
+        exclude '**/client/render/DrawableWord.java'
+        exclude '**/client/render/DrawableWordManager.java'
+        // Entities using 1.20.x APIs (getAddEntityPacket is abstract in 1.19.2)
+        exclude '**/entity/LinkbookEntity.java'
+        exclude '**/entity/MystcraftFallingBlockEntity.java'
+        exclude '**/entity/MeteorEntity.java'
+        // Populators using 1.20.x APIs (isSolid, setEntityId) - exclude ALL populators
+        exclude '**/world/gen/populate/**'
+        // LinkingManager uses level(), serverLevel(), BlockPos.containing(), blocksMotion()
+        exclude '**/link/LinkingManager.java'
+        // Commands use level() - 1.20.x API
+        exclude '**/command/MystcraftCommands.java'
+        // Event handlers using 1.20.x APIs (level(), serverLevel())
+        exclude '**/event/AgeReturnHandler.java'
+        exclude '**/event/AgeEffectsHandler.java'
+        exclude '**/event/AgeDataSyncHandler.java'
+        exclude '**/event/PersonalPocketEscapeHandler.java'
+        // Instability - use level()
+        exclude '**/instability/bonus/PlayerKilledBonus.java'
+        exclude '**/instability/bonus/PlayerSurvivalBonus.java'
+        exclude '**/instability/effects/EffectErosion.java'
+        // Blocks using damageSources()
+        exclude '**/block/DecayBlock.java'
+        // Menus using setByPlayer and level()
+        exclude '**/menu/FolderMenu.java'
+        exclude '**/menu/PortfolioMenu.java'
+        exclude '**/menu/InkMixerMenu.java'
+        exclude '**/menu/BookBinderMenu.java'
+        exclude '**/menu/LinkModifierMenu.java'
+        exclude '**/menu/WritingDeskMenu.java'
+        // World using isSolid()
+        exclude '**/world/AgeDirectorImpl.java'
+        // Network packets using level()
+        exclude '**/network/OpenBookPacket.java'
+        exclude '**/network/LinkBookActivatePacket.java'
+        exclude '**/network/EntityBookActivatePacket.java'
+        exclude '**/network/BlockBookActivatePacket.java'
+        // 1.20.x blocks (CHERRY_PLANKS, BAMBOO_PLANKS) and biomes (CHERRY_GROVE)
+        exclude '**/grammar/AgeBuilder.java'
+        exclude '**/world/gen/terrain/TerrainGeneratorNormal.java'
+        // Instability effects using ExplosionInteraction enum
+        exclude '**/instability/effects/EffectExplosion.java'
+        // LecternBlock.resetBookState signature changed in 1.20.x (added Player param)
+        exclude '**/util/MystcraftLecternHelper.java'
+        // WritingDeskBlock uses canBeReplaced() which requires params in 1.19.2
+        exclude '**/block/WritingDeskBlock.java'
+    })
+    // The module's own src/main/java sources (including 1.19.2-specific screens)
+    // are automatically included via sourceSets.main
+}
+
+tasks.named('processResources', ProcessResources) {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    // Common resources first, then own resources to override
+    from project(':common').sourceSets.main.resources
+    from sourceSets.main.resources
+
+    def expandProps = [
+            'version'                : version,
+            'group'                  : project.group,
+            'minecraft_version'      : minecraft_version_1_19_2,
+            'minecraft_version_range': minecraft_version_range_1_19_2,
+            'fabric_version'         : fabric_version_1_19_2,
+            'fabric_loader_version'  : fabric_loader_version_1_19_2,
+            'mod_name'               : mod_name,
+            'mod_author'             : mod_author,
+            'mod_id'                 : mod_id,
+            'license'                : license,
+            'description'            : project.findProperty('description'),
+            'credits'                : credits,
+            'java_version'           : java_version_1_19_2
+    ]
+
+    filesMatching(['pack.mcmeta', 'fabric.mod.json']) {
+        expand expandProps
+    }
+
+    inputs.properties(expandProps)
+
+    // Fix the problematic properties that get overridden by Gradle's built-in properties
+    doLast {
+        def fabricModJson = file("${destinationDir}/fabric.mod.json")
+        if (fabricModJson.exists()) {
+            def content = fabricModJson.text
+            content = content.replace('"minecraft": "~1.20.2"', '"minecraft": "~1.19.2"')
+            content = content.replace('"description": "Processes main resources."', '"description": "Mystcraft 2 Legacy - Pages Returned brings the Myst series to Minecraft, allowing players to write and travel to custom Ages (dimensions)."')
+            fabricModJson.text = content
+        }
+    }
+}
+
+tasks.named('sourcesJar', Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from project(':common').sourceSets.main.allSource
+    from project(':common').sourceSets.main.resources
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version_1_19_2}-fabric-${fabric_loader_version_1_19_2}-dev.jar"
+
+    from(rootProject.file('LICENSE')) {
+        rename { "${it}_${mod_name}" }
+    }
+
+    manifest {
+        attributes([
+                'Specification-Title'   : mod_name,
+                'Specification-Vendor'  : mod_author,
+                'Specification-Version' : project.jar.archiveVersion,
+                'Implementation-Title'  : project.name,
+                'Implementation-Version': project.jar.archiveVersion,
+                'Implementation-Vendor' : mod_author,
+                'Built-On-Minecraft'    : minecraft_version_1_19_2
+        ])
+    }
+}
+
+remapJar {
+    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version_1_19_2}-fabric-${fabric_loader_version_1_19_2}.jar"
+}
+
+sourcesJar {
+    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-1.19.2-sources-dev.jar"
+}
+
+remapSourcesJar {
+    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-1.19.2-sources.jar"
+}

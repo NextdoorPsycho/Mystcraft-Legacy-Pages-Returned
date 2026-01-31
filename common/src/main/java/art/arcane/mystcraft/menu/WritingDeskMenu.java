@@ -225,7 +225,7 @@ public class WritingDeskMenu extends AbstractContainerMenu {
         }
 
         // Try paper slot
-        if (stackInSlot.is(net.minecraft.world.item.Items.PAPER)) {
+        if (WritingDeskBlockEntity.isBlankPage(stackInSlot)) {
           if (!moveItemStackTo(stackInSlot, SLOT_PAPER, SLOT_PAPER + 1, false)) {
             // Fall through
           } else {

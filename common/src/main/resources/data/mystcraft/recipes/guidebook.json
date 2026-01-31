@@ -2,7 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "minecraft:paper"
+      "item": "mystcraft:page"
     },
     {
       "item": "minecraft:ink_sac"

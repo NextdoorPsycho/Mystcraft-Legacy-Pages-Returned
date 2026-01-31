@@ -209,23 +209,6 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
       return stack;
     }
 
-    // Convert paper to blank pages
-    if (stack.is(Items.PAPER)) {
-      while (stack.getCount() > 0) {
-        if (maxSymbols >= 0 && pages.size() >= maxSymbols) {
-          return stack;
-        }
-        ItemStack page = Page.createPage();
-        ItemStack remainder = insertPage(page, index);
-        if (!remainder.isEmpty()) {
-          return stack;
-        }
-        stack.shrink(1);
-        index++;
-      }
-      return stack.isEmpty() ? ItemStack.EMPTY : stack;
-    }
-
     // Only accept pages
     if (!(stack.getItem() instanceof art.arcane.mystcraft.item.PageItem)) {
       return stack;

@@ -53,6 +53,38 @@ idea {
                 "NeoForge 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':neoforge:1.20.2:runServer']
                 }
+                // Fabric 1.19.2
+                "Fabric 1.19.2 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:1.19.2:cleanAllWorlds', ':fabric:1.19.2:runClient']
+                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
+                }
+                "Fabric 1.19.2 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:1.19.2:runServer']
+                }
+                // Forge 1.19.2
+                "Forge 1.19.2 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.19.2:cleanAllWorlds', ':forge:1.19.2:runClient']
+                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
+                }
+                "Forge 1.19.2 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.19.2:runServer']
+                }
+                // Fabric 1.18.2
+                "Fabric 1.18.2 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:1.18.2:cleanAllWorlds', ':fabric:1.18.2:runClient']
+                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
+                }
+                "Fabric 1.18.2 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:1.18.2:runServer']
+                }
+                // Forge 1.18.2
+                "Forge 1.18.2 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.18.2:cleanAllWorlds', ':forge:1.18.2:runClient']
+                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
+                }
+                "Forge 1.18.2 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.18.2:runServer']
+                }
             }
         }
     }
@@ -63,7 +95,11 @@ tasks.register('cleanLibs') {
     description = 'Cleans libs directories and output directory'
 
     doLast {
-        def platforms = ['fabric:1.20.1', 'fabric:1.20.2', 'forge:1.20.1', 'forge:1.20.2', 'neoforge:1.20.2']
+        def platforms = [
+            'fabric:1.18.2', 'fabric:1.19.2', 'fabric:1.20.1', 'fabric:1.20.2',
+            'forge:1.18.2', 'forge:1.19.2', 'forge:1.20.1', 'forge:1.20.2',
+            'neoforge:1.20.2'
+        ]
         platforms.each { platform ->
             try {
                 def libsDir = project(":${platform}").file('build/libs')
@@ -94,8 +130,26 @@ tasks.register('cleanLibs') {
 // Build tasks
 tasks.register('buildAllVersions') {
     group = 'build'
-    description = 'Builds all platform/version combinations (5 JARs total)'
-    dependsOn ':fabric:1.20.1:build', ':fabric:1.20.2:build', ':forge:1.20.1:build', ':forge:1.20.2:build', ':neoforge:1.20.2:build'
+    description = 'Builds all platform/version combinations (9 JARs total)'
+    dependsOn ':fabric:1.18.2:build', ':fabric:1.19.2:build',
+              ':fabric:1.20.1:build', ':fabric:1.20.2:build',
+              ':forge:1.18.2:build', ':forge:1.19.2:build',
+              ':forge:1.20.1:build', ':forge:1.20.2:build',
+              ':neoforge:1.20.2:build'
+    mustRunAfter 'cleanLibs'
+}
+
+tasks.register('build_1_18_2') {
+    group = 'build'
+    description = 'Builds 1.18.2 for Fabric and Forge'
+    dependsOn ':fabric:1.18.2:build', ':forge:1.18.2:build'
+    mustRunAfter 'cleanLibs'
+}
+
+tasks.register('build_1_19_2') {
+    group = 'build'
+    description = 'Builds 1.19.2 for Fabric and Forge'
+    dependsOn ':fabric:1.19.2:build', ':forge:1.19.2:build'
     mustRunAfter 'cleanLibs'
 }
 
@@ -128,6 +182,16 @@ def registerCopyTask = { String name, String outputProp ->
         }
 
         // All version-specific builds
+        from(project(':fabric:1.18.2').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+            exclude '*-dev.jar'
+        }
+        from(project(':fabric:1.19.2').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+            exclude '*-dev.jar'
+        }
         from(project(':fabric:1.20.1').layout.buildDirectory.dir('libs')) {
             include '*.jar'
             exclude '*-sources*'
@@ -137,6 +201,14 @@ def registerCopyTask = { String name, String outputProp ->
             include '*.jar'
             exclude '*-sources*'
             exclude '*-dev.jar'
+        }
+        from(project(':forge:1.18.2').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+        }
+        from(project(':forge:1.19.2').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
         }
         from(project(':forge:1.20.1').layout.buildDirectory.dir('libs')) {
             include '*.jar'

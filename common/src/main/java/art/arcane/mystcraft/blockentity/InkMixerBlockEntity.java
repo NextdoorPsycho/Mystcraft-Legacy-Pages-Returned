@@ -2,9 +2,11 @@ package art.arcane.mystcraft.blockentity;
 
 import art.arcane.mystcraft.data.InkEffects;
 import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.item.PageItem;
 import art.arcane.mystcraft.menu.InkMixerMenu;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.registry.ModFluids;
+import art.arcane.mystcraft.registry.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -49,7 +51,7 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
         return isValidInkContainer(stack);
       }
       if (slot == SLOT_PAPER) {
-        return stack.is(Items.PAPER);
+        return isBlankPage(stack);
       }
       return false;
     }
@@ -210,7 +212,11 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
     // In vanilla-compatible code, we check the item's registry name or tag
     // For now, accept any item that has a crafting remainder (like buckets)
     // and is registered as an ink bucket in ModFluids
-    return stack.is(ModFluids.BLACK_INK_BUCKET.get());
+    return stack.is(ModTags.Items.INK_BUCKETS);
+  }
+
+  private boolean isBlankPage(ItemStack stack) {
+    return !stack.isEmpty() && stack.getItem() instanceof PageItem && Page.isBlank(stack);
   }
 
   /**
@@ -218,7 +224,7 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
    */
   public boolean canBuildItem() {
     ItemStack paper = inventory.getItem(SLOT_PAPER);
-    return !paper.isEmpty() && paper.is(Items.PAPER) && hasInk;
+    return isBlankPage(paper) && hasInk;
   }
 
   /**

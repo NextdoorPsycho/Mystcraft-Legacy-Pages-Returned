@@ -1,0 +1,30 @@
+accessWidener v2 named
+
+# MenuScreens for screen registration
+accessible method net/minecraft/client/gui/screens/MenuScreens register (Lnet/minecraft/world/inventory/MenuType;Lnet/minecraft/client/gui/screens/MenuScreens$ScreenConstructor;)V
+accessible class net/minecraft/client/gui/screens/MenuScreens$ScreenConstructor
+
+# MinecraftServer - Dynamic dimension creation
+accessible field net/minecraft/server/MinecraftServer levels Ljava/util/Map;
+mutable field net/minecraft/server/MinecraftServer levels Ljava/util/Map;
+accessible field net/minecraft/server/MinecraftServer executor Ljava/util/concurrent/Executor;
+accessible field net/minecraft/server/MinecraftServer storageSource Lnet/minecraft/world/level/storage/LevelStorageSource$LevelStorageAccess;
+
+# MappedRegistry - Unfreeze for dimension registration
+accessible field net/minecraft/core/MappedRegistry frozen Z
+mutable field net/minecraft/core/MappedRegistry frozen Z
+
+# StructureTemplatePool - Village structure injection
+accessible field net/minecraft/world/level/levelgen/structure/pools/StructureTemplatePool rawTemplates Ljava/util/List;
+mutable field net/minecraft/world/level/levelgen/structure/pools/StructureTemplatePool rawTemplates Ljava/util/List;
+accessible field net/minecraft/world/level/levelgen/structure/pools/StructureTemplatePool templates Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
+mutable field net/minecraft/world/level/levelgen/structure/pools/StructureTemplatePool templates Lit/unimi/dsi/fastutil/objects/ObjectArrayList;
+
+# CriteriaTriggers - Custom advancement triggers (1.19.2 signature)
+accessible method net/minecraft/advancements/CriteriaTriggers register (Lnet/minecraft/advancements/CriterionTrigger;)Lnet/minecraft/advancements/CriterionTrigger;
+
+# LecternBlockEntity - Book placement for Mystcraft books
+accessible field net/minecraft/world/level/block/entity/LecternBlockEntity book Lnet/minecraft/world/item/ItemStack;
+mutable field net/minecraft/world/level/block/entity/LecternBlockEntity book Lnet/minecraft/world/item/ItemStack;
+accessible field net/minecraft/world/level/block/entity/LecternBlockEntity pageCount I
+mutable field net/minecraft/world/level/block/entity/LecternBlockEntity pageCount I

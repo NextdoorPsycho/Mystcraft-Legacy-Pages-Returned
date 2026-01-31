@@ -2,6 +2,7 @@ package art.arcane.mystcraft.registry;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Rarity;
 
 /**
  * Centralized item property definitions for Mystcraft.
@@ -14,7 +15,7 @@ public final class ItemDefinitions {
 
   // Symbol pages
   public static Item.Properties page() {
-    return new Item.Properties().stacksTo(64);
+    return new Item.Properties().stacksTo(64).rarity(Rarity.UNCOMMON);
   }
 
   // Books
@@ -50,7 +51,7 @@ public final class ItemDefinitions {
 
   // Ink vial
   public static Item.Properties inkVial() {
-    return new Item.Properties().stacksTo(16);
+    return new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON);
   }
 
   // Guidebook
@@ -60,7 +61,7 @@ public final class ItemDefinitions {
 
   // Ink bucket
   public static Item.Properties inkBucket() {
-    return new Item.Properties().stacksTo(1).craftRemainder(Items.BUCKET);
+    return new Item.Properties().stacksTo(1).craftRemainder(Items.BUCKET).rarity(Rarity.UNCOMMON);
   }
 
   // Block items (standard properties)

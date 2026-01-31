@@ -5,6 +5,7 @@ import art.arcane.mystcraft.item.*;
 import art.arcane.mystcraft.menu.WritingDeskMenu;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.registry.ModFluids;
+import art.arcane.mystcraft.registry.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -64,7 +65,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
       return switch (slot) {
         case SLOT_WRITING -> isWritableItem(stack);
-        case SLOT_PAPER -> stack.is(Items.PAPER);
+        case SLOT_PAPER -> isBlankPage(stack);
         case SLOT_CONTAINER_IN -> isInkContainer(stack);
         case SLOT_CONTAINER_OUT -> false; // Output only
         default -> false;
@@ -155,7 +156,11 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
       return vial.getInkAmount(stack) > 0;
     }
     // Accept ink buckets
-    return stack.is(ModFluids.BLACK_INK_BUCKET.get());
+    return stack.is(ModTags.Items.INK_BUCKETS);
+  }
+
+  public static boolean isBlankPage(ItemStack stack) {
+    return !stack.isEmpty() && stack.getItem() instanceof PageItem && Page.isBlank(stack);
   }
 
   /**
@@ -235,7 +240,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
    */
   public int getPaperCount() {
     ItemStack paper = mainInventory.getItem(SLOT_PAPER);
-    return paper.isEmpty() ? 0 : paper.getCount();
+    return isBlankPage(paper) ? paper.getCount() : 0;
   }
 
   /**
@@ -243,7 +248,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
    */
   public boolean consumePaper() {
     ItemStack paper = mainInventory.getItem(SLOT_PAPER);
-    if (paper.isEmpty()) return false;
+    if (!isBlankPage(paper)) return false;
     paper.shrink(1);
     return true;
   }
@@ -375,7 +380,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     }
 
     // Handle ink buckets
-    if (containerIn.is(ModFluids.BLACK_INK_BUCKET.get())) {
+    if (containerIn.is(ModTags.Items.INK_BUCKETS)) {
       int spaceInTank = INK_CAPACITY - getInkAmount();
       if (spaceInTank >= 1000) {
         // Get the empty container (crafting remainder)

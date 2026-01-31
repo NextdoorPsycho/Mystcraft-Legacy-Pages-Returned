@@ -3,7 +3,7 @@ package art.arcane.mystcraft.client.gui.element;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
-import net.minecraft.client.gui.GuiGraphics;
+import com.floopowder.api.IFlooGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -30,12 +30,12 @@ public class MystGuiScrollablePages extends MystGuiElement {
   }
 
   @Override
-  protected void doRenderBackground(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
     int guiLeft = getLeft();
     int guiTop = getTop();
 
     // Draw background
-    guiGraphics.fill(guiLeft, guiTop, guiLeft + width, guiTop + height, 0x80000000);
+    graphics.fill(guiLeft, guiTop, guiLeft + width, guiTop + height, 0x80000000);
 
     List<ItemStack> pages = handler != null ? handler.getPageList() : null;
     if (pages == null) {
@@ -61,19 +61,19 @@ public class MystGuiScrollablePages extends MystGuiElement {
       int y = guiTop + row * PAGE_SLOT_SIZE + 1;
 
       // Draw slot background
-      guiGraphics.fill(x, y, x + PAGE_ICON_SIZE, y + PAGE_ICON_SIZE, 0xFF2D2D2D);
+      graphics.fill(x, y, x + PAGE_ICON_SIZE, y + PAGE_ICON_SIZE, 0xFF2D2D2D);
 
       if (!page.isEmpty()) {
         // Draw page item
-        guiGraphics.renderItem(page, x, y);
+        graphics.renderItem(page, x, y);
 
         // Check if first position needs link panel warning
         if (pageIndex == 0 && !Page.isLinkPanel(page)) {
           // Red tint for missing link panel
-          guiGraphics.fill(x - 1, y - 1, x + PAGE_ICON_SIZE + 1, y, 0xFFFF0000);
-          guiGraphics.fill(x - 1, y + PAGE_ICON_SIZE, x + PAGE_ICON_SIZE + 1, y + PAGE_ICON_SIZE + 1, 0xFFFF0000);
-          guiGraphics.fill(x - 1, y, x, y + PAGE_ICON_SIZE, 0xFFFF0000);
-          guiGraphics.fill(x + PAGE_ICON_SIZE, y, x + PAGE_ICON_SIZE + 1, y + PAGE_ICON_SIZE, 0xFFFF0000);
+          graphics.fill(x - 1, y - 1, x + PAGE_ICON_SIZE + 1, y, 0xFFFF0000);
+          graphics.fill(x - 1, y + PAGE_ICON_SIZE, x + PAGE_ICON_SIZE + 1, y + PAGE_ICON_SIZE + 1, 0xFFFF0000);
+          graphics.fill(x - 1, y, x, y + PAGE_ICON_SIZE, 0xFFFF0000);
+          graphics.fill(x + PAGE_ICON_SIZE, y, x + PAGE_ICON_SIZE + 1, y + PAGE_ICON_SIZE, 0xFFFF0000);
         }
 
         // Check hover
@@ -82,7 +82,7 @@ public class MystGuiScrollablePages extends MystGuiElement {
           hoverIndex = pageIndex;
           updateHoverTooltip(page);
           // Draw highlight
-          guiGraphics.fill(x, y, x + PAGE_ICON_SIZE, y + PAGE_ICON_SIZE, 0x40FFFFFF);
+          graphics.fill(x, y, x + PAGE_ICON_SIZE, y + PAGE_ICON_SIZE, 0x40FFFFFF);
         }
       } else {
         // Check hover on empty slot
@@ -101,8 +101,8 @@ public class MystGuiScrollablePages extends MystGuiElement {
       int scrollbarHeight = Math.max(8, (height * visibleSlots) / totalSlots);
       int scrollbarY = guiTop + (scrollOffset * (height - scrollbarHeight)) / maxScroll;
 
-      guiGraphics.fill(scrollbarX, guiTop, scrollbarX + 3, guiTop + height, 0xFF404040);
-      guiGraphics.fill(scrollbarX, scrollbarY, scrollbarX + 3, scrollbarY + scrollbarHeight, 0xFFC0C0C0);
+      graphics.fill(scrollbarX, guiTop, scrollbarX + 3, guiTop + height, 0xFF404040);
+      graphics.fill(scrollbarX, scrollbarY, scrollbarX + 3, scrollbarY + scrollbarHeight, 0xFFC0C0C0);
     }
   }
 

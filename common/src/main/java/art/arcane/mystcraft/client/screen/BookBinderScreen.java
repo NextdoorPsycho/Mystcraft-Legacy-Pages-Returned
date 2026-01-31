@@ -6,10 +6,10 @@ import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.BookBinderMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
+import com.floopowder.screen.FlooContainerScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -23,7 +23,7 @@ import java.util.List;
  * Screen for the Book Binder block.
  * Includes text field for book name and scrollable page list.
  */
-public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
+public class BookBinderScreen extends FlooContainerScreen<BookBinderMenu> {
 
   private static final ResourceLocation TEXTURE =
       new ResourceLocation(Mystcraft.MOD_ID, "gui/pagebinder.png");
@@ -213,9 +213,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
   @Override
   public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-    this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
     super.render(guiGraphics, mouseX, mouseY, partialTick);
-    this.renderTooltip(guiGraphics, mouseX, mouseY);
 
     // Render warning tooltip if hovering over warning area
     renderWarningTooltip(guiGraphics, mouseX, mouseY);
@@ -300,7 +298,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
   }
 
   @Override
-  public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+  protected boolean flooMouseScrolled(double mouseX, double mouseY, double verticalDelta) {
     // Scroll the page list
     int listLeft = this.leftPos + PAGE_LIST_X;
     int listTop = this.topPos + PAGE_LIST_Y;
@@ -312,15 +310,15 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
       List<ItemStack> pages = menu.getBlockEntity().getPageList();
       int maxScroll = Math.max(0, pages.size() - PAGES_PER_ROW * 2);
 
-      if (scrollY > 0) {
+      if (verticalDelta > 0) {
         scrollOffset = Math.max(0, scrollOffset - PAGES_PER_ROW);
-      } else if (scrollY < 0) {
+      } else if (verticalDelta < 0) {
         scrollOffset = Math.min(maxScroll, scrollOffset + PAGES_PER_ROW);
       }
       return true;
     }
 
-    return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    return false;
   }
 
   @Override

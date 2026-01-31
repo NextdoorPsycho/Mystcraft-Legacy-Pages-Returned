@@ -1,5 +1,6 @@
 plugins {
     id 'org.jetbrains.gradle.plugin.idea-ext' version '1.1.8'
+    id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
 }
 
 idea {
@@ -347,31 +348,110 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 
-    processResources {
-        def expandProps = [
-                'version'                      : version,
-                'group'                        : project.group,
-                'minecraft_version'            : minecraft_version,
-                'minecraft_version_range'      : minecraft_version_range,
-                'fabric_version'               : fabric_version,
-                'fabric_loader_version'        : fabric_loader_version,
-                'mod_name'                     : mod_name,
-                'mod_author'                   : mod_author,
-                'mod_id'                       : mod_id,
-                'license'                      : license,
-                'description'                  : description,
-                'neoforge_version'             : neoforge_version,
-                'neoforge_loader_version_range': neoforge_loader_version_range,
-                'forge_version'                : forge_version,
-                'forge_loader_version_range'   : forge_loader_version_range,
-                'credits'                      : credits,
-                'java_version'                 : java_version
-        ]
+        processResources {
 
-        filesMatching(['pack.mcmeta', 'fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
-            expand expandProps
+            def expandProps = [
+
+                    'version'                      : version,
+
+                    'group'                        : project.group,
+
+                    'minecraft_version'            : minecraft_version,
+
+                    'minecraft_version_range'      : minecraft_version_range,
+
+                    'fabric_version'               : fabric_version,
+
+                    'fabric_loader_version'        : fabric_loader_version,
+
+                    'mod_name'                     : mod_name,
+
+                    'mod_author'                   : mod_author,
+
+                    'mod_id'                       : mod_id,
+
+                    'license'                      : license,
+
+                    'description'                  : description,
+
+                    'neoforge_version'             : neoforge_version,
+
+                    'neoforge_loader_version_range': neoforge_loader_version_range,
+
+                    'forge_version'                : forge_version,
+
+                    'forge_loader_version_range'   : forge_loader_version_range,
+
+                    'credits'                      : credits,
+
+                    'java_version'           : java_version
+
+            ]
+
+    
+
+            filesMatching(['pack.mcmeta', 'fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
+
+                expand expandProps
+
+            }
+
+    
+
+            inputs.properties(expandProps)
+
         }
 
-        inputs.properties(expandProps)
     }
-}
+
+    
+
+    // Floo_Powder Module Configuration
+
+    // These modules are intended to be environment-agnostic.
+
+    // Their dependencies (Minecraft, Fabric, Forge) are provided by the consuming platform projects.
+
+    configure(subprojects.findAll { it.path.startsWith(':Floo_Powder') }) {
+
+        // Basic setup for all Floo modules
+
+        apply plugin: 'java-library'
+
+        
+
+        // Ensure they use the same Java version as defined in gradle.properties if available
+
+        java {
+
+            if (project.hasProperty('java_version')) {
+
+                toolchain.languageVersion = JavaLanguageVersion.of(project.property('java_version').toString())
+
+            }
+
+        }
+
+    }
+
+    
+
+    project(':Floo_Powder:fabric:1.18.2') { dependencies { implementation project(':Floo_Powder:common') } }
+
+    project(':Floo_Powder:fabric:1.19.2') { dependencies { implementation project(':Floo_Powder:common') } }
+
+    project(':Floo_Powder:fabric:1.20.1') { dependencies { implementation project(':Floo_Powder:common') } }
+
+    project(':Floo_Powder:fabric:1.20.2') { dependencies { implementation project(':Floo_Powder:common') } }
+
+    project(':Floo_Powder:forge:1.18.2') { dependencies { implementation project(':Floo_Powder:common') } }
+
+    project(':Floo_Powder:forge:1.19.2') { dependencies { implementation project(':Floo_Powder:common') } }
+
+    project(':Floo_Powder:forge:1.20.1') { dependencies { implementation project(':Floo_Powder:common') } }
+
+    project(':Floo_Powder:forge:1.20.2') { dependencies { implementation project(':Floo_Powder:common') } }
+
+    project(':Floo_Powder:neoforge:1.20.2') { dependencies { implementation project(':Floo_Powder:common') } }
+
+    

@@ -1,7 +1,7 @@
 package art.arcane.mystcraft.client.gui.element;
 
+import com.floopowder.api.IFlooGraphics;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -127,26 +127,26 @@ public abstract class MystGuiElement {
   protected void onTick() {
   }
 
-  public void renderBackground(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+  public void renderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
     if (!visible) return;
-    doRenderBackground(guiGraphics, partialTick, mouseX, mouseY);
+    doRenderBackground(graphics, partialTick, mouseX, mouseY);
     for (MystGuiElement child : children) {
-      child.renderBackground(guiGraphics, partialTick, mouseX, mouseY);
+      child.renderBackground(graphics, partialTick, mouseX, mouseY);
     }
   }
 
-  protected void doRenderBackground(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
   }
 
-  public void renderForeground(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+  public void renderForeground(IFlooGraphics graphics, int mouseX, int mouseY) {
     if (!visible) return;
-    doRenderForeground(guiGraphics, mouseX, mouseY);
+    doRenderForeground(graphics, mouseX, mouseY);
     for (MystGuiElement child : children) {
-      child.renderForeground(guiGraphics, mouseX, mouseY);
+      child.renderForeground(graphics, mouseX, mouseY);
     }
   }
 
-  protected void doRenderForeground(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+  protected void doRenderForeground(IFlooGraphics graphics, int mouseX, int mouseY) {
   }
 
   @Nullable

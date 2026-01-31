@@ -1,6 +1,6 @@
 package art.arcane.mystcraft.client.gui.element;
 
-import net.minecraft.client.gui.GuiGraphics;
+import com.floopowder.api.IFlooGraphics;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +28,7 @@ public class MystGuiFluidTank extends MystGuiElement {
   }
 
   @Override
-  protected void doRenderBackground(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
     int x = getLeft();
     int y = getTop();
 
@@ -36,22 +36,22 @@ public class MystGuiFluidTank extends MystGuiElement {
     int capacity = capacityProvider.get();
 
     // Draw tank background
-    guiGraphics.fill(x, y, x + width, y + height, 0xFF202020);
-    guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, 0xFF101010);
+    graphics.fill(x, y, x + width, y + height, 0xFF202020);
+    graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, 0xFF101010);
 
     // Draw fluid fill
     if (capacity > 0 && amount > 0) {
       int fillHeight = (amount * (height - 2)) / capacity;
       fillHeight = Math.min(fillHeight, height - 2);
       int fillY = y + height - 1 - fillHeight;
-      guiGraphics.fill(x + 1, fillY, x + width - 1, y + height - 1, fluidColor);
+      graphics.fill(x + 1, fillY, x + width - 1, y + height - 1, fluidColor);
     }
 
     // Draw tank border
-    guiGraphics.fill(x, y, x + width, y + 1, 0xFF404040);
-    guiGraphics.fill(x, y + height - 1, x + width, y + height, 0xFF404040);
-    guiGraphics.fill(x, y, x + 1, y + height, 0xFF404040);
-    guiGraphics.fill(x + width - 1, y, x + width, y + height, 0xFF404040);
+    graphics.fill(x, y, x + width, y + 1, 0xFF404040);
+    graphics.fill(x, y + height - 1, x + width, y + height, 0xFF404040);
+    graphics.fill(x, y, x + 1, y + height, 0xFF404040);
+    graphics.fill(x + width - 1, y, x + width, y + height, 0xFF404040);
   }
 
   @Override

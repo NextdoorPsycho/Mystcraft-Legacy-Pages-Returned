@@ -1,7 +1,7 @@
 package art.arcane.mystcraft.client.gui.element;
 
+import com.floopowder.api.IFlooGraphics;
 import net.minecraft.SharedConstants;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import org.lwjgl.glfw.GLFW;
 
@@ -97,16 +97,16 @@ public class MystGuiTextField extends MystGuiElement {
   }
 
   @Override
-  protected void doRenderBackground(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
     int x = getLeft();
     int y = getTop();
 
     // Draw border
     int borderColorToUse = focused ? 0xFFFFFF : borderColor;
-    guiGraphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF000000 | borderColorToUse);
+    graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF000000 | borderColorToUse);
 
     // Draw background
-    guiGraphics.fill(x, y, x + width, y + height, 0xFF000000);
+    graphics.fill(x, y, x + width, y + height, 0xFF000000);
 
     // Draw text
     int textX = x + 4;
@@ -126,13 +126,13 @@ public class MystGuiTextField extends MystGuiElement {
     }
 
     // Enable scissor
-    guiGraphics.enableScissor(x + 2, y, x + width - 2, y + height);
-    guiGraphics.drawString(mc.font, displayText, textX - scrollOffset, textY, textColor);
+    graphics.enableScissor(x + 2, y, x + width - 2, y + height);
+    graphics.drawString(mc.font, displayText, textX - scrollOffset, textY, textColor);
 
     // Draw cursor
     if (focused && editable && (cursorCounter / 6) % 2 == 0) {
       int cursorX = textX + mc.font.width(text.substring(0, cursorPosition)) - scrollOffset;
-      guiGraphics.fill(cursorX, textY - 1, cursorX + 1, textY + 9, 0xFFD0D0D0);
+      graphics.fill(cursorX, textY - 1, cursorX + 1, textY + 9, 0xFFD0D0D0);
     }
 
     // Draw selection
@@ -141,10 +141,10 @@ public class MystGuiTextField extends MystGuiElement {
       int endPos = Math.max(cursorPosition, selectionEnd);
       int selStartX = textX + mc.font.width(text.substring(0, startPos)) - scrollOffset;
       int selEndX = textX + mc.font.width(text.substring(0, endPos)) - scrollOffset;
-      guiGraphics.fill(selStartX, textY - 1, selEndX, textY + 9, 0x803030FF);
+      graphics.fill(selStartX, textY - 1, selEndX, textY + 9, 0x803030FF);
     }
 
-    guiGraphics.disableScissor();
+    graphics.disableScissor();
   }
 
   @Override

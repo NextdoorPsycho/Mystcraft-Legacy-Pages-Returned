@@ -8,6 +8,8 @@ import art.arcane.mystcraft.registry.FabricRegistries;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
+import com.floopowder.api.Floo;
+import com.floopowder.fabric.FabricFlooRegistry;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
@@ -36,6 +38,10 @@ public class MystcraftFabric implements ModInitializer {
   @Override
   public void onInitialize() {
     Mystcraft.LOGGER.info("[Mystcraft] Fabric 1.19.2 initialization starting...");
+
+    // Initialize Floo_Powder registry FIRST
+    Floo.setRegistry(new FabricFlooRegistry(Mystcraft.MOD_ID));
+    Mystcraft.LOGGER.info("[Mystcraft] Floo registry initialized");
 
     FabricMystcraftConfig.load();
 

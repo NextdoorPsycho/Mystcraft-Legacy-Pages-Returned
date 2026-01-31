@@ -12,11 +12,12 @@ import art.arcane.mystcraft.menu.WritingDeskMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import com.floopowder.api.IFlooGraphics;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import com.floopowder.screen.FlooContainerScreen;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -32,7 +33,7 @@ import java.util.List;
  * left panel (228px, tabs + page surface), right panel (176x166, inventory),
  * button bar (18px), total 409x185.
  */
-public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> {
+public class WritingDeskScreen extends FlooContainerScreen<WritingDeskMenu> {
 
   private static final ResourceLocation TEXTURE =
       new ResourceLocation(Mystcraft.MOD_ID, "gui/writingdesk.png");
@@ -203,7 +204,8 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     if (rootElement != null) {
       rootElement.setLeft(this.leftPos);
       rootElement.setTop(this.topPos);
-      rootElement.renderBackground(guiGraphics, partialTick, mouseX, mouseY);
+      IFlooGraphics flooGraphics = createFlooGraphics(guiGraphics);
+      rootElement.renderBackground(flooGraphics, partialTick, mouseX, mouseY);
     }
   }
 
@@ -272,15 +274,14 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
 
   @Override
   public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-    this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+    // FlooContainerScreen handles renderBackground and renderTooltip
     super.render(guiGraphics, mouseX, mouseY, partialTick);
 
     // Render foreground elements
     if (rootElement != null) {
-      rootElement.renderForeground(guiGraphics, mouseX, mouseY);
+      IFlooGraphics flooGraphics = createFlooGraphics(guiGraphics);
+      rootElement.renderForeground(flooGraphics, mouseX, mouseY);
     }
-
-    this.renderTooltip(guiGraphics, mouseX, mouseY);
 
     // Render element tooltips
     if (rootElement != null) {
@@ -289,9 +290,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
       }
     }
-
-    // Symbol cost indicator is shown via page surface tooltips
-    // The MystGuiPageSurface already handles hover detection
   }
 
   /**
@@ -465,11 +463,11 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
   }
 
   @Override
-  public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-    if (rootElement != null && rootElement.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+  protected boolean flooMouseScrolled(double mouseX, double mouseY, double verticalDelta) {
+    if (rootElement != null && rootElement.mouseScrolled(mouseX, mouseY, 0, verticalDelta)) {
       return true;
     }
-    return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    return false;
   }
 
   @Override

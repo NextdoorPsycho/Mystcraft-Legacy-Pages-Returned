@@ -1,6 +1,6 @@
 package art.arcane.mystcraft.client.gui.element;
 
-import net.minecraft.client.gui.GuiGraphics;
+import com.floopowder.api.IFlooGraphics;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,7 +55,7 @@ public class MystGuiToggleButton extends MystGuiElement {
   }
 
   @Override
-  protected void doRenderBackground(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
     int x = getLeft();
     int y = getTop();
     boolean state = getState();
@@ -75,15 +75,15 @@ public class MystGuiToggleButton extends MystGuiElement {
     }
 
     // Draw button
-    guiGraphics.fill(x, y, x + width, y + height, 0xFF000000);
-    guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, bgColor);
+    graphics.fill(x, y, x + width, y + height, 0xFF000000);
+    graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, bgColor);
 
     // Draw border
     int borderColor = state ? 0xFF8080FF : 0xFF606060;
-    guiGraphics.fill(x, y, x + width, y + 1, borderColor);
-    guiGraphics.fill(x, y + height - 1, x + width, y + height, borderColor);
-    guiGraphics.fill(x, y, x + 1, y + height, borderColor);
-    guiGraphics.fill(x + width - 1, y, x + width, y + height, borderColor);
+    graphics.fill(x, y, x + width, y + 1, borderColor);
+    graphics.fill(x, y + height - 1, x + width, y + height, borderColor);
+    graphics.fill(x, y, x + 1, y + height, borderColor);
+    graphics.fill(x + width - 1, y, x + width, y + height, borderColor);
 
     // Draw text centered
     if (!text.isEmpty()) {
@@ -91,7 +91,7 @@ public class MystGuiToggleButton extends MystGuiElement {
       int textX = x + (width - textWidth) / 2;
       int textY = y + (height - 8) / 2;
       int textColor = state ? 0xFFFFFF : 0xC0C0C0;
-      guiGraphics.drawString(mc.font, text, textX, textY, textColor);
+      graphics.drawString(mc.font, text, textX, textY, textColor);
     }
   }
 

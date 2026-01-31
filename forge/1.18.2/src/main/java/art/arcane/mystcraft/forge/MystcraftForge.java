@@ -10,6 +10,8 @@ import art.arcane.mystcraft.platform.ForgeEventHelper_1_18_2;
 import art.arcane.mystcraft.portal.PortalUtils;
 import art.arcane.mystcraft.registry.*;
 import art.arcane.mystcraft.world.AgeManager;
+import com.floopowder.api.Floo;
+import com.floopowder.forge.ForgeFlooRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColor;
 import net.minecraft.client.color.item.ItemColor;
@@ -63,6 +65,10 @@ public class MystcraftForge {
     IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
     Mystcraft.LOGGER.info("[Mystcraft] Forge 1.18.2 initialization starting...");
+
+    // Initialize Floo_Powder registry FIRST
+    Floo.setRegistry(new ForgeFlooRegistry(Mystcraft.MOD_ID, modEventBus));
+    Mystcraft.LOGGER.info("[Mystcraft] Floo registry initialized");
 
     // Register Forge config
     ForgeMystcraftConfig.register();

@@ -5,13 +5,13 @@ import art.arcane.mystcraft.data.InkEffects;
 import art.arcane.mystcraft.menu.InkMixerMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
+import com.floopowder.screen.FlooContainerScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -27,7 +27,7 @@ import java.util.Map;
  * Screen for the Ink Mixer block.
  * Click on the basin area while holding an item to add it to the ink.
  */
-public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
+public class InkMixerScreen extends FlooContainerScreen<InkMixerMenu> {
 
   private static final ResourceLocation TEXTURE =
       new ResourceLocation(Mystcraft.MOD_ID, "gui/inkmixer.png");
@@ -176,9 +176,7 @@ public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
 
   @Override
   public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-    this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
     super.render(guiGraphics, mouseX, mouseY, partialTick);
-    this.renderTooltip(guiGraphics, mouseX, mouseY);
 
     // Render property tooltips when hovering over basin
     if (menu.hasInk()) {

@@ -4,8 +4,7 @@ import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.client.render.PageRenderHelper;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.GuiGraphics;
+import com.floopowder.api.IFlooGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -39,32 +38,27 @@ public class MystGuiPageSurface extends MystGuiElement {
   }
 
   @Override
-  protected void doRenderBackground(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
     int guiLeft = getLeft();
     int guiTop = getTop();
     int scrollbarWidth = 16;
     int contentWidth = width - scrollbarWidth;
 
     // Draw background
-    guiGraphics.fill(guiLeft, guiTop, guiLeft + contentWidth, guiTop + height, 0xAA000000);
+    graphics.fill(guiLeft, guiTop, guiLeft + contentWidth, guiTop + height, 0xAA000000);
 
     // Draw scrollbar background
-    guiGraphics.fill(guiLeft + contentWidth, guiTop, guiLeft + width, guiTop + height, 0x80404040);
+    graphics.fill(guiLeft + contentWidth, guiTop, guiLeft + width, guiTop + height, 0x80404040);
 
     // Calculate scrollbar position and size
     if (maxScroll > 0) {
       int scrollbarHeight = Math.max(20, (height * height) / (height + maxScroll));
       int scrollbarY = guiTop + (scrollOffset * (height - scrollbarHeight)) / maxScroll;
-      guiGraphics.fill(guiLeft + contentWidth + 2, scrollbarY, guiLeft + width - 2, scrollbarY + scrollbarHeight, 0xFFC0C0C0);
+      graphics.fill(guiLeft + contentWidth + 2, scrollbarY, guiLeft + width - 2, scrollbarY + scrollbarHeight, 0xFFC0C0C0);
     }
 
     // Enable scissor for content area
-    RenderSystem.enableScissor(
-        (int) (guiLeft * mc.getWindow().getGuiScale()),
-        (int) ((mc.getWindow().getGuiScaledHeight() - guiTop - height) * mc.getWindow().getGuiScale()),
-        (int) (contentWidth * mc.getWindow().getGuiScale()),
-        (int) (height * mc.getWindow().getGuiScale())
-    );
+    graphics.enableScissor(guiLeft, guiTop, guiLeft + contentWidth, guiTop + height);
 
     // Render pages
     List<PositionableItem> pages = provider != null ? provider.getPositionedPages() : null;
@@ -98,12 +92,12 @@ public class MystGuiPageSurface extends MystGuiElement {
 
         // Render page
         if (item.count > 0 && !stack.isEmpty()) {
-          renderPage(guiGraphics, stack, (int) pageX, (int) pageY, (int) PAGE_WIDTH, (int) PAGE_HEIGHT);
+          renderPage(graphics, stack, (int) pageX, (int) pageY, (int) PAGE_WIDTH, (int) PAGE_HEIGHT);
 
           // Show count if more than 1
           if (item.count > 1) {
             String countStr = String.valueOf(item.count);
-            guiGraphics.drawString(mc.font, countStr,
+            graphics.drawString(mc.font, countStr,
                 (int) (pageX + PAGE_WIDTH - mc.font.width(countStr) - 2),
                 (int) (pageY + PAGE_HEIGHT - 10), 0xFFFFFF);
           }
@@ -115,7 +109,7 @@ public class MystGuiPageSurface extends MystGuiElement {
             hoverItem = item;
             updateHoverTooltip(stack);
             // Draw highlight
-            guiGraphics.fill((int) pageX, (int) pageY,
+            graphics.fill((int) pageX, (int) pageY,
                 (int) (pageX + PAGE_WIDTH), (int) (pageY + PAGE_HEIGHT),
                 0x40FFFFFF);
           }
@@ -123,16 +117,20 @@ public class MystGuiPageSurface extends MystGuiElement {
       }
     }
 
-    RenderSystem.disableScissor();
+    graphics.disableScissor();
 
     // Cap scroll
     if (maxScroll < 0) maxScroll = 0;
     if (scrollOffset > maxScroll) scrollOffset = maxScroll;
   }
 
-  private void renderPage(GuiGraphics guiGraphics, ItemStack stack, int x, int y, int width, int height) {
+  private void renderPage(IFlooGraphics graphics, ItemStack stack, int x, int y, int width, int height) {
     // Use PageRenderHelper to draw the page with D'ni symbols
-    PageRenderHelper.drawPage(guiGraphics, stack, x, y, width, height, 0);
+    // Get the underlying graphics object (GuiGraphics in 1.20.x, PoseStack in 1.18/1.19)
+    Object underlying = graphics.getUnderlying();
+    if (underlying instanceof net.minecraft.client.gui.GuiGraphics guiGraphics) {
+      PageRenderHelper.drawPage(guiGraphics, stack, x, y, width, height, 0);
+    }
   }
 
   @Nullable

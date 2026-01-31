@@ -1,7 +1,7 @@
 package art.arcane.mystcraft.client.gui.element;
 
 import art.arcane.mystcraft.Mystcraft;
-import net.minecraft.client.gui.GuiGraphics;
+import com.floopowder.api.IFlooGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -45,7 +45,7 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
   }
 
   @Override
-  protected void doRenderBackground(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
     int guiLeft = getLeft();
     int guiTop = getTop();
     int topSlot = handler.getTopSlot();
@@ -59,8 +59,8 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
     if (activeSlot < topSlot) {
       upArrowColor = 0xFF8080FF; // Blue tint if active is above
     }
-    guiGraphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + ARROW_HEIGHT, 0xFF303030);
-    guiGraphics.drawCenteredString(mc.font, Component.literal("^"), guiLeft + TAB_WIDTH / 2, tabY + 1, upArrowColor);
+    graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + ARROW_HEIGHT, 0xFF303030);
+    graphics.drawCenteredString(mc.font, Component.literal("^"), guiLeft + TAB_WIDTH / 2, tabY + 1, upArrowColor);
     tabY += ARROW_HEIGHT;
 
     // Render tabs
@@ -70,12 +70,12 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
 
       // Tab background
       int bgColor = isActive ? 0xFF404080 : 0xFF303030;
-      guiGraphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + TAB_HEIGHT, bgColor);
-      guiGraphics.fill(guiLeft + 1, tabY + 1, guiLeft + TAB_WIDTH - 1, tabY + TAB_HEIGHT - 1,
+      graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + TAB_HEIGHT, bgColor);
+      graphics.fill(guiLeft + 1, tabY + 1, guiLeft + TAB_WIDTH - 1, tabY + TAB_HEIGHT - 1,
           isActive ? 0xFF505090 : 0xFF404040);
 
       // Slot number
-      guiGraphics.drawString(mc.font, String.valueOf(slot), guiLeft + 4, tabY + 3, 0xFFFFFF);
+      graphics.drawString(mc.font, String.valueOf(slot), guiLeft + 4, tabY + 3, 0xFFFFFF);
 
       // Item name if present
       ItemStack stack = handler.getItemInSlot(slot);
@@ -89,10 +89,10 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
           }
           name = name + "...";
         }
-        guiGraphics.drawString(mc.font, name, guiLeft + 4, tabY + TAB_HEIGHT - 12, 0xA0A0A0);
+        graphics.drawString(mc.font, name, guiLeft + 4, tabY + TAB_HEIGHT - 12, 0xA0A0A0);
 
         // Render item icon
-        guiGraphics.renderItem(stack, guiLeft + TAB_WIDTH - 20, tabY + 8);
+        graphics.renderItem(stack, guiLeft + TAB_WIDTH - 20, tabY + 8);
       }
 
       tabY += TAB_HEIGHT;
@@ -103,8 +103,8 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
     if (activeSlot >= topSlot + TAB_COUNT) {
       downArrowColor = 0xFF8080FF; // Blue tint if active is below
     }
-    guiGraphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + ARROW_HEIGHT, 0xFF303030);
-    guiGraphics.drawCenteredString(mc.font, Component.literal("v"), guiLeft + TAB_WIDTH / 2, tabY + 1, downArrowColor);
+    graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + ARROW_HEIGHT, 0xFF303030);
+    graphics.drawCenteredString(mc.font, Component.literal("v"), guiLeft + TAB_WIDTH / 2, tabY + 1, downArrowColor);
   }
 
   @Override

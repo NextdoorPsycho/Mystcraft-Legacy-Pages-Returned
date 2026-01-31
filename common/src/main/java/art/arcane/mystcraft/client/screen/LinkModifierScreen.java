@@ -9,9 +9,9 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.menu.LinkModifierMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
+import com.floopowder.screen.FlooContainerScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * Screen for the Link Modifier block.
  */
-public class LinkModifierScreen extends AbstractContainerScreen<LinkModifierMenu> {
+public class LinkModifierScreen extends FlooContainerScreen<LinkModifierMenu> {
 
   private static final ResourceLocation TEXTURE =
       new ResourceLocation(Mystcraft.MOD_ID, "gui/linkmodifier.png");
@@ -115,9 +115,7 @@ public class LinkModifierScreen extends AbstractContainerScreen<LinkModifierMenu
 
   @Override
   public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-    this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
     super.render(guiGraphics, mouseX, mouseY, partialTick);
-    this.renderTooltip(guiGraphics, mouseX, mouseY);
 
     // Render dead link tooltip when hovering over book slot
     if (hasDeadLink()) {

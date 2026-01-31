@@ -56,13 +56,32 @@ repositories {
 }
 
 dependencies {
+
     minecraft "com.mojang:minecraft:${minecraft_version_1_20_2}"
+
     mappings loom.officialMojangMappings()
+
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version_1_20_2}"
+
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_2}"
+
     compileOnly project(':common')
 
-    // TOML config library (same as Forge/NeoForge use)
+
+
+    // Floo_Powder
+
+    implementation project(':Floo_Powder:fabric:1.20.2')
+
+    include project(':Floo_Powder:fabric:1.20.2')
+
+    include project(':Floo_Powder:common')
+
+
+
+    // TOML config library
+
+ (same as Forge/NeoForge use)
     implementation "com.electronwill.night-config:core:3.6.7"
     implementation "com.electronwill.night-config:toml:3.6.7"
     include "com.electronwill.night-config:core:3.6.7"

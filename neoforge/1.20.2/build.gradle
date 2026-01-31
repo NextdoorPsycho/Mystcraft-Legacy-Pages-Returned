@@ -9,6 +9,12 @@ buildscript {
 }
 
 apply plugin: 'net.neoforged.gradle.userdev'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+configurations {
+    shadow
+    implementation.extendsFrom shadow
+}
 
 version = "${project.version}"
 group = project.group
@@ -72,6 +78,16 @@ repositories {
 dependencies {
     implementation "net.neoforged:neoforge:${neoforge_version_1_20_2}"
     compileOnly project(':common')
+
+    // Floo_Powder
+    shadow project(':Floo_Powder:neoforge:1.20.2')
+    shadow project(':Floo_Powder:common')
+}
+
+shadowJar {
+    configurations = [project.configurations.shadow]
+    relocate 'com.floopowder', 'com.mystcraft.lib.floopowder'
+    archiveClassifier = '' // Replace the main jar
 }
 
 tasks.named('compileJava', JavaCompile) {

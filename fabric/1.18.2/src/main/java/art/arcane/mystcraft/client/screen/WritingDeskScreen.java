@@ -12,11 +12,13 @@ import art.arcane.mystcraft.menu.WritingDeskMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import com.floopowder.api.IFlooGraphics;
+import com.floopowder.screen.FlooContainerScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
@@ -30,11 +32,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Screen for the Writing Desk block (1.19.2 version). Multi-panel layout:
+ * Screen for the Writing Desk block (1.18.2 version). Multi-panel layout:
  * left panel (228px, tabs + page surface), right panel (176x166, inventory),
  * button bar (18px), total 409x185.
  */
-public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> {
+public class WritingDeskScreen extends FlooContainerScreen<WritingDeskMenu> {
 
   private static final ResourceLocation TEXTURE =
       new ResourceLocation(Mystcraft.MOD_ID, "gui/writingdesk.png");
@@ -206,7 +208,8 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     if (rootElement != null) {
       rootElement.setLeft(this.leftPos);
       rootElement.setTop(this.topPos);
-      rootElement.renderBackground(poseStack, partialTick, mouseX, mouseY);
+      IFlooGraphics flooGraphics = createFlooGraphics(poseStack);
+      rootElement.renderBackground(flooGraphics, partialTick, mouseX, mouseY);
     }
   }
 
@@ -281,7 +284,8 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
 
     // Render foreground elements
     if (rootElement != null) {
-      rootElement.renderForeground(poseStack, mouseX, mouseY);
+      IFlooGraphics flooGraphics = createFlooGraphics(poseStack);
+      rootElement.renderForeground(flooGraphics, mouseX, mouseY);
     }
 
     this.renderTooltip(poseStack, mouseX, mouseY);
@@ -468,13 +472,13 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
   }
 
-  // 1.19.2 API: mouseScrolled has 3 parameters (mouseX, mouseY, delta)
+  // FlooContainerScreen handles 3-param to 4-param conversion
   @Override
-  public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-    if (rootElement != null && rootElement.mouseScrolled(mouseX, mouseY, delta)) {
+  protected boolean flooMouseScrolled(double mouseX, double mouseY, double verticalDelta) {
+    if (rootElement != null && rootElement.mouseScrolled(mouseX, mouseY, 0, verticalDelta)) {
       return true;
     }
-    return super.mouseScrolled(mouseX, mouseY, delta);
+    return false;
   }
 
   @Override

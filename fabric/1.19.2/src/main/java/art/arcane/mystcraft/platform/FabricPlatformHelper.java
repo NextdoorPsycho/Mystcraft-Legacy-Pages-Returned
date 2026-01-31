@@ -6,6 +6,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.level.material.FlowingFluid;
 
 import java.util.function.Consumer;
 
@@ -57,5 +58,15 @@ public class FabricPlatformHelper implements IPlatformHelper {
         return provider.createMenu(syncId, inventory, player);
       }
     });
+  }
+
+  @Override
+  public FlowingFluid createBlackInkSource() {
+    throw new UnsupportedOperationException("Fabric fluid implementation not yet available");
+  }
+
+  @Override
+  public FlowingFluid createBlackInkFlowing() {
+    throw new UnsupportedOperationException("Fabric fluid implementation not yet available");
   }
 }

@@ -230,7 +230,7 @@ tasks.named('sourcesJar', Jar) {
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version_1_19_2}-fabric-${fabric_loader_version_1_19_2}-dev.jar"
+    archiveFileName = "mystcraft_legacy-fabric-${fabric_loader_version_1_19_2}-${minecraft_version_1_19_2}-dev.jar"
 
     from(rootProject.file('LICENSE')) {
         rename { "${it}_${mod_name}" }
@@ -250,13 +250,13 @@ jar {
 }
 
 remapJar {
-    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version_1_19_2}-fabric-${fabric_loader_version_1_19_2}.jar"
+    archiveFileName = "mystcraft_legacy-fabric-${fabric_loader_version_1_19_2}-${minecraft_version_1_19_2}.jar"
 }
 
 sourcesJar {
-    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-1.19.2-sources-dev.jar"
+    archiveFileName = "mystcraft_legacy-fabric-${fabric_loader_version_1_19_2}-${minecraft_version_1_19_2}-sources-dev.jar"
 }
 
 remapSourcesJar {
-    archiveFileName = "Mystcraft Legacy - ${version} - Fabric-1.19.2-sources.jar"
+    archiveFileName = "mystcraft_legacy-fabric-${fabric_loader_version_1_19_2}-${minecraft_version_1_19_2}-sources.jar"
 }

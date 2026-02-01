@@ -10,6 +10,23 @@
     "mystcraft:stronghold_boosters",
     "mystcraft:library_boosters",
     "mystcraft:temple_boosters",
-    "mystcraft:woodland_boosters"
+    "mystcraft:woodland_boosters",
+    "mystcraft:witch_boosters",
+    "mystcraft:evoker_boosters",
+    "mystcraft:vindicator_boosters",
+    "mystcraft:pillager_pages",
+    "mystcraft:warden_boosters",
+    "mystcraft:elder_guardian_boosters",
+    "mystcraft:wither_boosters",
+    "mystcraft:ancient_city_boosters",
+    "mystcraft:ancient_city_pages",
+    "mystcraft:shipwreck_pages",
+    "mystcraft:buried_treasure_pages",
+    "mystcraft:end_city_boosters",
+    "mystcraft:end_city_pages",
+    "mystcraft:bastion_boosters",
+    "mystcraft:nether_fortress_pages",
+    "mystcraft:ruined_portal_pages",
+    "mystcraft:pillager_outpost_boosters"
   ]
 }

@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.loot;
 
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.registry.ModItems;
 import com.google.gson.JsonObject;
 import net.minecraft.resources.ResourceLocation;
@@ -33,6 +34,10 @@ public class SymbolPageLootModifier extends LootModifier {
 
   @Override
   protected @NotNull List<ItemStack> doApply(List<ItemStack> generatedLoot, LootContext context) {
+    if (!MystcraftConfig.enablePageLoot.get()) {
+      return generatedLoot;
+    }
+
     // 1.18.2 uses java.util.Random instead of RandomSource
     Random random = context.getRandom();
     if (random.nextFloat() > chance) {

@@ -15,6 +15,13 @@ public final class MystcraftConfig {
   public static Supplier<Integer> maxSymbolsPerBook = () -> 50;
   public static Supplier<Boolean> deleteAgesOnStartup = () -> false;
   public static Supplier<Boolean> enablePersonalLinkBooks = () -> true;
+  public static Supplier<Boolean> linkPanelInBoosterPacks = () -> true;
+  public static Supplier<Boolean> enableBoosterLoot = () -> true;
+  public static Supplier<Boolean> enablePageLoot = () -> true;
+  public static Supplier<List<String>> bookBinderCoverItems = () -> List.of(
+      "minecraft:leather",
+      "mystcraft:folder"
+  );
   public static Supplier<Boolean> allowGravityBlocksInAges = () -> false;
   public static Supplier<Boolean> microDimensionsEnabled = () -> false;
   public static Supplier<Integer> microDimensionRadiusChunks = () -> 0;

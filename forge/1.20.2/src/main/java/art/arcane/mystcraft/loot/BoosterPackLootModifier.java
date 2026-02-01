@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.loot;
 
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.registry.ModItems;
 import com.google.common.base.Suppliers;
 import com.mojang.serialization.Codec;
@@ -39,6 +40,11 @@ public class BoosterPackLootModifier extends LootModifier {
 
   @Override
   protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
+    // Check if booster loot is enabled
+    if (!MystcraftConfig.enableBoosterLoot.get()) {
+      return generatedLoot;
+    }
+
     if (context.getRandom().nextFloat() > chance) {
       return generatedLoot;
     }

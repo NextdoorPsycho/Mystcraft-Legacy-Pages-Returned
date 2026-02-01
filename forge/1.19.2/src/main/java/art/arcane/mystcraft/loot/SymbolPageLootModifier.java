@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.loot;
 
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.registry.ModItems;
@@ -42,6 +43,9 @@ public class SymbolPageLootModifier extends LootModifier {
 
   @Override
   protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
+    if (!MystcraftConfig.enablePageLoot.get()) {
+      return generatedLoot;
+    }
     if (context.getRandom().nextFloat() > chance) {
       return generatedLoot;
     }

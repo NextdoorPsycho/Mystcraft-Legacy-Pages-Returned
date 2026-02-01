@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.item;
 
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import net.minecraft.network.chat.Component;
@@ -63,13 +64,15 @@ public class BoosterPackItem extends Item {
     List<ItemStack> pages = new ArrayList<>();
     RandomSource random = level.random;
 
+    boolean allowLinkPanels = MystcraftConfig.linkPanelInBoosterPacks.get();
+
     for (int i = 0; i < PAGES_PER_PACK; i++) {
       float roll = random.nextFloat();
-      if (roll < 0.2f) {
-        // 20% chance of link panel
+      if (allowLinkPanels && roll < 0.2f) {
+        // 20% chance of link panel (if enabled)
         pages.add(Page.createLinkPage());
       } else {
-        // 80% chance of symbol page
+        // Symbol page (or 100% if link panels disabled)
         IAgeSymbol symbol = SymbolRegistry.getRandomWeighted(random);
         if (symbol != null) {
           pages.add(Page.createSymbolPage(symbol.getRegistryName()));

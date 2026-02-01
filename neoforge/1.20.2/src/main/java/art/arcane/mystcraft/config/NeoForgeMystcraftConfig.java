@@ -23,6 +23,12 @@ public class NeoForgeMystcraftConfig {
   public static final ModConfigSpec.BooleanValue giveGuidebookOnFirstSpawn;
   public static final ModConfigSpec.IntValue maxSymbolsPerBook;
   public static final ModConfigSpec.BooleanValue deleteAgesOnStartup;
+  public static final ModConfigSpec.BooleanValue enablePersonalLinkBooks;
+  public static final ModConfigSpec.BooleanValue linkPanelInBoosterPacks;
+  public static final ModConfigSpec.BooleanValue enableBoosterLoot;
+  public static final ModConfigSpec.BooleanValue enablePageLoot;
+  public static final ModConfigSpec.ConfigValue<List<? extends String>> bookBinderCoverItems;
+  public static final ModConfigSpec.BooleanValue allowGravityBlocksInAges;
   public static final ModConfigSpec.BooleanValue microDimensionsEnabled;
   public static final ModConfigSpec.IntValue microDimensionRadiusChunks;
   public static final ModConfigSpec.IntValue microDimensionExtraChunks;
@@ -76,6 +82,45 @@ public class NeoForgeMystcraftConfig {
     deleteAgesOnStartup = COMMON_BUILDER
         .comment("If true, all Mystcraft Ages will be deleted every time the server starts.")
         .define("deleteAgesOnStartup", false);
+
+    enablePersonalLinkBooks = COMMON_BUILDER
+        .comment("If true, personal link books and personal pocket dimensions are enabled.")
+        .define("enablePersonalLinkBooks", true);
+
+    linkPanelInBoosterPacks = COMMON_BUILDER
+        .comment(
+            "If true, booster packs (sealed notebooks) have a chance to contain link panels.",
+            "If false, booster packs will only contain symbol pages."
+        )
+        .define("linkPanelInBoosterPacks", true);
+
+    enableBoosterLoot = COMMON_BUILDER
+        .comment(
+            "If true, booster packs can be found in dungeon chests and as mob drops.",
+            "Set to false to disable booster pack loot generation."
+        )
+        .define("enableBoosterLoot", true);
+
+    enablePageLoot = COMMON_BUILDER
+        .comment(
+            "If true, symbol pages can be found in dungeon chests.",
+            "Set to false to disable page loot generation."
+        )
+        .define("enablePageLoot", true);
+
+    bookBinderCoverItems = COMMON_BUILDER
+        .comment(
+            "List of item IDs that can be used as book covers in the Book Binder.",
+            "Default: leather and empty folders."
+        )
+        .defineListAllowEmpty("bookBinderCoverItems", List.of(
+            "minecraft:leather",
+            "mystcraft:folder"
+        ), NeoForgeMystcraftConfig::isValidBlockId);
+
+    allowGravityBlocksInAges = COMMON_BUILDER
+        .comment("If true, gravity blocks (sand, gravel, anvils, concrete powder) can fall in Mystcraft Ages.")
+        .define("allowGravityBlocksInAges", false);
 
     microDimensionsEnabled = COMMON_BUILDER
         .comment("If true, newly created Ages are limited to a small chunk radius around the spawn chunk.")

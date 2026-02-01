@@ -21,6 +21,13 @@ public class FabricMystcraftConfig {
   public static final IntValue maxSymbolsPerBook = new IntValue(50);
   public static final BooleanValue deleteAgesOnStartup = new BooleanValue(false);
   public static final BooleanValue enablePersonalLinkBooks = new BooleanValue(true);
+  public static final BooleanValue linkPanelInBoosterPacks = new BooleanValue(true);
+  public static final BooleanValue enableBoosterLoot = new BooleanValue(true);
+  public static final BooleanValue enablePageLoot = new BooleanValue(true);
+  public static final StringListValue bookBinderCoverItems = new StringListValue(new ArrayList<>(List.of(
+      "minecraft:leather",
+      "mystcraft:folder"
+  )));
   public static final BooleanValue allowGravityBlocksInAges = new BooleanValue(false);
   public static final BooleanValue microDimensionsEnabled = new BooleanValue(false);
   public static final IntValue microDimensionRadiusChunks = new IntValue(0);
@@ -116,6 +123,22 @@ public class FabricMystcraftConfig {
     setCommentAndDefault(config, "general.enablePersonalLinkBooks", enablePersonalLinkBooks.defaultValue,
         "If true, personal link books and personal pocket dimensions are enabled.");
     enablePersonalLinkBooks.set(config.getOrElse("general.enablePersonalLinkBooks", enablePersonalLinkBooks.defaultValue));
+
+    setCommentAndDefault(config, "general.linkPanelInBoosterPacks", linkPanelInBoosterPacks.defaultValue,
+        "If true, booster packs may contain link panel pages.");
+    linkPanelInBoosterPacks.set(config.getOrElse("general.linkPanelInBoosterPacks", linkPanelInBoosterPacks.defaultValue));
+
+    setCommentAndDefault(config, "general.enableBoosterLoot", enableBoosterLoot.defaultValue,
+        "If true, booster packs can be found in dungeon and structure loot.");
+    enableBoosterLoot.set(config.getOrElse("general.enableBoosterLoot", enableBoosterLoot.defaultValue));
+
+    setCommentAndDefault(config, "general.enablePageLoot", enablePageLoot.defaultValue,
+        "If true, symbol pages can be found in dungeon and structure loot.");
+    enablePageLoot.set(config.getOrElse("general.enablePageLoot", enablePageLoot.defaultValue));
+
+    setCommentAndDefault(config, "general.bookBinderCoverItems", new ArrayList<>(bookBinderCoverItems.defaultValue),
+        "List of item IDs that can be used as book covers in the Book Binder.");
+    bookBinderCoverItems.set(config.getOrElse("general.bookBinderCoverItems", new ArrayList<>(bookBinderCoverItems.defaultValue)));
 
     setCommentAndDefault(config, "general.allowGravityBlocksInAges", allowGravityBlocksInAges.defaultValue,
         "If true, gravity blocks (sand, gravel, anvils, concrete powder) can fall in Mystcraft Ages.");

@@ -320,7 +320,7 @@ tasks.named('sourcesJar', Jar) {
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version_1_18_2}-forge-${forge_version_1_18_2}.jar"
+    archiveFileName = "mystcraft_legacy-forge-${forge_version_1_18_2}-${minecraft_version_1_18_2}.jar"
 
     from(rootProject.file('LICENSE')) {
         rename { "${it}_${mod_name}" }
@@ -337,6 +337,10 @@ jar {
                 'Built-On-Minecraft'    : minecraft_version_1_18_2
         ])
     }
+}
+
+sourcesJar {
+    archiveFileName = "mystcraft_legacy-forge-${forge_version_1_18_2}-${minecraft_version_1_18_2}-sources.jar"
 }
 
 jar.finalizedBy('reobfJar')

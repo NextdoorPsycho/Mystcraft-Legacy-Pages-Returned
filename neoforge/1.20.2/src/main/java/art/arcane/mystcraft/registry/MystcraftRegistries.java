@@ -520,6 +520,12 @@ public final class MystcraftRegistries {
     art.arcane.mystcraft.config.MystcraftConfig.giveGuidebookOnFirstSpawn = NeoForgeMystcraftConfig.giveGuidebookOnFirstSpawn;
     art.arcane.mystcraft.config.MystcraftConfig.maxSymbolsPerBook = NeoForgeMystcraftConfig.maxSymbolsPerBook;
     art.arcane.mystcraft.config.MystcraftConfig.deleteAgesOnStartup = NeoForgeMystcraftConfig.deleteAgesOnStartup;
+    art.arcane.mystcraft.config.MystcraftConfig.enablePersonalLinkBooks = NeoForgeMystcraftConfig.enablePersonalLinkBooks;
+    art.arcane.mystcraft.config.MystcraftConfig.linkPanelInBoosterPacks = NeoForgeMystcraftConfig.linkPanelInBoosterPacks;
+    art.arcane.mystcraft.config.MystcraftConfig.enableBoosterLoot = NeoForgeMystcraftConfig.enableBoosterLoot;
+    art.arcane.mystcraft.config.MystcraftConfig.enablePageLoot = NeoForgeMystcraftConfig.enablePageLoot;
+    art.arcane.mystcraft.config.MystcraftConfig.bookBinderCoverItems = () -> List.copyOf(NeoForgeMystcraftConfig.bookBinderCoverItems.get());
+    art.arcane.mystcraft.config.MystcraftConfig.allowGravityBlocksInAges = NeoForgeMystcraftConfig.allowGravityBlocksInAges;
     art.arcane.mystcraft.config.MystcraftConfig.microDimensionsEnabled = NeoForgeMystcraftConfig.microDimensionsEnabled;
     art.arcane.mystcraft.config.MystcraftConfig.microDimensionRadiusChunks = NeoForgeMystcraftConfig.microDimensionRadiusChunks;
     art.arcane.mystcraft.config.MystcraftConfig.microDimensionExtraChunks = NeoForgeMystcraftConfig.microDimensionExtraChunks;

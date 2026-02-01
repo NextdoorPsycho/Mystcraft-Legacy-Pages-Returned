@@ -1,0 +1,12 @@
+{
+  "type": "mystcraft:symbol_page",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "minecraft:chests/ruined_portal"
+    }
+  ],
+  "chance": 0.3,
+  "min_pages": 1,
+  "max_pages": 2
+}

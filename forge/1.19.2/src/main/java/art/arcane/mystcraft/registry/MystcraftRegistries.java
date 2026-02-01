@@ -205,6 +205,11 @@ public final class MystcraftRegistries {
     BIOME_SOURCES.register(modEventBus);
     STRUCTURE_TYPES.register(modEventBus);
 
+    // Populate common ModStructures suppliers
+    art.arcane.mystcraft.world.structure.ModStructures.ABANDONED_LIBRARY = ABANDONED_LIBRARY;
+    art.arcane.mystcraft.world.structure.ModStructures.UNDERGROUND_ARCHIVE = UNDERGROUND_ARCHIVE;
+    art.arcane.mystcraft.world.structure.ModStructures.SCATTERED_LIBRARY = SCATTERED_LIBRARY;
+
     Mystcraft.LOGGER.info("Registered all Mystcraft deferred registries");
   }
 }

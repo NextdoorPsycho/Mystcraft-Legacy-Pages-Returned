@@ -411,6 +411,10 @@ public class ForgeRegistrationHelper_1_19_2 implements IRegistrationHelper {
     art.arcane.mystcraft.config.MystcraftConfig.maxSymbolsPerBook = ForgeMystcraftConfig.maxSymbolsPerBook::get;
     art.arcane.mystcraft.config.MystcraftConfig.deleteAgesOnStartup = ForgeMystcraftConfig.deleteAgesOnStartup::get;
     art.arcane.mystcraft.config.MystcraftConfig.enablePersonalLinkBooks = ForgeMystcraftConfig.enablePersonalLinkBooks::get;
+    art.arcane.mystcraft.config.MystcraftConfig.linkPanelInBoosterPacks = ForgeMystcraftConfig.linkPanelInBoosterPacks::get;
+    art.arcane.mystcraft.config.MystcraftConfig.enableBoosterLoot = ForgeMystcraftConfig.enableBoosterLoot::get;
+    art.arcane.mystcraft.config.MystcraftConfig.enablePageLoot = ForgeMystcraftConfig.enablePageLoot::get;
+    art.arcane.mystcraft.config.MystcraftConfig.bookBinderCoverItems = () -> List.copyOf(ForgeMystcraftConfig.bookBinderCoverItems.get());
     art.arcane.mystcraft.config.MystcraftConfig.allowGravityBlocksInAges = ForgeMystcraftConfig.allowGravityBlocksInAges::get;
     art.arcane.mystcraft.config.MystcraftConfig.microDimensionsEnabled = ForgeMystcraftConfig.microDimensionsEnabled::get;
     art.arcane.mystcraft.config.MystcraftConfig.microDimensionRadiusChunks = ForgeMystcraftConfig.microDimensionRadiusChunks::get;

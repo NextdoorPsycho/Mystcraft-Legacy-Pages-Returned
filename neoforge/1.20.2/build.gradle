@@ -135,7 +135,7 @@ tasks.named('sourcesJar', Jar) {
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveFileName = "mystcraft_legacy-${version}-${minecraft_version_1_20_2}-neoforge-${neoforge_version_1_20_2}.jar"
+    archiveFileName = "mystcraft_legacy-neoforge-${neoforge_version_1_20_2}-${minecraft_version_1_20_2}.jar"
 
     from(rootProject.file('LICENSE')) {
         rename { "${it}_${mod_name}" }
@@ -155,5 +155,5 @@ jar {
 }
 
 sourcesJar {
-    archiveFileName = "Mystcraft Legacy - ${version} - NeoForge-1.20.2-sources.jar"
+    archiveFileName = "mystcraft_legacy-neoforge-${neoforge_version_1_20_2}-${minecraft_version_1_20_2}-sources.jar"
 }

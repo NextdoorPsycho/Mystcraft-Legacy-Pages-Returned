@@ -449,6 +449,10 @@ public final class FabricRegistries {
     MystcraftConfig.maxSymbolsPerBook = () -> FabricMystcraftConfig.maxSymbolsPerBook.get();
     MystcraftConfig.deleteAgesOnStartup = () -> FabricMystcraftConfig.deleteAgesOnStartup.get();
     MystcraftConfig.enablePersonalLinkBooks = () -> FabricMystcraftConfig.enablePersonalLinkBooks.get();
+    MystcraftConfig.linkPanelInBoosterPacks = () -> FabricMystcraftConfig.linkPanelInBoosterPacks.get();
+    MystcraftConfig.enableBoosterLoot = () -> FabricMystcraftConfig.enableBoosterLoot.get();
+    MystcraftConfig.enablePageLoot = () -> FabricMystcraftConfig.enablePageLoot.get();
+    MystcraftConfig.bookBinderCoverItems = () -> FabricMystcraftConfig.bookBinderCoverItems.get();
     MystcraftConfig.allowGravityBlocksInAges = () -> FabricMystcraftConfig.allowGravityBlocksInAges.get();
     MystcraftConfig.microDimensionsEnabled = () -> FabricMystcraftConfig.microDimensionsEnabled.get();
     MystcraftConfig.microDimensionRadiusChunks = () -> FabricMystcraftConfig.microDimensionRadiusChunks.get();

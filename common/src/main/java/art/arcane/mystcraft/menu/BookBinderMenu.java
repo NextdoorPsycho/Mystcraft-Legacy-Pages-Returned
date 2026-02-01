@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.menu;
 
 import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
+import art.arcane.mystcraft.item.PageItem;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModMenuTypes;
 import net.minecraft.network.FriendlyByteBuf;
@@ -161,9 +162,41 @@ public class BookBinderMenu extends AbstractContainerMenu {
       }
       // Moving from player inventory to block entity slots
       else {
-        // Try cover slot
-        if (!moveItemStackTo(stackInSlot, SLOT_COVER, SLOT_COVER + 1, false)) {
-          // Move between inventory and hotbar
+        // Check if it's a page - insert ONE at a time into the binder's page list
+        if (stackInSlot.getItem() instanceof PageItem) {
+          // Create a single-item copy to insert
+          ItemStack singlePage = stackInSlot.copy();
+          singlePage.setCount(1);
+
+          // Try to insert into the page list
+          ItemStack remainder = blockEntity.insertPage(singlePage, blockEntity.getPageList().size());
+          if (remainder.isEmpty()) {
+            // Successfully inserted one page
+            stackInSlot.shrink(1);
+            slot.setChanged();
+            // Return the original stack to indicate something was moved
+            return result;
+          }
+          // Failed to insert (page list full)
+          return ItemStack.EMPTY;
+        }
+
+        // Try cover slot - only if it's a valid cover item
+        if (BookBinderBlockEntity.isValidCover(stackInSlot)) {
+          if (!moveItemStackTo(stackInSlot, SLOT_COVER, SLOT_COVER + 1, false)) {
+            // Move between inventory and hotbar
+            if (index < PLAYER_INVENTORY_END) {
+              if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
+                return ItemStack.EMPTY;
+              }
+            } else {
+              if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false)) {
+                return ItemStack.EMPTY;
+              }
+            }
+          }
+        } else {
+          // Not a page and not a valid cover - move between inventory and hotbar
           if (index < PLAYER_INVENTORY_END) {
             if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
               return ItemStack.EMPTY;
@@ -184,5 +217,32 @@ public class BookBinderMenu extends AbstractContainerMenu {
     }
 
     return result;
+  }
+
+  /**
+   * Shift-clicks a page out of the binder's page list to the player's inventory.
+   * Called from the screen when clicking on a page in the list.
+   *
+   * @param pageIndex the index of the page in the binder's page list
+   * @return true if the page was successfully moved to inventory
+   */
+  public boolean quickMovePageOut(int pageIndex) {
+    if (pageIndex < 0 || pageIndex >= blockEntity.getPageList().size()) {
+      return false;
+    }
+
+    ItemStack page = blockEntity.removePage(pageIndex);
+    if (page.isEmpty()) {
+      return false;
+    }
+
+    // Try to add to player inventory
+    if (!moveItemStackTo(page, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true)) {
+      // Failed - put it back
+      blockEntity.insertPage(page, pageIndex);
+      return false;
+    }
+
+    return true;
   }
 }

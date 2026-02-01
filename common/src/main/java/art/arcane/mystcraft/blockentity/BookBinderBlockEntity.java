@@ -8,6 +8,8 @@ import art.arcane.mystcraft.menu.BookBinderMenu;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.registry.ModItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -68,20 +70,31 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
 
   /**
    * Checks if a stack is valid as a book cover.
+   * Valid items are configured in MystcraftConfig.bookBinderCoverItems.
+   * For folders, they must be empty.
    */
   public static boolean isValidCover(ItemStack stack) {
     if (stack.isEmpty()) {
       return false;
     }
-    // Leather is valid
-    if (stack.is(Items.LEATHER)) {
-      return true;
+
+    // Check if item is in the configured list
+    ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+    List<String> validItems = MystcraftConfig.bookBinderCoverItems.get();
+
+    boolean isConfiguredItem = validItems.stream()
+        .anyMatch(id -> id.equals(itemId.toString()));
+
+    if (!isConfiguredItem) {
+      return false;
     }
-    // Empty folder is valid
+
+    // Special case: folders must be empty
     if (stack.getItem() instanceof FolderItem) {
       return FolderItem.isEmpty(stack);
     }
-    return false;
+
+    return true;
   }
 
   /**

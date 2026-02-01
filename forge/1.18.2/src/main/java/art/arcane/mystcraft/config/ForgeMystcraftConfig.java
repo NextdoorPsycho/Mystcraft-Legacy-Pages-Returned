@@ -24,6 +24,10 @@ public class ForgeMystcraftConfig {
   public static final ForgeConfigSpec.IntValue maxSymbolsPerBook;
   public static final ForgeConfigSpec.BooleanValue deleteAgesOnStartup;
   public static final ForgeConfigSpec.BooleanValue enablePersonalLinkBooks;
+  public static final ForgeConfigSpec.BooleanValue linkPanelInBoosterPacks;
+  public static final ForgeConfigSpec.BooleanValue enableBoosterLoot;
+  public static final ForgeConfigSpec.BooleanValue enablePageLoot;
+  public static final ForgeConfigSpec.ConfigValue<List<? extends String>> bookBinderCoverItems;
   public static final ForgeConfigSpec.BooleanValue allowGravityBlocksInAges;
   public static final ForgeConfigSpec.BooleanValue microDimensionsEnabled;
   public static final ForgeConfigSpec.IntValue microDimensionRadiusChunks;
@@ -87,6 +91,28 @@ public class ForgeMystcraftConfig {
     enablePersonalLinkBooks = COMMON_BUILDER
         .comment("If true, personal link books and personal pocket dimensions are enabled.")
         .define("enablePersonalLinkBooks", true);
+
+    linkPanelInBoosterPacks = COMMON_BUILDER
+        .comment("If true, booster packs always include a Link Panel page.")
+        .define("linkPanelInBoosterPacks", true);
+
+    enableBoosterLoot = COMMON_BUILDER
+        .comment("If true, booster packs can spawn in loot chests and from mob drops.")
+        .define("enableBoosterLoot", true);
+
+    enablePageLoot = COMMON_BUILDER
+        .comment("If true, symbol pages can spawn in loot chests.")
+        .define("enablePageLoot", true);
+
+    bookBinderCoverItems = COMMON_BUILDER
+        .comment(
+            "List of item IDs that can be used as book covers in the Book Binder.",
+            "Default: [\"minecraft:leather\", \"mystcraft:folder\"]"
+        )
+        .defineList("bookBinderCoverItems", List.of(
+            "minecraft:leather",
+            "mystcraft:folder"
+        ), ForgeMystcraftConfig::isValidBlockId);
 
     allowGravityBlocksInAges = COMMON_BUILDER
         .comment("If true, gravity blocks (sand, gravel, anvils, concrete powder) can fall in Mystcraft Ages.")

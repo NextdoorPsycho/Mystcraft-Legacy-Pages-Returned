@@ -24,6 +24,10 @@ public class ForgeMystcraftConfig {
   public static final ForgeConfigSpec.IntValue maxSymbolsPerBook;
   public static final ForgeConfigSpec.BooleanValue deleteAgesOnStartup;
   public static final ForgeConfigSpec.BooleanValue enablePersonalLinkBooks;
+  public static final ForgeConfigSpec.BooleanValue linkPanelInBoosterPacks;
+  public static final ForgeConfigSpec.BooleanValue enableBoosterLoot;
+  public static final ForgeConfigSpec.BooleanValue enablePageLoot;
+  public static final ForgeConfigSpec.ConfigValue<List<? extends String>> bookBinderCoverItems;
   public static final ForgeConfigSpec.BooleanValue allowGravityBlocksInAges;
   public static final ForgeConfigSpec.BooleanValue microDimensionsEnabled;
   public static final ForgeConfigSpec.IntValue microDimensionRadiusChunks;
@@ -87,6 +91,37 @@ public class ForgeMystcraftConfig {
     enablePersonalLinkBooks = COMMON_BUILDER
         .comment("If true, personal link books and personal pocket dimensions are enabled.")
         .define("enablePersonalLinkBooks", true);
+
+    linkPanelInBoosterPacks = COMMON_BUILDER
+        .comment(
+            "If true, booster packs (sealed notebooks) have a chance to contain link panels.",
+            "If false, booster packs will only contain symbol pages."
+        )
+        .define("linkPanelInBoosterPacks", true);
+
+    enableBoosterLoot = COMMON_BUILDER
+        .comment(
+            "If true, booster packs can be found in dungeon chests and as mob drops.",
+            "Set to false to disable booster pack loot generation."
+        )
+        .define("enableBoosterLoot", true);
+
+    enablePageLoot = COMMON_BUILDER
+        .comment(
+            "If true, symbol pages can be found in dungeon chests.",
+            "Set to false to disable page loot generation."
+        )
+        .define("enablePageLoot", true);
+
+    bookBinderCoverItems = COMMON_BUILDER
+        .comment(
+            "List of item IDs that can be used as book covers in the Book Binder.",
+            "Default: leather and empty folders."
+        )
+        .defineListAllowEmpty("bookBinderCoverItems", List.of(
+            "minecraft:leather",
+            "mystcraft:folder"
+        ), ForgeMystcraftConfig::isValidBlockId);
 
     allowGravityBlocksInAges = COMMON_BUILDER
         .comment("If true, gravity blocks (sand, gravel, anvils, concrete powder) can fall in Mystcraft Ages.")

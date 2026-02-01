@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.loot;
 
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.registry.FabricRegistries;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.resources.ResourceLocation;
@@ -25,8 +26,11 @@ public final class FabricLootModifiers {
   public static void register() {
     LootTableEvents.MODIFY.register((resourceManager, lootManager, id, tableBuilder, source) -> {
       if (source.isBuiltin()) {
+        boolean boosterLootEnabled = MystcraftConfig.enableBoosterLoot.get();
+        boolean pageLootEnabled = MystcraftConfig.enablePageLoot.get();
+
         // Symbol pages in dungeons, mineshafts, strongholds
-        if (id.equals(DUNGEON) || id.equals(MINESHAFT) || id.equals(STRONGHOLD_CORRIDOR)) {
+        if (pageLootEnabled && (id.equals(DUNGEON) || id.equals(MINESHAFT) || id.equals(STRONGHOLD_CORRIDOR))) {
           tableBuilder.withPool(LootPool.lootPool()
               .setRolls(UniformGenerator.between(1, 3))
               .when(LootItemRandomChanceCondition.randomChance(0.5f))
@@ -42,7 +46,7 @@ public final class FabricLootModifiers {
         }
 
         // Booster packs in dungeons
-        if (id.equals(DUNGEON)) {
+        if (boosterLootEnabled && id.equals(DUNGEON)) {
           tableBuilder.withPool(LootPool.lootPool()
               .setRolls(UniformGenerator.between(1, 1))
               .when(LootItemRandomChanceCondition.randomChance(0.35f))
@@ -51,7 +55,7 @@ public final class FabricLootModifiers {
         }
 
         // Booster packs in mineshafts
-        if (id.equals(MINESHAFT)) {
+        if (boosterLootEnabled && id.equals(MINESHAFT)) {
           tableBuilder.withPool(LootPool.lootPool()
               .setRolls(UniformGenerator.between(1, 1))
               .when(LootItemRandomChanceCondition.randomChance(0.25f))
@@ -59,7 +63,7 @@ public final class FabricLootModifiers {
         }
 
         // Booster packs in stronghold corridor
-        if (id.equals(STRONGHOLD_CORRIDOR)) {
+        if (boosterLootEnabled && id.equals(STRONGHOLD_CORRIDOR)) {
           tableBuilder.withPool(LootPool.lootPool()
               .setRolls(UniformGenerator.between(1, 1))
               .when(LootItemRandomChanceCondition.randomChance(0.4f))
@@ -68,7 +72,7 @@ public final class FabricLootModifiers {
         }
 
         // Booster packs in stronghold library (higher chance, more boosters)
-        if (id.equals(STRONGHOLD_LIBRARY)) {
+        if (boosterLootEnabled && id.equals(STRONGHOLD_LIBRARY)) {
           tableBuilder.withPool(LootPool.lootPool()
               .setRolls(UniformGenerator.between(1, 1))
               .when(LootItemRandomChanceCondition.randomChance(0.6f))
@@ -77,7 +81,7 @@ public final class FabricLootModifiers {
         }
 
         // Booster packs in temples
-        if (id.equals(DESERT_PYRAMID) || id.equals(JUNGLE_TEMPLE)) {
+        if (boosterLootEnabled && (id.equals(DESERT_PYRAMID) || id.equals(JUNGLE_TEMPLE))) {
           tableBuilder.withPool(LootPool.lootPool()
               .setRolls(UniformGenerator.between(1, 1))
               .when(LootItemRandomChanceCondition.randomChance(0.45f))
@@ -86,7 +90,7 @@ public final class FabricLootModifiers {
         }
 
         // Booster packs in woodland mansion
-        if (id.equals(WOODLAND_MANSION)) {
+        if (boosterLootEnabled && id.equals(WOODLAND_MANSION)) {
           tableBuilder.withPool(LootPool.lootPool()
               .setRolls(UniformGenerator.between(1, 1))
               .when(LootItemRandomChanceCondition.randomChance(0.5f))

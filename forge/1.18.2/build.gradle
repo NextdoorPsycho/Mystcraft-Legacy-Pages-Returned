@@ -283,10 +283,15 @@ tasks.named('compileJava', JavaCompile) {
 }
 
 tasks.named('processResources', ProcessResources) {
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(project(':common').sourceSets.main.resources) {
         // Exclude common's AT - Forge needs SRG names, common uses Mojang names
         exclude 'META-INF/accesstransformer.cfg'
+        // Exclude 1.19.3+ structure format - 1.18.2 uses configured_structure_feature instead
+        // (1.18.2 module provides its own configured_structure_feature files)
+        exclude 'data/mystcraft/worldgen/structure/**'
+        // Exclude underground_archive biome tag that uses #minecraft:is_overworld (doesn't exist in 1.18.2)
+        exclude 'data/mystcraft/tags/worldgen/biome/has_structure/underground_archive.json'
     }
     from sourceSets.main.resources
 
@@ -317,15 +322,17 @@ tasks.named('processResources', ProcessResources) {
         def modsToml = file("${destinationDir}/META-INF/mods.toml")
         if (modsToml.exists()) {
             def content = modsToml.text
-            // Fix loader version range
-            content = content.replace('loaderVersion = "[48,)"', 'loaderVersion = "[43,)"')
-            content = content.replace('loaderVersion = "[47,)"', 'loaderVersion = "[43,)"')
+            // Fix loader version range - Forge 1.18.2 uses javafml version 40
+            content = content.replace('loaderVersion = "[48,)"', 'loaderVersion = "[40,)"')
+            content = content.replace('loaderVersion = "[47,)"', 'loaderVersion = "[40,)"')
+            content = content.replace('loaderVersion = "[43,)"', 'loaderVersion = "[40,)"')
             // Fix minecraft version range
             content = content.replace('versionRange = "[1.20.2,1.21)"', 'versionRange = "[1.18.2,1.20)"')
             content = content.replace('versionRange = "[1.20.1,1.20.2)"', 'versionRange = "[1.18.2,1.20)"')
             // Fix forge version range
-            content = content.replace('versionRange = "[48.1.0,)"', 'versionRange = "[43.0.0,)"')
-            content = content.replace('versionRange = "[47.0.0,)"', 'versionRange = "[43.0.0,)"')
+            content = content.replace('versionRange = "[48.1.0,)"', 'versionRange = "[40.0.0,)"')
+            content = content.replace('versionRange = "[47.0.0,)"', 'versionRange = "[40.0.0,)"')
+            content = content.replace('versionRange = "[43.0.0,)"', 'versionRange = "[40.0.0,)"')
             // Fix description
             content = content.replace("description = '''Processes main resources.'''",
                     "description = '''Mystcraft 2 Legacy - Pages Returned brings the Myst series to Minecraft, allowing players to write and travel to custom Ages (dimensions).'''")

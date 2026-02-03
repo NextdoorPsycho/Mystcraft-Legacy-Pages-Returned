@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:village",
+  "config": {
+    "start_pool": "mystcraft:scattered_library/start",
+    "size": 1
+  },
+  "biomes": "#mystcraft:has_structure/scattered_library",
+  "adapt_noise": true,
+  "spawn_overrides": {}
+}

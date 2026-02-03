@@ -3,6 +3,7 @@ package art.arcane.mystcraft.item;
 import art.arcane.mystcraft.data.LinkFlags;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.link.LinkingManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -195,8 +196,12 @@ public class LinkbookItem extends Item {
 
       // Drop book if not "following" flag
       if (dropItemOnLink(stack)) {
-        // TODO: Spawn LinkbookEntity when entity class is ported to 1.18.2
-        // For now, just remove from inventory
+        // Spawn the book entity in the original world
+        LinkbookEntity bookEntity = new LinkbookEntity(level, player.getX(), player.getY(), player.getZ());
+        bookEntity.setBookItem(stack.copy());
+        level.addFreshEntity(bookEntity);
+
+        // Remove from inventory
         player.getInventory().setItem(slotToEmpty, ItemStack.EMPTY);
       }
     }
@@ -293,8 +298,13 @@ public class LinkbookItem extends Item {
 
   @Nullable
   public Entity createEntity(Level level, Entity location, @NotNull ItemStack stack) {
-    // TODO: Create LinkbookEntity when entity class is ported to 1.18.2
-    return null;
+    if (!art.arcane.mystcraft.config.MystcraftConfig.droppedBooksBecomeLivingEntities.get()) {
+      return null;
+    }
+    LinkbookEntity entity = new LinkbookEntity(level, location.getX(), location.getY(), location.getZ());
+    entity.setBookItem(stack.copy());
+    entity.setDeltaMovement(location.getDeltaMovement());
+    return entity;
   }
 
   /**

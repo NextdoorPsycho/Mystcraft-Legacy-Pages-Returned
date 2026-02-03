@@ -14,8 +14,21 @@ public class MystcraftFabricGameTests implements FabricGameTest {
   // ===== REGISTRATION TESTS =====
 
   @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
-  public void registries_load(GameTestHelper helper) {
-    MystcraftGameTestAssertions.runRegistriesLoadTest(helper);
+  public void symbols_loaded_400_plus(GameTestHelper helper) {
+    MystcraftGameTestAssertions.assertSymbolsLoaded();
+    helper.succeed();
+  }
+
+  @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+  public void creative_tabs_loaded(GameTestHelper helper) {
+    MystcraftGameTestAssertions.assertCreativeTabsLoaded();
+    helper.succeed();
+  }
+
+  @GameTest(template = FabricGameTest.EMPTY_STRUCTURE)
+  public void datapacks_loaded(GameTestHelper helper) {
+    MystcraftGameTestAssertions.assertDatapacksLoaded();
+    helper.succeed();
   }
 
   // ===== BOOK DROP ENTITY TESTS =====

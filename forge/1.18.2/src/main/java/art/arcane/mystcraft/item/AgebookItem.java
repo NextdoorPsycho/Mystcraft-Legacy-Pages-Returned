@@ -4,6 +4,7 @@ import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.link.LinkingManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -304,7 +305,12 @@ public class AgebookItem extends Item {
 
   @Nullable
   public Entity createEntity(Level level, Entity location, @NotNull ItemStack stack) {
-    // TODO: Create LinkbookEntity when entity class is ported to 1.18.2
-    return null;
+    if (!MystcraftConfig.droppedBooksBecomeLivingEntities.get()) {
+      return null;
+    }
+    LinkbookEntity entity = new LinkbookEntity(level, location.getX(), location.getY(), location.getZ());
+    entity.setBookItem(stack.copy());
+    entity.setDeltaMovement(location.getDeltaMovement());
+    return entity;
   }
 }

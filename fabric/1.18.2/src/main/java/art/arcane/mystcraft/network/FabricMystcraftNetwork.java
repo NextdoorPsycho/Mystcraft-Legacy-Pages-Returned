@@ -108,7 +108,7 @@ public final class FabricMystcraftNetwork {
     ClientPlayNetworking.registerGlobalReceiver(SYMBOL_SYNC, (client, handler, buf, responseSender) -> {
       SymbolSyncPacket packet = SymbolSyncPacket.decode(buf);
       PacketContext ctx = createClientContext();
-      packet.handle(ctx);
+      SymbolSyncPacket.handle(packet, ctx);
     });
 
     ClientPlayNetworking.registerGlobalReceiver(CONFIG_SYNC, (client, handler, buf, responseSender) -> {
@@ -234,7 +234,7 @@ public final class FabricMystcraftNetwork {
    */
   public static void sendToPlayer(SymbolSyncPacket packet, ServerPlayer player) {
     FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-    packet.encode(buf);
+    SymbolSyncPacket.encode(packet, buf);
     ServerPlayNetworking.send(player, SYMBOL_SYNC, buf);
   }
 

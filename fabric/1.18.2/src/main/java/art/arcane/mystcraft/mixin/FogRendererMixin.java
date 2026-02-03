@@ -71,7 +71,7 @@ public class FogRendererMixin {
   }
 
   @Inject(method = "setupFog", at = @At("TAIL"))
-  private static void mystcraft$modifyFogDensity(Camera camera, FogRenderer.FogMode fogMode, float farPlaneDistance, boolean shouldCreateFog, float partialTick, CallbackInfo ci) {
+  private static void mystcraft$modifyFogDensity(Camera camera, FogRenderer.FogMode fogMode, float farPlaneDistance, boolean shouldCreateFog, CallbackInfo ci) {
     int ageUID = getCurrentAgeUID();
     if (ageUID < 0) return;
 

@@ -84,11 +84,11 @@ public record SymbolSyncPacket(List<SymbolData> symbols) {
   }
 
   /**
-   * Encodes this packet to a buffer.
+   * Encodes a packet to a buffer.
    */
-  public void encode(FriendlyByteBuf buf) {
-    buf.writeInt(symbols.size());
-    for (SymbolData data : symbols) {
+  public static void encode(SymbolSyncPacket packet, FriendlyByteBuf buf) {
+    buf.writeInt(packet.symbols.size());
+    for (SymbolData data : packet.symbols) {
       buf.writeResourceLocation(data.id);
       buf.writeEnum(data.category);
       buf.writeInt(data.cardRank);
@@ -115,18 +115,18 @@ public record SymbolSyncPacket(List<SymbolData> symbols) {
   }
 
   /**
-   * Handles this packet on the client.
+   * Handles a packet on the client.
    */
-  public void handle(PacketContext ctx) {
+  public static void handle(SymbolSyncPacket packet, PacketContext ctx) {
     ctx.enqueueWork(() -> {
       // Log received symbols for debugging
-      Mystcraft.LOGGER.info("Received symbol sync packet with {} symbols", symbols.size());
+      Mystcraft.LOGGER.info("Received symbol sync packet with {} symbols", packet.symbols.size());
 
       // In a full implementation, this would update a client-side symbol cache
       // For now, symbols are registered statically at mod load time
       // This packet is primarily for future extensibility (datapacks, custom symbols)
 
-      for (SymbolData data : symbols) {
+      for (SymbolData data : packet.symbols) {
         boolean exists = SymbolRegistry.contains(data.id);
         boolean shouldRegister = data.isOverride || !exists;
         if (shouldRegister) {

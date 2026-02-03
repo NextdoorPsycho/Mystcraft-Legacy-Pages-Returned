@@ -188,7 +188,8 @@ public class MystcraftForge {
 
       event.enqueueWork(() -> {
         art.arcane.mystcraft.client.render.DrawableWordManager.initialize();
-        art.arcane.mystcraft.client.render.PageItemRendererBEWLR.prewarmCache();
+        // 1.19.2: PageItemRendererBEWLR not ported
+        // art.arcane.mystcraft.client.render.PageItemRendererBEWLR.prewarmCache();
 
         net.minecraft.client.gui.screens.MenuScreens.register(
             ModMenuTypes.INK_MIXER.get(),

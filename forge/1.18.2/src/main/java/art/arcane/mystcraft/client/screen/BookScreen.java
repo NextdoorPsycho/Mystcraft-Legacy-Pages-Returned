@@ -8,7 +8,7 @@ import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.network.BlockBookActivatePacket;
 import art.arcane.mystcraft.network.EntityBookActivatePacket;
 import art.arcane.mystcraft.network.LinkBookActivatePacket;
-import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_18_2;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -27,7 +27,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Screen for viewing book contents (Agebooks and Linkbooks) - 1.18.2 Forge version.
+ * Screen for viewing book contents (Agebooks and Linkbooks) - 1.19.2 version.
  * Page 0 is the title page with link panel. Click to link.
  * Navigate with left/right clicks. Agebooks have gold borders.
  */
@@ -183,7 +183,7 @@ public class BookScreen extends Screen {
     this.yScale = 1.0f;
   }
 
-  // 1.18.2 API: renderBackground takes only PoseStack
+  // 1.19.2 API: renderBackground takes only PoseStack
   @Override
   public void renderBackground(@NotNull PoseStack poseStack) {
     // Don't render dark background overlay - book has its own visual backing
@@ -494,13 +494,13 @@ public class BookScreen extends Screen {
   private void performLink() {
     if (blockPos != null) {
       // Book is on a block entity (bookstand/lectern)
-      MystcraftNetwork.sendToServer(new BlockBookActivatePacket(blockPos));
+      ForgeMystcraftNetwork_1_18_2.sendToServer(new BlockBookActivatePacket(blockPos));
     } else if (entityId == HAND_BASED) {
       // Book is in player's hand
-      MystcraftNetwork.sendToServer(new LinkBookActivatePacket(hand));
+      ForgeMystcraftNetwork_1_18_2.sendToServer(new LinkBookActivatePacket(hand));
     } else {
       // Book is on a LinkbookEntity
-      MystcraftNetwork.sendToServer(new EntityBookActivatePacket(entityId));
+      ForgeMystcraftNetwork_1_18_2.sendToServer(new EntityBookActivatePacket(entityId));
     }
     this.onClose();
   }

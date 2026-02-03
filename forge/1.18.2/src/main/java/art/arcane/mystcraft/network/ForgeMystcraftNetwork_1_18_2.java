@@ -66,39 +66,32 @@ public final class ForgeMystcraftNetwork_1_18_2 {
         LinkEffectPacket::encode, LinkEffectPacket::decode, wrap(LinkEffectPacket::handle),
         Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
-    CHANNEL.registerMessage(packetId++, SymbolSyncPacket.class,
-        SymbolSyncPacket::encode, SymbolSyncPacket::decode, wrap(SymbolSyncPacket::handle),
-        Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+    // 1.18.2: SymbolSyncPacket not ported
+    // CHANNEL.registerMessage(packetId++, SymbolSyncPacket.class,
+    //     SymbolSyncPacket::encode, SymbolSyncPacket::decode, wrap(SymbolSyncPacket::handle),
+    //     Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
     // Client -> Server: Container actions
     CHANNEL.registerMessage(packetId++, ContainerActionPacket.class,
         ContainerActionPacket::encode, ContainerActionPacket::decode, wrap(ContainerActionPacket::handle),
         Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
-    // Server -> Client: Config sync
-    CHANNEL.registerMessage(packetId++, ConfigSyncPacket.class,
-        ConfigSyncPacket::encode, ConfigSyncPacket::decode, wrap(ConfigSyncPacket::handle),
-        Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-
-    // Server -> Client: Dimension sync
-    CHANNEL.registerMessage(packetId++, DimensionSyncPacket.class,
-        DimensionSyncPacket::encode, DimensionSyncPacket::decode, wrap(DimensionSyncPacket::handle),
-        Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-
-    // Server -> Client: Profiling state
-    CHANNEL.registerMessage(packetId++, ProfilingStatePacket.class,
-        ProfilingStatePacket::encode, ProfilingStatePacket::decode, wrap(ProfilingStatePacket::handle),
-        Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-
-    // Server -> Client: Custom explosion
-    CHANNEL.registerMessage(packetId++, ExplosionPacket.class,
-        ExplosionPacket::encode, ExplosionPacket::decode, wrap(ExplosionPacket::handle),
-        Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-
-    // Server -> Client: Spawn colored lightning
-    CHANNEL.registerMessage(packetId++, SpawnLightningPacket.class,
-        SpawnLightningPacket::encode, SpawnLightningPacket::decode, wrap(SpawnLightningPacket::handle),
-        Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+    // 1.18.2: ConfigSyncPacket, DimensionSyncPacket, ProfilingStatePacket, ExplosionPacket, SpawnLightningPacket not ported
+    // CHANNEL.registerMessage(packetId++, ConfigSyncPacket.class,
+    //     ConfigSyncPacket::encode, ConfigSyncPacket::decode, wrap(ConfigSyncPacket::handle),
+    //     Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+    // CHANNEL.registerMessage(packetId++, DimensionSyncPacket.class,
+    //     DimensionSyncPacket::encode, DimensionSyncPacket::decode, wrap(DimensionSyncPacket::handle),
+    //     Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+    // CHANNEL.registerMessage(packetId++, ProfilingStatePacket.class,
+    //     ProfilingStatePacket::encode, ProfilingStatePacket::decode, wrap(ProfilingStatePacket::handle),
+    //     Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+    // CHANNEL.registerMessage(packetId++, ExplosionPacket.class,
+    //     ExplosionPacket::encode, ExplosionPacket::decode, wrap(ExplosionPacket::handle),
+    //     Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+    // CHANNEL.registerMessage(packetId++, SpawnLightningPacket.class,
+    //     SpawnLightningPacket::encode, SpawnLightningPacket::decode, wrap(SpawnLightningPacket::handle),
+    //     Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
     // Client -> Server: Activate linking book from GUI (hand-based)
     CHANNEL.registerMessage(packetId++, LinkBookActivatePacket.class,
@@ -115,10 +108,10 @@ public final class ForgeMystcraftNetwork_1_18_2 {
         BlockBookActivatePacket::encode, BlockBookActivatePacket::decode, wrap(BlockBookActivatePacket::handle),
         Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
-    // Client -> Server: Sync pocket head palette
-    CHANNEL.registerMessage(packetId++, PocketHeadSyncPacket.class,
-        PocketHeadSyncPacket::encode, PocketHeadSyncPacket::decode, wrap(PocketHeadSyncPacket::handle),
-        Optional.of(NetworkDirection.PLAY_TO_SERVER));
+    // 1.18.2: PocketHeadSyncPacket not ported
+    // CHANNEL.registerMessage(packetId++, PocketHeadSyncPacket.class,
+    //     PocketHeadSyncPacket::encode, PocketHeadSyncPacket::decode, wrap(PocketHeadSyncPacket::handle),
+    //     Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
     // Server -> Client: Sync Mystcraft book in vanilla lectern
     CHANNEL.registerMessage(packetId++, LecternBookSyncPacket.class,

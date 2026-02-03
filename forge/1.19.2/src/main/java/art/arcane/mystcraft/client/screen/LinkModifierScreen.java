@@ -8,7 +8,7 @@ import art.arcane.mystcraft.data.InkEffects;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.menu.LinkModifierMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
-import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_19_2;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -61,7 +61,7 @@ public class LinkModifierScreen extends AbstractContainerScreen<LinkModifierMenu
         (btn) -> {
           boolean newValue = !menu.getLinkFlag(property);
           menu.setLinkFlagClient(property, newValue);
-          MystcraftNetwork.sendToServer(new ContainerActionPacket(
+          ForgeMystcraftNetwork_1_19_2.sendToServer(new ContainerActionPacket(
               ContainerActionPacket.Action.LINK_MODIFIER_SET_FLAG,
               menu.containerId,
               newValue,
@@ -76,7 +76,7 @@ public class LinkModifierScreen extends AbstractContainerScreen<LinkModifierMenu
 
   private void onSeedChanged(String newSeed) {
     menu.setItemSeedClient(newSeed);
-    MystcraftNetwork.sendToServer(new ContainerActionPacket(
+    ForgeMystcraftNetwork_1_19_2.sendToServer(new ContainerActionPacket(
         ContainerActionPacket.Action.LINK_MODIFIER_SET_SEED,
         menu.containerId,
         false,
@@ -86,7 +86,7 @@ public class LinkModifierScreen extends AbstractContainerScreen<LinkModifierMenu
 
   private void onNameChanged(String newName) {
     menu.setBookTitleClient(newName);
-    MystcraftNetwork.sendToServer(new ContainerActionPacket(
+    ForgeMystcraftNetwork_1_19_2.sendToServer(new ContainerActionPacket(
         ContainerActionPacket.Action.LINK_MODIFIER_SET_TITLE,
         menu.containerId,
         false,

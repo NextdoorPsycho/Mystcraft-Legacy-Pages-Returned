@@ -4,7 +4,7 @@ import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.data.InkEffects;
 import art.arcane.mystcraft.menu.InkMixerMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
-import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_18_2;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Screen for the Ink Mixer block (1.18.2 Forge version).
+ * Screen for the Ink Mixer block (1.19.2 version).
  * Click on the basin area while holding an item to add it to the ink.
  */
 public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
@@ -179,7 +179,7 @@ public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
 
   @Override
   public void render(@NotNull PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-    // 1.18.2 API: renderBackground takes only PoseStack
+    // 1.19.2 API: renderBackground takes only PoseStack
     this.renderBackground(poseStack);
     super.render(poseStack, mouseX, mouseY, partialTick);
     this.renderTooltip(poseStack, mouseX, mouseY);
@@ -247,7 +247,7 @@ public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
       if (!menu.getCarried().isEmpty() && menu.hasInk()) {
         // Send packet to server to consume item
         boolean rightClick = (button == 1);
-        MystcraftNetwork.sendToServer(new ContainerActionPacket(
+        ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
             ContainerActionPacket.Action.INK_MIXER_ADD_ITEM,
             menu.containerId,
             rightClick

@@ -5,7 +5,7 @@ import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.BookBinderMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
-import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_19_2;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.EditBox;
@@ -83,7 +83,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
   private void onTitleChanged(String text) {
     // Send title change to server
-    MystcraftNetwork.sendToServer(new ContainerActionPacket(
+    ForgeMystcraftNetwork_1_19_2.sendToServer(new ContainerActionPacket(
         ContainerActionPacket.Action.BOOK_BINDER_SET_TITLE,
         menu.containerId,
         false,
@@ -280,7 +280,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
       if (!carried.isEmpty()) {
         // Insert page at this index
         boolean singleItem = (button == 1); // Right-click = single
-        MystcraftNetwork.sendToServer(new ContainerActionPacket(
+        ForgeMystcraftNetwork_1_19_2.sendToServer(new ContainerActionPacket(
             ContainerActionPacket.Action.BOOK_BINDER_INSERT_PAGE,
             menu.containerId,
             singleItem,
@@ -290,7 +290,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
         return true;
       } else if (pageIndex < pages.size()) {
         // Remove page from this index
-        MystcraftNetwork.sendToServer(new ContainerActionPacket(
+        ForgeMystcraftNetwork_1_19_2.sendToServer(new ContainerActionPacket(
             ContainerActionPacket.Action.BOOK_BINDER_REMOVE_PAGE,
             menu.containerId,
             pageIndex

@@ -16,8 +16,8 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Renderer for MystcraftFallingBlockEntity (1.18.2).
- * Similar to vanilla FallingBlockRenderer.
+ * Fabric renderer for MystcraftFallingBlockEntity (1.18.2).
+ * Uses vanilla block rendering to avoid loader-specific APIs.
  */
 public class MystcraftFallingBlockRenderer extends EntityRenderer<MystcraftFallingBlockEntity> {
 

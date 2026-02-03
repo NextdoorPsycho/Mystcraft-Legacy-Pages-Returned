@@ -3,14 +3,15 @@ package art.arcane.mystcraft.platform;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.client.AgeColorUtils;
-import art.arcane.mystcraft.client.PocketHeadClientSync;
-import art.arcane.mystcraft.command.MystcraftCommands;
+// 1.18.2: PocketHeadClientSync, MystcraftCommands, InstabilityManager, SymbolSyncPacket not ported
+// import art.arcane.mystcraft.client.PocketHeadClientSync;
+// import art.arcane.mystcraft.command.MystcraftCommands;
 import art.arcane.mystcraft.datapack.grammar.MystcraftGrammarReloadListener;
 import art.arcane.mystcraft.datapack.symbol.MystcraftSymbolReloadListener;
 import art.arcane.mystcraft.event.*;
-import art.arcane.mystcraft.instability.InstabilityManager;
+// import art.arcane.mystcraft.instability.InstabilityManager;
 import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_18_2;
-import art.arcane.mystcraft.network.SymbolSyncPacket;
+// import art.arcane.mystcraft.network.SymbolSyncPacket;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.platform.services.IEventHelper;
 import art.arcane.mystcraft.registry.ModItems;
@@ -140,7 +141,8 @@ public class ForgeEventHelper_1_18_2 implements IEventHelper {
   }
 
   private void onRegisterCommands(RegisterCommandsEvent event) {
-    MystcraftCommands.registerCommands(event.getDispatcher());
+    // 1.18.2: MystcraftCommands not ported
+    // MystcraftCommands.registerCommands(event.getDispatcher());
   }
 
   private void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -150,17 +152,20 @@ public class ForgeEventHelper_1_18_2 implements IEventHelper {
 
   // 1.18.2: ClientPlayerNetworkEvent.LoggedInEvent instead of LoggingIn
   private void onClientLoggedIn(ClientPlayerNetworkEvent.LoggedInEvent event) {
-    PocketHeadClientSync.requestSend();
+    // 1.18.2: PocketHeadClientSync not ported
+    // PocketHeadClientSync.requestSend();
   }
 
   // 1.18.2: ClientPlayerNetworkEvent.LoggedOutEvent instead of LoggingOut
   private void onClientLoggedOut(ClientPlayerNetworkEvent.LoggedOutEvent event) {
-    PocketHeadClientSync.reset();
+    // 1.18.2: PocketHeadClientSync not ported
+    // PocketHeadClientSync.reset();
   }
 
   private void onClientTick(TickEvent.ClientTickEvent event) {
     if (event.phase != TickEvent.Phase.END) return;
-    PocketHeadClientSync.tick();
+    // 1.18.2: PocketHeadClientSync not ported
+    // PocketHeadClientSync.tick();
   }
 
   // 1.18.2: TickEvent.WorldTickEvent instead of TickEvent.LevelTickEvent
@@ -171,8 +176,8 @@ public class ForgeEventHelper_1_18_2 implements IEventHelper {
     // Age effects (weather, ambient, etc.)
     AgeEffectsHandler.onLevelTick(serverLevel);
 
-    // Instability effects
-    InstabilityManager.onLevelTick(serverLevel);
+    // 1.18.2: InstabilityManager not ported
+    // InstabilityManager.onLevelTick(serverLevel);
   }
 
   private void onPlayerDeath(LivingDeathEvent event) {
@@ -213,9 +218,9 @@ public class ForgeEventHelper_1_18_2 implements IEventHelper {
       // Age data sync
       AgeDataSyncHandler.onPlayerLoggedIn(player);
 
-      // Symbol sync
-      ForgeMystcraftNetwork_1_18_2.sendToPlayer(new SymbolSyncPacket(), player);
-      Mystcraft.LOGGER.debug("Sent symbol sync packet to player {}", player.getName().getString());
+      // 1.18.2: SymbolSyncPacket not ported
+      // ForgeMystcraftNetwork_1_18_2.sendToPlayer(new SymbolSyncPacket(), player);
+      // Mystcraft.LOGGER.debug("Sent symbol sync packet to player {}", player.getName().getString());
     }
   }
 
@@ -244,9 +249,10 @@ public class ForgeEventHelper_1_18_2 implements IEventHelper {
     if (!(event.getEntity() instanceof FallingBlockEntity fallingBlock)) {
       return;
     }
-    if (FallingBlockHandler.handle(serverLevel, fallingBlock)) {
-      event.setCanceled(true);
-    }
+    // 1.18.2: FallingBlockHandler not ported
+    // if (FallingBlockHandler.handle(serverLevel, fallingBlock)) {
+    //   event.setCanceled(true);
+    // }
   }
 
   private void onServerAboutToStart(ServerAboutToStartEvent event) {

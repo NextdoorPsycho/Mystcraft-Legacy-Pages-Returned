@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Inventory;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Screen for the Folder item (1.18.2 Forge version).
+ * Screen for the Folder item (1.19.2 version).
  * Shows 16 page slots (2 rows x 8 columns) plus player inventory.
  * Renders slots programmatically with standard Minecraft styling.
  */
@@ -92,7 +92,7 @@ public class FolderScreen extends AbstractContainerScreen<FolderMenu> {
 
   @Override
   public void render(@NotNull PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-    // 1.18.2 API: renderBackground takes only PoseStack
+    // 1.19.2 API: renderBackground takes only PoseStack
     this.renderBackground(poseStack);
     super.render(poseStack, mouseX, mouseY, partialTick);
     this.renderTooltip(poseStack, mouseX, mouseY);

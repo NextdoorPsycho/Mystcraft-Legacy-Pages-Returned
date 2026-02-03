@@ -3,7 +3,7 @@ package art.arcane.mystcraft.client.screen;
 import art.arcane.mystcraft.item.PortfolioItem;
 import art.arcane.mystcraft.menu.PortfolioMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
-import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_19_2;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.Button;
@@ -134,7 +134,7 @@ public class PortfolioScreen extends AbstractContainerScreen<PortfolioMenu> {
    */
   private void onSortPressed(Button button) {
     // Send sort request to server
-    MystcraftNetwork.sendToServer(new ContainerActionPacket(
+    ForgeMystcraftNetwork_1_19_2.sendToServer(new ContainerActionPacket(
         ContainerActionPacket.Action.PORTFOLIO_SORT,
         menu.containerId,
         false,

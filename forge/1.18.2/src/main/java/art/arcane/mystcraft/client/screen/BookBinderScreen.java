@@ -5,7 +5,7 @@ import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.BookBinderMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
-import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_18_2;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.EditBox;
@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 /**
- * Screen for the Book Binder block (1.18.2 Forge version).
+ * Screen for the Book Binder block (1.19.2 version).
  * Includes text field for book name and scrollable page list.
  */
 public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
@@ -84,7 +84,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
   private void onTitleChanged(String text) {
     // Send title change to server
-    MystcraftNetwork.sendToServer(new ContainerActionPacket(
+    ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
         ContainerActionPacket.Action.BOOK_BINDER_SET_TITLE,
         menu.containerId,
         false,
@@ -216,7 +216,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
   @Override
   public void render(@NotNull PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-    // 1.18.2 API: renderBackground takes only PoseStack
+    // 1.19.2 API: renderBackground takes only PoseStack
     this.renderBackground(poseStack);
     super.render(poseStack, mouseX, mouseY, partialTick);
     this.renderTooltip(poseStack, mouseX, mouseY);
@@ -281,7 +281,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
       if (!carried.isEmpty()) {
         // Insert page at this index
         boolean singleItem = (button == 1); // Right-click = single
-        MystcraftNetwork.sendToServer(new ContainerActionPacket(
+        ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
             ContainerActionPacket.Action.BOOK_BINDER_INSERT_PAGE,
             menu.containerId,
             singleItem,
@@ -291,7 +291,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
         return true;
       } else if (pageIndex < pages.size()) {
         // Remove page from this index
-        MystcraftNetwork.sendToServer(new ContainerActionPacket(
+        ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
             ContainerActionPacket.Action.BOOK_BINDER_REMOVE_PAGE,
             menu.containerId,
             pageIndex
@@ -305,7 +305,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
   @Override
   public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-    // 1.18.2 API: mouseScrolled has only 3 parameters (mouseX, mouseY, delta)
+    // 1.19.2 API: mouseScrolled has only 3 parameters (mouseX, mouseY, delta)
     // Scroll the page list
     int listLeft = this.leftPos + PAGE_LIST_X;
     int listTop = this.topPos + PAGE_LIST_Y;

@@ -104,7 +104,8 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     boolean starsVisible = ClientAgeDataCache.areStarsVisible(ageUID);
     int skyColor = ClientAgeDataCache.getSkyColor(ageUID);
     boolean horizonHidden = ClientAgeDataCache.isHorizonHidden(ageUID);
-    List<ICelestial> celestials = ClientAgeDataCache.getCelestials(ageUID);
+    @SuppressWarnings("unchecked")
+    List<ICelestial> celestials = (List<ICelestial>) ClientAgeDataCache.getCelestials(ageUID);
 
     int fogColor = ClientAgeDataCache.getFogColor(ageUID);
     int nightSkyColor = ClientAgeDataCache.getNightSkyColor(ageUID);

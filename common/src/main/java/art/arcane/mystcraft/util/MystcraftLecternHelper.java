@@ -18,6 +18,8 @@ import net.minecraft.world.level.block.LecternBlock;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.lang.reflect.Method;
+
 
 /**
  * Helper utilities for Mystcraft book integration with vanilla Lecterns.
@@ -41,15 +43,26 @@ public final class MystcraftLecternHelper {
     return stack.getItem() instanceof LinkbookItem || stack.getItem() instanceof AgebookItem;
   }
 
+  private static Method openForBlockMethod;
+
   /**
    * Opens the book screen for a book placed on a block (lectern/bookstand).
    * Must be called on the client side only.
+   * Uses reflection to avoid loading client classes on the server.
    *
    * @param book     the book ItemStack
    * @param blockPos the position of the block holding the book
    */
   public static void openBookScreenForBlock(ItemStack book, BlockPos blockPos) {
-    art.arcane.mystcraft.client.screen.BookScreen.openForBlock(book, blockPos);
+    try {
+      if (openForBlockMethod == null) {
+        Class<?> bookScreenClass = Class.forName("art.arcane.mystcraft.client.screen.BookScreen");
+        openForBlockMethod = bookScreenClass.getMethod("openForBlock", ItemStack.class, BlockPos.class);
+      }
+      openForBlockMethod.invoke(null, book, blockPos);
+    } catch (ReflectiveOperationException e) {
+      Mystcraft.LOGGER.error("[LecternHelper] Failed to open book screen", e);
+    }
   }
 
   /**

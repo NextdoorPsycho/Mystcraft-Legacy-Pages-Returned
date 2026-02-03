@@ -7,7 +7,7 @@ import art.arcane.mystcraft.network.FabricMystcraftNetwork;
 import art.arcane.mystcraft.registry.FabricRegistries;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
-import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
+// import art.arcane.mystcraft.world.gen.AgeChunkGenerator;  // Not ported to 1.18.2 yet
 import com.floopowder.api.Floo;
 import com.floopowder.fabric.FabricFlooRegistry;
 import net.fabricmc.api.ModInitializer;
@@ -102,11 +102,12 @@ public class MystcraftFabric implements ModInitializer {
       return;
     }
     art.arcane.mystcraft.event.AgeDeathHandler.configureAgeGameRules(serverLevel);
-    ChunkGenerator generator = serverLevel.getChunkSource().getGenerator();
-    if (generator instanceof AgeChunkGenerator ageGen && ageGen.needsDirectorReconstruction()) {
-      Mystcraft.LOGGER.info("[Mystcraft] Reconstructing director for Age: {}", serverLevel.dimension().location());
-      ageGen.reconstructDirectorFromAgeData(serverLevel);
-    }
+    // TODO: AgeChunkGenerator not ported to 1.18.2 yet
+    // ChunkGenerator generator = serverLevel.getChunkSource().getGenerator();
+    // if (generator instanceof AgeChunkGenerator ageGen && ageGen.needsDirectorReconstruction()) {
+    //   Mystcraft.LOGGER.info("[Mystcraft] Reconstructing director for Age: {}", serverLevel.dimension().location());
+    //   ageGen.reconstructDirectorFromAgeData(serverLevel);
+    // }
   }
 
   /**

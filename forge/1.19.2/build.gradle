@@ -150,9 +150,7 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/client/renderer/BookstandRenderer.java'
         exclude '**/client/renderer/BookReceptacleRenderer.java'
         exclude '**/client/renderer/LecternRenderer.java'
-        // Render helpers - use platform-specific versions
-        exclude '**/client/render/DrawableWord.java'
-        exclude '**/client/render/DrawableWordManager.java'
+        // DrawableWord and DrawableWordManager are pure data classes - NO EXCLUSION NEEDED
         // Entities using 1.20.x APIs (getAddEntityPacket is abstract in 1.19.2)
         exclude '**/entity/LinkbookEntity.java'
         exclude '**/entity/MystcraftFallingBlockEntity.java'
@@ -191,10 +189,18 @@ tasks.named('compileJava', JavaCompile) {
         // 1.20.x blocks (CHERRY_PLANKS, BAMBOO_PLANKS) and biomes (CHERRY_GROVE)
         exclude '**/grammar/AgeBuilder.java'
         exclude '**/world/gen/terrain/TerrainGeneratorNormal.java'
+        exclude '**/world/gen/terrain/TerrainGeneratorBase.java'
+        // Celestials - using version-specific copies for Matrix4f differences
+        exclude '**/world/celestial/AbstractCelestial.java'
+        // Additional instability effects with version-specific copies
+        exclude '**/instability/effects/EffectLightning.java'
+        exclude '**/instability/effects/EffectMeteor.java'
         // Instability effects using ExplosionInteraction enum
         exclude '**/instability/effects/EffectExplosion.java'
         // LecternBlock.resetBookState signature changed in 1.20.x (added Player param)
         exclude '**/util/MystcraftLecternHelper.java'
+        // BlockEntities using BuiltInRegistries
+        exclude '**/blockentity/BookBinderBlockEntity.java'
         // WritingDeskBlock uses canBeReplaced() which requires params in 1.19.2
         exclude '**/block/WritingDeskBlock.java'
         // Network packets - forge/1.19.2 has its own implementations
@@ -211,6 +217,9 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/network/SpawnLightningPacket.java'
         exclude '**/network/ConfigSyncPacket.java'
         exclude '**/network/MystcraftNetwork.java'
+        exclude '**/network/LecternBookSyncPacket.java'
+        // Client utilities with network dependencies
+        exclude '**/client/PocketHeadClientSync.java'
     })
     // Include Floo_Powder common API
     source(fileTree(rootProject.file('Floo_Powder/common/src/main/java')))

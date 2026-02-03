@@ -132,6 +132,7 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/registry/ModTags.java'
         exclude '**/data/LinkOptions.java'
         // 1.20.x uses joml Matrix4f and Axis which don't exist in 1.18.2
+        exclude '**/world/celestial/AbstractCelestial.java'
         exclude '**/world/celestial/CelestialStars.java'
         exclude '**/world/celestial/CelestialMoon.java'
         exclude '**/world/celestial/CelestialSun.java'
@@ -251,6 +252,27 @@ tasks.named('compileJava', JavaCompile) {
         // Instability using nextIntBetweenInclusive
         exclude '**/instability/effects/EffectLightning.java'
         exclude '**/instability/effects/EffectMeteor.java'
+        // Client gui elements depending on excluded classes (Page, SymbolRegistry)
+        exclude '**/client/gui/element/MystGuiElement.java'
+        exclude '**/client/gui/element/MystGuiPageSurface.java'
+        exclude '**/client/gui/element/MystGuiScrollablePages.java'
+        // PortalUtils depends on LinkPortalBlock
+        exclude '**/portal/PortalUtils.java'
+        // MystcraftAPI depends on SymbolRegistry
+        exclude '**/api/MystcraftAPI.java'
+        // Client utils depending on AgeDimensionFactory
+        exclude '**/client/AgeColorUtils.java'
+        // Event handler depending on AgeDimensionFactory
+        exclude '**/event/FallingBlockHandler.java'
+        // Instability bonus depending on AgeDimensionFactory
+        exclude '**/instability/bonus/PlayerBonusProvider.java'
+        // LinkbookUnlinkedItem depends on Page
+        exclude '**/item/LinkbookUnlinkedItem.java'
+        // TerrainGeneratorRegistry depends on world.gen.terrain
+        exclude '**/datapack/symbol/TerrainGeneratorRegistry.java'
+        // Block entities depending on excluded classes
+        exclude '**/blockentity/BookstandBlockEntity.java'
+        exclude '**/blockentity/BookReceptacleBlockEntity.java'
     })
     // Include Floo_Powder common API
     source(fileTree(rootProject.file('Floo_Powder/common/src/main/java')))

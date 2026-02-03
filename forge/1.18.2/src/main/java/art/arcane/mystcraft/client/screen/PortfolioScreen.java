@@ -3,7 +3,7 @@ package art.arcane.mystcraft.client.screen;
 import art.arcane.mystcraft.item.PortfolioItem;
 import art.arcane.mystcraft.menu.PortfolioMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
-import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_18_2;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.Button;
@@ -15,7 +15,7 @@ import net.minecraft.world.entity.player.Inventory;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Screen for the Portfolio item (1.18.2 Forge version).
+ * Screen for the Portfolio item (1.19.2 version).
  * Shows 64 page slots (8 rows x 8 columns) plus player inventory.
  * Includes a SORT button - Portfolio's unique feature for organizing pages.
  */
@@ -49,7 +49,7 @@ public class PortfolioScreen extends AbstractContainerScreen<PortfolioMenu> {
     // Position it in the top-right area
     int buttonX = this.leftPos + this.imageWidth - 40;
     int buttonY = this.topPos + 4;
-    // 1.18.2 API: Button constructor instead of builder
+    // 1.19.2 API: Button constructor instead of builder
     sortButton = new Button(buttonX, buttonY, 36, 12, new TextComponent("Sort"), this::onSortPressed);
     this.addRenderableWidget(sortButton);
   }
@@ -110,7 +110,7 @@ public class PortfolioScreen extends AbstractContainerScreen<PortfolioMenu> {
 
   @Override
   public void render(@NotNull PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
-    // 1.18.2 API: renderBackground takes only PoseStack
+    // 1.19.2 API: renderBackground takes only PoseStack
     this.renderBackground(poseStack);
     super.render(poseStack, mouseX, mouseY, partialTick);
     this.renderTooltip(poseStack, mouseX, mouseY);
@@ -135,7 +135,7 @@ public class PortfolioScreen extends AbstractContainerScreen<PortfolioMenu> {
    */
   private void onSortPressed(Button button) {
     // Send sort request to server
-    MystcraftNetwork.sendToServer(new ContainerActionPacket(
+    ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
         ContainerActionPacket.Action.PORTFOLIO_SORT,
         menu.containerId,
         false,

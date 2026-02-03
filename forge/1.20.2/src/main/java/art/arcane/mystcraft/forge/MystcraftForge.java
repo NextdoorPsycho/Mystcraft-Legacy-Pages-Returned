@@ -1,32 +1,18 @@
 package art.arcane.mystcraft.forge;
 
 import art.arcane.mystcraft.Mystcraft;
-import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
-import art.arcane.mystcraft.client.AgeColorUtils;
-import art.arcane.mystcraft.client.AgeDimensionSpecialEffects;
 import art.arcane.mystcraft.config.ForgeMystcraftConfig;
 import art.arcane.mystcraft.network.ForgeMystcraftNetwork;
-import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.platform.ForgeEventHelper;
-import art.arcane.mystcraft.portal.PortalUtils;
 import art.arcane.mystcraft.registry.*;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import com.floopowder.api.Floo;
 import com.floopowder.forge.ForgeFlooRegistry;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.color.block.BlockColor;
-import net.minecraft.client.color.item.ItemColor;
-import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.FoliageColor;
-import net.minecraft.world.level.GrassColor;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.common.MinecraftForge;
@@ -247,82 +233,82 @@ public class MystcraftForge {
     @SubscribeEvent
     public static void onRegisterBlockColors(net.minecraftforge.client.event.RegisterColorHandlersEvent.Block event) {
       // Custom grass color handler with multi-color noise support
-      BlockColor grassColor = (state, level, pos, tintIndex) -> {
+      net.minecraft.client.color.block.BlockColor grassColor = (state, level, pos, tintIndex) -> {
         if (level == null || pos == null) {
-          return GrassColor.getDefaultColor();
+          return net.minecraft.world.level.GrassColor.getDefaultColor();
         }
 
-        int ageUID = AgeColorUtils.getCurrentAgeUID();
+        int ageUID = art.arcane.mystcraft.client.AgeColorUtils.getCurrentAgeUID();
         if (ageUID >= 0) {
-          java.util.List<Integer> colors = ClientAgeDataCache.getGrassColors(ageUID);
+          java.util.List<Integer> colors = art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache.getGrassColors(ageUID);
           if (colors.size() == 1) {
             return colors.get(0);
           } else if (colors.size() >= 2) {
-            return AgeColorUtils.selectColorFromPalette(colors, pos, ageUID);
+            return art.arcane.mystcraft.client.AgeColorUtils.selectColorFromPalette(colors, pos, ageUID);
           }
         }
 
-        return BiomeColors.getAverageGrassColor(level, pos);
+        return net.minecraft.client.renderer.BiomeColors.getAverageGrassColor(level, pos);
       };
 
       // Custom foliage color handler
-      BlockColor foliageColor = (state, level, pos, tintIndex) -> {
+      net.minecraft.client.color.block.BlockColor foliageColor = (state, level, pos, tintIndex) -> {
         if (level == null || pos == null) {
-          return FoliageColor.getDefaultColor();
+          return net.minecraft.world.level.FoliageColor.getDefaultColor();
         }
 
-        int ageUID = AgeColorUtils.getCurrentAgeUID();
+        int ageUID = art.arcane.mystcraft.client.AgeColorUtils.getCurrentAgeUID();
         if (ageUID >= 0) {
-          int customColor = ClientAgeDataCache.getFoliageColor(ageUID);
+          int customColor = art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache.getFoliageColor(ageUID);
           if (customColor != -1) {
             return customColor;
           }
         }
 
-        return BiomeColors.getAverageFoliageColor(level, pos);
+        return net.minecraft.client.renderer.BiomeColors.getAverageFoliageColor(level, pos);
       };
 
       // Custom water color handler
-      BlockColor waterColor = (state, level, pos, tintIndex) -> {
+      net.minecraft.client.color.block.BlockColor waterColor = (state, level, pos, tintIndex) -> {
         if (level == null || pos == null) {
           return 0x3F76E4;
         }
 
-        int ageUID = AgeColorUtils.getCurrentAgeUID();
+        int ageUID = art.arcane.mystcraft.client.AgeColorUtils.getCurrentAgeUID();
         if (ageUID >= 0) {
-          int customColor = ClientAgeDataCache.getWaterColor(ageUID);
+          int customColor = art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache.getWaterColor(ageUID);
           if (customColor != -1) {
             return customColor;
           }
         }
 
-        return BiomeColors.getAverageWaterColor(level, pos);
+        return net.minecraft.client.renderer.BiomeColors.getAverageWaterColor(level, pos);
       };
 
       // Register for grass blocks
       event.register(grassColor,
-          Blocks.GRASS_BLOCK, Blocks.GRASS, Blocks.FERN,
-          Blocks.LARGE_FERN, Blocks.POTTED_FERN, Blocks.TALL_GRASS);
+          net.minecraft.world.level.block.Blocks.GRASS_BLOCK, net.minecraft.world.level.block.Blocks.GRASS, net.minecraft.world.level.block.Blocks.FERN,
+          net.minecraft.world.level.block.Blocks.LARGE_FERN, net.minecraft.world.level.block.Blocks.POTTED_FERN, net.minecraft.world.level.block.Blocks.TALL_GRASS);
 
       // Register for foliage blocks
       event.register(foliageColor,
-          Blocks.OAK_LEAVES, Blocks.SPRUCE_LEAVES, Blocks.BIRCH_LEAVES,
-          Blocks.JUNGLE_LEAVES, Blocks.ACACIA_LEAVES, Blocks.DARK_OAK_LEAVES,
-          Blocks.MANGROVE_LEAVES, Blocks.VINE);
+          net.minecraft.world.level.block.Blocks.OAK_LEAVES, net.minecraft.world.level.block.Blocks.SPRUCE_LEAVES, net.minecraft.world.level.block.Blocks.BIRCH_LEAVES,
+          net.minecraft.world.level.block.Blocks.JUNGLE_LEAVES, net.minecraft.world.level.block.Blocks.ACACIA_LEAVES, net.minecraft.world.level.block.Blocks.DARK_OAK_LEAVES,
+          net.minecraft.world.level.block.Blocks.MANGROVE_LEAVES, net.minecraft.world.level.block.Blocks.VINE);
 
       // Register for water
-      event.register(waterColor, Blocks.WATER, Blocks.WATER_CAULDRON);
+      event.register(waterColor, net.minecraft.world.level.block.Blocks.WATER, net.minecraft.world.level.block.Blocks.WATER_CAULDRON);
 
       // Portal color handler
-      BlockColor portalColor = (state, blockAndTintGetter, pos, tintIndex) -> {
+      net.minecraft.client.color.block.BlockColor portalColor = (state, blockAndTintGetter, pos, tintIndex) -> {
         if (pos == null) {
           return 0x4488FF;
         }
 
-        Level clientLevel = Minecraft.getInstance().level;
+        net.minecraft.world.level.Level clientLevel = net.minecraft.client.Minecraft.getInstance().level;
         if (clientLevel != null) {
-          BlockEntity be = PortalUtils.findReceptacle(clientLevel, pos);
-          if (be instanceof BookReceptacleBlockEntity receptacle) {
+          net.minecraft.world.level.block.entity.BlockEntity be = art.arcane.mystcraft.portal.PortalUtils.findReceptacle(clientLevel, pos);
+          if (be instanceof art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity receptacle) {
             return receptacle.getPortalColor();
           }
         }
@@ -342,42 +328,42 @@ public class MystcraftForge {
       event.register((stack, tintIndex) -> tintIndex == 1 ? 0xFF1A1A1A : 0xFFFFFFFF, ModItems.INK_BUCKET.get());
 
       // Item colors for grass/foliage blocks in inventory
-      ItemColor grassItemColor = (stack, tintIndex) -> {
-        int ageUID = AgeColorUtils.getCurrentAgeUID();
+      net.minecraft.client.color.item.ItemColor grassItemColor = (stack, tintIndex) -> {
+        int ageUID = art.arcane.mystcraft.client.AgeColorUtils.getCurrentAgeUID();
         if (ageUID >= 0) {
-          java.util.List<Integer> colors = ClientAgeDataCache.getGrassColors(ageUID);
+          java.util.List<Integer> colors = art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache.getGrassColors(ageUID);
           if (!colors.isEmpty()) {
             return colors.get(0);
           }
         }
-        return GrassColor.getDefaultColor();
+        return net.minecraft.world.level.GrassColor.getDefaultColor();
       };
 
-      ItemColor foliageItemColor = (stack, tintIndex) -> {
-        int ageUID = AgeColorUtils.getCurrentAgeUID();
+      net.minecraft.client.color.item.ItemColor foliageItemColor = (stack, tintIndex) -> {
+        int ageUID = art.arcane.mystcraft.client.AgeColorUtils.getCurrentAgeUID();
         if (ageUID >= 0) {
-          int customColor = ClientAgeDataCache.getFoliageColor(ageUID);
+          int customColor = art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache.getFoliageColor(ageUID);
           if (customColor != -1) {
             return customColor;
           }
         }
-        return FoliageColor.getDefaultColor();
+        return net.minecraft.world.level.FoliageColor.getDefaultColor();
       };
 
       event.register(grassItemColor,
-          Blocks.GRASS_BLOCK, Blocks.GRASS, Blocks.FERN,
-          Blocks.LARGE_FERN, Blocks.TALL_GRASS);
+          net.minecraft.world.level.block.Blocks.GRASS_BLOCK, net.minecraft.world.level.block.Blocks.GRASS, net.minecraft.world.level.block.Blocks.FERN,
+          net.minecraft.world.level.block.Blocks.LARGE_FERN, net.minecraft.world.level.block.Blocks.TALL_GRASS);
 
       event.register(foliageItemColor,
-          Blocks.OAK_LEAVES, Blocks.SPRUCE_LEAVES, Blocks.BIRCH_LEAVES,
-          Blocks.JUNGLE_LEAVES, Blocks.ACACIA_LEAVES, Blocks.DARK_OAK_LEAVES,
-          Blocks.MANGROVE_LEAVES, Blocks.VINE);
+          net.minecraft.world.level.block.Blocks.OAK_LEAVES, net.minecraft.world.level.block.Blocks.SPRUCE_LEAVES, net.minecraft.world.level.block.Blocks.BIRCH_LEAVES,
+          net.minecraft.world.level.block.Blocks.JUNGLE_LEAVES, net.minecraft.world.level.block.Blocks.ACACIA_LEAVES, net.minecraft.world.level.block.Blocks.DARK_OAK_LEAVES,
+          net.minecraft.world.level.block.Blocks.MANGROVE_LEAVES, net.minecraft.world.level.block.Blocks.VINE);
     }
 
     @SubscribeEvent
     public static void onRegisterDimensionEffects(net.minecraftforge.client.event.RegisterDimensionSpecialEffectsEvent event) {
       ResourceLocation ageEffectsKey = new ResourceLocation(Mystcraft.MOD_ID, "age");
-      event.register(ageEffectsKey, new AgeDimensionSpecialEffects());
+      event.register(ageEffectsKey, new art.arcane.mystcraft.client.AgeDimensionSpecialEffects());
       Mystcraft.LOGGER.info("Registered shared DimensionSpecialEffects under key '{}'", ageEffectsKey);
     }
   }

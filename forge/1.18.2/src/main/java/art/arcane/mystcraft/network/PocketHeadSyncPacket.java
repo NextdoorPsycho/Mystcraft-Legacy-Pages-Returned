@@ -98,10 +98,11 @@ public class PocketHeadSyncPacket {
           ageData.setPocketHeadBlocks(face, blocks);
         }
       }
-      net.minecraft.world.level.chunk.ChunkGenerator generator = level.getChunkSource().getGenerator();
-      if (generator instanceof art.arcane.mystcraft.world.gen.AgeChunkGenerator ageGen) {
-        ageGen.refreshPocketHeadBlocks(level);
-      }
+      // 1.18.2: AgeChunkGenerator not ported
+      // net.minecraft.world.level.chunk.ChunkGenerator generator = level.getChunkSource().getGenerator();
+      // if (generator instanceof art.arcane.mystcraft.world.gen.AgeChunkGenerator ageGen) {
+      //   ageGen.refreshPocketHeadBlocks(level);
+      // }
       Mystcraft.LOGGER.info("[PocketHead] Applied client head palette for {}", player.getGameProfile().getName());
     });
   }

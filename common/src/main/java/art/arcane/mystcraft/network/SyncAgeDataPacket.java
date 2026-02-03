@@ -1,7 +1,6 @@
 package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
-import art.arcane.mystcraft.api.world.logic.ICelestial;
 import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -234,11 +233,13 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
      * Gets the list of celestial objects for the age.
      * Currently returns empty list - celestials are not synced via packets yet.
      * This will be populated when custom celestial symbols are implemented.
+     * Returns List<?> to avoid loading client-only ICelestial interface on server.
      *
      * @param ageUID The age UID
      * @return List of celestials (may be empty)
      */
-    public static List<ICelestial> getCelestials(int ageUID) {
+    @SuppressWarnings("rawtypes")
+    public static List getCelestials(int ageUID) {
       // TODO: Implement celestial serialization/deserialization when celestial symbols are added
       // For now, return empty list to use default sun/moon rendering
       return Collections.emptyList();

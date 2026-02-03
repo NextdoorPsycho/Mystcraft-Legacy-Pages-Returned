@@ -17,6 +17,8 @@ public final class Services {
   public static final IClientHelper CLIENT = load(IClientHelper.class);
   public static final IVersionHelper VERSION = load(IVersionHelper.class);
   public static final IAdvancementTriggerFactory ADVANCEMENTS = load(IAdvancementTriggerFactory.class);
+  public static final IRegistryHelper REGISTRY = load(IRegistryHelper.class);
+  public static final IComponentHelper COMPONENT = load(IComponentHelper.class);
 
   private Services() {
   }

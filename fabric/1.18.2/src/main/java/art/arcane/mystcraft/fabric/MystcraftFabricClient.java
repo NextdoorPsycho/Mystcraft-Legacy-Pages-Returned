@@ -2,10 +2,10 @@ package art.arcane.mystcraft.fabric;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.client.FabricAgeBlockColorHandler;
-import art.arcane.mystcraft.client.PocketHeadClientSync;
+// import art.arcane.mystcraft.client.PocketHeadClientSync;  // Not ported to 1.18.2 yet
 import art.arcane.mystcraft.client.model.BookstandModel;
 import art.arcane.mystcraft.client.model.WritingDeskModel;
-import art.arcane.mystcraft.client.render.DrawableWordManager;
+// import art.arcane.mystcraft.client.render.DrawableWordManager;  // Not ported to 1.18.2 yet
 import art.arcane.mystcraft.client.renderer.MystcraftFallingBlockRenderer;
 import art.arcane.mystcraft.client.screen.*;
 import art.arcane.mystcraft.network.FabricMystcraftNetwork;
@@ -31,12 +31,13 @@ public class MystcraftFabricClient implements ClientModInitializer {
     FabricMystcraftNetwork.registerClient();
 
     // Client -> Server head palette sync (dev/offline-safe)
-    ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> PocketHeadClientSync.requestSend());
-    ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> PocketHeadClientSync.reset());
-    ClientTickEvents.END_CLIENT_TICK.register(client -> PocketHeadClientSync.tick());
+    // PocketHeadClientSync not ported to 1.18.2 yet
+    // ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> PocketHeadClientSync.requestSend());
+    // ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> PocketHeadClientSync.reset());
+    // ClientTickEvents.END_CLIENT_TICK.register(client -> PocketHeadClientSync.tick());
 
     // Initialize client-side systems
-    DrawableWordManager.initialize();
+    // DrawableWordManager.initialize();  // Not ported to 1.18.2 yet
 
     // Register menu screens
     ScreenRegistry.register(FabricRegistries.INK_MIXER_MENU.get(), InkMixerScreen::new);

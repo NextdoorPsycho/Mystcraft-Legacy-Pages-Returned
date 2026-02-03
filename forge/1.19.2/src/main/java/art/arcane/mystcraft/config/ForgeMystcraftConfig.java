@@ -118,7 +118,7 @@ public class ForgeMystcraftConfig {
             "List of item IDs that can be used as book covers in the Book Binder.",
             "Default: leather and empty folders."
         )
-        .defineListAllowEmpty("bookBinderCoverItems", List.of(
+        .defineList("bookBinderCoverItems", List.of(
             "minecraft:leather",
             "mystcraft:folder"
         ), ForgeMystcraftConfig::isValidBlockId);

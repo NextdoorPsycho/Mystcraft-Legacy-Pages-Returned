@@ -22,9 +22,9 @@ public final class NetworkEvents_1_19_2 {
   @SubscribeEvent
   public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
     if (event.getEntity() instanceof ServerPlayer player) {
-      // Sync symbol registry to the joining player
-      ForgeMystcraftNetwork_1_19_2.sendToPlayer(new SymbolSyncPacket(), player);
-      Mystcraft.LOGGER.debug("Sent symbol sync packet to player {}", player.getName().getString());
+      // 1.19.2: SymbolSyncPacket not ported
+      // ForgeMystcraftNetwork_1_19_2.sendToPlayer(new SymbolSyncPacket(), player);
+      Mystcraft.LOGGER.debug("Player {} logged in (symbol sync disabled in 1.19.2)", player.getName().getString());
     }
   }
 

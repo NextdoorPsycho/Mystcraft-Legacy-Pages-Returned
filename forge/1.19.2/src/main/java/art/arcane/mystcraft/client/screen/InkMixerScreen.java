@@ -4,7 +4,7 @@ import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.data.InkEffects;
 import art.arcane.mystcraft.menu.InkMixerMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
-import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_19_2;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -246,7 +246,7 @@ public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
       if (!menu.getCarried().isEmpty() && menu.hasInk()) {
         // Send packet to server to consume item
         boolean rightClick = (button == 1);
-        MystcraftNetwork.sendToServer(new ContainerActionPacket(
+        ForgeMystcraftNetwork_1_19_2.sendToServer(new ContainerActionPacket(
             ContainerActionPacket.Action.INK_MIXER_ADD_ITEM,
             menu.containerId,
             rightClick

@@ -2,8 +2,8 @@ package art.arcane.mystcraft.event;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
-import art.arcane.mystcraft.command.MystcraftCommands;
-import art.arcane.mystcraft.instability.InstabilityManager;
+// import art.arcane.mystcraft.command.MystcraftCommands;  // Not ported to 1.18.2 yet
+// import art.arcane.mystcraft.instability.InstabilityManager;  // Not ported to 1.18.2 yet
 import art.arcane.mystcraft.network.FabricNetworkEvents;
 import art.arcane.mystcraft.platform.services.IEventHelper;
 import art.arcane.mystcraft.registry.FabricRegistries;
@@ -42,14 +42,15 @@ public final class FabricEventHelper implements IEventHelper {
   public static void registerAll() {
     // World tick: instability and age effects processing
     ServerTickEvents.END_WORLD_TICK.register(level -> {
-      InstabilityManager.onLevelTick(level);
-      AgeEffectsHandler.onLevelTick(level);
+      // InstabilityManager.onLevelTick(level);  // Not ported to 1.18.2 yet
+      // AgeEffectsHandler.onLevelTick(level);  // Not ported to 1.18.2 yet
     });
 
     // Command registration (1.18.2 uses v1 API without environment parameter)
-    CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
-      MystcraftCommands.registerCommands(dispatcher);
-    });
+    // Commands not ported to 1.18.2 yet
+    // CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
+    //   MystcraftCommands.registerCommands(dispatcher);
+    // });
 
     // Player login: guidebook delivery and age data sync
     ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {

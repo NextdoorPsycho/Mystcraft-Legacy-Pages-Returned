@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.network;
 
-import net.minecraft.client.Minecraft;
+import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
@@ -11,7 +12,7 @@ import net.minecraft.world.level.block.entity.LecternBlockEntity;
  * Packet sent from server to client to sync Mystcraft book data in a vanilla lectern.
  * This is needed because vanilla's LecternBlockEntity doesn't sync non-vanilla books.
  * <p>
- * Forge-specific implementation using direct field access via access transformer.
+ * Fabric-specific implementation using direct field access via access widener.
  */
 public record LecternBookSyncPacket(BlockPos pos, ItemStack book) {
 
@@ -29,8 +30,7 @@ public record LecternBookSyncPacket(BlockPos pos, ItemStack book) {
       return;
     }
     ctx.enqueueWork(() -> {
-      Minecraft mc = Minecraft.getInstance();
-      Level level = mc.level;
+      Level level = (Level) ClientAccess.getClientLevel();
       if (level == null) return;
 
       if (level.getBlockEntity(packet.pos) instanceof LecternBlockEntity lectern) {
@@ -41,10 +41,14 @@ public record LecternBookSyncPacket(BlockPos pos, ItemStack book) {
 
   /**
    * Sets the book on a client-side lectern using direct field access.
-   * Access transformer makes book and pageCount fields accessible.
+   * Access widener makes book and pageCount fields accessible.
    */
   public static void setBookOnClient(LecternBlockEntity lectern, ItemStack book) {
-    lectern.book = book;
-    lectern.pageCount = 1;
+    try {
+      lectern.book = book;
+      lectern.pageCount = 1;
+    } catch (Exception e) {
+      Mystcraft.LOGGER.error("[LecternBookSyncPacket] Failed to set book on client", e);
+    }
   }
 }

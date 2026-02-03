@@ -1,12 +1,10 @@
 package art.arcane.mystcraft.item;
 
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-
 import java.util.function.Consumer;
 
 /**
  * Forge-specific PageItem with custom BEWLR renderer.
+ * 1.19.2: PageItemRendererBEWLR not ported, using base PageItem behavior.
  */
 public class ForgePageItem extends PageItem {
 
@@ -14,13 +12,14 @@ public class ForgePageItem extends PageItem {
     super(properties);
   }
 
-  @Override
-  public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-    consumer.accept(new IClientItemExtensions() {
-      @Override
-      public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-        return art.arcane.mystcraft.client.render.PageItemRendererBEWLR.getInstance();
-      }
-    });
-  }
+  // 1.19.2: PageItemRendererBEWLR not ported, so no custom renderer
+  // @Override
+  // public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+  //   consumer.accept(new IClientItemExtensions() {
+  //     @Override
+  //     public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+  //       return art.arcane.mystcraft.client.render.PageItemRendererBEWLR.getInstance();
+  //     }
+  //   });
+  // }
 }

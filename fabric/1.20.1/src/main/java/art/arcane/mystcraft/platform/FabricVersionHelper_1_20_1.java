@@ -1,9 +1,13 @@
 package art.arcane.mystcraft.platform;
 
 import art.arcane.mystcraft.platform.services.IVersionHelper;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -41,5 +45,20 @@ public class FabricVersionHelper_1_20_1 implements IVersionHelper {
   public boolean usesNewRenderBackgroundAPI() {
     // 1.20.1 uses 1-parameter renderBackground(graphics)
     return false;
+  }
+
+  @Override
+  public Level getEntityLevel(Entity entity) {
+    return entity.level();
+  }
+
+  @Override
+  public BlockPos blockPosContaining(Vec3 vec) {
+    return BlockPos.containing(vec);
+  }
+
+  @Override
+  public BlockPos blockPosContaining(double x, double y, double z) {
+    return BlockPos.containing(x, y, z);
   }
 }

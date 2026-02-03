@@ -3,14 +3,16 @@ package art.arcane.mystcraft.platform;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.client.AgeColorUtils;
-import art.arcane.mystcraft.client.PocketHeadClientSync;
+// 1.19.2: PocketHeadClientSync excluded
+// import art.arcane.mystcraft.client.PocketHeadClientSync;
 import art.arcane.mystcraft.command.MystcraftCommands;
 import art.arcane.mystcraft.datapack.grammar.MystcraftGrammarReloadListener;
 import art.arcane.mystcraft.datapack.symbol.MystcraftSymbolReloadListener;
 import art.arcane.mystcraft.event.*;
 import art.arcane.mystcraft.instability.InstabilityManager;
 import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_19_2;
-import art.arcane.mystcraft.network.SymbolSyncPacket;
+// 1.19.2: SymbolSyncPacket excluded
+// import art.arcane.mystcraft.network.SymbolSyncPacket;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.platform.services.IEventHelper;
 import art.arcane.mystcraft.registry.ModItems;
@@ -159,16 +161,19 @@ public class ForgeEventHelper_1_19_2 implements IEventHelper {
   // ==================== Client Networking Sync ====================
 
   private void onClientLoggedIn(ClientPlayerNetworkEvent.LoggingIn event) {
-    PocketHeadClientSync.requestSend();
+    // 1.19.2: PocketHeadClientSync excluded
+    // PocketHeadClientSync.requestSend();
   }
 
   private void onClientLoggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
-    PocketHeadClientSync.reset();
+    // 1.19.2: PocketHeadClientSync excluded
+    // PocketHeadClientSync.reset();
   }
 
   private void onClientTick(TickEvent.ClientTickEvent event) {
     if (event.phase != TickEvent.Phase.END) return;
-    PocketHeadClientSync.tick();
+    // 1.19.2: PocketHeadClientSync excluded
+    // PocketHeadClientSync.tick();
   }
 
   // ==================== Player Login/Dimension Change Events ====================
@@ -177,8 +182,8 @@ public class ForgeEventHelper_1_19_2 implements IEventHelper {
     if (event.phase != TickEvent.Phase.END) return;
     if (!(event.level instanceof ServerLevel serverLevel)) return;
 
-    // Age effects (weather, ambient, etc.)
-    AgeEffectsHandler.onLevelTick(serverLevel);
+    // 1.19.2: AgeEffectsHandler excluded
+    // AgeEffectsHandler.onLevelTick(serverLevel);
 
     // Instability effects
     InstabilityManager.onLevelTick(serverLevel);
@@ -222,9 +227,9 @@ public class ForgeEventHelper_1_19_2 implements IEventHelper {
       // Age data sync
       AgeDataSyncHandler.onPlayerLoggedIn(player);
 
-      // Symbol sync
-      ForgeMystcraftNetwork_1_19_2.sendToPlayer(new SymbolSyncPacket(), player);
-      Mystcraft.LOGGER.debug("Sent symbol sync packet to player {}", player.getName().getString());
+      // 1.19.2: SymbolSyncPacket excluded
+      // ForgeMystcraftNetwork_1_19_2.sendToPlayer(new SymbolSyncPacket(), player);
+      // Mystcraft.LOGGER.debug("Sent symbol sync packet to player {}", player.getName().getString());
     }
   }
 
@@ -239,11 +244,12 @@ public class ForgeEventHelper_1_19_2 implements IEventHelper {
   }
 
   private void onLivingAttack(LivingAttackEvent event) {
-    LivingEntity entity = event.getEntity();
-    boolean cancel = AgeEffectsHandler.onLivingAttack(entity, event.getSource());
-    if (cancel) {
-      event.setCanceled(true);
-    }
+    // 1.19.2: AgeEffectsHandler excluded
+    // LivingEntity entity = event.getEntity();
+    // boolean cancel = AgeEffectsHandler.onLivingAttack(entity, event.getSource());
+    // if (cancel) {
+    //   event.setCanceled(true);
+    // }
   }
 
   private void onEntityJoinLevel(EntityJoinLevelEvent event) {

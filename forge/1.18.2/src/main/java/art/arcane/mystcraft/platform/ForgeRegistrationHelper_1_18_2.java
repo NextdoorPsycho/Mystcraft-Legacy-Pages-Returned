@@ -444,11 +444,12 @@ public class ForgeRegistrationHelper_1_18_2 implements IRegistrationHelper {
   }
 
   private void populateNetworkHandlers() {
-    art.arcane.mystcraft.network.MystcraftNetwork.sendToServerHandler = ForgeMystcraftNetwork_1_18_2::sendToServer;
-    art.arcane.mystcraft.network.MystcraftNetwork.sendToPlayerHandler = ForgeMystcraftNetwork_1_18_2::sendToPlayer;
-    art.arcane.mystcraft.network.MystcraftNetwork.sendToAllHandler = ForgeMystcraftNetwork_1_18_2::sendToAll;
-    art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingHandler = ForgeMystcraftNetwork_1_18_2::sendToTracking;
-    art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingBlockHandler = ForgeMystcraftNetwork_1_18_2::sendToTrackingBlock;
+    // 1.18.2: MystcraftNetwork.java is excluded from this build - use ForgeMystcraftNetwork_1_18_2 directly
+    // art.arcane.mystcraft.network.MystcraftNetwork.sendToServerHandler = ForgeMystcraftNetwork_1_18_2::sendToServer;
+    // art.arcane.mystcraft.network.MystcraftNetwork.sendToPlayerHandler = ForgeMystcraftNetwork_1_18_2::sendToPlayer;
+    // art.arcane.mystcraft.network.MystcraftNetwork.sendToAllHandler = ForgeMystcraftNetwork_1_18_2::sendToAll;
+    // art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingHandler = ForgeMystcraftNetwork_1_18_2::sendToTracking;
+    // art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingBlockHandler = ForgeMystcraftNetwork_1_18_2::sendToTrackingBlock;
   }
 
   // The following methods can be used by common code to register additional content

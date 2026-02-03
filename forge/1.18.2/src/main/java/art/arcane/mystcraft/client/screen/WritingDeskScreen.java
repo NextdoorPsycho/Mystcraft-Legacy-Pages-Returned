@@ -10,7 +10,7 @@ import art.arcane.mystcraft.item.FolderItem;
 import art.arcane.mystcraft.item.PortfolioItem;
 import art.arcane.mystcraft.menu.WritingDeskMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
-import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_18_2;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.floopowder.api.IFlooGraphics;
 import com.floopowder.screen.FlooContainerScreen;
@@ -173,7 +173,7 @@ public class WritingDeskScreen extends FlooContainerScreen<WritingDeskMenu> {
   }
 
   private void onNameChanged(String text) {
-    MystcraftNetwork.sendToServer(new ContainerActionPacket(
+    ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
         ContainerActionPacket.Action.WRITING_DESK_SET_TITLE,
         menu.containerId,
         false,
@@ -530,7 +530,7 @@ public class WritingDeskScreen extends FlooContainerScreen<WritingDeskMenu> {
       // Otherwise, set as active tab
       if (activeTabSlot != slot) {
         activeTabSlot = slot;
-        MystcraftNetwork.sendToServer(new ContainerActionPacket(
+        ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
             ContainerActionPacket.Action.WRITING_DESK_SET_ACTIVE_TAB,
             menu.containerId,
             slot
@@ -618,7 +618,7 @@ public class WritingDeskScreen extends FlooContainerScreen<WritingDeskMenu> {
 
     @Override
     public void place(int index, boolean single) {
-      MystcraftNetwork.sendToServer(new ContainerActionPacket(
+      ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
           ContainerActionPacket.Action.WRITING_DESK_ADD_TO_SURFACE,
           menu.containerId,
           single,
@@ -629,7 +629,7 @@ public class WritingDeskScreen extends FlooContainerScreen<WritingDeskMenu> {
 
     @Override
     public void pickup(MystGuiPageSurface.PositionableItem item) {
-      MystcraftNetwork.sendToServer(new ContainerActionPacket(
+      ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
           ContainerActionPacket.Action.WRITING_DESK_REMOVE_FROM_SURFACE,
           menu.containerId,
           item.slotId
@@ -640,7 +640,7 @@ public class WritingDeskScreen extends FlooContainerScreen<WritingDeskMenu> {
     public void copy(MystGuiPageSurface.PositionableItem item) {
       ResourceLocation symbol = Page.getSymbol(item.itemstack);
       if (symbol != null) {
-        MystcraftNetwork.sendToServer(new ContainerActionPacket(
+        ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
             ContainerActionPacket.Action.WRITING_DESK_WRITE_SYMBOL,
             menu.containerId,
             false,
@@ -672,7 +672,7 @@ public class WritingDeskScreen extends FlooContainerScreen<WritingDeskMenu> {
     @Override
     public void onItemPlace(int index, boolean single) {
       // Insert page into book
-      MystcraftNetwork.sendToServer(new ContainerActionPacket(
+      ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
           ContainerActionPacket.Action.WRITING_DESK_ADD_TO_BOOK,
           menu.containerId,
           single,
@@ -684,7 +684,7 @@ public class WritingDeskScreen extends FlooContainerScreen<WritingDeskMenu> {
     @Override
     public void onItemRemove(int index) {
       // Remove page from book
-      MystcraftNetwork.sendToServer(new ContainerActionPacket(
+      ForgeMystcraftNetwork_1_18_2.sendToServer(new ContainerActionPacket(
           ContainerActionPacket.Action.WRITING_DESK_REMOVE_FROM_BOOK,
           menu.containerId,
           index

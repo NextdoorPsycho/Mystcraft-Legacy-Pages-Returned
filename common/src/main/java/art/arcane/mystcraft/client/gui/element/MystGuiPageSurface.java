@@ -2,9 +2,8 @@ package art.arcane.mystcraft.client.gui.element;
 
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.Page;
-import com.floopowder.api.FlooTextHelper;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
-import com.floopowder.api.IFlooGraphics;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -38,7 +37,7 @@ public class MystGuiPageSurface extends MystGuiElement {
   }
 
   @Override
-  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
     int guiLeft = getLeft();
     int guiTop = getTop();
     int scrollbarWidth = 16;
@@ -124,8 +123,8 @@ public class MystGuiPageSurface extends MystGuiElement {
     if (scrollOffset > maxScroll) scrollOffset = maxScroll;
   }
 
-  private void renderPage(IFlooGraphics graphics, ItemStack stack, int x, int y, int width, int height) {
-    // Render the page using IFlooGraphics abstraction
+  private void renderPage(GuiGraphics graphics, ItemStack stack, int x, int y, int width, int height) {
+    // Render the page using GuiGraphics abstraction
     // Draw a simple representation - platform-specific versions can override for D'ni symbols
     graphics.renderItem(stack, x + (width - 16) / 2, y + (height - 16) / 2);
   }
@@ -154,7 +153,7 @@ public class MystGuiPageSurface extends MystGuiElement {
     // Add display name
     String displayName = getDisplayName(stack);
     if (displayName != null) {
-      hoverTooltip.add(FlooTextHelper.literal(displayName));
+      hoverTooltip.add(Component.literal(displayName));
     }
   }
 
@@ -222,10 +221,10 @@ public class MystGuiPageSurface extends MystGuiElement {
   }
 
   @Override
-  protected boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-    if (scrollY > 0) {
+  protected boolean onMouseScrolled(double mouseX, double mouseY, double delta) {
+    if (delta > 0) {
       scrollOffset = Math.max(0, scrollOffset - 20);
-    } else if (scrollY < 0) {
+    } else if (delta < 0) {
       scrollOffset = Math.min(maxScroll, scrollOffset + 20);
     }
     return true;

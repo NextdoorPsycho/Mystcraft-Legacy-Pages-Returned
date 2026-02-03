@@ -5,8 +5,8 @@ import art.arcane.mystcraft.data.InkEffects;
 import art.arcane.mystcraft.menu.InkMixerMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
-import com.floopowder.screen.FlooContainerScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -27,7 +27,7 @@ import java.util.Map;
  * Screen for the Ink Mixer block.
  * Click on the basin area while holding an item to add it to the ink.
  */
-public class InkMixerScreen extends FlooContainerScreen<InkMixerMenu> {
+public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
 
   private static final ResourceLocation TEXTURE =
       new ResourceLocation(Mystcraft.MOD_ID, "gui/inkmixer.png");

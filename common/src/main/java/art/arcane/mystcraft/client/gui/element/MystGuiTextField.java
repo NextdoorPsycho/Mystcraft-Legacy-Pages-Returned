@@ -1,7 +1,7 @@
 package art.arcane.mystcraft.client.gui.element;
 
-import com.floopowder.api.IFlooGraphics;
 import net.minecraft.SharedConstants;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import org.lwjgl.glfw.GLFW;
 
@@ -97,7 +97,7 @@ public class MystGuiTextField extends MystGuiElement {
   }
 
   @Override
-  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
     int x = getLeft();
     int y = getTop();
 

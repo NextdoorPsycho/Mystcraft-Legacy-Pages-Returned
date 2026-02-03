@@ -67,8 +67,6 @@ dependencies {
 
     compileOnly project(':common')
 
-    // Floo_Powder sources are compiled directly as part of this module
-
     // TOML config library (same as Forge/NeoForge use)
     implementation "com.electronwill.night-config:core:3.6.7"
     implementation "com.electronwill.night-config:toml:3.6.7"
@@ -81,10 +79,6 @@ tasks.named('compileJava', JavaCompile) {
         // Platform-specific packet implementations (use access widener for direct field access)
         exclude '**/network/LecternBookSyncPacket.java'
     })
-    // Include Floo_Powder common API
-    source(fileTree(rootProject.file('Floo_Powder/common/src/main/java')))
-    // Include Floo_Powder fabric 1.20.2 adapter sources
-    source(fileTree(rootProject.file('Floo_Powder/fabric/1.20.2/src/main/java')))
 }
 
 tasks.named('processResources', ProcessResources) {

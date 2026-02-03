@@ -6,8 +6,8 @@ import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.BookBinderMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
-import com.floopowder.screen.FlooContainerScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.renderer.GameRenderer;
@@ -23,7 +23,7 @@ import java.util.List;
  * Screen for the Book Binder block.
  * Includes text field for book name and scrollable page list.
  */
-public class BookBinderScreen extends FlooContainerScreen<BookBinderMenu> {
+public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
   private static final ResourceLocation TEXTURE =
       new ResourceLocation(Mystcraft.MOD_ID, "gui/pagebinder.png");
@@ -297,8 +297,17 @@ public class BookBinderScreen extends FlooContainerScreen<BookBinderMenu> {
     return super.mouseClicked(mouseX, mouseY, button);
   }
 
-  @Override
-  protected boolean flooMouseScrolled(double mouseX, double mouseY, double verticalDelta) {
+  // 1.20.1 signature (3 params)
+  public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    return handleMouseScroll(mouseX, mouseY, delta);
+  }
+
+  // 1.20.2 signature (4 params)
+  public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    return handleMouseScroll(mouseX, mouseY, scrollY);
+  }
+
+  private boolean handleMouseScroll(double mouseX, double mouseY, double delta) {
     // Scroll the page list
     int listLeft = this.leftPos + PAGE_LIST_X;
     int listTop = this.topPos + PAGE_LIST_Y;
@@ -310,9 +319,9 @@ public class BookBinderScreen extends FlooContainerScreen<BookBinderMenu> {
       List<ItemStack> pages = menu.getBlockEntity().getPageList();
       int maxScroll = Math.max(0, pages.size() - PAGES_PER_ROW * 2);
 
-      if (verticalDelta > 0) {
+      if (delta > 0) {
         scrollOffset = Math.max(0, scrollOffset - PAGES_PER_ROW);
-      } else if (verticalDelta < 0) {
+      } else if (delta < 0) {
         scrollOffset = Math.min(maxScroll, scrollOffset + PAGES_PER_ROW);
       }
       return true;

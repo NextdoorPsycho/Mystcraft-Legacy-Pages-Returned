@@ -4,8 +4,8 @@ import art.arcane.mystcraft.item.PortfolioItem;
 import art.arcane.mystcraft.menu.PortfolioMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
-import com.floopowder.screen.FlooContainerScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.GameRenderer;
@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
  * Shows 64 page slots (8 rows x 8 columns) plus player inventory.
  * Includes a SORT button - Portfolio's unique feature for organizing pages.
  */
-public class PortfolioScreen extends FlooContainerScreen<PortfolioMenu> {
+public class PortfolioScreen extends AbstractContainerScreen<PortfolioMenu> {
 
   // Slot colors for programmatic rendering (matches vanilla Minecraft)
   private static final int SLOT_BORDER_DARK = 0xFF373737;

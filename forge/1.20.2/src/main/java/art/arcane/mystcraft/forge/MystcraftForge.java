@@ -8,8 +8,6 @@ import art.arcane.mystcraft.registry.*;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
-import com.floopowder.api.Floo;
-import com.floopowder.forge.ForgeFlooRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -45,10 +43,6 @@ public class MystcraftForge {
     IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
     Mystcraft.LOGGER.info("[Mystcraft] Forge initialization starting...");
-
-    // Initialize Floo_Powder registry FIRST - before any code that might access ModItems/ModBlocks
-    Floo.setRegistry(new ForgeFlooRegistry(Mystcraft.MOD_ID, modEventBus));
-    Mystcraft.LOGGER.info("[Mystcraft] Floo registry initialized");
 
     // Register Forge config
     ForgeMystcraftConfig.register();

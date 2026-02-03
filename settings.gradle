@@ -28,15 +28,8 @@ plugins {
 
 rootProject.name = 'Mystcraft'
 include('common')
-include('fabric:1.18.2')
-include('fabric:1.19.2')
 include('fabric:1.20.1')
 include('fabric:1.20.2')
-include('forge:1.18.2')
-include('forge:1.19.2')
 include('forge:1.20.1')
 include('forge:1.20.2')
 include('neoforge:1.20.2')
-
-// Floo_Powder sources are compiled directly as part of each platform module
-// to avoid circular dependencies with VanillaGradle plugins

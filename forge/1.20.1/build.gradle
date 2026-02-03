@@ -87,14 +87,11 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version_1_20_1}-${forge_version_1_20_1}"
     compileOnly project(':common')
 
-    // Floo_Powder sources are compiled directly as part of this module
-
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
 }
 
 shadowJar {
     configurations = [project.configurations.shadow]
-    relocate 'com.floopowder', 'com.mystcraft.lib.floopowder'
     archiveClassifier = '' // Replace the main jar
 }
 
@@ -120,12 +117,6 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/network/PocketHeadSyncPacket.java'
         exclude '**/network/OpenLecternBookPacket.java'
     })
-    // Include Floo_Powder common API
-    source(fileTree(rootProject.file('Floo_Powder/common/src/main/java')))
-    // Include Floo_Powder forge 1.20.1 adapter sources
-    source(fileTree(rootProject.file('Floo_Powder/forge/1.20.1/src/main/java')))
-    // The module's own src/main/java sources (including 1.20.1-specific screens)
-    // are automatically included via sourceSets.main
 }
 
 tasks.named('processResources', ProcessResources) {

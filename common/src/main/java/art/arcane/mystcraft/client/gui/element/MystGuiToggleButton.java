@@ -1,6 +1,6 @@
 package art.arcane.mystcraft.client.gui.element;
 
-import com.floopowder.api.IFlooGraphics;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,7 +55,7 @@ public class MystGuiToggleButton extends MystGuiElement {
   }
 
   @Override
-  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
     int x = getLeft();
     int y = getTop();
     boolean state = getState();

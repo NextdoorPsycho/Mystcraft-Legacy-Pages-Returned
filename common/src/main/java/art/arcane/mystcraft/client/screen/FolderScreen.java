@@ -2,8 +2,8 @@ package art.arcane.mystcraft.client.screen;
 
 import art.arcane.mystcraft.item.FolderItem;
 import art.arcane.mystcraft.menu.FolderMenu;
-import com.floopowder.screen.FlooContainerScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * Shows 16 page slots (2 rows x 8 columns) plus player inventory.
  * Renders slots programmatically with standard Minecraft styling.
  */
-public class FolderScreen extends FlooContainerScreen<FolderMenu> {
+public class FolderScreen extends AbstractContainerScreen<FolderMenu> {
 
   // Slot colors for programmatic rendering (matches vanilla Minecraft)
   private static final int SLOT_BORDER_DARK = 0xFF373737;

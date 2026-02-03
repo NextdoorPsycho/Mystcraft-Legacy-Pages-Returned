@@ -7,84 +7,41 @@ idea {
     project {
         settings {
             runConfigurations {
-                // Build tasks
                 "Build Psycho Jars"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':buildPsychoJars']
                 }
                 "Build XComp Jars"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':buildXCompJars']
                 }
-                // Fabric 1.20.1
                 "Fabric 1.20.1 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':fabric:1.20.1:cleanAllWorlds', ':fabric:1.20.1:runClient']
-                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
+                    taskNames = [':fabric:1.20.1:runClient']
                 }
                 "Fabric 1.20.1 Server"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':fabric:1.20.1:runServer']
                 }
-                // Fabric 1.20.2
                 "Fabric 1.20.2 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':fabric:1.20.2:cleanAllWorlds', ':fabric:1.20.2:runClient']
-                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
+                    taskNames = [':fabric:1.20.2:runClient']
                 }
                 "Fabric 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':fabric:1.20.2:runServer']
                 }
-                // Forge 1.20.1
                 "Forge 1.20.1 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:1.20.1:cleanAllWorlds', ':forge:1.20.1:runClient']
-                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
+                    taskNames = [':forge:1.20.1:runClient']
                 }
                 "Forge 1.20.1 Server"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':forge:1.20.1:runServer']
                 }
-                // Forge 1.20.2
                 "Forge 1.20.2 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:1.20.2:cleanAllWorlds', ':forge:1.20.2:runClient']
-                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
+                    taskNames = [':forge:1.20.2:runClient']
                 }
                 "Forge 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':forge:1.20.2:runServer']
                 }
-                // NeoForge 1.20.2
                 "NeoForge 1.20.2 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':neoforge:1.20.2:cleanAllWorlds', ':neoforge:1.20.2:runClient']
-                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
+                    taskNames = [':neoforge:1.20.2:runClient']
                 }
                 "NeoForge 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':neoforge:1.20.2:runServer']
-                }
-                // Fabric 1.19.2
-                "Fabric 1.19.2 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':fabric:1.19.2:cleanAllWorlds', ':fabric:1.19.2:runClient']
-                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
-                }
-                "Fabric 1.19.2 Server"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':fabric:1.19.2:runServer']
-                }
-                // Forge 1.19.2
-                "Forge 1.19.2 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:1.19.2:cleanAllWorlds', ':forge:1.19.2:runClient']
-                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
-                }
-                "Forge 1.19.2 Server"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:1.19.2:runServer']
-                }
-                // Fabric 1.18.2
-                "Fabric 1.18.2 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':fabric:1.18.2:cleanAllWorlds', ':fabric:1.18.2:runClient']
-                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
-                }
-                "Fabric 1.18.2 Server"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':fabric:1.18.2:runServer']
-                }
-                // Forge 1.18.2
-                "Forge 1.18.2 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:1.18.2:cleanAllWorlds', ':forge:1.18.2:runClient']
-                    scriptParameters = '--args="--quickPlaySingleplayer \'New World\'"'
-                }
-                "Forge 1.18.2 Server"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':forge:1.18.2:runServer']
                 }
             }
         }
@@ -97,8 +54,8 @@ tasks.register('cleanLibs') {
 
     doLast {
         def platforms = [
-            'fabric:1.18.2', 'fabric:1.19.2', 'fabric:1.20.1', 'fabric:1.20.2',
-            'forge:1.18.2', 'forge:1.19.2', 'forge:1.20.1', 'forge:1.20.2',
+            'fabric:1.20.1', 'fabric:1.20.2',
+            'forge:1.20.1', 'forge:1.20.2',
             'neoforge:1.20.2'
         ]
         platforms.each { platform ->
@@ -131,40 +88,10 @@ tasks.register('cleanLibs') {
 // Build tasks
 tasks.register('buildAllVersions') {
     group = 'build'
-    description = 'Builds all platform/version combinations (9 JARs total)'
-    dependsOn ':fabric:1.18.2:build', ':fabric:1.19.2:build',
-              ':fabric:1.20.1:build', ':fabric:1.20.2:build',
-              ':forge:1.18.2:build', ':forge:1.19.2:build',
+    description = 'Builds all platform/version combinations (5 JARs total)'
+    dependsOn ':fabric:1.20.1:build', ':fabric:1.20.2:build',
               ':forge:1.20.1:build', ':forge:1.20.2:build',
               ':neoforge:1.20.2:build'
-    mustRunAfter 'cleanLibs'
-}
-
-tasks.register('build_1_18_2') {
-    group = 'build'
-    description = 'Builds 1.18.2 for Fabric and Forge'
-    dependsOn ':fabric:1.18.2:build', ':forge:1.18.2:build'
-    mustRunAfter 'cleanLibs'
-}
-
-tasks.register('build_1_19_2') {
-    group = 'build'
-    description = 'Builds 1.19.2 for Fabric and Forge'
-    dependsOn ':fabric:1.19.2:build', ':forge:1.19.2:build'
-    mustRunAfter 'cleanLibs'
-}
-
-tasks.register('build_1_20_1') {
-    group = 'build'
-    description = 'Builds 1.20.1 for Fabric and Forge'
-    dependsOn ':fabric:1.20.1:build', ':forge:1.20.1:build'
-    mustRunAfter 'cleanLibs'
-}
-
-tasks.register('build_1_20_2') {
-    group = 'build'
-    description = 'Builds 1.20.2 for all platforms'
-    dependsOn ':fabric:1.20.2:build', ':forge:1.20.2:build', ':neoforge:1.20.2:build'
     mustRunAfter 'cleanLibs'
 }
 
@@ -183,16 +110,6 @@ def registerCopyTask = { String name, String outputProp ->
         }
 
         // All version-specific builds
-        from(project(':fabric:1.18.2').layout.buildDirectory.dir('libs')) {
-            include '*.jar'
-            exclude '*-sources*'
-            exclude '*-dev.jar'
-        }
-        from(project(':fabric:1.19.2').layout.buildDirectory.dir('libs')) {
-            include '*.jar'
-            exclude '*-sources*'
-            exclude '*-dev.jar'
-        }
         from(project(':fabric:1.20.1').layout.buildDirectory.dir('libs')) {
             include '*.jar'
             exclude '*-sources*'
@@ -202,14 +119,6 @@ def registerCopyTask = { String name, String outputProp ->
             include '*.jar'
             exclude '*-sources*'
             exclude '*-dev.jar'
-        }
-        from(project(':forge:1.18.2').layout.buildDirectory.dir('libs')) {
-            include '*.jar'
-            exclude '*-sources*'
-        }
-        from(project(':forge:1.19.2').layout.buildDirectory.dir('libs')) {
-            include '*.jar'
-            exclude '*-sources*'
         }
         from(project(':forge:1.20.1').layout.buildDirectory.dir('libs')) {
             include '*.jar'
@@ -348,65 +257,30 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 
-        processResources {
-
-            def expandProps = [
-
-                    'version'                      : version,
-
-                    'group'                        : project.group,
-
-                    'minecraft_version'            : minecraft_version,
-
-                    'minecraft_version_range'      : minecraft_version_range,
-
-                    'fabric_version'               : fabric_version,
-
-                    'fabric_loader_version'        : fabric_loader_version,
-
-                    'mod_name'                     : mod_name,
-
-                    'mod_author'                   : mod_author,
-
-                    'mod_id'                       : mod_id,
-
-                    'license'                      : license,
-
-                    'description'                  : description,
-
-                    'neoforge_version'             : neoforge_version,
-
-                    'neoforge_loader_version_range': neoforge_loader_version_range,
-
-                    'forge_version'                : forge_version,
-
-                    'forge_loader_version_range'   : forge_loader_version_range,
-
-                    'credits'                      : credits,
-
-                    'java_version'           : java_version
-
-            ]
-
-    
-
-            filesMatching(['pack.mcmeta', 'fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
-
-                expand expandProps
-
-            }
-
-    
-
-            inputs.properties(expandProps)
-
+    processResources {
+        def expandProps = [
+            'version'                      : version,
+            'group'                        : project.group,
+            'minecraft_version'            : minecraft_version,
+            'minecraft_version_range'      : minecraft_version_range,
+            'fabric_version'               : fabric_version,
+            'fabric_loader_version'        : fabric_loader_version,
+            'forge_version'                : forge_version,
+            'forge_loader_version_range'   : forge_loader_version_range,
+            'neoforge_version'             : neoforge_version,
+            'neoforge_loader_version_range': neoforge_loader_version_range,
+            'mod_name'                     : mod_name,
+            'mod_author'                   : mod_author,
+            'mod_id'                       : mod_id,
+            'license'                      : license,
+            'description'                  : description,
+            'credits'                      : credits,
+            'java_version'                 : java_version
+        ]
+        filesMatching(['pack.mcmeta', 'fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
+            expand expandProps
         }
-
+        inputs.properties(expandProps)
     }
+}
 
-    
-
-    // Floo_Powder sources are compiled directly as part of each platform module
-    // to avoid circular dependencies with VanillaGradle plugins
-
-    

@@ -78,13 +78,10 @@ repositories {
 dependencies {
     implementation "net.neoforged:neoforge:${neoforge_version_1_20_2}"
     compileOnly project(':common')
-
-    // Floo_Powder sources are compiled directly as part of this module
 }
 
 shadowJar {
     configurations = [project.configurations.shadow]
-    relocate 'com.floopowder', 'com.mystcraft.lib.floopowder'
     archiveClassifier = '' // Replace the main jar
 }
 
@@ -93,10 +90,6 @@ tasks.named('compileJava', JavaCompile) {
         // Platform-specific packet implementations (use access transformer for direct field access)
         exclude '**/network/LecternBookSyncPacket.java'
     })
-    // Include Floo_Powder common API
-    source(fileTree(rootProject.file('Floo_Powder/common/src/main/java')))
-    // Include Floo_Powder neoforge 1.20.2 adapter sources
-    source(fileTree(rootProject.file('Floo_Powder/neoforge/1.20.2/src/main/java')))
 }
 
 tasks.named('processResources', ProcessResources) {

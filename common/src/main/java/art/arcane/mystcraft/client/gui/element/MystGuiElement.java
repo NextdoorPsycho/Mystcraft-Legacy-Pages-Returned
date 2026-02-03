@@ -1,7 +1,7 @@
 package art.arcane.mystcraft.client.gui.element;
 
-import com.floopowder.api.IFlooGraphics;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -127,7 +127,7 @@ public abstract class MystGuiElement {
   protected void onTick() {
   }
 
-  public void renderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
+  public void renderBackground(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
     if (!visible) return;
     doRenderBackground(graphics, partialTick, mouseX, mouseY);
     for (MystGuiElement child : children) {
@@ -135,10 +135,10 @@ public abstract class MystGuiElement {
     }
   }
 
-  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
   }
 
-  public void renderForeground(IFlooGraphics graphics, int mouseX, int mouseY) {
+  public void renderForeground(GuiGraphics graphics, int mouseX, int mouseY) {
     if (!visible) return;
     doRenderForeground(graphics, mouseX, mouseY);
     for (MystGuiElement child : children) {
@@ -146,7 +146,7 @@ public abstract class MystGuiElement {
     }
   }
 
-  protected void doRenderForeground(IFlooGraphics graphics, int mouseX, int mouseY) {
+  protected void doRenderForeground(GuiGraphics graphics, int mouseX, int mouseY) {
   }
 
   @Nullable
@@ -218,20 +218,20 @@ public abstract class MystGuiElement {
     return false;
   }
 
-  public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+  public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
     if (!visible || !enabled) return false;
     for (int i = children.size() - 1; i >= 0; i--) {
-      if (children.get(i).mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+      if (children.get(i).mouseScrolled(mouseX, mouseY, delta)) {
         return true;
       }
     }
     if (contains(mouseX, mouseY)) {
-      return onMouseScrolled(mouseX, mouseY, scrollX, scrollY);
+      return onMouseScrolled(mouseX, mouseY, delta);
     }
     return false;
   }
 
-  protected boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+  protected boolean onMouseScrolled(double mouseX, double mouseY, double delta) {
     return false;
   }
 

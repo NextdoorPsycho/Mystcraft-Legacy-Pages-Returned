@@ -3,8 +3,7 @@ package art.arcane.mystcraft.client.gui.element;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
-import com.floopowder.api.FlooTextHelper;
-import com.floopowder.api.IFlooGraphics;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -31,7 +30,7 @@ public class MystGuiScrollablePages extends MystGuiElement {
   }
 
   @Override
-  protected void doRenderBackground(IFlooGraphics graphics, float partialTick, int mouseX, int mouseY) {
+  protected void doRenderBackground(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
     int guiLeft = getLeft();
     int guiTop = getTop();
 
@@ -118,7 +117,7 @@ public class MystGuiScrollablePages extends MystGuiElement {
     if (symbolId != null) {
       IAgeSymbol symbol = SymbolRegistry.get(symbolId);
       if (symbol != null) {
-        hoverTooltip.add(FlooTextHelper.literal(symbol.getLocalizedName()));
+        hoverTooltip.add(Component.literal(symbol.getLocalizedName()));
       }
     }
   }
@@ -156,7 +155,7 @@ public class MystGuiScrollablePages extends MystGuiElement {
   }
 
   @Override
-  protected boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+  protected boolean onMouseScrolled(double mouseX, double mouseY, double delta) {
     List<ItemStack> pages = handler != null ? handler.getPageList() : null;
     if (pages == null) return false;
 
@@ -165,9 +164,9 @@ public class MystGuiScrollablePages extends MystGuiElement {
     int visibleSlots = pagesPerRow * rowCount;
     int maxScroll = Math.max(0, pages.size() - visibleSlots);
 
-    if (scrollY > 0) {
+    if (delta > 0) {
       scrollOffset = Math.max(0, scrollOffset - pagesPerRow);
-    } else if (scrollY < 0) {
+    } else if (delta < 0) {
       scrollOffset = Math.min(maxScroll, scrollOffset + pagesPerRow);
     }
     return true;

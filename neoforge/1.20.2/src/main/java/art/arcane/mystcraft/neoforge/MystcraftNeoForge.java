@@ -11,8 +11,6 @@ import art.arcane.mystcraft.registry.MystcraftRegistries;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
-import com.floopowder.api.Floo;
-import com.floopowder.neoforge.NeoForgeFlooRegistry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColor;
@@ -57,10 +55,6 @@ public class MystcraftNeoForge {
     this.modEventBus = modEventBus;
 
     Mystcraft.LOGGER.info("[Mystcraft] NeoForge initialization starting...");
-
-    // Initialize Floo_Powder registry FIRST
-    Floo.setRegistry(new NeoForgeFlooRegistry(Mystcraft.MOD_ID, modEventBus));
-    Mystcraft.LOGGER.info("[Mystcraft] Floo registry initialized");
 
     // Register config first
     NeoForgeMystcraftConfig.register();

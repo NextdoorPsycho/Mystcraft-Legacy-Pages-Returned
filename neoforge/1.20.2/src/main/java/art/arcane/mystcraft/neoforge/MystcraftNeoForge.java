@@ -3,11 +3,9 @@ package art.arcane.mystcraft.neoforge;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
 import art.arcane.mystcraft.client.AgeColorUtils;
-import art.arcane.mystcraft.config.NeoForgeMystcraftConfig;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.network.NeoForgeMystcraftNetwork;
 import art.arcane.mystcraft.portal.PortalUtils;
-import art.arcane.mystcraft.registry.MystcraftRegistries;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
@@ -60,10 +58,10 @@ public class MystcraftNeoForge {
     NeoForgeMystcraftConfig.register();
 
     // Use the consolidated registry system
-    MystcraftRegistries.register(modEventBus);
+    NeoForgeRegistries.register(modEventBus);
 
     modEventBus.addListener(this::commonSetup);
-    modEventBus.addListener(MystcraftRegistries::onBuildCreativeTabContents);
+    modEventBus.addListener(NeoForgeRegistries::onBuildCreativeTabContents);
     modEventBus.addListener((net.neoforged.neoforge.event.RegisterGameTestsEvent event) -> {
       Mystcraft.LOGGER.info("[Mystcraft] Registering GameTests (NeoForge)");
       event.register(art.arcane.mystcraft.gametest.MystcraftNeoForgeGameTests.class);
@@ -175,22 +173,22 @@ public class MystcraftNeoForge {
         art.arcane.mystcraft.client.render.PageItemRendererBEWLR.prewarmCache();
 
         net.minecraft.client.gui.screens.MenuScreens.register(
-            MystcraftRegistries.INK_MIXER_MENU.get(),
+            NeoForgeRegistries.INK_MIXER_MENU.get(),
             art.arcane.mystcraft.client.screen.InkMixerScreen::new);
         net.minecraft.client.gui.screens.MenuScreens.register(
-            MystcraftRegistries.BOOK_BINDER_MENU.get(),
+            NeoForgeRegistries.BOOK_BINDER_MENU.get(),
             art.arcane.mystcraft.client.screen.BookBinderScreen::new);
         net.minecraft.client.gui.screens.MenuScreens.register(
-            MystcraftRegistries.LINK_MODIFIER_MENU.get(),
+            NeoForgeRegistries.LINK_MODIFIER_MENU.get(),
             art.arcane.mystcraft.client.screen.LinkModifierScreen::new);
         net.minecraft.client.gui.screens.MenuScreens.register(
-            MystcraftRegistries.WRITING_DESK_MENU.get(),
+            NeoForgeRegistries.WRITING_DESK_MENU.get(),
             art.arcane.mystcraft.client.screen.WritingDeskScreen::new);
         net.minecraft.client.gui.screens.MenuScreens.register(
-            MystcraftRegistries.FOLDER_MENU.get(),
+            NeoForgeRegistries.FOLDER_MENU.get(),
             art.arcane.mystcraft.client.screen.FolderScreen::new);
         net.minecraft.client.gui.screens.MenuScreens.register(
-            MystcraftRegistries.PORTFOLIO_MENU.get(),
+            NeoForgeRegistries.PORTFOLIO_MENU.get(),
             art.arcane.mystcraft.client.screen.PortfolioScreen::new);
       });
     }
@@ -209,22 +207,22 @@ public class MystcraftNeoForge {
     public static void onRegisterRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
       Mystcraft.LOGGER.info("[Mystcraft] Registering renderers");
 
-      event.registerBlockEntityRenderer(MystcraftRegistries.BOOKSTAND_BE.get(),
+      event.registerBlockEntityRenderer(NeoForgeRegistries.BOOKSTAND_BE.get(),
           art.arcane.mystcraft.client.renderer.BookstandRenderer::new);
-      event.registerBlockEntityRenderer(MystcraftRegistries.STAR_FISSURE_BE.get(),
+      event.registerBlockEntityRenderer(NeoForgeRegistries.STAR_FISSURE_BE.get(),
           art.arcane.mystcraft.client.renderer.StarFissureRenderer::new);
-      event.registerBlockEntityRenderer(MystcraftRegistries.WRITING_DESK_BE.get(),
+      event.registerBlockEntityRenderer(NeoForgeRegistries.WRITING_DESK_BE.get(),
           art.arcane.mystcraft.client.renderer.WritingDeskRenderer::new);
-      event.registerBlockEntityRenderer(MystcraftRegistries.BOOK_RECEPTACLE_BE.get(),
+      event.registerBlockEntityRenderer(NeoForgeRegistries.BOOK_RECEPTACLE_BE.get(),
           art.arcane.mystcraft.client.renderer.BookReceptacleRenderer::new);
 
-      event.registerEntityRenderer(MystcraftRegistries.LINKBOOK_ENTITY.get(),
+      event.registerEntityRenderer(NeoForgeRegistries.LINKBOOK_ENTITY.get(),
           art.arcane.mystcraft.client.renderer.LinkbookEntityRenderer::new);
-      event.registerEntityRenderer(MystcraftRegistries.METEOR_ENTITY.get(),
+      event.registerEntityRenderer(NeoForgeRegistries.METEOR_ENTITY.get(),
           art.arcane.mystcraft.client.renderer.MeteorEntityRenderer::new);
-      event.registerEntityRenderer(MystcraftRegistries.FALLING_BLOCK_ENTITY.get(),
+      event.registerEntityRenderer(NeoForgeRegistries.FALLING_BLOCK_ENTITY.get(),
           art.arcane.mystcraft.client.renderer.MystcraftFallingBlockRenderer::new);
-      event.registerEntityRenderer(MystcraftRegistries.COLORED_LIGHTNING_ENTITY.get(),
+      event.registerEntityRenderer(NeoForgeRegistries.COLORED_LIGHTNING_ENTITY.get(),
           art.arcane.mystcraft.client.renderer.ColoredLightningRenderer::new);
     }
 
@@ -307,13 +305,13 @@ public class MystcraftNeoForge {
         return 0x4488FF;
       };
 
-      event.register(portalColor, MystcraftRegistries.LINK_PORTAL.get());
+      event.register(portalColor, NeoForgeRegistries.LINK_PORTAL.get());
     }
 
     @SubscribeEvent
     public static void onRegisterItemColors(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item event) {
-      event.register((stack, tintIndex) -> 0xFF303030, MystcraftRegistries.GUIDEBOOK.get());
-      event.register((stack, tintIndex) -> tintIndex == 1 ? 0xFF1A1A1A : 0xFFFFFFFF, MystcraftRegistries.INK_BUCKET.get());
+      event.register((stack, tintIndex) -> 0xFF303030, NeoForgeRegistries.GUIDEBOOK.get());
+      event.register((stack, tintIndex) -> tintIndex == 1 ? 0xFF1A1A1A : 0xFFFFFFFF, NeoForgeRegistries.INK_BUCKET.get());
 
       ItemColor grassItemColor = (stack, tintIndex) -> {
         int ageUID = AgeColorUtils.getCurrentAgeUID();

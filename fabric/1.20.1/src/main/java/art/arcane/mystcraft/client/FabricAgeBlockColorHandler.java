@@ -1,7 +1,7 @@
 package art.arcane.mystcraft.client;
 
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
-import art.arcane.mystcraft.registry.FabricRegistries;
+import art.arcane.mystcraft.fabric.FabricRegistries;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.minecraft.client.color.block.BlockColor;
 import net.minecraft.client.color.item.ItemColor;

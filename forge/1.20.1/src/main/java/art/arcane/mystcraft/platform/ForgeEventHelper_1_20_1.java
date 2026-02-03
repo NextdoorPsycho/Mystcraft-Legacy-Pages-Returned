@@ -13,8 +13,8 @@ import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_20_1;
 import art.arcane.mystcraft.network.SymbolSyncPacket;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.platform.services.IEventHelper;
+import art.arcane.mystcraft.forge.MystcraftForgeRegistries;
 import art.arcane.mystcraft.registry.ModItems;
-import art.arcane.mystcraft.registry.MystcraftRegistries;
 import art.arcane.mystcraft.util.MystcraftLecternHelper;
 import art.arcane.mystcraft.villager.ArchivistTradeListings;
 import com.mojang.datafixers.util.Pair;
@@ -326,7 +326,7 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
   // ==================== Archivist Trades ====================
 
   private void onVillagerTrades(VillagerTradesEvent event) {
-    if (event.getType() != MystcraftRegistries.ARCHIVIST.get()) {
+    if (event.getType() != MystcraftForgeRegistries.ARCHIVIST.get()) {
       return;
     }
 

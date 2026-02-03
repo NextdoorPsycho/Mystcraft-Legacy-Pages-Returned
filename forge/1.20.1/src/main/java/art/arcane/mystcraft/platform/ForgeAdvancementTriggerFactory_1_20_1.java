@@ -1,8 +1,6 @@
 package art.arcane.mystcraft.platform;
 
-import art.arcane.mystcraft.advancements.trigger.EnterMystDimensionQuinnTrigger_1_20_1;
-import art.arcane.mystcraft.advancements.trigger.EnterMystDimensionSafeTrigger_1_20_1;
-import art.arcane.mystcraft.advancements.trigger.WritingDeskWriteTrigger_1_20_1;
+import art.arcane.mystcraft.forge.ForgeTriggers;
 import art.arcane.mystcraft.platform.services.IAdvancementTriggerFactory;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.advancements.CriterionTrigger;
@@ -16,9 +14,9 @@ import java.lang.reflect.Method;
  */
 public class ForgeAdvancementTriggerFactory_1_20_1 implements IAdvancementTriggerFactory {
 
-  private WritingDeskWriteTrigger_1_20_1 writingDeskWriteTrigger;
-  private EnterMystDimensionSafeTrigger_1_20_1 enterMystDimensionSafeTrigger;
-  private EnterMystDimensionQuinnTrigger_1_20_1 enterMystDimensionQuinnTrigger;
+  private ForgeTriggers.WritingDeskWriteTrigger writingDeskWriteTrigger;
+  private ForgeTriggers.EnterMystDimensionSafeTrigger enterMystDimensionSafeTrigger;
+  private ForgeTriggers.EnterMystDimensionQuinnTrigger enterMystDimensionQuinnTrigger;
 
   private static Method findRegisterMethod() throws NoSuchMethodException {
     Method[] methods = CriteriaTriggers.class.getDeclaredMethods();
@@ -47,24 +45,24 @@ public class ForgeAdvancementTriggerFactory_1_20_1 implements IAdvancementTrigge
 
   @Override
   public CriterionTrigger<?> createEnterMystDimensionSafeTrigger() {
-    return new EnterMystDimensionSafeTrigger_1_20_1();
+    return new ForgeTriggers.EnterMystDimensionSafeTrigger();
   }
 
   @Override
   public CriterionTrigger<?> createEnterMystDimensionQuinnTrigger() {
-    return new EnterMystDimensionQuinnTrigger_1_20_1();
+    return new ForgeTriggers.EnterMystDimensionQuinnTrigger();
   }
 
   @Override
   public CriterionTrigger<?> createWritingDeskWriteTrigger() {
-    return new WritingDeskWriteTrigger_1_20_1();
+    return new ForgeTriggers.WritingDeskWriteTrigger();
   }
 
   @Override
   public void registerTriggers() {
-    writingDeskWriteTrigger = new WritingDeskWriteTrigger_1_20_1();
-    enterMystDimensionSafeTrigger = new EnterMystDimensionSafeTrigger_1_20_1();
-    enterMystDimensionQuinnTrigger = new EnterMystDimensionQuinnTrigger_1_20_1();
+    writingDeskWriteTrigger = new ForgeTriggers.WritingDeskWriteTrigger();
+    enterMystDimensionSafeTrigger = new ForgeTriggers.EnterMystDimensionSafeTrigger();
+    enterMystDimensionQuinnTrigger = new ForgeTriggers.EnterMystDimensionQuinnTrigger();
 
     try {
       Method registerMethod = findRegisterMethod();

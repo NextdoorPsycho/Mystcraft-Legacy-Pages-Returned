@@ -3,13 +3,15 @@ package art.arcane.mystcraft.platform;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.block.*;
 import art.arcane.mystcraft.blockentity.*;
-import art.arcane.mystcraft.config.ForgeMystcraftConfig;
 import art.arcane.mystcraft.entity.ColoredLightningEntity;
 import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.entity.MystcraftFallingBlockEntity;
-import art.arcane.mystcraft.fluid.BlackInkFluid;
-import art.arcane.mystcraft.fluid.BlackInkFluidType;
+import art.arcane.mystcraft.forge.ForgeBlackInkFluid;
+import art.arcane.mystcraft.forge.ForgeBlackInkFluidType;
+import art.arcane.mystcraft.forge.ForgeMystcraftConfig;
+import art.arcane.mystcraft.forge.ForgePageItem;
+import art.arcane.mystcraft.forge.MystcraftForgeRegistries;
 import art.arcane.mystcraft.item.*;
 import art.arcane.mystcraft.menu.*;
 import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_20_1;
@@ -42,7 +44,7 @@ import java.util.function.Supplier;
 
 /**
  * Forge 1.20.1 implementation of IRegistrationHelper.
- * Handles all block, item, entity, and other registrations using MystcraftRegistries.
+ * Handles all block, item, entity, and other registrations using MystcraftForgeRegistries.
  * This class consolidates registration logic that was previously spread across
  * ForgeModBlocks, ForgeModItems, ForgeModBlockEntities, etc.
  */
@@ -158,39 +160,39 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   }
 
   private void registerFluids() {
-    blackInkType = MystcraftRegistries.FLUID_TYPES.register("black_ink", BlackInkFluidType::new);
+    blackInkType = MystcraftForgeRegistries.FLUID_TYPES.register("black_ink", ForgeBlackInkFluidType::new);
 
-    // Set the fluid type supplier for BlackInkFluid instances
-    BlackInkFluid.setFluidTypeSupplier(blackInkType);
+    // Set the fluid type supplier for ForgeBlackInkFluid instances
+    ForgeBlackInkFluid.setFluidTypeSupplier(blackInkType);
 
-    blackInkSource = MystcraftRegistries.FLUIDS.register("black_ink",
-        () -> new BlackInkFluid.Source(BlackInkFluid.createProperties(blackInkType, blackInkSource, blackInkFlowing)));
-    blackInkFlowing = MystcraftRegistries.FLUIDS.register("black_ink_flowing",
-        () -> new BlackInkFluid.Flowing(BlackInkFluid.createProperties(blackInkType, blackInkSource, blackInkFlowing)));
+    blackInkSource = MystcraftForgeRegistries.FLUIDS.register("black_ink",
+        () -> new ForgeBlackInkFluid.Source(ForgeBlackInkFluid.createProperties(blackInkType, blackInkSource, blackInkFlowing)));
+    blackInkFlowing = MystcraftForgeRegistries.FLUIDS.register("black_ink_flowing",
+        () -> new ForgeBlackInkFluid.Flowing(ForgeBlackInkFluid.createProperties(blackInkType, blackInkSource, blackInkFlowing)));
   }
 
   private void registerBlocks() {
-    inkMixer = MystcraftRegistries.BLOCKS.register("blockinkmixer",
+    inkMixer = MystcraftForgeRegistries.BLOCKS.register("blockinkmixer",
         () -> new InkMixerBlock(BlockDefinitions.INK_MIXER));
-    bookBinder = MystcraftRegistries.BLOCKS.register("blockbookbinder",
+    bookBinder = MystcraftForgeRegistries.BLOCKS.register("blockbookbinder",
         () -> new BookBinderBlock(BlockDefinitions.BOOK_BINDER));
-    bookReceptacle = MystcraftRegistries.BLOCKS.register("blockbookreceptacle",
+    bookReceptacle = MystcraftForgeRegistries.BLOCKS.register("blockbookreceptacle",
         () -> new BookReceptacleBlock(BlockDefinitions.BOOK_RECEPTACLE));
-    bookstand = MystcraftRegistries.BLOCKS.register("blockbookstand",
+    bookstand = MystcraftForgeRegistries.BLOCKS.register("blockbookstand",
         () -> new BookstandBlock(BlockDefinitions.BOOKSTAND));
-    linkModifier = MystcraftRegistries.BLOCKS.register("blocklinkmodifier",
+    linkModifier = MystcraftForgeRegistries.BLOCKS.register("blocklinkmodifier",
         () -> new LinkModifierBlock(BlockDefinitions.LINK_MODIFIER));
-    writingDesk = MystcraftRegistries.BLOCKS.register("writingdesk",
+    writingDesk = MystcraftForgeRegistries.BLOCKS.register("writingdesk",
         () -> new WritingDeskBlock(BlockDefinitions.WRITING_DESK));
-    crystal = MystcraftRegistries.BLOCKS.register("blockcrystal",
+    crystal = MystcraftForgeRegistries.BLOCKS.register("blockcrystal",
         () -> new CrystalBlock(BlockDefinitions.CRYSTAL));
-    decay = MystcraftRegistries.BLOCKS.register("blockdecay",
+    decay = MystcraftForgeRegistries.BLOCKS.register("blockdecay",
         () -> new DecayBlock(BlockDefinitions.DECAY));
-    linkPortal = MystcraftRegistries.BLOCKS.register("linkportal",
+    linkPortal = MystcraftForgeRegistries.BLOCKS.register("linkportal",
         () -> new LinkPortalBlock(BlockDefinitions.LINK_PORTAL));
-    starFissure = MystcraftRegistries.BLOCKS.register("blockstarfissure",
+    starFissure = MystcraftForgeRegistries.BLOCKS.register("blockstarfissure",
         () -> new StarFissureBlock(BlockDefinitions.STAR_FISSURE));
-    fluidInk = MystcraftRegistries.BLOCKS.register("fluidblockblackink",
+    fluidInk = MystcraftForgeRegistries.BLOCKS.register("fluidblockblackink",
         () -> new LiquidBlock(blackInkSource, BlockBehaviour.Properties.copy(Blocks.WATER)
             .mapColor(MapColor.COLOR_BLACK)
             .noLootTable()));
@@ -198,86 +200,86 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
 
   private void registerItems() {
     // Standalone items
-    page = MystcraftRegistries.ITEMS.register("page",
+    page = MystcraftForgeRegistries.ITEMS.register("page",
         () -> new ForgePageItem(ItemDefinitions.page()));
-    agebook = MystcraftRegistries.ITEMS.register("agebook",
+    agebook = MystcraftForgeRegistries.ITEMS.register("agebook",
         () -> new AgebookItem(ItemDefinitions.agebook()));
-    linkbook = MystcraftRegistries.ITEMS.register("linkbook",
+    linkbook = MystcraftForgeRegistries.ITEMS.register("linkbook",
         () -> new LinkbookItem(ItemDefinitions.linkbook()));
-    linkbookUnlinked = MystcraftRegistries.ITEMS.register("linkbook_unlinked",
+    linkbookUnlinked = MystcraftForgeRegistries.ITEMS.register("linkbook_unlinked",
         () -> new LinkbookUnlinkedItem(ItemDefinitions.linkbookUnlinked()));
-    personalLinkBook = MystcraftRegistries.ITEMS.register("personal_link_book",
+    personalLinkBook = MystcraftForgeRegistries.ITEMS.register("personal_link_book",
         () -> new PersonalLinkBookItem(ItemDefinitions.personalLinkBook()));
-    boosterPack = MystcraftRegistries.ITEMS.register("booster",
+    boosterPack = MystcraftForgeRegistries.ITEMS.register("booster",
         () -> new BoosterPackItem(ItemDefinitions.boosterPack()));
-    folder = MystcraftRegistries.ITEMS.register("folder",
+    folder = MystcraftForgeRegistries.ITEMS.register("folder",
         () -> new FolderItem(ItemDefinitions.folder()));
-    portfolio = MystcraftRegistries.ITEMS.register("portfolio",
+    portfolio = MystcraftForgeRegistries.ITEMS.register("portfolio",
         () -> new PortfolioItem(ItemDefinitions.portfolio()));
-    inkVial = MystcraftRegistries.ITEMS.register("inkvial",
+    inkVial = MystcraftForgeRegistries.ITEMS.register("inkvial",
         () -> new InkVialItem(ItemDefinitions.inkVial()));
-    guidebook = MystcraftRegistries.ITEMS.register("guidebook",
+    guidebook = MystcraftForgeRegistries.ITEMS.register("guidebook",
         () -> new GuidebookItem(ItemDefinitions.guidebook()));
-    inkBucket = MystcraftRegistries.ITEMS.register("ink_bucket",
+    inkBucket = MystcraftForgeRegistries.ITEMS.register("ink_bucket",
         () -> new BucketItem(blackInkSource, ItemDefinitions.inkBucket()));
 
     // Block items
-    inkMixerItem = MystcraftRegistries.ITEMS.register("blockinkmixer",
+    inkMixerItem = MystcraftForgeRegistries.ITEMS.register("blockinkmixer",
         () -> new BlockItem(inkMixer.get(), ItemDefinitions.blockItem()));
-    bookBinderItem = MystcraftRegistries.ITEMS.register("blockbookbinder",
+    bookBinderItem = MystcraftForgeRegistries.ITEMS.register("blockbookbinder",
         () -> new BlockItem(bookBinder.get(), ItemDefinitions.blockItem()));
-    bookReceptacleItem = MystcraftRegistries.ITEMS.register("blockbookreceptacle",
+    bookReceptacleItem = MystcraftForgeRegistries.ITEMS.register("blockbookreceptacle",
         () -> new BlockItem(bookReceptacle.get(), ItemDefinitions.blockItem()));
-    bookstandItem = MystcraftRegistries.ITEMS.register("blockbookstand",
+    bookstandItem = MystcraftForgeRegistries.ITEMS.register("blockbookstand",
         () -> new BlockItem(bookstand.get(), ItemDefinitions.blockItem()));
-    linkModifierItem = MystcraftRegistries.ITEMS.register("blocklinkmodifier",
+    linkModifierItem = MystcraftForgeRegistries.ITEMS.register("blocklinkmodifier",
         () -> new BlockItem(linkModifier.get(), ItemDefinitions.blockItem()));
-    writingDeskItem = MystcraftRegistries.ITEMS.register("writingdesk",
+    writingDeskItem = MystcraftForgeRegistries.ITEMS.register("writingdesk",
         () -> new BlockItem(writingDesk.get(), ItemDefinitions.blockItem()));
-    crystalItem = MystcraftRegistries.ITEMS.register("blockcrystal",
+    crystalItem = MystcraftForgeRegistries.ITEMS.register("blockcrystal",
         () -> new BlockItem(crystal.get(), ItemDefinitions.blockItem()));
-    decayItem = MystcraftRegistries.ITEMS.register("blockdecay",
+    decayItem = MystcraftForgeRegistries.ITEMS.register("blockdecay",
         () -> new BlockItem(decay.get(), ItemDefinitions.blockItem()));
   }
 
   private void registerBlockEntities() {
-    inkMixerBE = MystcraftRegistries.BLOCK_ENTITIES.register("ink_mixer",
+    inkMixerBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("ink_mixer",
         () -> BlockEntityType.Builder.of(InkMixerBlockEntity::new, inkMixer.get()).build(null));
-    bookBinderBE = MystcraftRegistries.BLOCK_ENTITIES.register("book_binder",
+    bookBinderBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("book_binder",
         () -> BlockEntityType.Builder.of(BookBinderBlockEntity::new, bookBinder.get()).build(null));
-    bookReceptacleBE = MystcraftRegistries.BLOCK_ENTITIES.register("book_receptacle",
+    bookReceptacleBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("book_receptacle",
         () -> BlockEntityType.Builder.of(BookReceptacleBlockEntity::new, bookReceptacle.get()).build(null));
-    bookstandBE = MystcraftRegistries.BLOCK_ENTITIES.register("bookstand",
+    bookstandBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("bookstand",
         () -> BlockEntityType.Builder.of(BookstandBlockEntity::new, bookstand.get()).build(null));
-    writingDeskBE = MystcraftRegistries.BLOCK_ENTITIES.register("writing_desk",
+    writingDeskBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("writing_desk",
         () -> BlockEntityType.Builder.of(WritingDeskBlockEntity::new, writingDesk.get()).build(null));
-    starFissureBE = MystcraftRegistries.BLOCK_ENTITIES.register("star_fissure",
+    starFissureBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("star_fissure",
         () -> BlockEntityType.Builder.of(StarFissureBlockEntity::new, starFissure.get()).build(null));
-    linkModifierBE = MystcraftRegistries.BLOCK_ENTITIES.register("link_modifier",
+    linkModifierBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("link_modifier",
         () -> BlockEntityType.Builder.of(LinkModifierBlockEntity::new, linkModifier.get()).build(null));
   }
 
   private void registerEntities() {
-    linkbookEntity = MystcraftRegistries.ENTITIES.register("linkbook",
+    linkbookEntity = MystcraftForgeRegistries.ENTITIES.register("linkbook",
         () -> EntityType.Builder.<LinkbookEntity>of(LinkbookEntity::new, MobCategory.MISC)
             .sized(0.5F, 0.5F)
             .clientTrackingRange(10)
             .updateInterval(20)
             .build(new ResourceLocation(Mystcraft.MOD_ID, "linkbook").toString()));
-    fallingBlockEntity = MystcraftRegistries.ENTITIES.register("falling_block",
+    fallingBlockEntity = MystcraftForgeRegistries.ENTITIES.register("falling_block",
         () -> EntityType.Builder.<MystcraftFallingBlockEntity>of(MystcraftFallingBlockEntity::new, MobCategory.MISC)
             .sized(0.98F, 0.98F)
             .clientTrackingRange(10)
             .updateInterval(20)
             .build(new ResourceLocation(Mystcraft.MOD_ID, "falling_block").toString()));
-    meteorEntity = MystcraftRegistries.ENTITIES.register("meteor",
+    meteorEntity = MystcraftForgeRegistries.ENTITIES.register("meteor",
         () -> EntityType.Builder.<MeteorEntity>of(MeteorEntity::new, MobCategory.MISC)
             .sized(2.0F, 2.0F)
             .clientTrackingRange(16)
             .updateInterval(10)
             .fireImmune()
             .build(new ResourceLocation(Mystcraft.MOD_ID, "meteor").toString()));
-    coloredLightningEntity = MystcraftRegistries.ENTITIES.register("colored_lightning",
+    coloredLightningEntity = MystcraftForgeRegistries.ENTITIES.register("colored_lightning",
         () -> EntityType.Builder.<ColoredLightningEntity>of(ColoredLightningEntity::new, MobCategory.MISC)
             .sized(0.0F, 0.0F)
             .clientTrackingRange(16)
@@ -300,28 +302,28 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
 
   private RegistryObject<SoundEvent> registerSoundEvent(String name) {
     ResourceLocation id = new ResourceLocation(Mystcraft.MOD_ID, name);
-    return MystcraftRegistries.SOUNDS.register(name.replace('.', '_').replace('-', '_'),
+    return MystcraftForgeRegistries.SOUNDS.register(name.replace('.', '_').replace('-', '_'),
         () -> SoundEvent.createVariableRangeEvent(id));
   }
 
   private void registerMenus() {
-    inkMixerMenu = MystcraftRegistries.MENUS.register("ink_mixer",
+    inkMixerMenu = MystcraftForgeRegistries.MENUS.register("ink_mixer",
         () -> IForgeMenuType.create(InkMixerMenu::new));
-    bookBinderMenu = MystcraftRegistries.MENUS.register("book_binder",
+    bookBinderMenu = MystcraftForgeRegistries.MENUS.register("book_binder",
         () -> IForgeMenuType.create(BookBinderMenu::new));
-    linkModifierMenu = MystcraftRegistries.MENUS.register("link_modifier",
+    linkModifierMenu = MystcraftForgeRegistries.MENUS.register("link_modifier",
         () -> IForgeMenuType.create(LinkModifierMenu::new));
-    writingDeskMenu = MystcraftRegistries.MENUS.register("writing_desk",
+    writingDeskMenu = MystcraftForgeRegistries.MENUS.register("writing_desk",
         () -> IForgeMenuType.create(WritingDeskMenu::new));
-    folderMenu = MystcraftRegistries.MENUS.register("folder",
+    folderMenu = MystcraftForgeRegistries.MENUS.register("folder",
         () -> IForgeMenuType.create(FolderMenu::new));
-    portfolioMenu = MystcraftRegistries.MENUS.register("portfolio",
+    portfolioMenu = MystcraftForgeRegistries.MENUS.register("portfolio",
         () -> IForgeMenuType.create(PortfolioMenu::new));
   }
 
   @Override
   public void register() {
-    MystcraftRegistries.register(modEventBus);
+    MystcraftForgeRegistries.register(modEventBus);
   }
 
   @Override
@@ -460,41 +462,41 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   // The following methods can be used by common code to register additional content
   @Override
   public <T extends Block> Supplier<T> registerBlock(String name, Supplier<T> block) {
-    return MystcraftRegistries.BLOCKS.register(name, block);
+    return MystcraftForgeRegistries.BLOCKS.register(name, block);
   }
 
   @Override
   public <T extends Item> Supplier<T> registerItem(String name, Supplier<T> item) {
-    return MystcraftRegistries.ITEMS.register(name, item);
+    return MystcraftForgeRegistries.ITEMS.register(name, item);
   }
 
   @Override
   public <T extends BlockEntityType<?>> Supplier<T> registerBlockEntity(String name, Supplier<T> type) {
-    return MystcraftRegistries.BLOCK_ENTITIES.register(name, type);
+    return MystcraftForgeRegistries.BLOCK_ENTITIES.register(name, type);
   }
 
   @Override
   public <T extends EntityType<?>> Supplier<T> registerEntity(String name, Supplier<T> type) {
-    return MystcraftRegistries.ENTITIES.register(name, type);
+    return MystcraftForgeRegistries.ENTITIES.register(name, type);
   }
 
   @Override
   public <T extends Fluid> Supplier<T> registerFluid(String name, Supplier<T> fluid) {
-    return MystcraftRegistries.FLUIDS.register(name, fluid);
+    return MystcraftForgeRegistries.FLUIDS.register(name, fluid);
   }
 
   @Override
   public Supplier<SoundEvent> registerSound(String name, Supplier<SoundEvent> sound) {
-    return MystcraftRegistries.SOUNDS.register(name, sound);
+    return MystcraftForgeRegistries.SOUNDS.register(name, sound);
   }
 
   @Override
   public Supplier<CreativeModeTab> registerCreativeTab(String name, Supplier<CreativeModeTab> tab) {
-    return MystcraftRegistries.CREATIVE_TABS.register(name, tab);
+    return MystcraftForgeRegistries.CREATIVE_TABS.register(name, tab);
   }
 
   @Override
   public <T extends MenuType<?>> Supplier<T> registerMenuType(String name, Supplier<T> menuType) {
-    return MystcraftRegistries.MENUS.register(name, menuType);
+    return MystcraftForgeRegistries.MENUS.register(name, menuType);
   }
 }

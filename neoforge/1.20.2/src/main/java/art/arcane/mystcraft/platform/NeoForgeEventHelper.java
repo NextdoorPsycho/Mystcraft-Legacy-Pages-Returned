@@ -10,7 +10,7 @@ import art.arcane.mystcraft.instability.InstabilityManager;
 import art.arcane.mystcraft.network.NeoForgeMystcraftNetwork;
 import art.arcane.mystcraft.network.SymbolSyncPacket;
 import art.arcane.mystcraft.platform.services.IEventHelper;
-import art.arcane.mystcraft.registry.MystcraftRegistries;
+import art.arcane.mystcraft.neoforge.NeoForgeRegistries;
 import art.arcane.mystcraft.util.MystcraftLecternHelper;
 import art.arcane.mystcraft.villager.ArchivistTradeListings;
 import com.mojang.datafixers.util.Pair;
@@ -273,7 +273,7 @@ public class NeoForgeEventHelper implements IEventHelper {
 
   @SubscribeEvent
   public static void onVillagerTrades(VillagerTradesEvent event) {
-    if (event.getType() != MystcraftRegistries.ARCHIVIST.get()) {
+    if (event.getType() != NeoForgeRegistries.ARCHIVIST.get()) {
       return;
     }
 
@@ -283,17 +283,17 @@ public class NeoForgeEventHelper implements IEventHelper {
     List<VillagerTrades.ItemListing> level1 = event.getTrades().get(1);
     level1.add(new BasicItemListing(
         new ItemStack(Items.EMERALD, 2),
-        new ItemStack(MystcraftRegistries.INK_VIAL.get(), 1),
+        new ItemStack(NeoForgeRegistries.INK_VIAL.get(), 1),
         12, 1, 0.05f
     ));
     level1.add(new BasicItemListing(
-        new ItemStack(MystcraftRegistries.PAGE.get(), 8),
+        new ItemStack(NeoForgeRegistries.PAGE.get(), 8),
         new ItemStack(Items.EMERALD, 1),
         16, 2, 0.05f
     ));
     level1.add(new BasicItemListing(
         new ItemStack(Items.EMERALD, 1),
-        new ItemStack(MystcraftRegistries.PAGE.get(), 4),
+        new ItemStack(NeoForgeRegistries.PAGE.get(), 4),
         16, 1, 0.05f
     ));
     level1.add(new ArchivistTradeListings.RankedSymbolTrade(1, 2, 5));
@@ -302,12 +302,12 @@ public class NeoForgeEventHelper implements IEventHelper {
     List<VillagerTrades.ItemListing> level2 = event.getTrades().get(2);
     level2.add(new BasicItemListing(
         new ItemStack(Items.EMERALD, 5),
-        new ItemStack(MystcraftRegistries.FOLDER.get(), 1),
+        new ItemStack(NeoForgeRegistries.FOLDER.get(), 1),
         8, 5, 0.05f
     ));
     level2.add(new BasicItemListing(
         new ItemStack(Items.EMERALD, 3),
-        new ItemStack(MystcraftRegistries.INK_VIAL.get(), 2),
+        new ItemStack(NeoForgeRegistries.INK_VIAL.get(), 2),
         12, 5, 0.05f
     ));
     level2.add(new ArchivistTradeListings.RankedSymbolTrade(1, 2, 8));
@@ -317,12 +317,12 @@ public class NeoForgeEventHelper implements IEventHelper {
     List<VillagerTrades.ItemListing> level3 = event.getTrades().get(3);
     level3.add(new BasicItemListing(
         new ItemStack(Items.EMERALD, 12),
-        new ItemStack(MystcraftRegistries.PORTFOLIO.get(), 1),
+        new ItemStack(NeoForgeRegistries.PORTFOLIO.get(), 1),
         4, 10, 0.05f
     ));
     level3.add(new BasicItemListing(
         new ItemStack(Items.EMERALD, 8),
-        new ItemStack(MystcraftRegistries.BOOSTER_PACK.get(), 1),
+        new ItemStack(NeoForgeRegistries.BOOSTER_PACK.get(), 1),
         6, 10, 0.05f
     ));
     level3.add(new ArchivistTradeListings.RankedSymbolTrade(2, 2, 12));
@@ -332,7 +332,7 @@ public class NeoForgeEventHelper implements IEventHelper {
     List<VillagerTrades.ItemListing> level4 = event.getTrades().get(4);
     level4.add(new BasicItemListing(
         new ItemStack(Items.EMERALD, 20),
-        new ItemStack(MystcraftRegistries.LINKBOOK_UNLINKED.get(), 1),
+        new ItemStack(NeoForgeRegistries.LINKBOOK_UNLINKED.get(), 1),
         3, 15, 0.05f
     ));
     level4.add(new ArchivistTradeListings.RankedSymbolTrade(3, 2, 18));
@@ -343,7 +343,7 @@ public class NeoForgeEventHelper implements IEventHelper {
     level5.add(new ArchivistTradeListings.SymbolPageTrade(1, 25));
     level5.add(new ArchivistTradeListings.RankedSymbolTrade(4, 1, 25));
     level5.add(new BasicItemListing(
-        new ItemStack(MystcraftRegistries.LINKBOOK.get(), 1),
+        new ItemStack(NeoForgeRegistries.LINKBOOK.get(), 1),
         new ItemStack(Items.EMERALD, 24),
         2, 30, 0.05f
     ));

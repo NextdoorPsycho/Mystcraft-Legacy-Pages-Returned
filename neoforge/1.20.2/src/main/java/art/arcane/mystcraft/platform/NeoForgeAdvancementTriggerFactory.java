@@ -1,8 +1,6 @@
 package art.arcane.mystcraft.platform;
 
-import art.arcane.mystcraft.advancements.EnterMystDimensionQuinnTrigger;
-import art.arcane.mystcraft.advancements.EnterMystDimensionSafeTrigger;
-import art.arcane.mystcraft.advancements.WritingDeskWriteTrigger;
+import art.arcane.mystcraft.neoforge.NeoForgeTriggers;
 import art.arcane.mystcraft.platform.services.IAdvancementTriggerFactory;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.advancements.CriterionTrigger;
@@ -15,9 +13,9 @@ import java.lang.reflect.Method;
  */
 public class NeoForgeAdvancementTriggerFactory implements IAdvancementTriggerFactory {
 
-  private WritingDeskWriteTrigger writingDeskWriteTrigger;
-  private EnterMystDimensionSafeTrigger enterMystDimensionSafeTrigger;
-  private EnterMystDimensionQuinnTrigger enterMystDimensionQuinnTrigger;
+  private NeoForgeTriggers.WritingDeskWriteTrigger writingDeskWriteTrigger;
+  private NeoForgeTriggers.EnterMystDimensionSafeTrigger enterMystDimensionSafeTrigger;
+  private NeoForgeTriggers.EnterMystDimensionQuinnTrigger enterMystDimensionQuinnTrigger;
 
   private static Method findRegisterMethod() throws NoSuchMethodException {
     Method[] methods = CriteriaTriggers.class.getDeclaredMethods();
@@ -38,24 +36,24 @@ public class NeoForgeAdvancementTriggerFactory implements IAdvancementTriggerFac
 
   @Override
   public CriterionTrigger<?> createEnterMystDimensionSafeTrigger() {
-    return new EnterMystDimensionSafeTrigger();
+    return new NeoForgeTriggers.EnterMystDimensionSafeTrigger();
   }
 
   @Override
   public CriterionTrigger<?> createEnterMystDimensionQuinnTrigger() {
-    return new EnterMystDimensionQuinnTrigger();
+    return new NeoForgeTriggers.EnterMystDimensionQuinnTrigger();
   }
 
   @Override
   public CriterionTrigger<?> createWritingDeskWriteTrigger() {
-    return new WritingDeskWriteTrigger();
+    return new NeoForgeTriggers.WritingDeskWriteTrigger();
   }
 
   @Override
   public void registerTriggers() {
-    writingDeskWriteTrigger = new WritingDeskWriteTrigger();
-    enterMystDimensionSafeTrigger = new EnterMystDimensionSafeTrigger();
-    enterMystDimensionQuinnTrigger = new EnterMystDimensionQuinnTrigger();
+    writingDeskWriteTrigger = new NeoForgeTriggers.WritingDeskWriteTrigger();
+    enterMystDimensionSafeTrigger = new NeoForgeTriggers.EnterMystDimensionSafeTrigger();
+    enterMystDimensionQuinnTrigger = new NeoForgeTriggers.EnterMystDimensionQuinnTrigger();
 
     try {
       Method registerMethod = findRegisterMethod();

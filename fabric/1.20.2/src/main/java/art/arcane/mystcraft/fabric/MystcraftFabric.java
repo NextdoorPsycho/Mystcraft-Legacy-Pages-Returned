@@ -1,10 +1,7 @@
 package art.arcane.mystcraft.fabric;
 
 import art.arcane.mystcraft.Mystcraft;
-import art.arcane.mystcraft.config.FabricMystcraftConfig;
-import art.arcane.mystcraft.event.FabricEventHelper;
 import art.arcane.mystcraft.network.FabricMystcraftNetwork;
-import art.arcane.mystcraft.registry.FabricRegistries;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
@@ -75,15 +72,15 @@ public class MystcraftFabric implements ModInitializer {
 
     // Datapack reload listeners
     ResourceManagerHelper.get(PackType.SERVER_DATA)
-        .registerReloadListener(new art.arcane.mystcraft.fabric.resource.FabricGrammarReloadListener());
+        .registerReloadListener(new FabricReloadListeners.GrammarReloadListener());
     ResourceManagerHelper.get(PackType.SERVER_DATA)
-        .registerReloadListener(new art.arcane.mystcraft.fabric.resource.FabricSymbolReloadListener());
+        .registerReloadListener(new FabricReloadListeners.SymbolReloadListener());
 
     // Register all Fabric event callbacks
     FabricEventHelper.registerAll();
 
     // Register lectern interaction handler for Mystcraft books
-    art.arcane.mystcraft.fabric.event.LecternInteractionHandler.register();
+    LecternInteractionHandler.register();
 
     Mystcraft.LOGGER.info("[Mystcraft] Fabric 1.20.2 registration complete");
   }

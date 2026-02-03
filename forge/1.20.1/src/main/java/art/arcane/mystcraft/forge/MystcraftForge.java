@@ -1,7 +1,6 @@
 package art.arcane.mystcraft.forge;
 
 import art.arcane.mystcraft.Mystcraft;
-import art.arcane.mystcraft.config.ForgeMystcraftConfig;
 import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_20_1;
 import art.arcane.mystcraft.platform.ForgeEventHelper_1_20_1;
 import art.arcane.mystcraft.registry.*;

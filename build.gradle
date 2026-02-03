@@ -21,7 +21,7 @@ idea {
                 }
                 "Fabric 1.20.2 Client"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':fabric:1.20.2:runClient']
-                }
+                } 
                 "Fabric 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':fabric:1.20.2:runServer']
                 }

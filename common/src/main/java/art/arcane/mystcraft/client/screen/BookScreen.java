@@ -184,7 +184,11 @@ public class BookScreen extends Screen {
     this.yScale = 1.0f;
   }
 
-  @Override
+  public void renderBackground(@NotNull GuiGraphics guiGraphics) {
+    // 1.20.1 legacy signature
+    renderBackground(guiGraphics, 0, 0, 0.0f);
+  }
+
   public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
     // Don't render dark background overlay - book has its own visual backing
   }

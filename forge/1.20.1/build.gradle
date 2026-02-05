@@ -13,7 +13,7 @@ version = "${project.version}"
 group = project.group
 
 base {
-    archivesName = "mystcraft_legacy-${version}-${minecraft_version_1_20_1}-forge"
+    archivesName = "MystcraftLegacy_Forge-${minecraft_version_1_20_1}"
 }
 
 java {
@@ -92,19 +92,22 @@ dependencies {
 
 shadowJar {
     configurations = [project.configurations.shadow]
-    archiveClassifier = '' // Replace the main jar
+    // Avoid clobbering the plain jar; Forge's reobfJar expects the normal jar output.
+    archiveClassifier = 'all'
+    archiveFileName = "MystcraftLegacy_Forge-${minecraft_version_1_20_1}-all.jar"
 }
 
 reobf {
     shadowJar {} // Reobfuscate the shadow jar
 }
 
+tasks.named('reobfShadowJar') {
+    dependsOn(tasks.named('shadowJar'))
+}
+
 tasks.named('compileJava', JavaCompile) {
     // Add common sources with exclusions for 1.20.2-specific classes
     source(project(':common').sourceSets.main.allSource.matching {
-        // Only exclude screens that have platform-specific implementations in forge/1.20.1
-        exclude '**/client/screen/BookScreen.java'
-        exclude '**/client/screen/GuidebookScreen.java'
         exclude '**/client/GuidebookClientHelper.java'
         exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
         exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
@@ -153,6 +156,10 @@ tasks.named('processResources', ProcessResources) {
         expand expandProps
     }
 
+    filesMatching('pack.mcmeta') {
+        filter { it.replace('"pack_format": 18', '"pack_format": 15') }
+    }
+
     inputs.properties(expandProps)
 
     // Fix mods.toml for 1.20.1 (override problematic properties that Gradle expands incorrectly)
@@ -189,7 +196,7 @@ tasks.named('sourcesJar', Jar) {
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveFileName = "mystcraft_legacy-forge-${forge_version_1_20_1}-${minecraft_version_1_20_1}.jar"
+    archiveFileName = "MystcraftLegacy_Forge-${minecraft_version_1_20_1}.jar"
 
     from(rootProject.file('LICENSE')) {
         rename { "${it}_${mod_name}" }
@@ -209,7 +216,7 @@ jar {
 }
 
 sourcesJar {
-    archiveFileName = "mystcraft_legacy-forge-${forge_version_1_20_1}-${minecraft_version_1_20_1}-sources.jar"
+    archiveFileName = "MystcraftLegacy_Forge-${minecraft_version_1_20_1}-sources.jar"
 }
 
 jar.finalizedBy('reobfJar')

@@ -145,10 +145,6 @@ public abstract class MystcraftBlockEntity extends BlockEntity {
   }
 
   private static Method findMethod(Class<?> owner, String name, Class<?>... params) {
-    try {
-      return owner.getMethod(name, params);
-    } catch (NoSuchMethodException e) {
-      return null;
-    }
+    return art.arcane.mystcraft.util.ReflectionCompat.findMethod(owner, name, null, params);
   }
 }

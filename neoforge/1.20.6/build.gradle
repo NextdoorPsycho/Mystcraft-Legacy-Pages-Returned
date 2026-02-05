@@ -17,7 +17,7 @@ ext.neoforge_version = neoforge_version_1_20_6
 ext.neoforge_loader_version_range = neoforge_loader_version_range_1_20_6
 
 base {
-    archivesName = "mystcraft_legacy-${version}-${minecraft_version_1_20_6}-neoforge"
+    archivesName = "MystcraftLegacy_NeoForge-${minecraft_version_1_20_6}"
 }
 
 java {
@@ -77,6 +77,7 @@ dependencies {
 shadowJar {
     configurations = [project.configurations.shadow]
     archiveClassifier = ''
+    archiveFileName = "MystcraftLegacy_NeoForge-${minecraft_version_1_20_6}.jar"
 }
 
 tasks.named('compileJava', JavaCompile) {
@@ -151,7 +152,7 @@ tasks.named('sourcesJar', Jar) {
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveFileName = "mystcraft_legacy-neoforge-${neoforge_version_1_20_6}-${minecraft_version_1_20_6}.jar"
+    archiveFileName = "MystcraftLegacy_NeoForge-${minecraft_version_1_20_6}.jar"
 
     from(rootProject.file('LICENSE')) {
         rename { "${it}_${mod_name}" }
@@ -171,5 +172,5 @@ jar {
 }
 
 sourcesJar {
-    archiveFileName = "mystcraft_legacy-neoforge-${neoforge_version_1_20_6}-${minecraft_version_1_20_6}-sources.jar"
+    archiveFileName = "MystcraftLegacy_NeoForge-${minecraft_version_1_20_6}-sources.jar"
 }

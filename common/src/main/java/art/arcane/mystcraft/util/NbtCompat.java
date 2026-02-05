@@ -9,9 +9,9 @@ import java.lang.reflect.Method;
 public final class NbtCompat {
 
   private static final Method READ_BLOCK_POS_KEY =
-      findMethod(NbtUtils.class, "readBlockPos", CompoundTag.class, String.class);
+      ReflectionCompat.findMethod(NbtUtils.class, "readBlockPos", BlockPos.class, CompoundTag.class, String.class);
   private static final Method READ_BLOCK_POS_TAG =
-      findMethod(NbtUtils.class, "readBlockPos", CompoundTag.class);
+      ReflectionCompat.findMethod(NbtUtils.class, "readBlockPos", BlockPos.class, CompoundTag.class);
 
   private NbtCompat() {
   }
@@ -27,14 +27,6 @@ public final class NbtCompat {
       return pos != null ? pos : BlockPos.ZERO;
     }
     return BlockPos.ZERO;
-  }
-
-  private static Method findMethod(Class<?> owner, String name, Class<?>... params) {
-    try {
-      return owner.getMethod(name, params);
-    } catch (NoSuchMethodException e) {
-      return null;
-    }
   }
 
   @SuppressWarnings("unchecked")

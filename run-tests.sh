@@ -28,13 +28,25 @@ cd "$SCRIPT_DIR"
 echo -e "${CYAN}Running Mystcraft GameTests${NC}"
 echo ""
 
+# Use the standard Gradle cache location (should already have the wrapper distribution)
+export GRADLE_USER_HOME="${HOME}/.gradle"
+
+# Use Java 21 for Gradle itself when available (Fabric Loom requires 21+)
+if [[ "$OSTYPE" == "darwin"* && -n "$JAVA_21_HOME" ]]; then
+    GRADLE_JAVA_HOME="$JAVA_21_HOME"
+else
+    GRADLE_JAVA_HOME="$JAVA_17_HOME"
+fi
+
 # Run tests for Fabric/Forge (Java 17)
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    JAVA_HOME="$JAVA_17_HOME" ./gradlew :fabric:1.20.1:runGametest :fabric:1.20.2:runGametest \
-              :forge:1.20.1:runGametest :forge:1.20.2:runGametest --no-daemon
+    JAVA_HOME="$GRADLE_JAVA_HOME" ./gradlew :fabric:1.20.1:runGametest :fabric:1.20.2:runGametest \
+              :fabric:1.20.4:runGametest \
+              :forge:1.20.1:runGametest :forge:1.20.2:runGametest :forge:1.20.4:runGametest :forge:1.20.6:runGametest --no-daemon
 else
     ./gradlew :fabric:1.20.1:runGametest :fabric:1.20.2:runGametest \
-              :forge:1.20.1:runGametest :forge:1.20.2:runGametest --no-daemon
+              :fabric:1.20.4:runGametest \
+              :forge:1.20.1:runGametest :forge:1.20.2:runGametest :forge:1.20.4:runGametest :forge:1.20.6:runGametest --no-daemon
 fi
 
 # Run tests for NeoForge (Java 21)

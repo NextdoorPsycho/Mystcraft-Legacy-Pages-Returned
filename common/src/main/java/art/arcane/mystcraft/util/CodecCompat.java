@@ -9,7 +9,8 @@ import java.util.function.Function;
 
 public final class CodecCompat {
 
-  private static final Method SIMPLE_CODEC = findMethod(Block.class, "simpleCodec", Function.class);
+  private static final Method SIMPLE_CODEC =
+      ReflectionCompat.findMethod(Block.class, "simpleCodec", MapCodec.class, Function.class);
 
   private CodecCompat() {
   }
@@ -26,11 +27,5 @@ public final class CodecCompat {
     }
   }
 
-  private static Method findMethod(Class<?> owner, String name, Class<?>... params) {
-    try {
-      return owner.getMethod(name, params);
-    } catch (NoSuchMethodException e) {
-      return null;
-    }
-  }
+  
 }

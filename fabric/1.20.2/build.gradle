@@ -1,12 +1,12 @@
 plugins {
-    id 'fabric-loom' version '1.13-SNAPSHOT'
+    id 'fabric-loom' version '1.9.2'
 }
 
 version = "${project.version}"
 group = project.group
 
 base {
-    archivesName = "mystcraft_legacy-${version}-${minecraft_version_1_20_2}-fabric"
+    archivesName = "MystcraftLegacy_Fabric-${minecraft_version_1_20_2}"
 }
 
 java {
@@ -120,7 +120,7 @@ tasks.named('sourcesJar', Jar) {
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveFileName = "mystcraft_legacy-fabric-${fabric_loader_version_1_20_2}-${minecraft_version_1_20_2}-dev.jar"
+    archiveFileName = "MystcraftLegacy_Fabric-${minecraft_version_1_20_2}-dev.jar"
 
     from(rootProject.file('LICENSE')) {
         rename { "${it}_${mod_name}" }
@@ -140,13 +140,13 @@ jar {
 }
 
 remapJar {
-    archiveFileName = "mystcraft_legacy-fabric-${fabric_loader_version_1_20_2}-${minecraft_version_1_20_2}.jar"
+    archiveFileName = "MystcraftLegacy_Fabric-${minecraft_version_1_20_2}.jar"
 }
 
 sourcesJar {
-    archiveFileName = "mystcraft_legacy-fabric-${fabric_loader_version_1_20_2}-${minecraft_version_1_20_2}-sources-dev.jar"
+    archiveFileName = "MystcraftLegacy_Fabric-${minecraft_version_1_20_2}-sources-dev.jar"
 }
 
 remapSourcesJar {
-    archiveFileName = "mystcraft_legacy-fabric-${fabric_loader_version_1_20_2}-${minecraft_version_1_20_2}-sources.jar"
+    archiveFileName = "MystcraftLegacy_Fabric-${minecraft_version_1_20_2}-sources.jar"
 }

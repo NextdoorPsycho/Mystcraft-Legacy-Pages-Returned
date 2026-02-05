@@ -13,7 +13,7 @@ version = "${project.version}"
 group = project.group
 
 base {
-    archivesName = "mystcraft_legacy-${version}-${minecraft_version_1_20_4}-forge"
+    archivesName = "MystcraftLegacy_Forge-${minecraft_version_1_20_4}"
 }
 
 java {
@@ -95,11 +95,17 @@ dependencies {
 
 shadowJar {
     configurations = [project.configurations.shadow]
-    archiveClassifier = '' // Replace the main jar
+    archiveClassifier = ''
+    archiveFileName = "MystcraftLegacy_Forge-${minecraft_version_1_20_4}.jar"
+    dependsOn(tasks.named('jar'))
 }
 
 reobf {
     shadowJar {} // Reobfuscate the shadow jar
+}
+
+tasks.named('reobfShadowJar') {
+    dependsOn(tasks.named('shadowJar'))
 }
 
 tasks.named('compileJava', JavaCompile) {
@@ -116,7 +122,11 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/util/PocketHeadUtils.java'
     })
     source(file("${rootDir}/common/1.20.4/src/main/java"))
-    source(file("${rootDir}/forge/shared/src/main/java"))
+    source(project.fileTree("${rootDir}/forge/shared/src/main/java") {
+        // Use local gametest with @GameTestDontPrefix instead of shared one with @PrefixGameTestTemplate
+        exclude '**/gametest/MystcraftForgeGameTests.java'
+    })
+    source(sourceSets.main.java)
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -160,7 +170,7 @@ tasks.named('sourcesJar', Jar) {
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveFileName = "mystcraft_legacy-forge-${forge_version_1_20_4}-${minecraft_version_1_20_4}.jar"
+    archiveFileName = "MystcraftLegacy_Forge-${minecraft_version_1_20_4}-slim.jar"
 
     from(rootProject.file('LICENSE')) {
         rename { "${it}_${mod_name}" }
@@ -180,10 +190,10 @@ jar {
 }
 
 sourcesJar {
-    archiveFileName = "mystcraft_legacy-forge-${forge_version_1_20_4}-${minecraft_version_1_20_4}-sources.jar"
+    archiveFileName = "MystcraftLegacy_Forge-${minecraft_version_1_20_4}-sources.jar"
 }
 
-jar.finalizedBy('reobfJar')
+shadowJar.finalizedBy('reobfShadowJar')
 
 // Disable IDE run configuration generation
 tasks.matching { it.name.startsWith('genIntellijRuns') || it.name.startsWith('prepareRuns') }.configureEach {

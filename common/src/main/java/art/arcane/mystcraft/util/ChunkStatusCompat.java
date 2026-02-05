@@ -49,11 +49,8 @@ public final class ChunkStatusCompat {
     if (STATUS_CLASS == null) {
       return null;
     }
-    try {
-      return ServerLevel.class.getMethod("getChunk", int.class, int.class, STATUS_CLASS, boolean.class);
-    } catch (NoSuchMethodException e) {
-      return null;
-    }
+    return ReflectionCompat.findMethod(ServerLevel.class, "getChunk", ChunkAccess.class,
+        int.class, int.class, STATUS_CLASS, boolean.class);
   }
 
   private static Class<?> loadClass(String... names) {

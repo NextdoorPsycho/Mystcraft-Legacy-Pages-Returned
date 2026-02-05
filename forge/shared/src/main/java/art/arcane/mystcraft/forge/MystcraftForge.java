@@ -68,7 +68,12 @@ public class MystcraftForge {
 
   private void registerGameTests(net.minecraftforge.event.RegisterGameTestsEvent event) {
     Mystcraft.LOGGER.info("[Mystcraft] Registering GameTests");
-    event.register(art.arcane.mystcraft.gametest.MystcraftForgeGameTests.class);
+    try {
+      Class<?> gameTestClass = Class.forName("art.arcane.mystcraft.gametest.MystcraftForgeGameTests");
+      event.register(gameTestClass);
+    } catch (ClassNotFoundException e) {
+      Mystcraft.LOGGER.info("[Mystcraft] GameTests not available for this Forge version");
+    }
   }
 
   private void commonSetup(FMLCommonSetupEvent event) {

@@ -12,12 +12,17 @@ import java.util.function.Supplier;
 
 public final class RenderCompat {
 
-  private static final Method NORMAL_POSE = findMethod(VertexConsumer.class, "normal", PoseStack.Pose.class, float.class, float.class, float.class);
-  private static final Method NORMAL_MATRIX = findMethod(VertexConsumer.class, "normal", Matrix3f.class, float.class, float.class, float.class);
-  private static final Method NORMAL_SIMPLE = findMethod(VertexConsumer.class, "normal", float.class, float.class, float.class);
+  private static final Method NORMAL_POSE = ReflectionCompat.findMethod(VertexConsumer.class, "normal",
+      VertexConsumer.class, PoseStack.Pose.class, float.class, float.class, float.class);
+  private static final Method NORMAL_MATRIX = ReflectionCompat.findMethod(VertexConsumer.class, "normal",
+      VertexConsumer.class, Matrix3f.class, float.class, float.class, float.class);
+  private static final Method NORMAL_SIMPLE = ReflectionCompat.findMethod(VertexConsumer.class, "normal",
+      VertexConsumer.class, float.class, float.class, float.class);
 
-  private static final Method SHADER_POSITION_TEX_COLOR_NORMAL = findMethod(GameRenderer.class, "getPositionTexColorNormalShader");
-  private static final Method SHADER_POSITION_TEX_COLOR = findMethod(GameRenderer.class, "getPositionTexColorShader");
+  private static final Method SHADER_POSITION_TEX_COLOR_NORMAL =
+      ReflectionCompat.findMethod(GameRenderer.class, "getPositionTexColorNormalShader", ShaderInstance.class);
+  private static final Method SHADER_POSITION_TEX_COLOR =
+      ReflectionCompat.findMethod(GameRenderer.class, "getPositionTexColorShader", ShaderInstance.class);
 
   private RenderCompat() {
   }
@@ -56,14 +61,6 @@ public final class RenderCompat {
 
   public static Supplier<ShaderInstance> positionTexColorNormalShaderSupplier() {
     return RenderCompat::getPositionTexColorNormalShader;
-  }
-
-  private static Method findMethod(Class<?> owner, String name, Class<?>... params) {
-    try {
-      return owner.getMethod(name, params);
-    } catch (NoSuchMethodException e) {
-      return null;
-    }
   }
 
   private static void invoke(Object target, Method method, Object... args) {

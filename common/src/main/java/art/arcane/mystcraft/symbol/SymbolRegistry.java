@@ -14,24 +14,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Registry for Age symbols.
  * Manages symbol registration, lookup, and categorization.
  * Also registers symbols with the CFG grammar system for age generation.
+ *
+ * Thread-safety: Uses concurrent collections to allow safe access from
+ * multiple threads (render thread, server thread during datapack reload).
  */
 public final class SymbolRegistry {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SymbolRegistry.class);
 
-  private static final Map<ResourceLocation, IAgeSymbol> SYMBOLS = new HashMap<>();
-  private static final Map<SymbolCategory, List<IAgeSymbol>> BY_CATEGORY = new EnumMap<>(SymbolCategory.class);
-  private static final Map<Integer, List<IAgeSymbol>> BY_CARD_RANK = new HashMap<>();
-  private static final Set<ResourceLocation> BLACKLIST = new HashSet<>();
-  private static final Map<ResourceLocation, IAgeSymbol> STATIC_SYMBOLS = new HashMap<>();
+  // Use concurrent collections to prevent ConcurrentModificationException during datapack reload
+  private static final Map<ResourceLocation, IAgeSymbol> SYMBOLS = new ConcurrentHashMap<>();
+  private static final Map<SymbolCategory, List<IAgeSymbol>> BY_CATEGORY = new ConcurrentHashMap<>();
+  private static final Map<Integer, List<IAgeSymbol>> BY_CARD_RANK = new ConcurrentHashMap<>();
+  private static final Set<ResourceLocation> BLACKLIST = ConcurrentHashMap.newKeySet();
+  private static final Map<ResourceLocation, IAgeSymbol> STATIC_SYMBOLS = new ConcurrentHashMap<>();
 
-  private static boolean frozen = false;
-  private static boolean staticRegistrationOpen = true;
+  private static volatile boolean frozen = false;
+  private static volatile boolean staticRegistrationOpen = true;
 
   private SymbolRegistry() {
   }
@@ -161,11 +167,12 @@ public final class SymbolRegistry {
     ResourceLocation id = symbol.getRegistryName();
     SYMBOLS.put(id, symbol);
 
-    BY_CATEGORY.computeIfAbsent(symbol.getCategory(), k -> new ArrayList<>()).add(symbol);
+    // Use CopyOnWriteArrayList for thread-safe iteration during render
+    BY_CATEGORY.computeIfAbsent(symbol.getCategory(), k -> new CopyOnWriteArrayList<>()).add(symbol);
 
     Integer rank = symbol.getCardRank();
     if (rank != null) {
-      BY_CARD_RANK.computeIfAbsent(rank, k -> new ArrayList<>()).add(symbol);
+      BY_CARD_RANK.computeIfAbsent(rank, k -> new CopyOnWriteArrayList<>()).add(symbol);
     }
 
     if (includeGrammar) {

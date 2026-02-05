@@ -21,7 +21,7 @@ public final class ClientAccess {
     try {
       Class<?> mcClass = Class.forName("net.minecraft.client.Minecraft");
       if (getInstanceMethod == null) {
-        getInstanceMethod = mcClass.getMethod("getInstance");
+        getInstanceMethod = ReflectionCompat.findMethod(mcClass, "getInstance", mcClass);
       }
       return getInstanceMethod.invoke(null);
     } catch (ReflectiveOperationException e) {
@@ -37,8 +37,14 @@ public final class ClientAccess {
     }
     try {
       if (levelField == null) {
-        levelField = minecraft.getClass().getDeclaredField("level");
-        levelField.setAccessible(true);
+        Class<?> levelType = ReflectionCompat.getClassIfPresent("net.minecraft.client.multiplayer.ClientLevel");
+        levelField = ReflectionCompat.findField(minecraft.getClass(), "level", levelType);
+        if (levelField == null && levelType != null) {
+          levelField = ReflectionCompat.findFieldByType(minecraft.getClass(), levelType);
+        }
+        if (levelField == null) {
+          return null;
+        }
       }
       return levelField.get(minecraft);
     } catch (ReflectiveOperationException e) {

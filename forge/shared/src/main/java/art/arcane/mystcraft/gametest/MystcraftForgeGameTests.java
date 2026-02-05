@@ -4,11 +4,13 @@ import art.arcane.mystcraft.Mystcraft;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 /**
  * Forge-specific Mystcraft GameTests.
  */
 @GameTestHolder(value = Mystcraft.MOD_ID)
+@PrefixGameTestTemplate(false)
 public class MystcraftForgeGameTests {
 
   // ===== REGISTRATION TESTS =====

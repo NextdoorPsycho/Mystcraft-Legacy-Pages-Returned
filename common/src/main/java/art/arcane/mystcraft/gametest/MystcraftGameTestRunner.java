@@ -214,10 +214,11 @@ public final class MystcraftGameTestRunner {
    */
   public static void runBookDiesInFluidTest(GameTestHelper helper) {
     ServerLevel level = helper.getLevel();
-    BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+    BlockPos localPos = new BlockPos(1, 1, 1);
+    BlockPos origin = helper.absolutePos(localPos);
 
     // Place water at origin
-    helper.setBlock(BlockPos.ZERO, Blocks.WATER.defaultBlockState());
+    helper.setBlock(localPos, Blocks.WATER.defaultBlockState());
 
     double x = origin.getX() + 0.5;
     double y = origin.getY() + 0.5;
@@ -389,10 +390,11 @@ public final class MystcraftGameTestRunner {
    */
   public static void runLecternBookPlacementTest(GameTestHelper helper) {
     ServerLevel level = helper.getLevel();
-    BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+    BlockPos localPos = new BlockPos(1, 1, 1);
+    BlockPos origin = helper.absolutePos(localPos);
 
     // Place a vanilla lectern
-    helper.setBlock(BlockPos.ZERO, net.minecraft.world.level.block.Blocks.LECTERN.defaultBlockState());
+    helper.setBlock(localPos, net.minecraft.world.level.block.Blocks.LECTERN.defaultBlockState());
 
     helper.runAtTickTime(3, () -> {
       net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(origin);
@@ -446,8 +448,8 @@ public final class MystcraftGameTestRunner {
     ServerLevel level = helper.getLevel();
 
     // Place blocks at different positions
-    BlockPos inkMixerPos = BlockPos.ZERO;
-    BlockPos bookBinderPos = new BlockPos(2, 0, 0);
+    BlockPos inkMixerPos = new BlockPos(1, 1, 1);
+    BlockPos bookBinderPos = new BlockPos(3, 1, 1);
 
     helper.setBlock(inkMixerPos, art.arcane.mystcraft.registry.ModBlocks.INK_MIXER.get().defaultBlockState());
     helper.setBlock(bookBinderPos, art.arcane.mystcraft.registry.ModBlocks.BOOK_BINDER.get().defaultBlockState());

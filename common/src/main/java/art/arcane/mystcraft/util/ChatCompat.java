@@ -6,8 +6,10 @@ import java.lang.reflect.Method;
 
 public final class ChatCompat {
 
-  private static final Method ALLOWED_CHAR_INT = findMethod("isAllowedChatCharacter", int.class);
-  private static final Method ALLOWED_CHAR_CHAR = findMethod("isAllowedChatCharacter", char.class);
+  private static final Method ALLOWED_CHAR_INT =
+      ReflectionCompat.findMethod(SharedConstants.class, "isAllowedChatCharacter", boolean.class, int.class);
+  private static final Method ALLOWED_CHAR_CHAR =
+      ReflectionCompat.findMethod(SharedConstants.class, "isAllowedChatCharacter", boolean.class, char.class);
 
   private ChatCompat() {
   }
@@ -23,14 +25,6 @@ public final class ChatCompat {
       return result != null && result;
     }
     return false;
-  }
-
-  private static Method findMethod(String name, Class<?>... params) {
-    try {
-      return SharedConstants.class.getMethod(name, params);
-    } catch (NoSuchMethodException e) {
-      return null;
-    }
   }
 
   @SuppressWarnings("unchecked")

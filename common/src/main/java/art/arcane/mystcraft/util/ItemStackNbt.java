@@ -68,7 +68,9 @@ public final class ItemStackNbt {
     CompoundTag tag = getTag(stack);
     if (tag == null) {
       tag = new CompoundTag();
-      setTag(stack, tag);
+      // Don't call setTag here - callers are responsible for persisting after modifications.
+      // Calling setTag here causes infinite recursion when Minecraft calls setDamage during
+      // ItemStack deserialization, as setTag triggers NBT processing which calls setDamage again.
     }
     return tag;
   }

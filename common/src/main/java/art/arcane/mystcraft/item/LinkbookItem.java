@@ -36,15 +36,24 @@ public class LinkbookItem extends Item implements TooltipCompat {
 
   private static final float DEFAULT_MAX_HEALTH = 10.0f;
 
+  // Recursion guard to prevent StackOverflow when Minecraft calls setDamage during ItemStack deserialization
+  private static final ThreadLocal<Boolean> SETTING_HEALTH = ThreadLocal.withInitial(() -> false);
+
   public LinkbookItem(Properties properties) {
     super(properties.stacksTo(1).durability(10));
   }
 
   public static void setHealth(@NotNull ItemStack book, float health) {
     if (book.isEmpty()) return;
-    CompoundTag tag = ItemStackNbt.getOrCreateTag(book);
-    tag.putFloat("damage", getMaxHealth(book) - health);
-    ItemStackNbt.setTag(book, tag);
+    if (SETTING_HEALTH.get()) return; // Prevent recursion during ItemStack deserialization
+    SETTING_HEALTH.set(true);
+    try {
+      CompoundTag tag = ItemStackNbt.getOrCreateTag(book);
+      tag.putFloat("damage", getMaxHealth(book) - health);
+      ItemStackNbt.setTag(book, tag);
+    } finally {
+      SETTING_HEALTH.set(false);
+    }
   }
 
   public static float getHealth(@NotNull ItemStack book) {
@@ -57,12 +66,10 @@ public class LinkbookItem extends Item implements TooltipCompat {
   }
 
   public static float getMaxHealth(@NotNull ItemStack book) {
-    float health = DEFAULT_MAX_HEALTH;
-    if (book.isEmpty()) return health;
-    CompoundTag tag = ItemStackNbt.getOrCreateTag(book);
-    if (!tag.contains("MaxHealth")) {
-      tag.putFloat("MaxHealth", health);
-      ItemStackNbt.setTag(book, tag);
+    if (book.isEmpty()) return DEFAULT_MAX_HEALTH;
+    CompoundTag tag = ItemStackNbt.getTag(book);
+    if (tag == null || !tag.contains("MaxHealth")) {
+      return DEFAULT_MAX_HEALTH;
     }
     return tag.getFloat("MaxHealth");
   }

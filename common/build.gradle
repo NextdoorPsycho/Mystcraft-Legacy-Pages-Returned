@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'fabric-loom' version '1.9.2'
 }
 
 // Common module is a SOURCE provider only - platform modules compile sources directly
@@ -17,16 +17,28 @@ tasks.named('jar') {
     enabled = false
 }
 
-// IDE-only classpath to make symbols resolve in IntelliJ.
-// This does not affect platform builds because common is only a source provider
-// (compileJava, classes, and jar tasks are all disabled above).
+tasks.named('remapJar') {
+    enabled = false
+}
+
+tasks.named('remapSourcesJar') {
+    enabled = false
+}
+
+// Use fabric-loom to provide Minecraft classes for IDE resolution.
+// This does not affect platform builds because common is only a source provider.
+loom {
+    // Minimal loom config - just enough for IDE resolution
+}
+
 dependencies {
-    // Minecraft base
-    compileOnly "com.mojang:minecraft:${minecraft_version_1_20_4}"
+    // Minecraft (via loom - provides actual deobfuscated classes)
+    minecraft "com.mojang:minecraft:${minecraft_version_1_20_4}"
+    mappings loom.officialMojangMappings()
 
     // Fabric Loader + API (for IDE resolution of Fabric classes)
-    compileOnly "net.fabricmc:fabric-loader:${fabric_loader_version_1_20_4}"
-    compileOnly "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_4}"
+    modCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version_1_20_4}"
+    modCompileOnly "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_4}"
 
     // Forge (for IDE resolution of Forge classes)
     compileOnly "net.minecraftforge:forge:${minecraft_version_1_20_4}-${forge_version_1_20_4}"

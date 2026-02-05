@@ -15,8 +15,8 @@ public final class CommonListenerCookieCompat {
     if (cookieClass == null) {
       return null;
     }
-    Method createInitialBoolean = findMethod(cookieClass, "createInitial", GameProfile.class, boolean.class);
-    Method createInitial = findMethod(cookieClass, "createInitial", GameProfile.class);
+    Method createInitialBoolean = ReflectionCompat.findMethod(cookieClass, "createInitial", cookieClass, GameProfile.class, boolean.class);
+    Method createInitial = ReflectionCompat.findMethod(cookieClass, "createInitial", cookieClass, GameProfile.class);
     if (createInitialBoolean != null) {
       Object cookie = invoke(createInitialBoolean, profile, false);
       if (cookie != null) {
@@ -68,7 +68,10 @@ public final class CommonListenerCookieCompat {
       return null;
     }
     try {
-      Method createDefault = infoClass.getMethod("createDefault");
+      Method createDefault = ReflectionCompat.findMethod(infoClass, "createDefault", infoClass);
+      if (createDefault == null) {
+        return null;
+      }
       return createDefault.invoke(null);
     } catch (ReflectiveOperationException e) {
       return null;
@@ -84,14 +87,6 @@ public final class CommonListenerCookieCompat {
     return constants != null && constants.length > 0 ? constants[0] : null;
   }
 
-  private static Method findMethod(Class<?> owner, String name, Class<?>... params) {
-    try {
-      return owner.getMethod(name, params);
-    } catch (NoSuchMethodException e) {
-      return null;
-    }
-  }
-
   @SuppressWarnings("unchecked")
   private static <T> T invoke(Method method, Object... args) {
     if (method == null) {
@@ -105,10 +100,6 @@ public final class CommonListenerCookieCompat {
   }
 
   private static Class<?> getClassIfPresent(String name) {
-    try {
-      return Class.forName(name);
-    } catch (ClassNotFoundException e) {
-      return null;
-    }
+    return ReflectionCompat.getClassIfPresent(name);
   }
 }

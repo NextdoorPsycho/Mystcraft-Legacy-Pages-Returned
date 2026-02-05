@@ -23,6 +23,8 @@ public class MystcraftGrammarReloadListener extends SimpleJsonResourceReloadList
   protected void apply(Map<ResourceLocation, JsonElement> object,
                        net.minecraft.server.packs.resources.ResourceManager resourceManager,
                        ProfilerFiller profiler) {
+    art.arcane.mystcraft.Mystcraft.LOGGER.info("[Datapack] Grammar reload listener starting with {} entries", object.size());
     GrammarDatapackLoader.setRules(object);
+    art.arcane.mystcraft.Mystcraft.LOGGER.info("[Datapack] Grammar reload listener complete");
   }
 }

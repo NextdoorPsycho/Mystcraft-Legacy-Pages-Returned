@@ -6,22 +6,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Context-Free Grammar generator for Age creation.
  * Handles rule registration, shortest path calculations, and symbol expansion.
+ *
+ * Thread-safety: Uses concurrent collections to allow safe access from
+ * multiple threads (render thread, server thread during datapack reload).
  */
 public final class CFGGrammarGenerator {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CFGGrammarGenerator.class);
-  // Rule storage
-  private static final Map<ResourceLocation, RankData> ranks = new HashMap<>();
-  private static final Map<ResourceLocation, List<CFGRule>> mappings = new HashMap<>();
-  private static final Map<ResourceLocation, List<CFGRule>> reverseLookup = new HashMap<>();
-  private static final boolean profilePathBuilder = false;
-  private static Map<ResourceLocation, Map<ResourceLocation, List<List<CFGRule>>>> shortestPaths = null;
+  // Rule storage - use concurrent collections for thread safety during datapack reload
+  private static final Map<ResourceLocation, RankData> ranks = new ConcurrentHashMap<>();
+  private static final Map<ResourceLocation, List<CFGRule>> mappings = new ConcurrentHashMap<>();
+  private static final Map<ResourceLocation, List<CFGRule>> reverseLookup = new ConcurrentHashMap<>();
+  private static volatile Map<ResourceLocation, Map<ResourceLocation, List<List<CFGRule>>>> shortestPaths = null;
 
-  private static boolean isFinalized = false;
+  private static volatile boolean isFinalized = false;
 
   private CFGGrammarGenerator() {
   }
@@ -72,21 +76,23 @@ public final class CFGGrammarGenerator {
           "Register rules before Mystcraft's post-init.");
     }
 
-    // Add to forward mappings
-    mappings.computeIfAbsent(rule.parent(), k -> new ArrayList<>()).add(rule);
+    // Add to forward mappings - use thread-safe list
+    mappings.computeIfAbsent(rule.parent(), k -> new CopyOnWriteArrayList<>()).add(rule);
 
-    // Add to reverse lookup
+    // Add to reverse lookup - use thread-safe list
     for (ResourceLocation value : rule.values()) {
-      reverseLookup.computeIfAbsent(value, k -> new ArrayList<>()).add(rule);
+      reverseLookup.computeIfAbsent(value, k -> new CopyOnWriteArrayList<>()).add(rule);
     }
 
     // Track rank data for weighted selection
     if (rule.rank() != null) {
       RankData rankData = ranks.computeIfAbsent(rule.parent(), k -> new RankData());
-      while (rankData.rankSizes.size() <= rule.rank()) {
-        rankData.rankSizes.add(0);
+      synchronized (rankData) {
+        while (rankData.rankSizes.size() <= rule.rank()) {
+          rankData.rankSizes.add(0);
+        }
+        rankData.rankSizes.set(rule.rank(), rankData.rankSizes.get(rule.rank()) + 1);
       }
-      rankData.rankSizes.set(rule.rank(), rankData.rankSizes.get(rule.rank()) + 1);
     }
   }
 
@@ -161,11 +167,15 @@ public final class CFGGrammarGenerator {
    * @return List of paths (each path is a list of rules), or null if no path exists
    */
   public static List<List<CFGRule>> getShortestPaths(ResourceLocation subtreeToken, ResourceLocation nodeToken) {
-    if (shortestPaths == null) {
-      throw new IllegalStateException("Grammar must be finalized before using shortest paths!");
+    // Local reference for thread safety (volatile read once)
+    Map<ResourceLocation, Map<ResourceLocation, List<List<CFGRule>>>> localPaths = shortestPaths;
+    if (localPaths == null) {
+      // Grammar not yet finalized - return empty rather than throwing during reload
+      LOGGER.debug("Grammar not yet finalized, returning null for shortest paths");
+      return null;
     }
 
-    Map<ResourceLocation, List<List<CFGRule>>> allPaths = shortestPaths.get(subtreeToken);
+    Map<ResourceLocation, List<List<CFGRule>>> allPaths = localPaths.get(subtreeToken);
     if (allPaths == null) {
       return null;
     }
@@ -211,37 +221,47 @@ public final class CFGGrammarGenerator {
    */
   private static void buildShortestPaths() {
     long startTime = System.currentTimeMillis();
-    if (profilePathBuilder) {
-      LOGGER.info("Starting buildShortestPaths");
-    }
+    LOGGER.info("Starting buildShortestPaths for {} tokens", reverseLookup.size());
 
-    shortestPaths = new HashMap<>();
+    // Build paths into a temporary map, then atomically assign
+    Map<ResourceLocation, Map<ResourceLocation, List<List<CFGRule>>>> tempPaths = new ConcurrentHashMap<>();
 
+    int count = 0;
+    int total = reverseLookup.size();
     for (ResourceLocation token : reverseLookup.keySet()) {
-      if (!shortestPaths.containsKey(token)) {
-        getOrCalculatePaths(shortestPaths, token);
+      if (!tempPaths.containsKey(token)) {
+        getOrCalculatePaths(tempPaths, token);
+      }
+      count++;
+      if (count % 50 == 0) {
+        LOGGER.debug("buildShortestPaths progress: {}/{}", count, total);
       }
     }
 
+    // Atomic assignment ensures threads see complete data or null
+    shortestPaths = tempPaths;
+
     long endTime = System.currentTimeMillis();
-    if (profilePathBuilder) {
-      LOGGER.info("buildShortestPaths execution time: {}ms", endTime - startTime);
-    }
+    LOGGER.info("buildShortestPaths completed in {}ms for {} tokens", endTime - startTime, total);
   }
 
   /**
    * Calculates shortest paths from a token to all reachable parent tokens.
    */
   private static Map<ResourceLocation, List<List<CFGRule>>> getOrCalculatePaths(
-      Map<ResourceLocation, Map<ResourceLocation, List<List<CFGRule>>>> shortestPaths,
+      Map<ResourceLocation, Map<ResourceLocation, List<List<CFGRule>>>> pathsMap,
       ResourceLocation token) {
 
-    Map<ResourceLocation, List<List<CFGRule>>> allPaths = shortestPaths.get(token);
+    Map<ResourceLocation, List<List<CFGRule>>> allPaths = pathsMap.get(token);
     if (allPaths != null) {
       return allPaths;
     }
 
-    allPaths = new HashMap<>();
+    allPaths = new ConcurrentHashMap<>();
+
+    // Track which nodes we've already queued producers for (at their shortest distance)
+    // This prevents exponential re-exploration of the same nodes
+    Set<ResourceLocation> exploredFromNode = new HashSet<>();
 
     // Get all rules that produce this token
     List<CFGRule> producers = reverseLookup.get(token);
@@ -264,20 +284,26 @@ public final class CFGGrammarGenerator {
       }
 
       List<CFGRule> path = elem.path;
-      List<List<CFGRule>> pathsToTarget = allPaths.computeIfAbsent(target, k -> new ArrayList<>());
+      List<List<CFGRule>> pathsToTarget = allPaths.computeIfAbsent(target, k -> new CopyOnWriteArrayList<>());
 
-      // Check if this path is shorter or equal to existing paths
-      if (!pathsToTarget.isEmpty()) {
-        if (pathsToTarget.get(0).size() > path.size()) {
-          // Found shorter path - clear existing
-          pathsToTarget.clear();
-        }
+      // Check if we already have a shorter path to this target
+      if (!pathsToTarget.isEmpty() && pathsToTarget.get(0).size() < path.size()) {
+        // This path is longer than existing - skip entirely
+        continue;
       }
 
-      if (pathsToTarget.isEmpty() || pathsToTarget.get(0).size() == path.size()) {
-        pathsToTarget.add(path);
+      // If this is a shorter path, clear existing paths
+      if (!pathsToTarget.isEmpty() && pathsToTarget.get(0).size() > path.size()) {
+        pathsToTarget.clear();
+        exploredFromNode.remove(target); // Allow re-exploration with shorter path
+      }
 
-        // Continue BFS from target's producers
+      // Add this path (either first path, or equal-length alternative)
+      pathsToTarget.add(path);
+
+      // Only continue BFS from this node if we haven't explored from it yet
+      // This prevents exponential blowup from multiple equal-length paths
+      if (exploredFromNode.add(target)) {
         List<CFGRule> targetProducers = reverseLookup.get(target);
         if (targetProducers != null) {
           for (CFGRule producer : targetProducers) {
@@ -289,7 +315,7 @@ public final class CFGGrammarGenerator {
       }
     }
 
-    shortestPaths.put(token, allPaths);
+    pathsMap.put(token, allPaths);
     return allPaths;
   }
 
@@ -301,7 +327,7 @@ public final class CFGGrammarGenerator {
     final int step = 1;
 
     for (RankData rankData : ranks.values()) {
-      rankData.rankWeights = new HashMap<>();
+      rankData.rankWeights = new ConcurrentHashMap<>();
       int weight = 1;
       int lastTotal = 0;
 
@@ -411,10 +437,11 @@ public final class CFGGrammarGenerator {
 
   /**
    * Stores rank sizes and weights for weighted random rule selection.
+   * Thread-safe for concurrent access.
    */
   public static class RankData {
-    public final List<Integer> rankSizes = new ArrayList<>();
-    public Map<Integer, Integer> rankWeights = null;
+    public final List<Integer> rankSizes = new CopyOnWriteArrayList<>();
+    public volatile Map<Integer, Integer> rankWeights = null;
   }
 
   /**

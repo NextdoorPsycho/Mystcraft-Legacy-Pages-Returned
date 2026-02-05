@@ -27,10 +27,15 @@ public final class SymbolDatapackLoader {
 
   public static void apply(Map<ResourceLocation, JsonElement> elements,
                            Map<ResourceLocation, JsonElement> grammarRules) {
+    Mystcraft.LOGGER.info("[Datapack] SymbolDatapackLoader.apply() starting");
     applySymbolBlacklist();
+    Mystcraft.LOGGER.info("[Datapack] Blacklist applied, resetting to static symbols");
     SymbolRegistry.resetToStatic();
+    Mystcraft.LOGGER.info("[Datapack] Registry reset, resetting grammar");
     CFGGrammarGenerator.reset();
+    Mystcraft.LOGGER.info("[Datapack] Grammar reset, registering base rules");
     GrammarRules.registerBaseRules();
+    Mystcraft.LOGGER.info("[Datapack] Base rules registered, applying datapack grammar rules");
     GrammarDatapackLoader.applyRules(grammarRules);
 
     registerFluidSeaSymbols();
@@ -64,7 +69,9 @@ public final class SymbolDatapackLoader {
       }
     }
 
+    Mystcraft.LOGGER.info("[Datapack] Symbol registration complete, building grammar...");
     CFGGrammarGenerator.buildGrammar();
+    Mystcraft.LOGGER.info("[Datapack] Grammar built, freezing registry");
     SymbolRegistry.freeze();
 
     Mystcraft.LOGGER.info("[Datapack] Applied {} symbol definitions", applied);

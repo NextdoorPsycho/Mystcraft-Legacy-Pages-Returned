@@ -11,9 +11,10 @@ public final class MobEffectCompat {
   private static final Constructor<MobEffectInstance> CTOR_EFFECT =
       findCtor(MobEffectInstance.class, MobEffect.class, int.class, int.class);
   private static final Constructor<MobEffectInstance> CTOR_HOLDER =
-      findCtor(MobEffectInstance.class, getClassIfPresent("net.minecraft.core.Holder"), int.class, int.class);
+      findCtor(MobEffectInstance.class, ReflectionCompat.getClassIfPresent("net.minecraft.core.Holder"), int.class, int.class);
   private static final Method EFFECT_TO_HOLDER =
-      findMethod(MobEffect.class, "builtInRegistryHolder");
+      ReflectionCompat.findMethod(MobEffect.class, "builtInRegistryHolder",
+          ReflectionCompat.getClassIfPresent("net.minecraft.core.Holder"));
 
   private MobEffectCompat() {
   }
@@ -35,6 +36,13 @@ public final class MobEffectCompat {
   }
 
   private static <T> Constructor<T> findCtor(Class<T> owner, Class<?>... params) {
+    if (params != null) {
+      for (Class<?> param : params) {
+        if (param == null) {
+          return null;
+        }
+      }
+    }
     try {
       return owner.getConstructor(params);
     } catch (NoSuchMethodException e) {
@@ -42,19 +50,7 @@ public final class MobEffectCompat {
     }
   }
 
-  private static Method findMethod(Class<?> owner, String name, Class<?>... params) {
-    try {
-      return owner.getMethod(name, params);
-    } catch (NoSuchMethodException e) {
-      return null;
-    }
-  }
-
   private static Class<?> getClassIfPresent(String name) {
-    try {
-      return Class.forName(name);
-    } catch (ClassNotFoundException e) {
-      return null;
-    }
+    return ReflectionCompat.getClassIfPresent(name);
   }
 }

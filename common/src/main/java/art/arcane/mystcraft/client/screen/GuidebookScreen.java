@@ -22,6 +22,13 @@ import java.util.List;
  */
 public class GuidebookScreen extends Screen {
 
+  private static final java.lang.reflect.Method SCREEN_SCROLL_3 =
+      art.arcane.mystcraft.util.ReflectionCompat.findMethod(Screen.class, "mouseScrolled",
+          boolean.class, double.class, double.class, double.class);
+  private static final java.lang.reflect.Method SCREEN_SCROLL_4 =
+      art.arcane.mystcraft.util.ReflectionCompat.findMethod(Screen.class, "mouseScrolled",
+          boolean.class, double.class, double.class, double.class, double.class);
+
   // Book dimensions
   private static final int BOOK_WIDTH = 276;
   private static final int BOOK_HEIGHT = 180;
@@ -94,7 +101,6 @@ public class GuidebookScreen extends Screen {
     this.topPos = (this.height - BOOK_HEIGHT) / 2;
   }
 
-  @Override
   public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     this.renderBackground(graphics, mouseX, mouseY, partialTick);
 
@@ -112,6 +118,15 @@ public class GuidebookScreen extends Screen {
     }
 
     // Don't call super.render - we're not using widgets
+  }
+
+  public void renderBackground(@NotNull GuiGraphics graphics) {
+    // 1.20.1 legacy signature
+    renderBackground(graphics, 0, 0, 0.0f);
+  }
+
+  public void renderBackground(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    // Don't render dark background overlay - book has its own visual backing
   }
 
   private void renderTableOfContents(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -376,18 +391,55 @@ public class GuidebookScreen extends Screen {
     return super.mouseClicked(mouseX, mouseY, button);
   }
 
-  @Override
-  public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-    if (showingTableOfContents) {
-      int maxScroll = Math.max(0, content.getChapters().size() - 10);
-      if (deltaY > 0) {
-        tocScrollOffset = Math.max(0, tocScrollOffset - 1);
-      } else {
-        tocScrollOffset = Math.min(maxScroll, tocScrollOffset + 1);
-      }
+  public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    if (handleScroll(delta)) {
       return true;
     }
-    return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
+    return invokeSuperScroll3(mouseX, mouseY, delta);
+  }
+
+  public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+    if (handleScroll(deltaY)) {
+      return true;
+    }
+    return invokeSuperScroll4(mouseX, mouseY, deltaX, deltaY);
+  }
+
+  private boolean handleScroll(double delta) {
+    if (!showingTableOfContents) {
+      return false;
+    }
+    int maxScroll = Math.max(0, content.getChapters().size() - 10);
+    if (delta > 0) {
+      tocScrollOffset = Math.max(0, tocScrollOffset - 1);
+    } else {
+      tocScrollOffset = Math.min(maxScroll, tocScrollOffset + 1);
+    }
+    return true;
+  }
+
+  private boolean invokeSuperScroll3(double mouseX, double mouseY, double delta) {
+    if (SCREEN_SCROLL_3 == null) {
+      return false;
+    }
+    try {
+      Object result = SCREEN_SCROLL_3.invoke(this, mouseX, mouseY, delta);
+      return result instanceof Boolean value && value;
+    } catch (ReflectiveOperationException ignored) {
+      return false;
+    }
+  }
+
+  private boolean invokeSuperScroll4(double mouseX, double mouseY, double deltaX, double deltaY) {
+    if (SCREEN_SCROLL_4 == null) {
+      return false;
+    }
+    try {
+      Object result = SCREEN_SCROLL_4.invoke(this, mouseX, mouseY, deltaX, deltaY);
+      return result instanceof Boolean value && value;
+    } catch (ReflectiveOperationException ignored) {
+      return false;
+    }
   }
 
   private void openChapter(int index) {

@@ -10,7 +10,7 @@ import java.lang.reflect.Method;
 
 /**
  * Fabric 1.20.1 implementation of advancement trigger factory.
- * Uses the older API with ContextAwarePredicate (no Optional) and getId().
+ * Uses the legacy API with ContextAwarePredicate and getId().
  */
 public class FabricAdvancementTriggerFactory_1_20_1 implements IAdvancementTriggerFactory {
 
@@ -20,16 +20,11 @@ public class FabricAdvancementTriggerFactory_1_20_1 implements IAdvancementTrigg
 
   private static Method findRegisterMethod() throws NoSuchMethodException {
     Method[] methods = CriteriaTriggers.class.getDeclaredMethods();
-    // 1.20.1 uses register(CriterionTrigger) where the trigger has getId()
     for (Method method : methods) {
       Class<?>[] params = method.getParameterTypes();
       if (params.length == 1 && CriterionTrigger.class.isAssignableFrom(params[0])) {
         return method;
       }
-    }
-    // Fallback: try 2-param version (shouldn't be needed for 1.20.1)
-    for (Method method : methods) {
-      Class<?>[] params = method.getParameterTypes();
       if (params.length != 2) {
         continue;
       }
@@ -40,37 +35,35 @@ public class FabricAdvancementTriggerFactory_1_20_1 implements IAdvancementTrigg
         return method;
       }
     }
-    throw new NoSuchMethodException("No CriteriaTriggers register method found");
+    throw new NoSuchMethodException("No CriteriaTriggers register method for 1.20.1");
   }
 
   @Override
   public CriterionTrigger<?> createEnterMystDimensionSafeTrigger() {
-    return new FabricTriggers.EnterMystDimensionSafeTrigger();
+    return FabricTriggers.createEnterMystDimensionSafeTrigger();
   }
 
   @Override
   public CriterionTrigger<?> createEnterMystDimensionQuinnTrigger() {
-    return new FabricTriggers.EnterMystDimensionQuinnTrigger();
+    return FabricTriggers.createEnterMystDimensionQuinnTrigger();
   }
 
   @Override
   public CriterionTrigger<?> createWritingDeskWriteTrigger() {
-    return new FabricTriggers.WritingDeskWriteTrigger();
+    return FabricTriggers.createWritingDeskWriteTrigger();
   }
 
   @Override
   public void registerTriggers() {
-    writingDeskWriteTrigger = new FabricTriggers.WritingDeskWriteTrigger();
-    enterMystDimensionSafeTrigger = new FabricTriggers.EnterMystDimensionSafeTrigger();
-    enterMystDimensionQuinnTrigger = new FabricTriggers.EnterMystDimensionQuinnTrigger();
+    writingDeskWriteTrigger = FabricTriggers.createWritingDeskWriteTrigger();
+    enterMystDimensionSafeTrigger = FabricTriggers.createEnterMystDimensionSafeTrigger();
+    enterMystDimensionQuinnTrigger = FabricTriggers.createEnterMystDimensionQuinnTrigger();
 
     try {
       Method registerMethod = findRegisterMethod();
       registerMethod.setAccessible(true);
       Class<?>[] params = registerMethod.getParameterTypes();
-
       if (params.length == 1) {
-        // 1.20.1 style: register(CriterionTrigger) - trigger has getId()
         registerMethod.invoke(null, writingDeskWriteTrigger);
         registerMethod.invoke(null, enterMystDimensionSafeTrigger);
         registerMethod.invoke(null, enterMystDimensionQuinnTrigger);

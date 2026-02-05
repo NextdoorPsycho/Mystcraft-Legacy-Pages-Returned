@@ -116,7 +116,13 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/network/PocketHeadSyncPacket.java'
         exclude '**/network/OpenLecternBookPacket.java'
     })
-    source(file("${rootDir}/forge/shared/src/main/java"))
+    source(project.fileTree("${rootDir}/forge/shared/src/main/java") {
+        exclude '**/platform/ForgeAdvancementTriggerFactory.java'
+        exclude '**/platform/ForgeClientHelper.java'
+        exclude '**/platform/ForgePlatformHelper.java'
+        exclude '**/platform/ForgeVersionHelper.java'
+        exclude '**/network/ForgeMystcraftNetwork.java'
+    })
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -172,7 +178,13 @@ tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
-    from file("${rootDir}/forge/shared/src/main/java")
+    from fileTree("${rootDir}/forge/shared/src/main/java") {
+        exclude '**/platform/ForgeAdvancementTriggerFactory.java'
+        exclude '**/platform/ForgeClientHelper.java'
+        exclude '**/platform/ForgePlatformHelper.java'
+        exclude '**/platform/ForgeVersionHelper.java'
+        exclude '**/network/ForgeMystcraftNetwork.java'
+    }
 }
 
 jar {

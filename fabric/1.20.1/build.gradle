@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.9-SNAPSHOT'
+    id 'fabric-loom' version '1.13-SNAPSHOT'
 }
 
 version = "${project.version}"
@@ -71,20 +71,26 @@ dependencies {
 }
 
 tasks.named('compileJava', JavaCompile) {
-    // Add common sources with exclusions for 1.20.2-specific classes and platform-specific overrides
     source(project(':common').sourceSets.main.allSource.matching {
         exclude '**/gametest/**'
-        // Only exclude screens that have platform-specific implementations in fabric/1.20.1
-        exclude '**/client/screen/BookScreen.java'
-        exclude '**/client/screen/GuidebookScreen.java'
-        exclude '**/client/GuidebookClientHelper.java'
+        // Use 1.20.1-specific client helper
+        exclude '**/platform/FabricClientHelper.java'
+        // Use 1.20.1-specific advancement triggers
         exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
         exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
         exclude '**/advancements/WritingDeskWriteTrigger.java'
+        // Use 1.20.1-specific screens with legacy renderBackground signature
+        exclude '**/client/screen/BookScreen.java'
+        exclude '**/client/screen/GuidebookScreen.java'
         // Platform-specific packet implementations (use access widener for direct field access)
         exclude '**/network/LecternBookSyncPacket.java'
     })
-    source(file("${rootDir}/fabric/shared/src/main/java"))
+    source(fileTree("${rootDir}/fabric/shared/src/main/java") {
+        exclude '**/platform/FabricAdvancementTriggerFactory.java'
+        exclude '**/platform/FabricClientHelper.java'
+        exclude '**/platform/FabricVersionHelper.java'
+    })
+    source(sourceSets.main.java)
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -131,7 +137,11 @@ tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
-    from file("${rootDir}/fabric/shared/src/main/java")
+    from fileTree("${rootDir}/fabric/shared/src/main/java") {
+        exclude '**/platform/FabricAdvancementTriggerFactory.java'
+        exclude '**/platform/FabricClientHelper.java'
+        exclude '**/platform/FabricVersionHelper.java'
+    }
 }
 
 jar {

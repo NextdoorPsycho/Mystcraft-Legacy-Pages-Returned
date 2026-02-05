@@ -25,6 +25,12 @@ idea {
                 "Fabric 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':fabric:1.20.2:runServer']
                 }
+                "Fabric 1.20.4 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:1.20.4:runClient']
+                }
+                "Fabric 1.20.4 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':fabric:1.20.4:runServer']
+                }
                 "Forge 1.20.1 Client"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':forge:1.20.1:runClient']
                 }
@@ -36,6 +42,18 @@ idea {
                 }
                 "Forge 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':forge:1.20.2:runServer']
+                }
+                "Forge 1.20.4 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.20.4:runClient']
+                }
+                "Forge 1.20.4 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.20.4:runServer']
+                }
+                "Forge 1.20.6 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.20.6:runClient']
+                }
+                "Forge 1.20.6 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':forge:1.20.6:runServer']
                 }
                 "NeoForge 1.20.4 Client"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':neoforge:1.20.4:runClient']
@@ -60,8 +78,8 @@ tasks.register('cleanLibs') {
 
     doLast {
         def platforms = [
-            'fabric:1.20.1', 'fabric:1.20.2',
-            'forge:1.20.1', 'forge:1.20.2',
+            'fabric:1.20.1', 'fabric:1.20.2', 'fabric:1.20.4',
+            'forge:1.20.1', 'forge:1.20.2', 'forge:1.20.4', 'forge:1.20.6',
             'neoforge:1.20.4', 'neoforge:1.20.6'
         ]
         platforms.each { platform ->
@@ -94,9 +112,11 @@ tasks.register('cleanLibs') {
 // Build tasks
 tasks.register('buildAllVersions') {
     group = 'build'
-    description = 'Builds all platform/version combinations (6 JARs total)'
+    description = 'Builds all platform/version combinations (9 JARs total)'
     dependsOn ':fabric:1.20.1:build', ':fabric:1.20.2:build',
+              ':fabric:1.20.4:build',
               ':forge:1.20.1:build', ':forge:1.20.2:build',
+              ':forge:1.20.4:build', ':forge:1.20.6:build',
               ':neoforge:1.20.4:build', ':neoforge:1.20.6:build'
     mustRunAfter 'cleanLibs'
 }
@@ -126,11 +146,24 @@ def registerCopyTask = { String name, String outputProp ->
             exclude '*-sources*'
             exclude '*-dev.jar'
         }
+        from(project(':fabric:1.20.4').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+            exclude '*-dev.jar'
+        }
         from(project(':forge:1.20.1').layout.buildDirectory.dir('libs')) {
             include '*.jar'
             exclude '*-sources*'
         }
         from(project(':forge:1.20.2').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+        }
+        from(project(':forge:1.20.4').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+        }
+        from(project(':forge:1.20.6').layout.buildDirectory.dir('libs')) {
             include '*.jar'
             exclude '*-sources*'
         }
@@ -150,6 +183,18 @@ def registerCopyTask = { String name, String outputProp ->
             if (!targetDir.exists()) {
                 targetDir.mkdirs()
                 println "Created output directory: ${targetDir.absolutePath}"
+            }
+            // Remove old Mystcraft jars to avoid accidentally grabbing stale builds.
+            def deleted = 0
+            targetDir.listFiles()?.each { File f ->
+                if (f.name.startsWith('mystcraft_legacy') && f.name.endsWith('.jar')) {
+                    if (f.delete()) {
+                        deleted++
+                    }
+                }
+            }
+            if (deleted > 0) {
+                println "Deleted ${deleted} old Mystcraft jars from: ${targetDir.absolutePath}"
             }
             println "Copying jars to: ${targetDir.absolutePath}"
         }
@@ -181,6 +226,37 @@ tasks.register('buildXCompJars') {
 
 subprojects {
     apply plugin: 'java'
+
+    repositories {
+        maven {
+            name = 'Minecraft Libraries'
+            url = 'https://libraries.minecraft.net'
+            content {
+                includeGroup 'org.lwjgl'
+            }
+        }
+        mavenCentral {
+            content {
+                excludeGroup 'org.lwjgl'
+            }
+        }
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net'
+        }
+        maven {
+            name = 'Sponge'
+            url = 'https://repo.spongepowered.org/repository/maven-public'
+        }
+        maven {
+            name = 'Forge'
+            url = 'https://maven.minecraftforge.net'
+        }
+        maven {
+            name = 'NeoForge'
+            url = 'https://maven.neoforged.net/releases'
+        }
+    }
 
     tasks.register('cleanAllWorlds') {
         group = 'mystcraft'

@@ -283,7 +283,7 @@ public class MystcraftForge {
 
       // Register for grass blocks
       event.register(grassColor,
-          net.minecraft.world.level.block.Blocks.GRASS_BLOCK, net.minecraft.world.level.block.Blocks.GRASS, net.minecraft.world.level.block.Blocks.FERN,
+          net.minecraft.world.level.block.Blocks.GRASS_BLOCK, resolveShortGrass(), net.minecraft.world.level.block.Blocks.FERN,
           net.minecraft.world.level.block.Blocks.LARGE_FERN, net.minecraft.world.level.block.Blocks.POTTED_FERN, net.minecraft.world.level.block.Blocks.TALL_GRASS);
 
       // Register for foliage blocks
@@ -347,7 +347,7 @@ public class MystcraftForge {
       };
 
       event.register(grassItemColor,
-          net.minecraft.world.level.block.Blocks.GRASS_BLOCK, net.minecraft.world.level.block.Blocks.GRASS, net.minecraft.world.level.block.Blocks.FERN,
+          net.minecraft.world.level.block.Blocks.GRASS_BLOCK, resolveShortGrass(), net.minecraft.world.level.block.Blocks.FERN,
           net.minecraft.world.level.block.Blocks.LARGE_FERN, net.minecraft.world.level.block.Blocks.TALL_GRASS);
 
       event.register(foliageItemColor,
@@ -379,6 +379,20 @@ public class MystcraftForge {
     } catch (ReflectiveOperationException e) {
       throw new RuntimeException("Failed to invoke " + methodName + " on " + target.getClass().getName(), e);
     }
+  }
+
+  private static net.minecraft.world.level.block.Block resolveShortGrass() {
+    try {
+      return (net.minecraft.world.level.block.Block) net.minecraft.world.level.block.Blocks.class.getField("SHORT_GRASS").get(null);
+    } catch (ReflectiveOperationException ignored) {
+      // Older versions use GRASS.
+    }
+    try {
+      return (net.minecraft.world.level.block.Block) net.minecraft.world.level.block.Blocks.class.getField("GRASS").get(null);
+    } catch (ReflectiveOperationException ignored) {
+      // Fallback below.
+    }
+    return net.minecraft.world.level.block.Blocks.GRASS_BLOCK;
   }
 
   private static void invokeStaticNoArg(String preferredClass, String fallbackClass, String methodName) {

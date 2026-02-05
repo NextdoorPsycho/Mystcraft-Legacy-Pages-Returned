@@ -14,7 +14,6 @@ import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 
 /**
  * Fabric 1.20.1 implementation of IRegistryHelper.
- * Uses BuiltInRegistries for static registries and Registries for dynamic registry keys.
  */
 public class FabricRegistryHelper_1_20_1 implements IRegistryHelper {
 

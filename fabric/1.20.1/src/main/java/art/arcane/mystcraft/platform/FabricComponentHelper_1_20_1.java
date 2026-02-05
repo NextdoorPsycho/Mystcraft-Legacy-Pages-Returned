@@ -6,7 +6,6 @@ import net.minecraft.network.chat.MutableComponent;
 
 /**
  * Fabric 1.20.1 implementation of IComponentHelper.
- * Uses static factory methods on Component class.
  */
 public class FabricComponentHelper_1_20_1 implements IComponentHelper {
 

@@ -17,6 +17,25 @@ tasks.named('jar') {
     enabled = false
 }
 
+// IDE-only classpath to make symbols resolve in IntelliJ.
+// This does not affect platform builds because common is only a source provider
+// (compileJava, classes, and jar tasks are all disabled above).
+dependencies {
+    // Minecraft base
+    compileOnly "com.mojang:minecraft:${minecraft_version_1_20_4}"
+
+    // Fabric Loader + API (for IDE resolution of Fabric classes)
+    compileOnly "net.fabricmc:fabric-loader:${fabric_loader_version_1_20_4}"
+    compileOnly "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_4}"
+
+    // Forge (for IDE resolution of Forge classes)
+    compileOnly "net.minecraftforge:forge:${minecraft_version_1_20_4}-${forge_version_1_20_4}"
+
+    // Night Config (used for TOML config parsing)
+    compileOnly "com.electronwill.night-config:core:3.6.7"
+    compileOnly "com.electronwill.night-config:toml:3.6.7"
+}
+
 configurations {
     commonJava {
         canBeResolved = false

@@ -16,29 +16,30 @@ import java.lang.reflect.Method;
  */
 public final class ItemStackNbt {
 
-  private static final Method STACK_GET_TAG = findMethod(ItemStack.class, "getTag");
-  private static final Method STACK_GET_OR_CREATE_TAG = findMethod(ItemStack.class, "getOrCreateTag");
-  private static final Method STACK_SET_TAG = findMethod(ItemStack.class, "setTag", CompoundTag.class);
-  private static final Method STACK_SET_HOVER_NAME = findMethod(ItemStack.class, "setHoverName", Component.class);
-  private static final Method STACK_HAS_CUSTOM_HOVER_NAME = findMethod(ItemStack.class, "hasCustomHoverName");
-  private static final Method STACK_SAVE_OLD = findMethod(ItemStack.class, "save", CompoundTag.class);
-  private static final Method STACK_SAVE_PROVIDER_TAG = findMethod(ItemStack.class, "save", HolderLookup.Provider.class, Tag.class);
-  private static final Method STACK_SAVE_PROVIDER = findMethod(ItemStack.class, "save", HolderLookup.Provider.class);
-  private static final Method STACK_PARSE_OPTIONAL = findMethod(ItemStack.class, "parseOptional", HolderLookup.Provider.class, CompoundTag.class);
-  private static final Method STACK_OF_OLD = findMethod(ItemStack.class, "of", CompoundTag.class);
-  private static final Method STACK_SAME_TAGS = findMethod(ItemStack.class, "isSameItemSameTags", ItemStack.class, ItemStack.class);
-  private static final Method STACK_SAME_COMPONENTS = findMethod(ItemStack.class, "isSameItemSameComponents", ItemStack.class, ItemStack.class);
+  private static final Method STACK_GET_TAG = findMethod(ItemStack.class, "getTag", CompoundTag.class);
+  private static final Method STACK_SET_TAG = findMethod(ItemStack.class, "setTag", void.class, CompoundTag.class);
+  private static final Method STACK_SET_HOVER_NAME = findMethod(ItemStack.class, "setHoverName", void.class, Component.class);
+  private static final Method STACK_HAS_CUSTOM_HOVER_NAME = findMethod(ItemStack.class, "hasCustomHoverName", boolean.class);
+  private static final Method STACK_SAVE_OLD = findMethod(ItemStack.class, "save", CompoundTag.class, CompoundTag.class);
+  private static final Method STACK_SAVE_PROVIDER_TAG = findMethod(ItemStack.class, "save", Tag.class, HolderLookup.Provider.class, Tag.class);
+  private static final Method STACK_SAVE_PROVIDER = findMethod(ItemStack.class, "save", Tag.class, HolderLookup.Provider.class);
+  private static final Method STACK_PARSE_OPTIONAL = findMethod(ItemStack.class, "parseOptional", ItemStack.class, HolderLookup.Provider.class, CompoundTag.class);
+  private static final Method STACK_OF_OLD = findMethod(ItemStack.class, "of", ItemStack.class, CompoundTag.class);
+  private static final Method STACK_SAME_TAGS = findMethod(ItemStack.class, "isSameItemSameTags", boolean.class, ItemStack.class, ItemStack.class);
+  private static final Method STACK_SAME_COMPONENTS = findMethod(ItemStack.class, "isSameItemSameComponents", boolean.class, ItemStack.class, ItemStack.class);
 
   private static final Object CUSTOM_DATA_TYPE = getStaticField("net.minecraft.core.component.DataComponents", "CUSTOM_DATA");
   private static final Object CUSTOM_NAME_TYPE = getStaticField("net.minecraft.core.component.DataComponents", "CUSTOM_NAME");
-  private static final Method STACK_GET_COMPONENT = findMethod(ItemStack.class, "get", getClassIfPresent("net.minecraft.core.component.DataComponentType"));
-  private static final Method STACK_SET_COMPONENT = findMethod(ItemStack.class, "set",
+  private static final Method STACK_GET_COMPONENT = findMethod(ItemStack.class, "get", Object.class,
+      getClassIfPresent("net.minecraft.core.component.DataComponentType"));
+  private static final Method STACK_SET_COMPONENT = findMethod(ItemStack.class, "set", void.class,
       getClassIfPresent("net.minecraft.core.component.DataComponentType"),
       Object.class
   );
-  private static final Method CUSTOM_DATA_COPY_TAG = findMethod(getClassIfPresent("net.minecraft.world.item.component.CustomData"), "copyTag");
+  private static final Method CUSTOM_DATA_COPY_TAG = findMethod(getClassIfPresent("net.minecraft.world.item.component.CustomData"),
+      "copyTag", CompoundTag.class);
   private static final Method CUSTOM_DATA_SET = findMethod(getClassIfPresent("net.minecraft.world.item.component.CustomData"),
-      "set",
+      "set", void.class,
       getClassIfPresent("net.minecraft.core.component.DataComponentType"),
       ItemStack.class,
       CompoundTag.class
@@ -67,6 +68,7 @@ public final class ItemStackNbt {
     CompoundTag tag = getTag(stack);
     if (tag == null) {
       tag = new CompoundTag();
+      setTag(stack, tag);
     }
     return tag;
   }
@@ -165,15 +167,40 @@ public final class ItemStackNbt {
     }
   }
 
-  private static Method findMethod(Class<?> owner, String name, Class<?>... params) {
+  private static Method findMethod(Class<?> owner, String name, Class<?> returnType, Class<?>... params) {
     if (owner == null) {
       return null;
     }
-    try {
-      return owner.getMethod(name, params);
-    } catch (NoSuchMethodException e) {
-      return null;
+    if (name != null) {
+      try {
+        Method method = owner.getMethod(name, params);
+        if (returnType == null || returnType.isAssignableFrom(method.getReturnType())) {
+          return method;
+        }
+      } catch (NoSuchMethodException ignored) {
+        // Fall through to signature-based lookup.
+      }
     }
+    for (Method method : owner.getMethods()) {
+      if (params.length != method.getParameterCount()) {
+        continue;
+      }
+      if (returnType != null && !returnType.isAssignableFrom(method.getReturnType())) {
+        continue;
+      }
+      Class<?>[] methodParams = method.getParameterTypes();
+      boolean matches = true;
+      for (int i = 0; i < params.length; i++) {
+        if (params[i] == null || !methodParams[i].isAssignableFrom(params[i])) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches) {
+        return method;
+      }
+    }
+    return null;
   }
 
   private static Object getStaticField(String className, String fieldName) {

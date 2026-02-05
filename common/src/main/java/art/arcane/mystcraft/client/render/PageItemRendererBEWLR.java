@@ -58,6 +58,8 @@ public class PageItemRendererBEWLR extends BlockEntityWithoutLevelRenderer {
   private static int componentImageHeight = 0;
   private static volatile boolean prewarming = false;
   private static volatile boolean prewarmComplete = false;
+  private static volatile long lastPrewarmAttemptMs = 0;
+  private static final long PREWARM_RETRY_INTERVAL_MS = 5000;
 
   private PageItemRendererBEWLR() {
     super(Minecraft.getInstance().getBlockEntityRenderDispatcher(),
@@ -327,6 +329,11 @@ public class PageItemRendererBEWLR extends BlockEntityWithoutLevelRenderer {
    */
   public static void prewarmCache() {
     if (prewarming || prewarmComplete) return;
+    long now = System.currentTimeMillis();
+    if (now - lastPrewarmAttemptMs < PREWARM_RETRY_INTERVAL_MS) {
+      return;
+    }
+    lastPrewarmAttemptMs = now;
     prewarming = true;
 
     Thread thread = new Thread(() -> {
@@ -403,6 +410,10 @@ public class PageItemRendererBEWLR extends BlockEntityWithoutLevelRenderer {
                            MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
     if (!(stack.getItem() instanceof PageItem)) {
       return;
+    }
+
+    if (!prewarmComplete && !prewarming) {
+      prewarmCache();
     }
 
     // Register any pending pre-warmed textures on the main thread

@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.9-SNAPSHOT'
+    id 'fabric-loom' version '1.13-SNAPSHOT'
 }
 
 version = "${project.version}"
@@ -80,6 +80,7 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/network/LecternBookSyncPacket.java'
     })
     source(file("${rootDir}/fabric/shared/src/main/java"))
+    source(sourceSets.main.java)
 }
 
 tasks.named('processResources', ProcessResources) {

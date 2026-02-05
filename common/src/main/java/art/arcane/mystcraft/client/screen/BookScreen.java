@@ -9,11 +9,13 @@ import art.arcane.mystcraft.network.BlockBookActivatePacket;
 import art.arcane.mystcraft.network.EntityBookActivatePacket;
 import art.arcane.mystcraft.network.LinkBookActivatePacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
@@ -119,11 +121,12 @@ public class BookScreen extends Screen {
   }
 
   private static Component getBookTitle(ItemStack book) {
-    if (book.hasCustomHoverName()) {
+    if (ItemStackNbt.hasCustomHoverName(book)) {
       return book.getHoverName();
     }
-    if (book.getTag() != null) {
-      String displayName = LinkOptions.getDisplayName(book.getTag());
+    CompoundTag tag = ItemStackNbt.getTag(book);
+    if (tag != null) {
+      String displayName = LinkOptions.getDisplayName(tag);
       if (!"???".equals(displayName)) {
         return Component.literal(displayName);
       }
@@ -140,7 +143,7 @@ public class BookScreen extends Screen {
       if (mc.player == null) return;
 
       InteractionHand hand = InteractionHand.MAIN_HAND;
-      if (ItemStack.isSameItemSameTags(mc.player.getOffhandItem(), book)) {
+      if (ItemStackNbt.isSameItemSameTags(mc.player.getOffhandItem(), book)) {
         hand = InteractionHand.OFF_HAND;
       }
 
@@ -297,10 +300,11 @@ public class BookScreen extends Screen {
     }
 
     // Destination info
-    if (book.getTag() != null) {
+    CompoundTag linkTag = ItemStackNbt.getTag(book);
+    if (linkTag != null) {
       y += 10;
-      Integer dimId = LinkOptions.getDimensionUID(book.getTag());
-      BlockPos spawn = LinkOptions.getSpawn(book.getTag());
+      Integer dimId = LinkOptions.getDimensionUID(linkTag);
+      BlockPos spawn = LinkOptions.getSpawn(linkTag);
 
       if (dimId != null) {
         String dimText = isAgebook ? "Age " + dimId : "Dimension " + dimId;
@@ -412,8 +416,9 @@ public class BookScreen extends Screen {
   }
 
   private String getBookDisplayName() {
-    if (book.getTag() != null) {
-      String name = LinkOptions.getDisplayName(book.getTag());
+    CompoundTag tag = ItemStackNbt.getTag(book);
+    if (tag != null) {
+      String name = LinkOptions.getDisplayName(tag);
       if (!"???".equals(name) && !name.isEmpty()) {
         return name;
       }
@@ -437,18 +442,19 @@ public class BookScreen extends Screen {
   private boolean isTargetVisited() {
     // For now, always return false (unvisited appearance)
     // Could track visited ages in the future
-    return book.getTag() != null && LinkOptions.getDimensionUID(book.getTag()) != null;
+    return ItemStackNbt.getTag(book) != null && LinkOptions.getDimensionUID(ItemStackNbt.getTag(book)) != null;
   }
 
   /**
    * Checks if the book has a valid link destination or can create one.
    */
   private boolean hasValidDestination() {
-    if (book.getTag() == null) {
+    if (ItemStackNbt.getTag(book) == null) {
       return false;
     }
-    Integer dimId = LinkOptions.getDimensionUID(book.getTag());
-    BlockPos spawn = LinkOptions.getSpawn(book.getTag());
+    CompoundTag tag2 = ItemStackNbt.getTag(book);
+    Integer dimId = LinkOptions.getDimensionUID(tag2);
+    BlockPos spawn = LinkOptions.getSpawn(tag2);
 
     // Existing books with destination
     if (dimId != null && spawn != null) {

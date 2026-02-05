@@ -12,6 +12,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
+import art.arcane.mystcraft.util.RenderCompat;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -532,7 +533,7 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     RenderSystem.enableDepthTest();
     RenderSystem.depthMask(true);
 
-    RenderSystem.setShader(GameRenderer::getPositionTexColorNormalShader);
+    RenderSystem.setShader(RenderCompat.positionTexColorNormalShaderSupplier());
     RenderSystem.setShaderTexture(0, new net.minecraft.resources.ResourceLocation("textures/environment/clouds.png"));
 
     float f = (float) (cloudHeight - camY + 0.33F);

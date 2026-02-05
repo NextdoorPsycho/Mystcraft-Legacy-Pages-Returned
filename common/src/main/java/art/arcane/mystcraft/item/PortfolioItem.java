@@ -5,6 +5,8 @@ import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.PortfolioMenu;
 import art.arcane.mystcraft.platform.Services;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.TooltipCompat;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -43,7 +45,7 @@ import java.util.List;
  * collected pages, with automatic organization features.
  * It's crafted FROM a Folder (upgrade path).
  */
-public class PortfolioItem extends Item {
+public class PortfolioItem extends Item implements TooltipCompat {
 
   public static final int MAX_PAGES = 64;
   private static final String TAG_PAGES = "Pages";
@@ -56,14 +58,14 @@ public class PortfolioItem extends Item {
    * Gets all pages in this portfolio.
    */
   public static List<ItemStack> getPages(ItemStack stack) {
-    if (stack.getTag() == null) {
+    if (ItemStackNbt.getTag(stack) == null) {
       return new ArrayList<>();
     }
-    CompoundTag tag = stack.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(stack);
     ListTag listTag = tag.getList(TAG_PAGES, Tag.TAG_COMPOUND);
     List<ItemStack> pages = new ArrayList<>();
     for (int i = 0; i < listTag.size(); i++) {
-      ItemStack page = ItemStack.of(listTag.getCompound(i));
+      ItemStack page = ItemStackNbt.load(listTag.getCompound(i));
       if (!page.isEmpty()) {
         pages.add(page);
       }
@@ -77,8 +79,8 @@ public class PortfolioItem extends Item {
    * @return true if the page was added successfully
    */
   public static boolean addPage(ItemStack portfolio, ItemStack page) {
-    if (portfolio.getTag() == null) {
-      portfolio.setTag(new CompoundTag());
+    if (ItemStackNbt.getTag(portfolio) == null) {
+      ItemStackNbt.setTag(portfolio, new CompoundTag());
     }
     List<ItemStack> pages = getPages(portfolio);
     if (pages.size() >= MAX_PAGES) {
@@ -108,14 +110,15 @@ public class PortfolioItem extends Item {
    * Sets the pages in this portfolio.
    */
   public static void setPages(ItemStack portfolio, List<ItemStack> pages) {
-    CompoundTag tag = portfolio.getOrCreateTag();
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(portfolio);
     ListTag listTag = new ListTag();
     for (ItemStack page : pages) {
       if (!page.isEmpty()) {
-        listTag.add(page.save(new CompoundTag()));
+        listTag.add(ItemStackNbt.save(page));
       }
     }
     tag.put(TAG_PAGES, listTag);
+    ItemStackNbt.setTag(portfolio, tag);
   }
 
   /**
@@ -193,7 +196,7 @@ public class PortfolioItem extends Item {
 
     for (int i = 0; i < pages.size(); i++) {
       ItemStack page = pages.get(i);
-      if (ItemStack.isSameItemSameTags(page, pageToRemove)) {
+      if (ItemStackNbt.isSameItemSameTags(page, pageToRemove)) {
         ItemStack removed = pages.remove(i);
         setPages(portfolio, pages);
         return removed;
@@ -207,7 +210,7 @@ public class PortfolioItem extends Item {
    */
   public static boolean containsPage(ItemStack portfolio, ItemStack pageToFind) {
     for (ItemStack page : getPages(portfolio)) {
-      if (ItemStack.isSameItemSameTags(page, pageToFind)) {
+      if (ItemStackNbt.isSameItemSameTags(page, pageToFind)) {
         return true;
       }
     }
@@ -222,7 +225,7 @@ public class PortfolioItem extends Item {
   public static int countMatchingPages(ItemStack portfolio, ItemStack pageToCount) {
     int count = 0;
     for (ItemStack page : getPages(portfolio)) {
-      if (ItemStack.isSameItemSameTags(page, pageToCount)) {
+      if (ItemStackNbt.isSameItemSameTags(page, pageToCount)) {
         count++;
       }
     }
@@ -300,7 +303,6 @@ public class PortfolioItem extends Item {
 
   // --- Portfolio: Bulk Operations ---
 
-  @Override
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
     List<ItemStack> pages = getPages(stack);
     if (!pages.isEmpty()) {

@@ -5,6 +5,8 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.world.PersonalPocketData;
 import art.arcane.mystcraft.world.PersonalPocketDimension;
+import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.TooltipCompat;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -24,7 +26,7 @@ import java.util.List;
 /**
  * Personal link book that links to a player-specific pocket dimension.
  */
-public class PersonalLinkBookItem extends LinkbookItem {
+public class PersonalLinkBookItem extends LinkbookItem implements TooltipCompat {
 
   public static final String TOOLTIP_KEY = "item.mystcraft.personal_link_book.tooltip";
 
@@ -61,7 +63,7 @@ public class PersonalLinkBookItem extends LinkbookItem {
     tag.putFloat("damage", 0.0f);
     tag.putBoolean("NoDecay", true);
 
-    stack.setTag(tag);
+    ItemStackNbt.setTag(stack, tag);
   }
 
   @Override
@@ -122,7 +124,7 @@ public class PersonalLinkBookItem extends LinkbookItem {
 
     // Ensure link data is initialized and up-to-date.
     validate(serverLevel, stack, player);
-    CompoundTag tag = stack.getOrCreateTag();
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
     if (LinkOptions.getDimensionUID(tag) == null) {
       LinkOptions.setDimensionUID(tag, PersonalPocketDimension.getPersonalAgeUid(player.getUUID()));
     }
@@ -132,6 +134,7 @@ public class PersonalLinkBookItem extends LinkbookItem {
     if (LinkOptions.getSpawnYaw(tag) == 0.0f) {
       LinkOptions.setSpawnYaw(tag, player.getYRot());
     }
+    ItemStackNbt.setTag(stack, tag);
     onLink(stack, level, entity);
     LinkingManager.LinkResult result = LinkingManager.performLink(player, tag);
     if (result != LinkingManager.LinkResult.SUCCESS) {

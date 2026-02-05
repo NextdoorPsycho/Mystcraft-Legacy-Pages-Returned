@@ -2,6 +2,7 @@ package art.arcane.mystcraft.link;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.platform.Services;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -139,7 +140,6 @@ public class LinkPermissions extends SavedData {
     );
   }
 
-  @Override
   public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
     // Save entry blacklist
     CompoundTag blacklist = new CompoundTag();
@@ -180,6 +180,10 @@ public class LinkPermissions extends SavedData {
     tag.put("GlobalAdmins", saveUUIDSet(globalAdmins));
 
     return tag;
+  }
+
+  public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+    return save(tag);
   }
 
   // --- Permission Management ---

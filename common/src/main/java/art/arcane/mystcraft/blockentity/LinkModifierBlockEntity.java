@@ -7,6 +7,7 @@ import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.item.PageItem;
 import art.arcane.mystcraft.menu.LinkModifierMenu;
 import art.arcane.mystcraft.registry.ModBlockEntities;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -87,7 +88,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
       if (!stack.isEmpty()) {
         CompoundTag itemTag = new CompoundTag();
         itemTag.putInt("Slot", i);
-        stack.save(itemTag);
+        itemTag.merge(ItemStackNbt.save(stack));
         itemList.add(itemTag);
       }
     }
@@ -103,7 +104,8 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
       CompoundTag itemTag = itemList.getCompound(i);
       int slot = itemTag.getInt("Slot");
       if (slot >= 0 && slot < inventory.getContainerSize()) {
-        inventory.setItem(slot, ItemStack.of(itemTag));
+        CompoundTag itemData = itemTag.contains("Item", Tag.TAG_COMPOUND) ? itemTag.getCompound("Item") : itemTag;
+        inventory.setItem(slot, ItemStackNbt.load(itemData));
       }
     }
   }
@@ -214,7 +216,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
   public void setBookTitle(@NotNull Player player, @NotNull String title) {
     ItemStack book = getBook();
     if (book.isEmpty()) return;
-    book.setHoverName(Component.literal(title));
+    ItemStackNbt.setHoverName(book, Component.literal(title));
     setChanged();
     markForUpdate();
   }
@@ -269,7 +271,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
     ItemStack book = getBook();
     if (book.isEmpty() || !(book.getItem() instanceof AgebookItem)) return "";
 
-    CompoundTag tag = book.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(book);
     if (tag == null || !tag.contains("Seed")) return "";
 
     return String.valueOf(tag.getLong("Seed"));
@@ -282,7 +284,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
     ItemStack book = getBook();
     if (book.isEmpty() || !(book.getItem() instanceof AgebookItem)) return;
 
-    CompoundTag tag = book.getOrCreateTag();
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(book);
     if (seedStr.isEmpty()) {
       tag.remove("Seed");
     } else {
@@ -293,6 +295,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
         // Invalid seed format
       }
     }
+    ItemStackNbt.setTag(book, tag);
     setChanged();
     markForUpdate();
   }

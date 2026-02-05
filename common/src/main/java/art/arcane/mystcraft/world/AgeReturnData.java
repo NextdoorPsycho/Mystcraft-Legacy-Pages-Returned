@@ -2,6 +2,7 @@ package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.platform.Services;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -62,7 +63,6 @@ public class AgeReturnData extends SavedData {
     }
   }
 
-  @Override
   public CompoundTag save(CompoundTag tag) {
     ListTag list = new ListTag();
     for (Map.Entry<UUID, Map<Integer, CompoundTag>> playerEntry : returnLinks.entrySet()) {
@@ -77,6 +77,10 @@ public class AgeReturnData extends SavedData {
     }
     tag.put(TAG_RETURNS, list);
     return tag;
+  }
+
+  public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+    return save(tag);
   }
 
   public void setReturnLink(UUID playerId, int ageUID, CompoundTag linkData) {

@@ -3,6 +3,7 @@ package art.arcane.mystcraft.entity;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.registry.ModEntities;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -70,7 +71,7 @@ public class LinkbookEntity extends Entity {
   @Override
   protected void readAdditionalSaveData(CompoundTag tag) {
     if (tag.contains("Book")) {
-      setBookItem(ItemStack.of(tag.getCompound("Book")));
+      setBookItem(ItemStackNbt.load(tag.getCompound("Book")));
     }
     if (tag.contains("Health")) {
       setHealth(tag.getFloat("Health"));
@@ -83,7 +84,7 @@ public class LinkbookEntity extends Entity {
   protected void addAdditionalSaveData(CompoundTag tag) {
     ItemStack book = getBookItem();
     if (!book.isEmpty()) {
-      tag.put("Book", book.save(new CompoundTag()));
+      tag.put("Book", ItemStackNbt.save(book));
     }
     tag.putFloat("Health", getHealth());
     tag.putInt("TicksExisted", ticksExisted);
@@ -249,7 +250,8 @@ public class LinkbookEntity extends Entity {
    */
   private void processGroundDecay() {
     ItemStack book = getBookItem();
-    if (!book.isEmpty() && book.getTag() != null && book.getTag().getBoolean("NoDecay")) {
+    CompoundTag tag = ItemStackNbt.getTag(book);
+    if (!book.isEmpty() && tag != null && tag.getBoolean("NoDecay")) {
       return;
     }
     if (onGround() && level().getFluidState(blockPosition()).isEmpty()) {

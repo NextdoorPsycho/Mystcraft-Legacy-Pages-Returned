@@ -4,6 +4,7 @@ import art.arcane.mystcraft.api.instability.IEnvironmentalEffect;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
+import art.arcane.mystcraft.util.MobEffectCompat;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.level.chunk.LevelChunk;
 
@@ -61,7 +62,10 @@ public class EffectPotion implements IEnvironmentalEffect {
 
     // Apply effect to a random player
     ServerPlayer target = players.get(level.random.nextInt(players.size()));
-    target.addEffect(new MobEffectInstance(effect, duration, 0));
+    MobEffectInstance instance = MobEffectCompat.createInstance(effect, duration, 0);
+    if (instance != null) {
+      target.addEffect(instance);
+    }
   }
 
   private boolean isNearChunk(ServerPlayer player, LevelChunk chunk) {

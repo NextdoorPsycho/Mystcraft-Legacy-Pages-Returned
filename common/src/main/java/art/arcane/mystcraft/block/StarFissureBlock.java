@@ -2,6 +2,9 @@ package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.StarFissureBlockEntity;
 import art.arcane.mystcraft.registry.ModSounds;
+import art.arcane.mystcraft.util.BlockInteractionCompat;
+import art.arcane.mystcraft.util.CodecCompat;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,8 +30,9 @@ import org.jetbrains.annotations.Nullable;
  * Falls through the void and appears as a star in the sky from the Age.
  * Entities that touch it are teleported to their spawn point in the overworld.
  */
-public class StarFissureBlock extends BaseEntityBlock {
+public class StarFissureBlock extends BaseEntityBlock implements BlockInteractionCompat {
 
+  public static final MapCodec<StarFissureBlock> CODEC = CodecCompat.simpleCodec(StarFissureBlock::new);
   private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 1.6, 16);
 
   public StarFissureBlock(Properties properties) {
@@ -60,6 +64,10 @@ public class StarFissureBlock extends BaseEntityBlock {
   @Override
   public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
     return null;
+  }
+
+  protected MapCodec<? extends BaseEntityBlock> codec() {
+    return CODEC;
   }
 
   @Override

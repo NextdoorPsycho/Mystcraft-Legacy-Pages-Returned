@@ -4,6 +4,7 @@ import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.entity.MeteorEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import art.arcane.mystcraft.util.RenderCompat;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -79,23 +80,24 @@ public class MeteorEntityRenderer extends EntityRenderer<MeteorEntity> {
 
     // Render all 6 faces
     // Top
-    addFace(buffer, matrix, normal, -size, size, -size, size, size, size, 0, 1, 0, r, g, b, 1.0f);
+    PoseStack.Pose pose = poseStack.last();
+    addFace(buffer, pose, matrix, normal, -size, size, -size, size, size, size, 0, 1, 0, r, g, b, 1.0f);
     // Bottom
-    addFace(buffer, matrix, normal, -size, -size, size, size, -size, -size, 0, -1, 0, r, g, b, 1.0f);
+    addFace(buffer, pose, matrix, normal, -size, -size, size, size, -size, -size, 0, -1, 0, r, g, b, 1.0f);
     // North
-    addFace(buffer, matrix, normal, size, -size, -size, size, size, -size, -size, size, -size, -size, -size, -size, 0, 0, -1, r, g, b, 1.0f);
+    addFace(buffer, pose, matrix, normal, size, -size, -size, size, size, -size, -size, size, -size, -size, -size, -size, 0, 0, -1, r, g, b, 1.0f);
     // South
-    addFace(buffer, matrix, normal, -size, -size, size, -size, size, size, size, size, size, size, -size, size, 0, 0, 1, r, g, b, 1.0f);
+    addFace(buffer, pose, matrix, normal, -size, -size, size, -size, size, size, size, size, size, size, -size, size, 0, 0, 1, r, g, b, 1.0f);
     // West
-    addFace(buffer, matrix, normal, -size, -size, -size, -size, size, -size, -size, size, size, -size, -size, size, -1, 0, 0, r, g, b, 1.0f);
+    addFace(buffer, pose, matrix, normal, -size, -size, -size, -size, size, -size, -size, size, size, -size, -size, size, -1, 0, 0, r, g, b, 1.0f);
     // East
-    addFace(buffer, matrix, normal, size, -size, size, size, size, size, size, size, -size, size, -size, -size, 1, 0, 0, r, g, b, 1.0f);
+    addFace(buffer, pose, matrix, normal, size, -size, size, size, size, size, size, size, -size, size, -size, -size, 1, 0, 0, r, g, b, 1.0f);
   }
 
   /**
    * Adds a face (quad) to the vertex buffer.
    */
-  private void addFace(VertexConsumer buffer, Matrix4f matrix, Matrix3f normal,
+  private void addFace(VertexConsumer buffer, PoseStack.Pose pose, Matrix4f matrix, Matrix3f normal,
                        float x1, float y1, float z1,
                        float x2, float y2, float z2,
                        float nx, float ny, float nz,
@@ -107,43 +109,39 @@ public class MeteorEntityRenderer extends EntityRenderer<MeteorEntity> {
     int ib = (int) (b * 255);
     int ia = (int) (a * 255);
 
-    buffer.vertex(matrix, x1, y1, z1)
+    VertexConsumer vertex = buffer.vertex(matrix, x1, y1, z1)
         .color(ir, ig, ib, ia)
         .uv(0, 0)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
-        .uv2(light)
-        .normal(normal, nx, ny, nz)
-        .endVertex();
+        .uv2(light);
+    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
 
-    buffer.vertex(matrix, x1, y1, z2)
+    vertex = buffer.vertex(matrix, x1, y1, z2)
         .color(ir, ig, ib, ia)
         .uv(0, 1)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
-        .uv2(light)
-        .normal(normal, nx, ny, nz)
-        .endVertex();
+        .uv2(light);
+    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
 
-    buffer.vertex(matrix, x2, y1, z2)
+    vertex = buffer.vertex(matrix, x2, y1, z2)
         .color(ir, ig, ib, ia)
         .uv(1, 1)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
-        .uv2(light)
-        .normal(normal, nx, ny, nz)
-        .endVertex();
+        .uv2(light);
+    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
 
-    buffer.vertex(matrix, x2, y1, z1)
+    vertex = buffer.vertex(matrix, x2, y1, z1)
         .color(ir, ig, ib, ia)
         .uv(1, 0)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
-        .uv2(light)
-        .normal(normal, nx, ny, nz)
-        .endVertex();
+        .uv2(light);
+    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
   }
 
   /**
    * Adds a face with explicit 4 vertices.
    */
-  private void addFace(VertexConsumer buffer, Matrix4f matrix, Matrix3f normal,
+  private void addFace(VertexConsumer buffer, PoseStack.Pose pose, Matrix4f matrix, Matrix3f normal,
                        float x1, float y1, float z1,
                        float x2, float y2, float z2,
                        float x3, float y3, float z3,
@@ -156,37 +154,33 @@ public class MeteorEntityRenderer extends EntityRenderer<MeteorEntity> {
     int ib = (int) (b * 255);
     int ia = (int) (a * 255);
 
-    buffer.vertex(matrix, x1, y1, z1)
+    VertexConsumer vertex = buffer.vertex(matrix, x1, y1, z1)
         .color(ir, ig, ib, ia)
         .uv(0, 0)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
-        .uv2(light)
-        .normal(normal, nx, ny, nz)
-        .endVertex();
+        .uv2(light);
+    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
 
-    buffer.vertex(matrix, x2, y2, z2)
+    vertex = buffer.vertex(matrix, x2, y2, z2)
         .color(ir, ig, ib, ia)
         .uv(0, 1)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
-        .uv2(light)
-        .normal(normal, nx, ny, nz)
-        .endVertex();
+        .uv2(light);
+    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
 
-    buffer.vertex(matrix, x3, y3, z3)
+    vertex = buffer.vertex(matrix, x3, y3, z3)
         .color(ir, ig, ib, ia)
         .uv(1, 1)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
-        .uv2(light)
-        .normal(normal, nx, ny, nz)
-        .endVertex();
+        .uv2(light);
+    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
 
-    buffer.vertex(matrix, x4, y4, z4)
+    vertex = buffer.vertex(matrix, x4, y4, z4)
         .color(ir, ig, ib, ia)
         .uv(1, 0)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
-        .uv2(light)
-        .normal(normal, nx, ny, nz)
-        .endVertex();
+        .uv2(light);
+    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
   }
 
   /**

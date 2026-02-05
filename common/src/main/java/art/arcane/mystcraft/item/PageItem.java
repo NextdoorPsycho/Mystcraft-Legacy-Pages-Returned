@@ -3,6 +3,8 @@ package art.arcane.mystcraft.item;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.TooltipCompat;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -19,7 +21,7 @@ import java.util.List;
  * Contains a single symbol that can be used in Age creation.
  * Can be blank, a link panel, or contain a symbol.
  */
-public class PageItem extends Item {
+public class PageItem extends Item implements TooltipCompat {
 
   public PageItem(Properties properties) {
     super(properties);
@@ -28,7 +30,7 @@ public class PageItem extends Item {
   @Override
   @NotNull
   public Component getName(@NotNull ItemStack stack) {
-    if (stack.getTag() != null) {
+    if (ItemStackNbt.getTag(stack) != null) {
       if (Page.isLinkPanel(stack)) {
         return Component.translatable("item.mystcraft.page.panel");
       }
@@ -47,9 +49,8 @@ public class PageItem extends Item {
     return Component.translatable("item.mystcraft.page.blank");
   }
 
-  @Override
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
-    if (stack.getTag() != null) {
+    if (ItemStackNbt.getTag(stack) != null) {
       Page.getTooltip(stack, tooltip);
     }
   }
@@ -100,8 +101,8 @@ public class PageItem extends Item {
     if (!Page.isBlank(stack)) {
       return false;
     }
-    if (stack.getTag() == null) {
-      stack.setTag(Page.createDefault());
+    if (ItemStackNbt.getTag(stack) == null) {
+      ItemStackNbt.setTag(stack, Page.createDefault());
     }
     Page.setSymbol(stack, symbol);
     return true;

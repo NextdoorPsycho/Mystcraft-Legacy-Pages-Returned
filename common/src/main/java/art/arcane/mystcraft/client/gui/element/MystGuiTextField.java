@@ -1,6 +1,6 @@
 package art.arcane.mystcraft.client.gui.element;
 
-import net.minecraft.SharedConstants;
+import art.arcane.mystcraft.util.ChatCompat;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import org.lwjgl.glfw.GLFW;
@@ -274,7 +274,7 @@ public class MystGuiTextField extends MystGuiElement {
   protected boolean onCharTyped(char codePoint, int modifiers) {
     if (!focused || !editable) return false;
 
-    if (SharedConstants.isAllowedChatCharacter(codePoint)) {
+    if (ChatCompat.isAllowedChatCharacter(codePoint)) {
       insertText(String.valueOf(codePoint));
       return true;
     }

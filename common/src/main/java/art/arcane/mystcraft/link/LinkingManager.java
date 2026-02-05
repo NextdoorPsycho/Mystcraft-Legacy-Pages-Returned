@@ -9,6 +9,7 @@ import art.arcane.mystcraft.network.LinkEffectPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.registry.ModSounds;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.util.ChunkStatusCompat;
 import art.arcane.mystcraft.world.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -29,7 +30,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -716,7 +716,7 @@ public final class LinkingManager {
     int minY = level.getMinBuildHeight();
     int maxY = level.getMaxBuildHeight();
 
-    ChunkAccess chunk = level.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, false);
+    ChunkAccess chunk = ChunkStatusCompat.getChunk(level, x >> 4, z >> 4, false);
 
     if (chunk == null) {
       Mystcraft.LOGGER.warn("[LinkingManager] findSafeY: chunk not loaded at ({}, {}), forcing load",

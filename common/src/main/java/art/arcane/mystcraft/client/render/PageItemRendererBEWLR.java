@@ -276,6 +276,9 @@ public class PageItemRendererBEWLR extends BlockEntityWithoutLevelRenderer {
 
   private static BufferedImage loadPageBackground() {
     try {
+      if (Minecraft.getInstance().getResourceManager() == null) {
+        return null;
+      }
       Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(PAGE_BACKGROUND_LOC);
       if (resource.isPresent()) {
         try (InputStream is = resource.get().open()) {
@@ -295,6 +298,9 @@ public class PageItemRendererBEWLR extends BlockEntityWithoutLevelRenderer {
     if (componentPixels != null) return true;
 
     try {
+      if (Minecraft.getInstance().getResourceManager() == null) {
+        return false;
+      }
       Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(DrawableWord.WORD_COMPONENTS);
       if (resource.isPresent()) {
         try (InputStream is = resource.get().open()) {
@@ -324,17 +330,18 @@ public class PageItemRendererBEWLR extends BlockEntityWithoutLevelRenderer {
     prewarming = true;
 
     Thread thread = new Thread(() -> {
+      boolean success = false;
       try {
         // Load resources we need
         BufferedImage background = loadPageBackground();
         if (background == null) {
-          Mystcraft.LOGGER.warn("Cannot prewarm page textures: background image not available");
+          Mystcraft.LOGGER.debug("Cannot prewarm page textures: background image not available");
           return;
         }
 
         // Ensure component pixels are loaded
         if (!ensureComponentPixels()) {
-          Mystcraft.LOGGER.warn("Cannot prewarm page textures: component sprites not available");
+          Mystcraft.LOGGER.debug("Cannot prewarm page textures: component sprites not available");
           return;
         }
 
@@ -359,11 +366,12 @@ public class PageItemRendererBEWLR extends BlockEntityWithoutLevelRenderer {
         }
 
         Mystcraft.LOGGER.info("Pre-warmed {} page textures (awaiting GPU upload)", count + 1);
+        success = true;
       } catch (Exception e) {
         Mystcraft.LOGGER.error("Failed to prewarm page textures", e);
       } finally {
         prewarming = false;
-        prewarmComplete = true;
+        prewarmComplete = success;
       }
     }, "Mystcraft-PageTexture-Prewarm");
     thread.setDaemon(true);

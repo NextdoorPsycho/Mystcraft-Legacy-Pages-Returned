@@ -3,6 +3,8 @@ package art.arcane.mystcraft.item;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.FolderMenu;
 import art.arcane.mystcraft.platform.Services;
+import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.TooltipCompat;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -38,7 +40,7 @@ import java.util.List;
  * The Folder is designed as a portable workspace for organizing
  * pages at the Writing Desk and binding them into Age books.
  */
-public class FolderItem extends Item {
+public class FolderItem extends Item implements TooltipCompat {
 
   public static final int MAX_PAGES = 16;
   private static final String TAG_PAGES = "Pages";
@@ -54,14 +56,14 @@ public class FolderItem extends Item {
    * Gets all pages in this folder.
    */
   public static List<ItemStack> getPages(ItemStack stack) {
-    if (stack.getTag() == null) {
+    if (ItemStackNbt.getTag(stack) == null) {
       return new ArrayList<>();
     }
-    CompoundTag tag = stack.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(stack);
     ListTag listTag = tag.getList(TAG_PAGES, Tag.TAG_COMPOUND);
     List<ItemStack> pages = new ArrayList<>();
     for (int i = 0; i < listTag.size(); i++) {
-      ItemStack page = ItemStack.of(listTag.getCompound(i));
+      ItemStack page = ItemStackNbt.load(listTag.getCompound(i));
       if (!page.isEmpty()) {
         pages.add(page);
       }
@@ -75,8 +77,8 @@ public class FolderItem extends Item {
    * @return true if the page was added successfully
    */
   public static boolean addPage(ItemStack folder, ItemStack page) {
-    if (folder.getTag() == null) {
-      folder.setTag(new CompoundTag());
+    if (ItemStackNbt.getTag(folder) == null) {
+      ItemStackNbt.setTag(folder, new CompoundTag());
     }
     List<ItemStack> pages = getPages(folder);
     if (pages.size() >= MAX_PAGES) {
@@ -106,14 +108,15 @@ public class FolderItem extends Item {
    * Sets the pages in this folder.
    */
   public static void setPages(ItemStack folder, List<ItemStack> pages) {
-    CompoundTag tag = folder.getOrCreateTag();
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(folder);
     ListTag listTag = new ListTag();
     for (ItemStack page : pages) {
       if (!page.isEmpty()) {
-        listTag.add(page.save(new CompoundTag()));
+        listTag.add(ItemStackNbt.save(page));
       }
     }
     tag.put(TAG_PAGES, listTag);
+    ItemStackNbt.setTag(folder, tag);
   }
 
   /**
@@ -249,7 +252,6 @@ public class FolderItem extends Item {
 
   // --- Folder: Ordered Access ---
 
-  @Override
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
     List<ItemStack> pages = getPages(stack);
     if (!pages.isEmpty()) {

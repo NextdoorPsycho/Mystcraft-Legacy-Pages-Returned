@@ -10,6 +10,8 @@ import art.arcane.mystcraft.event.AgeDataSyncHandler;
 import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.TooltipCompat;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
@@ -45,7 +47,7 @@ import java.util.List;
  * Contains the complete description of an Age and allows travel to it.
  * Ages are created when the book is first used with a link panel.
  */
-public class AgebookItem extends Item {
+public class AgebookItem extends Item implements TooltipCompat {
 
   private static final String TAG_PAGES = "Pages";
   private static final String TAG_AUTHORS = "Authors";
@@ -58,7 +60,7 @@ public class AgebookItem extends Item {
    * Creates an Agebook from pages.
    */
   public static void create(ItemStack agebook, Player player, List<ItemStack> pages, String title) {
-    agebook.setTag(new CompoundTag());
+    ItemStackNbt.setTag(agebook, new CompoundTag());
 
     AgebookItem item = (AgebookItem) agebook.getItem();
     item.addPages(agebook, pages);
@@ -80,10 +82,10 @@ public class AgebookItem extends Item {
     if (!(stack.getItem() instanceof AgebookItem)) {
       return false;
     }
-    if (stack.getTag() == null) {
+    if (ItemStackNbt.getTag(stack) == null) {
       return false;
     }
-    Integer dimId = LinkOptions.getDimensionUID(stack.getTag());
+    Integer dimId = LinkOptions.getDimensionUID(ItemStackNbt.getTag(stack));
     if (dimId != null) {
       return false;
     }
@@ -91,7 +93,6 @@ public class AgebookItem extends Item {
     return !pages.isEmpty() && Page.isLinkPanel(pages.get(0));
   }
 
-  @Override
   @NotNull
   public Rarity getRarity(@NotNull ItemStack stack) {
     return stack.isEnchanted() ? Rarity.RARE : Rarity.EPIC;
@@ -100,8 +101,9 @@ public class AgebookItem extends Item {
   @Override
   @NotNull
   public Component getName(@NotNull ItemStack stack) {
-    if (stack.getTag() != null) {
-      String displayName = LinkOptions.getDisplayName(stack.getTag());
+    CompoundTag tag = ItemStackNbt.getTag(stack);
+    if (tag != null) {
+      String displayName = LinkOptions.getDisplayName(tag);
       if (!"???".equals(displayName)) {
         return Component.literal(displayName);
       }
@@ -109,10 +111,10 @@ public class AgebookItem extends Item {
     return super.getName(stack);
   }
 
-  @Override
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
-    if (stack.getTag() != null) {
-      Integer dimId = LinkOptions.getDimensionUID(stack.getTag());
+    CompoundTag tag = ItemStackNbt.getTag(stack);
+    if (tag != null) {
+      Integer dimId = LinkOptions.getDimensionUID(tag);
       if (dimId != null) {
         tooltip.add(Component.translatable("item.mystcraft.agebook.age", dimId));
       } else {
@@ -164,11 +166,11 @@ public class AgebookItem extends Item {
       return;
     }
 
-    if (stack.getTag() == null) {
-      stack.setTag(new CompoundTag());
+    if (ItemStackNbt.getTag(stack) == null) {
+      ItemStackNbt.setTag(stack, new CompoundTag());
     }
 
-    Integer dimId = LinkOptions.getDimensionUID(stack.getTag());
+    Integer dimId = LinkOptions.getDimensionUID(ItemStackNbt.getTag(stack));
 
     if (dimId == null) {
       // This is a new book - check if it has a link panel
@@ -254,9 +256,11 @@ public class AgebookItem extends Item {
     AgeDimensionFactory.applyMicroDimensionBorder(ageLevel, ageData);
 
     // Update the book with the Age's dimension ID and spawn
-    LinkOptions.setDimensionUID(stack.getTag(), ageUID);
-    LinkOptions.setSpawn(stack.getTag(), spawn);
-    LinkOptions.setUUID(stack.getTag(), ageUUID);
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
+    LinkOptions.setDimensionUID(tag, ageUID);
+    LinkOptions.setSpawn(tag, spawn);
+    LinkOptions.setUUID(tag, ageUUID);
+    ItemStackNbt.setTag(stack, tag);
 
     if (!builder.isComplete()) {
       Mystcraft.LOGGER.info("Created incomplete age uid={} instability={} player={}",
@@ -352,7 +356,7 @@ public class AgebookItem extends Item {
    * Links the player to the Age described in this book.
    */
   private void linkToAge(ItemStack stack, ServerLevel level, ServerPlayer player) {
-    CompoundTag linkData = stack.getTag();
+    CompoundTag linkData = ItemStackNbt.getTag(stack);
     if (linkData == null) {
       return;
     }
@@ -376,14 +380,14 @@ public class AgebookItem extends Item {
    * Gets the list of pages in this book.
    */
   public List<ItemStack> getPageList(ItemStack stack) {
-    if (stack.getTag() == null) {
+    if (ItemStackNbt.getTag(stack) == null) {
       return Collections.emptyList();
     }
-    CompoundTag tag = stack.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(stack);
     ListTag listTag = tag.getList(TAG_PAGES, Tag.TAG_COMPOUND);
     List<ItemStack> pages = new ArrayList<>();
     for (int i = 0; i < listTag.size(); i++) {
-      pages.add(ItemStack.of(listTag.getCompound(i)));
+      pages.add(ItemStackNbt.load(listTag.getCompound(i)));
     }
     return pages;
   }
@@ -392,31 +396,33 @@ public class AgebookItem extends Item {
    * Adds pages to this book.
    */
   public void addPages(ItemStack stack, Collection<ItemStack> pages) {
-    CompoundTag tag = stack.getOrCreateTag();
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
     ListTag listTag = tag.getList(TAG_PAGES, Tag.TAG_COMPOUND);
     for (ItemStack page : pages) {
-      listTag.add(page.save(new CompoundTag()));
+      listTag.add(ItemStackNbt.save(page));
     }
     tag.put(TAG_PAGES, listTag);
+    ItemStackNbt.setTag(stack, tag);
   }
 
   /**
    * Sets the page list.
    */
   public void setPageList(ItemStack stack, List<ItemStack> pages) {
-    CompoundTag tag = stack.getOrCreateTag();
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
     ListTag listTag = new ListTag();
     for (ItemStack page : pages) {
-      listTag.add(page.save(new CompoundTag()));
+      listTag.add(ItemStackNbt.save(page));
     }
     tag.put(TAG_PAGES, listTag);
+    ItemStackNbt.setTag(stack, tag);
   }
 
   /**
    * Adds an author to this book.
    */
   public void addAuthor(ItemStack stack, Player player) {
-    CompoundTag tag = stack.getOrCreateTag();
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
     ListTag listTag = tag.getList(TAG_AUTHORS, Tag.TAG_STRING);
     String playerName = player.getGameProfile().getName();
     boolean found = false;
@@ -430,16 +436,17 @@ public class AgebookItem extends Item {
       listTag.add(net.minecraft.nbt.StringTag.valueOf(playerName));
       tag.put(TAG_AUTHORS, listTag);
     }
+    ItemStackNbt.setTag(stack, tag);
   }
 
   /**
    * Gets the authors of this book.
    */
   public Collection<String> getAuthors(ItemStack stack) {
-    if (stack.getTag() == null) {
+    if (ItemStackNbt.getTag(stack) == null) {
       return Collections.emptyList();
     }
-    CompoundTag tag = stack.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(stack);
     ListTag listTag = tag.getList(TAG_AUTHORS, Tag.TAG_STRING);
     List<String> authors = new ArrayList<>();
     for (int i = 0; i < listTag.size(); i++) {
@@ -452,14 +459,16 @@ public class AgebookItem extends Item {
    * Sets the display name of the book.
    */
   public void setDisplayName(ItemStack stack, String name) {
-    LinkOptions.setDisplayName(stack.getOrCreateTag(), name);
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
+    LinkOptions.setDisplayName(tag, name);
+    ItemStackNbt.setTag(stack, tag);
   }
 
   /**
    * Gets the display name of the book.
    */
   public String getDisplayName(ItemStack stack) {
-    return LinkOptions.getDisplayName(stack.getTag());
+    return LinkOptions.getDisplayName(ItemStackNbt.getTag(stack));
   }
 
   /**
@@ -468,7 +477,7 @@ public class AgebookItem extends Item {
   @Override
   public boolean isFoil(@NotNull ItemStack stack) {
     // Show foil if the book has an Age (dimension) linked
-    return stack.getTag() != null && LinkOptions.getDimensionUID(stack.getTag()) != null;
+    return ItemStackNbt.getTag(stack) != null && LinkOptions.getDimensionUID(ItemStackNbt.getTag(stack)) != null;
   }
 
   // --- Custom Entity on Q-Drop ---

@@ -7,8 +7,8 @@ import art.arcane.mystcraft.entity.ColoredLightningEntity;
 import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.entity.MystcraftFallingBlockEntity;
-import art.arcane.mystcraft.forge.ForgeBlackInkFluid;
-import art.arcane.mystcraft.forge.ForgeBlackInkFluidType;
+import art.arcane.mystcraft.forge.BlackInkFluid;
+import art.arcane.mystcraft.forge.BlackInkFluidType;
 import art.arcane.mystcraft.forge.ForgeMystcraftConfig;
 import art.arcane.mystcraft.forge.ForgePageItem;
 import art.arcane.mystcraft.forge.MystcraftForgeRegistries;
@@ -160,15 +160,15 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   }
 
   private void registerFluids() {
-    blackInkType = MystcraftForgeRegistries.FLUID_TYPES.register("black_ink", ForgeBlackInkFluidType::new);
+    blackInkType = MystcraftForgeRegistries.FLUID_TYPES.register("black_ink", BlackInkFluidType::new);
 
-    // Set the fluid type supplier for ForgeBlackInkFluid instances
-    ForgeBlackInkFluid.setFluidTypeSupplier(blackInkType);
+    // Set the fluid type supplier for BlackInkFluid instances
+    BlackInkFluid.setFluidTypeSupplier(blackInkType);
 
     blackInkSource = MystcraftForgeRegistries.FLUIDS.register("black_ink",
-        () -> new ForgeBlackInkFluid.Source(ForgeBlackInkFluid.createProperties(blackInkType, blackInkSource, blackInkFlowing)));
+        () -> new BlackInkFluid.Source(BlackInkFluid.createProperties(blackInkType, blackInkSource, blackInkFlowing)));
     blackInkFlowing = MystcraftForgeRegistries.FLUIDS.register("black_ink_flowing",
-        () -> new ForgeBlackInkFluid.Flowing(ForgeBlackInkFluid.createProperties(blackInkType, blackInkSource, blackInkFlowing)));
+        () -> new BlackInkFluid.Flowing(BlackInkFluid.createProperties(blackInkType, blackInkSource, blackInkFlowing)));
   }
 
   private void registerBlocks() {

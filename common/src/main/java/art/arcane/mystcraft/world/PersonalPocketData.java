@@ -2,6 +2,7 @@ package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.platform.Services;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -94,7 +95,6 @@ public class PersonalPocketData extends SavedData {
     }
   }
 
-  @Override
   public CompoundTag save(CompoundTag tag) {
     ListTag list = new ListTag();
     for (Map.Entry<UUID, CompoundTag> entry : returnLinks.entrySet()) {
@@ -122,6 +122,10 @@ public class PersonalPocketData extends SavedData {
     }
     tag.put(TAG_HEADS, headList);
     return tag;
+  }
+
+  public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+    return save(tag);
   }
 
   public void setReturnLink(UUID playerId, CompoundTag linkData) {

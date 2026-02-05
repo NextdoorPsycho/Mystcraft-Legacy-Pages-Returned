@@ -24,7 +24,9 @@ versions, and it is designed to keep evolving.
 | Version    | Fabric | Forge | NeoForge |
 |:-----------|:------:|:-----:|:--------:|
 | **1.20.1** |   ✅    |   ✅   |    ❌     |
-| **1.20.2** |   ✅    |   ✅   |    ✅     |
+| **1.20.2** |   ✅    |   ✅   |    ❌     |
+| **1.20.4** |   ❌    |   ❌   |    ✅     |
+| **1.20.6** |   ❌    |   ❌   |    ✅     |
 
 ---
 
@@ -153,7 +155,7 @@ versions, and it is designed to keep evolving.
 ### Prerequisites
 
 - **Java:** JDK 17
-- **Minecraft Versions:** 1.20.1, 1.20.2
+- **Minecraft Versions:** 1.20.1, 1.20.2 (Fabric/Forge); 1.20.4, 1.20.6 (NeoForge)
 
 ### Build Commands
 
@@ -182,7 +184,8 @@ The project uses Gradle.
 **Run Client (NeoForge):**
 
 ```bash
-./gradlew :neoforge:1.20.2:runClient
+./gradlew :neoforge:1.20.4:runClient
+./gradlew :neoforge:1.20.6:runClient
 ```
 
 ---
@@ -195,7 +198,7 @@ This mod requires access to private Minecraft fields (e.g.,
 | Loader       | File Location                                                       | Field Naming           |
 |--------------|---------------------------------------------------------------------|------------------------|
 | **Forge**    | `forge/1.20.x/src/main/resources/META-INF/accesstransformer.cfg`    | SRG names (`f_59527_`) |
-| **NeoForge** | `neoforge/1.20.2/src/main/resources/META-INF/accesstransformer.cfg` | Mojang names (`book`)  |
+| **NeoForge** | `common/src/main/resources/META-INF/accesstransformer.cfg`          | Mojang names (`book`)  |
 | **Fabric**   | `fabric/1.20.x/src/main/resources/mystcraft.accesswidener`          | Mojang names (`book`)  |
 
 **Why different names?** Forge's AT processor runs on the SRG-mapped JAR before

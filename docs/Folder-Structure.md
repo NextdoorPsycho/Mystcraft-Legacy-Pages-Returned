@@ -11,7 +11,7 @@ The project follows a multi-loader structure:
 - `forge/`
   Forge-specific implementations for 1.20.1 and 1.20.2.
 - `neoforge/`
-  NeoForge-specific implementations for 1.20.2.
+  NeoForge-specific implementations for 1.20.4 and 1.20.6.
 - `docs/`
   Documentation (see below).
 

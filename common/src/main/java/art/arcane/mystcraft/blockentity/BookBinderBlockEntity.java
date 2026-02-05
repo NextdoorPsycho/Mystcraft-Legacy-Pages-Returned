@@ -7,6 +7,7 @@ import art.arcane.mystcraft.item.FolderItem;
 import art.arcane.mystcraft.menu.BookBinderMenu;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.registry.ModItems;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -113,7 +114,7 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
       if (!stack.isEmpty()) {
         CompoundTag itemTag = new CompoundTag();
         itemTag.putInt("Slot", i);
-        stack.save(itemTag);
+        itemTag.merge(ItemStackNbt.save(stack));
         itemList.add(itemTag);
       }
     }
@@ -121,7 +122,7 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
 
     ListTag pageList = new ListTag();
     for (ItemStack page : pages) {
-      pageList.add(page.save(new CompoundTag()));
+      pageList.add(ItemStackNbt.save(page));
     }
     tag.put(TAG_PAGES, pageList);
 
@@ -139,14 +140,15 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
       CompoundTag itemTag = itemList.getCompound(i);
       int slot = itemTag.getInt("Slot");
       if (slot >= 0 && slot < inventory.getContainerSize()) {
-        inventory.setItem(slot, ItemStack.of(itemTag));
+        CompoundTag itemData = itemTag.contains("Item", Tag.TAG_COMPOUND) ? itemTag.getCompound("Item") : itemTag;
+        inventory.setItem(slot, ItemStackNbt.load(itemData));
       }
     }
 
     pages.clear();
     ListTag pageList = tag.getList(TAG_PAGES, Tag.TAG_COMPOUND);
     for (int i = 0; i < pageList.size(); i++) {
-      ItemStack page = ItemStack.of(pageList.getCompound(i));
+      ItemStack page = ItemStackNbt.load(pageList.getCompound(i));
       if (!page.isEmpty()) {
         pages.add(page);
       }

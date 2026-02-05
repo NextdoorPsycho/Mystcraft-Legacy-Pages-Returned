@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -254,24 +255,12 @@ public class AgeDimensionFactory {
       // Create the world seed
       long seed = BiomeManager.obfuscateSeed(server.getWorldData().worldGenOptions().seed()) + ageUID;
 
-      // Create progress listener (use no-op for dynamic dimensions)
-      ChunkProgressListener progressListener = new ChunkProgressListener() {
-        @Override
-        public void updateSpawnPos(net.minecraft.world.level.ChunkPos pos) {
-        }
-
-        @Override
-        public void onStatusChange(net.minecraft.world.level.ChunkPos pos, @Nullable net.minecraft.world.level.chunk.ChunkStatus status) {
-        }
-
-        @Override
-        public void start() {
-        }
-
-        @Override
-        public void stop() {
-        }
-      };
+      // Create progress listener (use no-op proxy to avoid version-specific ChunkStatus signatures)
+      ChunkProgressListener progressListener = (ChunkProgressListener) Proxy.newProxyInstance(
+          ChunkProgressListener.class.getClassLoader(),
+          new Class<?>[]{ChunkProgressListener.class},
+          (proxy, method, args) -> null
+      );
 
       // Create the new ServerLevel
       ServerLevel newLevel = new ServerLevel(
@@ -601,8 +590,10 @@ public class AgeDimensionFactory {
         frozenField.set(registry, false);
       }
 
-      // Register the stem
-      registry.register(key, stem, Lifecycle.stable());
+      // Register the stem (RegistrationInfo in 1.20.5+, Lifecycle in older versions)
+      if (!registerWithRegistrationInfo(registry, key, stem)) {
+        registerWithLifecycle(registry, key, stem);
+      }
 
       // Re-freeze the registry
       if (frozenField != null) {
@@ -611,6 +602,37 @@ public class AgeDimensionFactory {
 
     } catch (Exception e) {
       Mystcraft.LOGGER.error("Failed to register dimension stem", e);
+    }
+  }
+
+  private static boolean registerWithRegistrationInfo(
+      MappedRegistry<LevelStem> registry,
+      ResourceKey<LevelStem> key,
+      LevelStem stem
+  ) {
+    try {
+      Class<?> infoClass = Class.forName("net.minecraft.core.RegistrationInfo");
+      Field builtInField = infoClass.getField("BUILT_IN");
+      Object builtIn = builtInField.get(null);
+      java.lang.reflect.Method register = registry.getClass().getMethod("register", key.getClass(), LevelStem.class, infoClass);
+      register.invoke(registry, key, stem, builtIn);
+      return true;
+    } catch (ClassNotFoundException e) {
+      return false;
+    } catch (ReflectiveOperationException e) {
+      return false;
+    }
+  }
+
+  private static void registerWithLifecycle(
+      MappedRegistry<LevelStem> registry,
+      ResourceKey<LevelStem> key,
+      LevelStem stem
+  ) {
+    try {
+      java.lang.reflect.Method register = registry.getClass().getMethod("register", key.getClass(), LevelStem.class, Lifecycle.class);
+      register.invoke(registry, key, stem, Lifecycle.stable());
+    } catch (ReflectiveOperationException ignored) {
     }
   }
 

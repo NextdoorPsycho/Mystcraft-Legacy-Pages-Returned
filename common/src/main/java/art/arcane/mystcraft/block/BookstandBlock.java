@@ -1,6 +1,9 @@
 package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.BookstandBlockEntity;
+import art.arcane.mystcraft.util.BlockInteractionCompat;
+import art.arcane.mystcraft.util.CodecCompat;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -31,8 +34,9 @@ import org.jetbrains.annotations.Nullable;
  * Holds a linkbook or agebook for display and use.
  * Players can place books and use them to link.
  */
-public class BookstandBlock extends BaseEntityBlock {
+public class BookstandBlock extends BaseEntityBlock implements BlockInteractionCompat {
 
+  public static final MapCodec<BookstandBlock> CODEC = CodecCompat.simpleCodec(BookstandBlock::new);
   public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
   private static final VoxelShape SHAPE = Block.box(2, 0, 2, 14, 12, 14);
@@ -45,6 +49,10 @@ public class BookstandBlock extends BaseEntityBlock {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(FACING);
+  }
+
+  protected MapCodec<? extends BaseEntityBlock> codec() {
+    return CODEC;
   }
 
   @Override
@@ -80,7 +88,6 @@ public class BookstandBlock extends BaseEntityBlock {
     return null;
   }
 
-  @Override
   @NotNull
   public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     BlockEntity blockEntity = level.getBlockEntity(pos);

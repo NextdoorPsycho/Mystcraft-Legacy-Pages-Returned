@@ -103,6 +103,7 @@ tasks.named('compileJava', JavaCompile) {
         // Platform-specific packet implementations (use ObfuscationReflectionHelper for SRG names)
         exclude '**/network/LecternBookSyncPacket.java'
     })
+    source(file("${rootDir}/forge/shared/src/main/java"))
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -140,6 +141,7 @@ tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
+    from file("${rootDir}/forge/shared/src/main/java")
 }
 
 jar {

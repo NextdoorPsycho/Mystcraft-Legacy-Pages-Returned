@@ -4,6 +4,7 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.registry.ModBlockEntities;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -91,7 +92,7 @@ public class BookstandBlockEntity extends MystcraftBlockEntity implements IRotat
       if (!stack.isEmpty()) {
         CompoundTag itemTag = new CompoundTag();
         itemTag.putInt("Slot", i);
-        stack.save(itemTag);
+        itemTag.merge(ItemStackNbt.save(stack));
         itemList.add(itemTag);
       }
     }
@@ -111,7 +112,8 @@ public class BookstandBlockEntity extends MystcraftBlockEntity implements IRotat
       CompoundTag itemTag = itemList.getCompound(i);
       int slot = itemTag.getInt("Slot");
       if (slot >= 0 && slot < inventory.getContainerSize()) {
-        inventory.setItem(slot, ItemStack.of(itemTag));
+        CompoundTag itemData = itemTag.contains("Item", Tag.TAG_COMPOUND) ? itemTag.getCompound("Item") : itemTag;
+        inventory.setItem(slot, ItemStackNbt.load(itemData));
       }
     }
     // Support alternate "Rotation" key format
@@ -214,10 +216,10 @@ public class BookstandBlockEntity extends MystcraftBlockEntity implements IRotat
   @Nullable
   public String getBookTitle() {
     ItemStack book = getBook();
-    if (book.isEmpty() || book.getTag() == null) {
+    if (book.isEmpty() || ItemStackNbt.getTag(book) == null) {
       return null;
     }
-    return LinkOptions.getDisplayName(book.getTag());
+    return LinkOptions.getDisplayName(ItemStackNbt.getTag(book));
   }
 
   /**

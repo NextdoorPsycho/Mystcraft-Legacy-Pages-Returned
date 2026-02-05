@@ -84,6 +84,7 @@ tasks.named('compileJava', JavaCompile) {
         // Platform-specific packet implementations (use access widener for direct field access)
         exclude '**/network/LecternBookSyncPacket.java'
     })
+    source(file("${rootDir}/fabric/shared/src/main/java"))
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -130,6 +131,7 @@ tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
+    from file("${rootDir}/fabric/shared/src/main/java")
 }
 
 jar {

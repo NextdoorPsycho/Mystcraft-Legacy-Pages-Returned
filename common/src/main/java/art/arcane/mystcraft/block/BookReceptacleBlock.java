@@ -2,6 +2,9 @@ package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
 import art.arcane.mystcraft.registry.ModBlocks;
+import art.arcane.mystcraft.util.BlockInteractionCompat;
+import art.arcane.mystcraft.util.CodecCompat;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -35,8 +38,9 @@ import org.jetbrains.annotations.Nullable;
  * Holds a descriptive book and creates a portal when attached to a crystal.
  * Can be placed on any face of a crystal block.
  */
-public class BookReceptacleBlock extends BaseEntityBlock {
+public class BookReceptacleBlock extends BaseEntityBlock implements BlockInteractionCompat {
 
+  public static final MapCodec<BookReceptacleBlock> CODEC = CodecCompat.simpleCodec(BookReceptacleBlock::new);
   public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
   // Shapes for each facing direction (thin block against the crystal)
@@ -55,6 +59,10 @@ public class BookReceptacleBlock extends BaseEntityBlock {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(FACING);
+  }
+
+  protected MapCodec<? extends BaseEntityBlock> codec() {
+    return CODEC;
   }
 
   @Override
@@ -121,7 +129,6 @@ public class BookReceptacleBlock extends BaseEntityBlock {
     return null;
   }
 
-  @Override
   @NotNull
   public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     if (level.isClientSide) {

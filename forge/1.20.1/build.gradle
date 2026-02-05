@@ -102,7 +102,6 @@ reobf {
 tasks.named('compileJava', JavaCompile) {
     // Add common sources with exclusions for 1.20.2-specific classes
     source(project(':common').sourceSets.main.allSource.matching {
-        exclude '**/gametest/**'
         // Only exclude screens that have platform-specific implementations in forge/1.20.1
         exclude '**/client/screen/BookScreen.java'
         exclude '**/client/screen/GuidebookScreen.java'
@@ -117,6 +116,7 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/network/PocketHeadSyncPacket.java'
         exclude '**/network/OpenLecternBookPacket.java'
     })
+    source(file("${rootDir}/forge/shared/src/main/java"))
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -172,6 +172,7 @@ tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
+    from file("${rootDir}/forge/shared/src/main/java")
 }
 
 jar {

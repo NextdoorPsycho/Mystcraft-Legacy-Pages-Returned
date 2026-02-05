@@ -3,6 +3,9 @@ package art.arcane.mystcraft.block;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
 import art.arcane.mystcraft.platform.Services;
 import art.arcane.mystcraft.registry.ModBlockEntities;
+import art.arcane.mystcraft.util.BlockInteractionCompat;
+import art.arcane.mystcraft.util.CodecCompat;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
@@ -45,8 +48,9 @@ import java.util.List;
  * - Top block above main: IS_TOP && !IS_FOOT
  * - Top block above foot: IS_TOP && IS_FOOT
  */
-public class WritingDeskBlock extends BaseEntityBlock {
+public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractionCompat {
 
+  public static final MapCodec<WritingDeskBlock> CODEC = CodecCompat.simpleCodec(WritingDeskBlock::new);
   public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
   public static final BooleanProperty IS_TOP = BooleanProperty.create("is_top");
   public static final BooleanProperty IS_FOOT = BooleanProperty.create("is_foot");
@@ -115,6 +119,10 @@ public class WritingDeskBlock extends BaseEntityBlock {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(FACING, IS_TOP, IS_FOOT);
+  }
+
+  protected MapCodec<? extends BaseEntityBlock> codec() {
+    return CODEC;
   }
 
   @Override
@@ -252,44 +260,29 @@ public class WritingDeskBlock extends BaseEntityBlock {
     level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
   }
 
-  @Override
-  public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-    if (!level.isClientSide) {
-      Direction facing = state.getValue(FACING);
-      int dirIndex = facing.get2DDataValue();
-      boolean isTop = state.getValue(IS_TOP);
-      boolean isFoot = state.getValue(IS_FOOT);
+  private void clearStructureOnRemove(Level level, BlockPos pos, BlockState state) {
+    Direction facing = state.getValue(FACING);
+    int dirIndex = facing.get2DDataValue();
 
-      // Find and clear all parts of the structure
-      BlockPos mainPos = getMainBlockPos(pos, state);
-      BlockPos footPos = mainPos.offset(HEAD_FOOT_MAP[dirIndex][0], 0, HEAD_FOOT_MAP[dirIndex][1]);
-      BlockPos topMainPos = mainPos.above();
-      BlockPos topFootPos = footPos.above();
+    BlockPos mainPos = getMainBlockPos(pos, state);
+    BlockPos footPos = mainPos.offset(HEAD_FOOT_MAP[dirIndex][0], 0, HEAD_FOOT_MAP[dirIndex][1]);
+    BlockPos topMainPos = mainPos.above();
+    BlockPos topFootPos = footPos.above();
 
-      // Only drop items from main block
-      if (!isTop && !isFoot) {
-        // This is the main block - items will be dropped in onRemove
-      }
-
-      // Clear all blocks (without dropping items from non-main blocks)
-      if (!pos.equals(mainPos) && isWritingDesk(level.getBlockState(mainPos))) {
-        level.setBlock(mainPos, Blocks.AIR.defaultBlockState(), 3);
-      }
-      if (!pos.equals(footPos) && isWritingDesk(level.getBlockState(footPos))) {
-        level.setBlock(footPos, Blocks.AIR.defaultBlockState(), 35); // 35 = no drops
-      }
-      if (!pos.equals(topMainPos) && isWritingDesk(level.getBlockState(topMainPos))) {
-        level.setBlock(topMainPos, Blocks.AIR.defaultBlockState(), 35);
-      }
-      if (!pos.equals(topFootPos) && isWritingDesk(level.getBlockState(topFootPos))) {
-        level.setBlock(topFootPos, Blocks.AIR.defaultBlockState(), 35);
-      }
+    if (!pos.equals(mainPos) && isWritingDesk(level.getBlockState(mainPos))) {
+      level.setBlock(mainPos, Blocks.AIR.defaultBlockState(), 3);
     }
-
-    super.playerWillDestroy(level, pos, state, player);
+    if (!pos.equals(footPos) && isWritingDesk(level.getBlockState(footPos))) {
+      level.setBlock(footPos, Blocks.AIR.defaultBlockState(), 35);
+    }
+    if (!pos.equals(topMainPos) && isWritingDesk(level.getBlockState(topMainPos))) {
+      level.setBlock(topMainPos, Blocks.AIR.defaultBlockState(), 35);
+    }
+    if (!pos.equals(topFootPos) && isWritingDesk(level.getBlockState(topFootPos))) {
+      level.setBlock(topFootPos, Blocks.AIR.defaultBlockState(), 35);
+    }
   }
 
-  @Override
   @NotNull
   public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     if (level.isClientSide) {
@@ -310,6 +303,9 @@ public class WritingDeskBlock extends BaseEntityBlock {
   @Override
   public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
     if (!state.is(newState.getBlock())) {
+      if (!level.isClientSide) {
+        clearStructureOnRemove(level, pos, state);
+      }
       // Only drop items from the main block
       if (!state.getValue(IS_TOP) && !state.getValue(IS_FOOT)) {
         BlockEntity blockEntity = level.getBlockEntity(pos);

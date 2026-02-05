@@ -2,6 +2,9 @@ package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
 import art.arcane.mystcraft.platform.Services;
+import art.arcane.mystcraft.util.BlockInteractionCompat;
+import art.arcane.mystcraft.util.CodecCompat;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
@@ -32,8 +35,9 @@ import java.util.List;
  * Used to create descriptive books and linkbooks from pages.
  * Players can insert pages and leather to craft books.
  */
-public class BookBinderBlock extends BaseEntityBlock {
+public class BookBinderBlock extends BaseEntityBlock implements BlockInteractionCompat {
 
+  public static final MapCodec<BookBinderBlock> CODEC = CodecCompat.simpleCodec(BookBinderBlock::new);
   public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
   public BookBinderBlock(Properties properties) {
@@ -44,6 +48,10 @@ public class BookBinderBlock extends BaseEntityBlock {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(FACING);
+  }
+
+  protected MapCodec<? extends BaseEntityBlock> codec() {
+    return CODEC;
   }
 
   @Override
@@ -73,7 +81,6 @@ public class BookBinderBlock extends BaseEntityBlock {
     return null;
   }
 
-  @Override
   @NotNull
   public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     if (level.isClientSide) {

@@ -14,6 +14,7 @@ import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
@@ -32,6 +33,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.BlockPos;
@@ -1521,12 +1523,14 @@ public class MystcraftCommands {
 
     // Create the agebook item
     ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
-    agebook.setTag(new net.minecraft.nbt.CompoundTag());
+    ItemStackNbt.setTag(agebook, new net.minecraft.nbt.CompoundTag());
 
     // Set up the book with the age's information
-    art.arcane.mystcraft.data.LinkOptions.setDimensionUID(agebook.getTag(), ageId);
-    art.arcane.mystcraft.data.LinkOptions.setSpawn(agebook.getTag(), spawn);
-    art.arcane.mystcraft.data.LinkOptions.setDisplayName(agebook.getTag(), ageName);
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(agebook);
+    art.arcane.mystcraft.data.LinkOptions.setDimensionUID(tag, ageId);
+    art.arcane.mystcraft.data.LinkOptions.setSpawn(tag, spawn);
+    art.arcane.mystcraft.data.LinkOptions.setDisplayName(tag, ageName);
+    ItemStackNbt.setTag(agebook, tag);
 
     // Copy pages from age data if available
     if (ageData != null) {

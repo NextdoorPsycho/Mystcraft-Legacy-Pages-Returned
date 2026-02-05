@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import art.arcane.mystcraft.util.ItemStackNbt;
 
 import java.util.UUID;
 
@@ -260,7 +261,7 @@ public class LinkOptions {
   @Nullable
   public static LinkOptions fromItemStack(ItemStack stack) {
     if (stack.isEmpty()) return null;
-    CompoundTag tag = stack.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(stack);
     if (tag == null || !tag.contains(TAG_LINK_OPTIONS)) return null;
     return new LinkOptions(tag.getCompound(TAG_LINK_OPTIONS));
   }
@@ -272,9 +273,10 @@ public class LinkOptions {
    */
   public static void removeFromItemStack(ItemStack stack) {
     if (stack.isEmpty()) return;
-    CompoundTag tag = stack.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(stack);
     if (tag != null) {
       tag.remove(TAG_LINK_OPTIONS);
+      ItemStackNbt.setTag(stack, tag);
     }
   }
 
@@ -389,7 +391,8 @@ public class LinkOptions {
    */
   public void toItemStack(ItemStack stack) {
     if (stack.isEmpty()) return;
-    CompoundTag tag = stack.getOrCreateTag();
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
     tag.put(TAG_LINK_OPTIONS, this.data.copy());
+    ItemStackNbt.setTag(stack, tag);
   }
 }

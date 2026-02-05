@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import art.arcane.mystcraft.util.ItemStackNbt;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,10 +54,10 @@ public abstract class Page {
     if (item.isEmpty()) {
       return new CompoundTag();
     }
-    CompoundTag tag = item.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(item);
     if (tag == null) {
       tag = new CompoundTag();
-      item.setTag(tag);
+      ItemStackNbt.setTag(item, tag);
     }
     return tag;
   }
@@ -92,8 +93,8 @@ public abstract class Page {
       return;
     }
 
-    if (page.getTag() == null) {
-      page.setTag(createDefault());
+    if (ItemStackNbt.getTag(page) == null) {
+      ItemStackNbt.setTag(page, createDefault());
     }
     CompoundTag data = getData(page);
     if (!data.contains(TAG_LINK_PANEL)) {
@@ -109,8 +110,8 @@ public abstract class Page {
       return;
     }
 
-    if (page.getTag() == null) {
-      page.setTag(createDefault());
+    if (ItemStackNbt.getTag(page) == null) {
+      ItemStackNbt.setTag(page, createDefault());
     }
     CompoundTag data = getData(page);
     if (!data.contains(TAG_LINK_PANEL)) {
@@ -128,7 +129,7 @@ public abstract class Page {
   @NotNull
   public static List<String> getLinkProperties(@NotNull ItemStack page) {
     List<String> result = new ArrayList<>();
-    if (page.isEmpty() || page.getTag() == null) {
+    if (page.isEmpty() || ItemStackNbt.getTag(page) == null) {
       return result;
     }
     CompoundTag data = getData(page);
@@ -161,7 +162,7 @@ public abstract class Page {
    * Removes a link property from a page.
    */
   public static void removeLinkProperty(@NotNull ItemStack page, String property) {
-    if (page.isEmpty() || page.getTag() == null) {
+    if (page.isEmpty() || ItemStackNbt.getTag(page) == null) {
       return;
     }
     CompoundTag data = getData(page);
@@ -189,7 +190,9 @@ public abstract class Page {
       return;
     }
     for (String property : properties) {
-      LinkOptions.setFlag(linkingitem.getOrCreateTag(), property, true);
+      CompoundTag tag = ItemStackNbt.getOrCreateTag(linkingitem);
+      LinkOptions.setFlag(tag, property, true);
+      ItemStackNbt.setTag(linkingitem, tag);
     }
   }
 
@@ -197,7 +200,7 @@ public abstract class Page {
    * Sets the symbol on a page.
    */
   public static void setSymbol(@NotNull ItemStack page, ResourceLocation symbol) {
-    if (page.isEmpty() || page.getTag() == null) {
+    if (page.isEmpty() || ItemStackNbt.getTag(page) == null) {
       return;
     }
     CompoundTag data = getData(page);
@@ -213,7 +216,7 @@ public abstract class Page {
    */
   @Nullable
   public static ResourceLocation getSymbol(@NotNull ItemStack page) {
-    if (page.isEmpty() || page.getTag() == null) {
+    if (page.isEmpty() || ItemStackNbt.getTag(page) == null) {
       return null;
     }
     CompoundTag data = getData(page);
@@ -260,7 +263,7 @@ public abstract class Page {
   @NotNull
   public static ItemStack createPage() {
     ItemStack page = new ItemStack(ModItems.PAGE.get());
-    page.setTag(createDefault());
+    ItemStackNbt.setTag(page, createDefault());
     return page;
   }
 
@@ -270,7 +273,7 @@ public abstract class Page {
   @NotNull
   public static ItemStack createLinkPage() {
     ItemStack page = new ItemStack(ModItems.PAGE.get());
-    page.setTag(createDefault());
+    ItemStackNbt.setTag(page, createDefault());
     makeLinkPanel(page);
     return page;
   }
@@ -281,7 +284,7 @@ public abstract class Page {
   @NotNull
   public static ItemStack createLinkPage(String property) {
     ItemStack page = new ItemStack(ModItems.PAGE.get());
-    page.setTag(createDefault());
+    ItemStackNbt.setTag(page, createDefault());
     addLinkProperty(page, property);
     return page;
   }
@@ -292,7 +295,7 @@ public abstract class Page {
   @NotNull
   public static ItemStack createSymbolPage(ResourceLocation symbol) {
     ItemStack page = new ItemStack(ModItems.PAGE.get());
-    page.setTag(createDefault());
+    ItemStackNbt.setTag(page, createDefault());
     setSymbol(page, symbol);
     return page;
   }
@@ -303,7 +306,7 @@ public abstract class Page {
   @NotNull
   public static ItemStack createPage(CompoundTag pagedata) {
     ItemStack page = new ItemStack(ModItems.PAGE.get());
-    page.setTag(pagedata);
+    ItemStackNbt.setTag(page, pagedata);
     return page;
   }
 }

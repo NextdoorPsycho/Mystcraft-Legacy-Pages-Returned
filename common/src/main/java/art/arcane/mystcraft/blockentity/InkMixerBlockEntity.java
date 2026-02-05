@@ -7,6 +7,7 @@ import art.arcane.mystcraft.menu.InkMixerMenu;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.registry.ModFluids;
 import art.arcane.mystcraft.registry.ModTags;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -88,7 +89,7 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
       if (!stack.isEmpty()) {
         CompoundTag itemTag = new CompoundTag();
         itemTag.putInt("Slot", i);
-        stack.save(itemTag);
+        itemTag.merge(ItemStackNbt.save(stack));
         itemList.add(itemTag);
       }
     }
@@ -113,7 +114,8 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
       CompoundTag itemTag = itemList.getCompound(i);
       int slot = itemTag.getInt("Slot");
       if (slot >= 0 && slot < inventory.getContainerSize()) {
-        inventory.setItem(slot, ItemStack.of(itemTag));
+        CompoundTag itemData = itemTag.contains("Item", Tag.TAG_COMPOUND) ? itemTag.getCompound("Item") : itemTag;
+        inventory.setItem(slot, ItemStackNbt.load(itemData));
       }
     }
     hasInk = tag.getBoolean(TAG_HAS_INK);
@@ -166,7 +168,7 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
     // Check if we can put the empty container in the output
     ItemStack currentOutput = inventory.getItem(SLOT_INK_OUT);
     if (!currentOutput.isEmpty()) {
-      if (!ItemStack.isSameItemSameTags(currentOutput, emptyContainer)) {
+      if (!ItemStackNbt.isSameItemSameTags(currentOutput, emptyContainer)) {
         return;
       }
       if (currentOutput.getCount() >= currentOutput.getMaxStackSize()) {

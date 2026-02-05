@@ -2,6 +2,9 @@ package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.LinkModifierBlockEntity;
 import art.arcane.mystcraft.platform.Services;
+import art.arcane.mystcraft.util.BlockInteractionCompat;
+import art.arcane.mystcraft.util.CodecCompat;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
@@ -31,8 +34,9 @@ import java.util.List;
  * The Link Modifier block.
  * Used to add modifier pages (link properties) to existing linkbooks.
  */
-public class LinkModifierBlock extends BaseEntityBlock {
+public class LinkModifierBlock extends BaseEntityBlock implements BlockInteractionCompat {
 
+  public static final MapCodec<LinkModifierBlock> CODEC = CodecCompat.simpleCodec(LinkModifierBlock::new);
   public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
   public LinkModifierBlock(Properties properties) {
@@ -43,6 +47,10 @@ public class LinkModifierBlock extends BaseEntityBlock {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(FACING);
+  }
+
+  protected MapCodec<? extends BaseEntityBlock> codec() {
+    return CODEC;
   }
 
   @Override
@@ -72,7 +80,6 @@ public class LinkModifierBlock extends BaseEntityBlock {
     return null;
   }
 
-  @Override
   @NotNull
   public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     if (level.isClientSide) {

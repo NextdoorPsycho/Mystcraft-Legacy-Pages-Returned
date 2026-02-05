@@ -3,12 +3,12 @@ package art.arcane.mystcraft.world;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
+import art.arcane.mystcraft.util.ChunkStatusCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.chunk.ChunkStatus;
 
 import java.util.*;
 
@@ -46,7 +46,7 @@ public class AgePopulationHandler {
       return;
     }
 
-    if (chunk.getStatus() != ChunkStatus.FULL) {
+    if (!ChunkStatusCompat.isFull(chunk)) {
       return;
     }
 

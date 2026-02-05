@@ -6,6 +6,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.TooltipCompat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,7 +18,7 @@ import java.util.List;
  * Contains ink for use in writing desks.
  * Can hold different colors of ink.
  */
-public class InkVialItem extends Item {
+public class InkVialItem extends Item implements TooltipCompat {
 
   public static final int MAX_INK = 100;
   public static final int DEFAULT_COLOR = 0x000000; // Black
@@ -27,7 +29,6 @@ public class InkVialItem extends Item {
     super(properties);
   }
 
-  @Override
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
     int amount = getInkAmount(stack);
     int color = getInkColor(stack);
@@ -60,10 +61,10 @@ public class InkVialItem extends Item {
    * Gets the amount of ink remaining in this vial.
    */
   public int getInkAmount(ItemStack stack) {
-    if (stack.getTag() == null) {
+    if (ItemStackNbt.getTag(stack) == null) {
       return MAX_INK; // Full by default when new
     }
-    CompoundTag tag = stack.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(stack);
     if (!tag.contains(TAG_INK_AMOUNT)) {
       return MAX_INK;
     }
@@ -74,18 +75,19 @@ public class InkVialItem extends Item {
    * Sets the amount of ink in this vial.
    */
   public void setInkAmount(ItemStack stack, int amount) {
-    CompoundTag tag = stack.getOrCreateTag();
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
     tag.putInt(TAG_INK_AMOUNT, Math.max(0, Math.min(MAX_INK, amount)));
+    ItemStackNbt.setTag(stack, tag);
   }
 
   /**
    * Gets the color of this ink.
    */
   public int getInkColor(ItemStack stack) {
-    if (stack.getTag() == null) {
+    if (ItemStackNbt.getTag(stack) == null) {
       return DEFAULT_COLOR;
     }
-    CompoundTag tag = stack.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(stack);
     if (!tag.contains(TAG_INK_COLOR)) {
       return DEFAULT_COLOR;
     }
@@ -96,8 +98,9 @@ public class InkVialItem extends Item {
    * Sets the color of this ink.
    */
   public void setInkColor(ItemStack stack, int color) {
-    CompoundTag tag = stack.getOrCreateTag();
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
     tag.putInt(TAG_INK_COLOR, color & 0xFFFFFF);
+    ItemStackNbt.setTag(stack, tag);
   }
 
 }

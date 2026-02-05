@@ -14,6 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
+import art.arcane.mystcraft.util.MobEffectCompat;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
@@ -385,8 +386,10 @@ public final class InstabilityManager {
     int duration = (int) chosen[1];
     int amplifier = (int) chosen[2];
 
-    MobEffectInstance instance = new MobEffectInstance(effect, duration, amplifier);
-    target.addEffect(instance);
+    MobEffectInstance instance = MobEffectCompat.createInstance(effect, duration, amplifier);
+    if (instance != null) {
+      target.addEffect(instance);
+    }
     Mystcraft.LOGGER.debug("Applied {} to player {}", effect.getDescriptionId(), target.getName().getString());
   }
 

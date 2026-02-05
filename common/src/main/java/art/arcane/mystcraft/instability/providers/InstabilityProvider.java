@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 /**
@@ -32,18 +33,23 @@ public class InstabilityProvider implements IInstabilityProvider {
    */
   public InstabilityProvider(boolean useLevel, Class<? extends IEnvironmentalEffect> effectClass, Object... constructorArgs) {
     this.effectClass = effectClass;
-    this.constructorArgs = constructorArgs;
     this.useLevel = useLevel;
 
+    Object[] resolvedArgs = new Object[constructorArgs.length];
+    for (int i = 0; i < constructorArgs.length; i++) {
+      resolvedArgs[i] = resolveHolderValue(constructorArgs[i]);
+    }
+    this.constructorArgs = resolvedArgs;
+
     // Build constructor argument types
-    Class<?>[] argTypes = new Class<?>[constructorArgs.length + (useLevel ? 1 : 0)];
+    Class<?>[] argTypes = new Class<?>[resolvedArgs.length + (useLevel ? 1 : 0)];
     if (useLevel) {
       argTypes[0] = int.class;
     }
 
-    for (int i = 0; i < constructorArgs.length; i++) {
+    for (int i = 0; i < resolvedArgs.length; i++) {
       int index = i + (useLevel ? 1 : 0);
-      Class<?> argClass = constructorArgs[i].getClass();
+      Class<?> argClass = resolvedArgs[i].getClass();
 
       // Handle special cases for primitive wrappers
       if (argClass == Integer.class) {
@@ -71,6 +77,24 @@ public class InstabilityProvider implements IInstabilityProvider {
       LOGGER.error("Failed to find constructor for {} with args {}", effectClass.getName(), Arrays.toString(argTypes));
       throw new RuntimeException("Error building instability provider for " + effectClass.getCanonicalName(), e);
     }
+  }
+
+  private static Object resolveHolderValue(Object arg) {
+    if (arg == null) {
+      return null;
+    }
+    if (arg instanceof MobEffect) {
+      return arg;
+    }
+    try {
+      Method valueMethod = arg.getClass().getMethod("value");
+      Object value = valueMethod.invoke(arg);
+      if (value instanceof MobEffect) {
+        return value;
+      }
+    } catch (ReflectiveOperationException ignored) {
+    }
+    return arg;
   }
 
   @Override

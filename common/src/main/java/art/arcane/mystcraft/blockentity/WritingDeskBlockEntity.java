@@ -6,6 +6,7 @@ import art.arcane.mystcraft.menu.WritingDeskMenu;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.registry.ModFluids;
 import art.arcane.mystcraft.registry.ModTags;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -202,7 +203,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
       if (!stack.isEmpty()) {
         CompoundTag itemTag = new CompoundTag();
         itemTag.putInt("Slot", i);
-        stack.save(itemTag);
+        itemTag.merge(ItemStackNbt.save(stack));
         itemList.add(itemTag);
       }
     }
@@ -215,7 +216,8 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
       CompoundTag itemTag = itemList.getCompound(i);
       int slot = itemTag.getInt("Slot");
       if (slot >= 0 && slot < container.getContainerSize()) {
-        container.setItem(slot, ItemStack.of(itemTag));
+        CompoundTag itemData = itemTag.contains("Item", Tag.TAG_COMPOUND) ? itemTag.getCompound("Item") : itemTag;
+        container.setItem(slot, ItemStackNbt.load(itemData));
       }
     }
   }
@@ -396,7 +398,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
           inkTank.fill(1000);
           mainInventory.setItem(SLOT_CONTAINER_OUT, emptyContainer);
           containerIn.shrink(1);
-        } else if (ItemStack.isSameItemSameTags(containerOut, emptyContainer) &&
+        } else if (ItemStackNbt.isSameItemSameTags(containerOut, emptyContainer) &&
             containerOut.getCount() < containerOut.getMaxStackSize()) {
           inkTank.fill(1000);
           containerOut.grow(1);

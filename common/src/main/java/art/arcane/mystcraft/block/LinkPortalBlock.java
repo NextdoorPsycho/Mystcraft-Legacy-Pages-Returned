@@ -9,6 +9,7 @@ import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.portal.PortalUtils;
 import art.arcane.mystcraft.registry.ModSounds;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -132,12 +133,12 @@ public class LinkPortalBlock extends Block {
     // This matches the original behavior where placing a book in a receptacle and walking
     // through the portal creates the Age on first contact.
     if (book.getItem() instanceof AgebookItem agebookItem
-        && LinkOptions.getDimensionUID(book.getTag()) == null
+        && LinkOptions.getDimensionUID(ItemStackNbt.getTag(book)) == null
         && entity instanceof net.minecraft.server.level.ServerPlayer player) {
       agebookItem.activate(book, level, entity);
       // After activation, the book tag is updated in place with Dimension/Spawn data.
       // If activation failed (no link panel, etc.), the tag still won't have a dimension.
-      if (LinkOptions.getDimensionUID(book.getTag()) == null) {
+      if (LinkOptions.getDimensionUID(ItemStackNbt.getTag(book)) == null) {
         return;
       }
       // activate() already performed the link, so we're done.
@@ -183,13 +184,13 @@ public class LinkPortalBlock extends Block {
    * Extracts link data from a book item.
    */
   private CompoundTag getLinkData(ItemStack book) {
-    if (book.isEmpty() || book.getTag() == null) {
+    if (book.isEmpty() || ItemStackNbt.getTag(book) == null) {
       return null;
     }
 
     // Both Linkbooks and Agebooks store their link data in the item tag
     if (book.getItem() instanceof LinkbookItem || book.getItem() instanceof AgebookItem) {
-      return book.getTag();
+      return ItemStackNbt.getTag(book);
     }
 
     return null;

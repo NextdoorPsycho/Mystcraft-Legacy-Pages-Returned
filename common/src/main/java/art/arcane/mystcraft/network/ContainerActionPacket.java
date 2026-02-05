@@ -10,6 +10,7 @@ import art.arcane.mystcraft.item.FolderItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.item.PortfolioItem;
 import art.arcane.mystcraft.menu.*;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -431,7 +432,9 @@ public class ContainerActionPacket {
 
     // Set title on agebook
     if (writingItem.getItem() instanceof AgebookItem) {
-      LinkOptions.setDisplayName(writingItem.getOrCreateTag(), title);
+      var tag = ItemStackNbt.getOrCreateTag(writingItem);
+      LinkOptions.setDisplayName(tag, title);
+      ItemStackNbt.setTag(writingItem, tag);
       blockEntity.setChanged();
     }
     // Set title on linkbook

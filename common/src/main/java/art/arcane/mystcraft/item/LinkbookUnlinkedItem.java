@@ -4,6 +4,8 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.registry.ModItems;
+import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.TooltipCompat;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -23,7 +25,7 @@ import java.util.List;
  * A blank linkbook that converts to a linked linkbook at the current position on right-click.
  * Only converts when exactly 1 is held. Transfers link panel properties to the new book.
  */
-public class LinkbookUnlinkedItem extends Item {
+public class LinkbookUnlinkedItem extends Item implements TooltipCompat {
 
   public LinkbookUnlinkedItem(Properties properties) {
     super(properties.stacksTo(16));
@@ -34,18 +36,17 @@ public class LinkbookUnlinkedItem extends Item {
    */
   public static ItemStack createItem(@NotNull ItemStack linkpanel, @NotNull ItemStack covermat) {
     ItemStack linkbook = new ItemStack(ModItems.LINKBOOK_UNLINKED.get());
-    CompoundTag prev = linkpanel.getTag();
+    CompoundTag prev = ItemStackNbt.getTag(linkpanel);
     if (prev == null) {
       prev = new CompoundTag();
     }
-    linkbook.setTag(prev.copy());
+    ItemStackNbt.setTag(linkbook, prev.copy());
     return linkbook;
   }
 
-  @Override
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
     // Show link panel properties in tooltip
-    if (stack.getTag() != null) {
+    if (ItemStackNbt.getTag(stack) != null) {
       Page.getTooltip(stack, tooltip);
     }
   }
@@ -89,7 +90,7 @@ public class LinkbookUnlinkedItem extends Item {
     String dimName = getDimensionDisplayName(level);
     LinkOptions.setDisplayName(tag, dimName);
 
-    linkBook.setTag(tag);
+    ItemStackNbt.setTag(linkBook, tag);
   }
 
   /**

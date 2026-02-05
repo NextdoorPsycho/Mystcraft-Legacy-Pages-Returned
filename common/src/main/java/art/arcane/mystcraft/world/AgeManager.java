@@ -2,6 +2,7 @@ package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.platform.Services;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -124,7 +125,6 @@ public class AgeManager extends SavedData {
     }
   }
 
-  @Override
   @NotNull
   public CompoundTag save(@NotNull CompoundTag tag) {
     Mystcraft.LOGGER.info("Saving AgeManager data...");
@@ -162,6 +162,10 @@ public class AgeManager extends SavedData {
 
     Mystcraft.LOGGER.info("AgeManager save complete.");
     return tag;
+  }
+
+  public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+    return save(tag);
   }
 
   /**

@@ -2,6 +2,7 @@ package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.platform.Services;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -64,7 +65,6 @@ public class GuidebookData extends SavedData {
     }
   }
 
-  @Override
   @NotNull
   public CompoundTag save(@NotNull CompoundTag tag) {
     ListTag list = new ListTag();
@@ -73,6 +73,10 @@ public class GuidebookData extends SavedData {
     }
     tag.put(TAG_PLAYERS, list);
     return tag;
+  }
+
+  public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+    return save(tag);
   }
 
   public boolean hasReceived(UUID playerId) {

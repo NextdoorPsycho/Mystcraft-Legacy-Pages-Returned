@@ -2,6 +2,8 @@ package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.platform.Services;
+import art.arcane.mystcraft.util.ItemStackNbt;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -202,7 +204,7 @@ public class AgeData extends SavedData {
     this.pages.clear();
     ListTag pagesList = tag.getList(TAG_PAGES, Tag.TAG_COMPOUND);
     for (int i = 0; i < pagesList.size(); i++) {
-      ItemStack page = ItemStack.of(pagesList.getCompound(i));
+      ItemStack page = ItemStackNbt.load(pagesList.getCompound(i));
       if (!page.isEmpty()) {
         this.pages.add(page);
       }
@@ -315,7 +317,6 @@ public class AgeData extends SavedData {
     }
   }
 
-  @Override
   @NotNull
   public CompoundTag save(@NotNull CompoundTag tag) {
     Mystcraft.LOGGER.info("Saving AgeData for age {}...", ageUID);
@@ -336,7 +337,7 @@ public class AgeData extends SavedData {
     ListTag pagesList = new ListTag();
     for (ItemStack page : pages) {
       if (!page.isEmpty()) {
-        pagesList.add(page.save(new CompoundTag()));
+        pagesList.add(ItemStackNbt.save(page));
       }
     }
     tag.put(TAG_PAGES, pagesList);
@@ -431,6 +432,10 @@ public class AgeData extends SavedData {
 
     Mystcraft.LOGGER.info("AgeData save complete for age {}.", ageUID);
     return tag;
+  }
+
+  public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+    return save(tag);
   }
 
   public int getAgeUID() {

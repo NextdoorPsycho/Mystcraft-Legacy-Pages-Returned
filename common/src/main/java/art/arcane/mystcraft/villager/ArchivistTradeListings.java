@@ -9,6 +9,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import art.arcane.mystcraft.util.MerchantOfferCompat;
 import net.minecraft.world.item.trading.MerchantOffer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,7 +68,7 @@ public final class ArchivistTradeListings {
       IAgeSymbol symbol = SymbolRegistry.getRandomWeighted(random);
 
       if (symbol == null) {
-        return new MerchantOffer(
+        return MerchantOfferCompat.create(
             new ItemStack(Items.EMERALD, 4),
             Page.createPage(),
             maxUses,
@@ -82,7 +83,7 @@ public final class ArchivistTradeListings {
 
       ItemStack pageStack = Page.createSymbolPage(symbol.getRegistryName());
 
-      return new MerchantOffer(
+      return MerchantOfferCompat.create(
           new ItemStack(Items.EMERALD, emeraldCost),
           pageStack,
           uses,
@@ -129,7 +130,7 @@ public final class ArchivistTradeListings {
       int emeraldCost = calculateSymbolPrice(symbol);
       ItemStack pageStack = Page.createSymbolPage(symbol.getRegistryName());
 
-      return new MerchantOffer(
+      return MerchantOfferCompat.create(
           new ItemStack(Items.EMERALD, emeraldCost),
           pageStack,
           maxUses,
@@ -175,7 +176,7 @@ public final class ArchivistTradeListings {
       int emeraldCost = calculateSymbolPrice(symbol);
       ItemStack pageStack = Page.createSymbolPage(symbol.getRegistryName());
 
-      return new MerchantOffer(
+      return MerchantOfferCompat.create(
           new ItemStack(Items.EMERALD, emeraldCost),
           pageStack,
           maxUses,

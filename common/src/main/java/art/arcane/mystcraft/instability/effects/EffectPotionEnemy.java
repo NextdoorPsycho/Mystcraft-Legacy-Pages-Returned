@@ -3,6 +3,7 @@ package art.arcane.mystcraft.instability.effects;
 import art.arcane.mystcraft.api.instability.IEnvironmentalEffect;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffect;
+import art.arcane.mystcraft.util.MobEffectCompat;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -68,6 +69,9 @@ public class EffectPotionEnemy implements IEnvironmentalEffect {
 
     // Apply effect to a random mob
     Mob target = mobs.get(level.random.nextInt(mobs.size()));
-    target.addEffect(new MobEffectInstance(effect, duration, 0));
+    MobEffectInstance instance = MobEffectCompat.createInstance(effect, duration, 0);
+    if (instance != null) {
+      target.addEffect(instance);
+    }
   }
 }

@@ -7,6 +7,7 @@ import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -16,7 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
+import art.arcane.mystcraft.util.CommonListenerCookieCompat;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -180,8 +181,9 @@ public final class MystcraftGameTestRunner {
     LinkbookEntity personalEntity = new LinkbookEntity(level, x + 2, y, z);
     ItemStack personalBook = new ItemStack(ModItems.PERSONAL_LINK_BOOK.get());
     // Manually set NoDecay tag since we don't have a player to initialize
-    net.minecraft.nbt.CompoundTag personalTag = personalBook.getOrCreateTag();
+    net.minecraft.nbt.CompoundTag personalTag = ItemStackNbt.getOrCreateTag(personalBook);
     personalTag.putBoolean("NoDecay", true);
+    ItemStackNbt.setTag(personalBook, personalTag);
     personalEntity.setBookItem(personalBook);
     level.addFreshEntity(personalEntity);
 
@@ -343,7 +345,7 @@ public final class MystcraftGameTestRunner {
 
     TestLinkbookItem testItem = new TestLinkbookItem(new Item.Properties());
     ItemStack stack = new ItemStack(testItem);
-    stack.setTag(new CompoundTag());
+    ItemStackNbt.setTag(stack, new CompoundTag());
 
     int slot = player.getInventory().selected;
     player.getInventory().setItem(slot, stack);
@@ -485,22 +487,50 @@ public final class MystcraftGameTestRunner {
 
     // Fallback: create a simple player without going through placeNewPlayer
     // which requires profile cache that may not be available in GameTest
-    CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-player"));
-    ServerPlayer player = new ServerPlayer(server, level, cookie.gameProfile(), cookie.clientInformation()) {
-      @Override
-      public boolean isSpectator() {
-        return false;
-      }
-
-      @Override
-      public boolean isCreative() {
-        return true;
-      }
-    };
+    GameProfile profile = new GameProfile(UUID.randomUUID(), "test-player");
+    ServerPlayer player = createServerPlayer(server, level, profile);
+    if (player == null) {
+      helper.fail("Failed to create test player");
+      return null;
+    }
 
     // Set basic position without full registration
     player.moveTo(level.getSharedSpawnPos(), 0.0F, 0.0F);
     return player;
+  }
+
+  private static ServerPlayer createServerPlayer(MinecraftServer server, ServerLevel level, GameProfile profile) {
+    // Try CommonListenerCookie path if present (1.20.4+)
+    Object cookie = CommonListenerCookieCompat.createInitial(profile);
+    if (cookie != null) {
+      try {
+        java.lang.reflect.Method gameProfile = cookie.getClass().getMethod("gameProfile");
+        java.lang.reflect.Method clientInfo = cookie.getClass().getMethod("clientInformation");
+        Object clientInformation = clientInfo.invoke(cookie);
+        GameProfile cookieProfile = (GameProfile) gameProfile.invoke(cookie);
+        java.lang.reflect.Constructor<ServerPlayer> ctor = ServerPlayer.class.getConstructor(
+            MinecraftServer.class,
+            ServerLevel.class,
+            GameProfile.class,
+            clientInformation.getClass()
+        );
+        return ctor.newInstance(server, level, cookieProfile, clientInformation);
+      } catch (ReflectiveOperationException ignored) {
+      }
+    }
+
+    // Fallback to older constructor
+    try {
+      java.lang.reflect.Constructor<ServerPlayer> ctor = ServerPlayer.class.getConstructor(
+          MinecraftServer.class,
+          ServerLevel.class,
+          GameProfile.class
+      );
+      return ctor.newInstance(server, level, profile);
+    } catch (ReflectiveOperationException ignored) {
+    }
+
+    return null;
   }
 
   private static final class TestLinkbookItem extends art.arcane.mystcraft.item.LinkbookItem {

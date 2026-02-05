@@ -4,6 +4,8 @@ import art.arcane.mystcraft.platform.services.IPlatformHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLLoader;
@@ -66,5 +68,10 @@ public class ForgePlatformHelper_1_20_1 implements IPlatformHelper {
       throw new IllegalStateException("Black ink flowing fluid not initialized. Call setBlackInkFlowing first.");
     }
     return blackInkFlowing;
+  }
+
+  @Override
+  public Block getShortGrassBlock() {
+    return Blocks.GRASS;
   }
 }

@@ -9,6 +9,7 @@ import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.util.PocketHeadUtils;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -453,7 +454,7 @@ public final class PersonalPocketDimension {
     if (blockEntity instanceof BookstandBlockEntity bookstand) {
       // Create the return linkbook
       ItemStack linkbook = new ItemStack(ModItems.LINKBOOK.get());
-      CompoundTag tag = linkbook.getOrCreateTag();
+      CompoundTag tag = ItemStackNbt.getOrCreateTag(linkbook);
 
       // Copy return link data to the linkbook
       Integer dimUID = LinkOptions.getDimensionUID(returnLink);
@@ -469,6 +470,7 @@ public final class PersonalPocketDimension {
         LinkOptions.setSpawnYaw(tag, yaw);
       }
       LinkOptions.setDisplayName(tag, "Return Home");
+      ItemStackNbt.setTag(linkbook, tag);
       tag.putBoolean("NoDecay", true);
 
       // Place the linkbook on the bookstand

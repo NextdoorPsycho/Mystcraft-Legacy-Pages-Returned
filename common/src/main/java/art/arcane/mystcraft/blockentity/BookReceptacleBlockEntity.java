@@ -5,6 +5,7 @@ import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.portal.PortalUtils;
 import art.arcane.mystcraft.registry.ModBlockEntities;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -75,7 +76,7 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
       if (!stack.isEmpty()) {
         CompoundTag itemTag = new CompoundTag();
         itemTag.putInt("Slot", i);
-        stack.save(itemTag);
+        itemTag.merge(ItemStackNbt.save(stack));
         itemList.add(itemTag);
       }
     }
@@ -92,7 +93,8 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
       CompoundTag itemTag = itemList.getCompound(i);
       int slot = itemTag.getInt("Slot");
       if (slot >= 0 && slot < inventory.getContainerSize()) {
-        inventory.setItem(slot, ItemStack.of(itemTag));
+        CompoundTag itemData = itemTag.contains("Item", Tag.TAG_COMPOUND) ? itemTag.getCompound("Item") : itemTag;
+        inventory.setItem(slot, ItemStackNbt.load(itemData));
       }
     }
     loading = false;
@@ -151,7 +153,7 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
     }
 
     // Get color from book's link data
-    CompoundTag tag = book.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(book);
     if (tag != null) {
       Integer color = LinkOptions.getLinkColor(tag);
       if (color != null) {

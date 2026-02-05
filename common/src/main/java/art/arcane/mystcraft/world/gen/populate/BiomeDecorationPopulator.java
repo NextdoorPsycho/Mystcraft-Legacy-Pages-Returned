@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.populate;
 
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import art.arcane.mystcraft.platform.Services;
 import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -360,10 +361,11 @@ public class BiomeDecorationPopulator implements IPopulate {
       BlockState ground = world.getBlockState(belowPos);
       if (ground.is(Blocks.GRASS_BLOCK) || ground.is(BlockTags.DIRT)) {
         if (world.getBlockState(grassPos).isAir()) {
-          // Choose grass type
+          // Choose grass type - use platform service for SHORT_GRASS (renamed in 1.20.4+)
+          BlockState shortGrass = Services.PLATFORM.getShortGrassBlock().defaultBlockState();
           BlockState grass = random.nextInt(3) == 0 ?
               Blocks.TALL_GRASS.defaultBlockState() :
-              Blocks.GRASS.defaultBlockState();
+              shortGrass;
 
           if (grass.is(Blocks.TALL_GRASS)) {
             // Only place tall grass if there's room
@@ -371,7 +373,7 @@ public class BiomeDecorationPopulator implements IPopulate {
             if (isInChunk(abovePos) && world.getBlockState(abovePos).isAir()) {
               safeSetBlock(world, grassPos, Blocks.TALL_GRASS.defaultBlockState());
             } else {
-              safeSetBlock(world, grassPos, Blocks.GRASS.defaultBlockState());
+              safeSetBlock(world, grassPos, shortGrass);
             }
           } else {
             safeSetBlock(world, grassPos, grass);

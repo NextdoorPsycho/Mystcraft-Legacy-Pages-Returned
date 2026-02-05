@@ -5,6 +5,8 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.link.LinkingManager;
+import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.TooltipCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -30,7 +32,7 @@ import java.util.List;
  * Auto-initializes with current position when first in inventory.
  * Dropped as an entity when used for linking (unless "following" flag is set).
  */
-public class LinkbookItem extends Item {
+public class LinkbookItem extends Item implements TooltipCompat {
 
   private static final float DEFAULT_MAX_HEALTH = 10.0f;
 
@@ -40,14 +42,15 @@ public class LinkbookItem extends Item {
 
   public static void setHealth(@NotNull ItemStack book, float health) {
     if (book.isEmpty()) return;
-    CompoundTag tag = book.getOrCreateTag();
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(book);
     tag.putFloat("damage", getMaxHealth(book) - health);
+    ItemStackNbt.setTag(book, tag);
   }
 
   public static float getHealth(@NotNull ItemStack book) {
     float health = getMaxHealth(book);
     if (book.isEmpty()) return health;
-    CompoundTag tag = book.getTag();
+    CompoundTag tag = ItemStackNbt.getTag(book);
     if (tag == null) return health;
     float damage = tag.getFloat("damage");
     return health - damage;
@@ -56,15 +59,14 @@ public class LinkbookItem extends Item {
   public static float getMaxHealth(@NotNull ItemStack book) {
     float health = DEFAULT_MAX_HEALTH;
     if (book.isEmpty()) return health;
-    CompoundTag tag = book.getTag();
-    if (tag == null) return health;
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(book);
     if (!tag.contains("MaxHealth")) {
       tag.putFloat("MaxHealth", health);
+      ItemStackNbt.setTag(book, tag);
     }
     return tag.getFloat("MaxHealth");
   }
 
-  @Override
   @NotNull
   public Rarity getRarity(@NotNull ItemStack stack) {
     return Rarity.RARE;
@@ -73,8 +75,9 @@ public class LinkbookItem extends Item {
   @Override
   @NotNull
   public Component getName(@NotNull ItemStack stack) {
-    if (stack.getTag() != null) {
-      String displayName = LinkOptions.getDisplayName(stack.getTag());
+    CompoundTag tag = ItemStackNbt.getTag(stack);
+    if (tag != null) {
+      String displayName = LinkOptions.getDisplayName(tag);
       if (!"???".equals(displayName)) {
         return Component.literal(displayName);
       }
@@ -82,11 +85,11 @@ public class LinkbookItem extends Item {
     return super.getName(stack);
   }
 
-  @Override
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
-    if (stack.getTag() != null) {
+    CompoundTag tag = ItemStackNbt.getTag(stack);
+    if (tag != null) {
       // Show display name in tooltip
-      String name = LinkOptions.getDisplayName(stack.getTag());
+      String name = LinkOptions.getDisplayName(tag);
       if (!name.isEmpty() && !"???".equals(name)) {
         tooltip.add(Component.literal(name));
       }
@@ -105,7 +108,7 @@ public class LinkbookItem extends Item {
    * Ensures the book has been initialized with link data.
    */
   public void validate(@Nullable Level level, @NotNull ItemStack stack, @Nullable Entity entity) {
-    if (stack.getTag() == null) {
+    if (ItemStackNbt.getTag(stack) == null) {
       initialize(level, stack, entity);
     }
   }
@@ -126,7 +129,7 @@ public class LinkbookItem extends Item {
     // Set max health
     tag.putFloat("MaxHealth", DEFAULT_MAX_HEALTH);
 
-    stack.setTag(tag);
+    ItemStackNbt.setTag(stack, tag);
   }
 
   @Override
@@ -153,11 +156,11 @@ public class LinkbookItem extends Item {
     if (level.isClientSide) {
       return;
     }
-    if (stack.getTag() == null) {
+    if (ItemStackNbt.getTag(stack) == null) {
       return;
     }
 
-    CompoundTag linkData = stack.getTag();
+    CompoundTag linkData = ItemStackNbt.getTag(stack);
 
     // Check link info validity
     BlockPos spawn = LinkOptions.getSpawn(linkData);
@@ -184,9 +187,9 @@ public class LinkbookItem extends Item {
       ItemStack offHand = player.getOffhandItem();
 
       int slotToEmpty = -1;
-      if (ItemStack.isSameItemSameTags(mainHand, stack)) {
+      if (ItemStackNbt.isSameItemSameTags(mainHand, stack)) {
         slotToEmpty = player.getInventory().selected;
-      } else if (ItemStack.isSameItemSameTags(offHand, stack)) {
+      } else if (ItemStackNbt.isSameItemSameTags(offHand, stack)) {
         slotToEmpty = 40; // Offhand slot index
       } else {
         // Book not found in either hand
@@ -213,7 +216,7 @@ public class LinkbookItem extends Item {
     if (!art.arcane.mystcraft.config.MystcraftConfig.dropBooksOnRead.get()) {
       return false;
     }
-    return !LinkOptions.getFlag(stack.getTag(), LinkFlags.FOLLOWING);
+    return !LinkOptions.getFlag(ItemStackNbt.getTag(stack), LinkFlags.FOLLOWING);
   }
 
   /**
@@ -227,8 +230,9 @@ public class LinkbookItem extends Item {
    * Gets the authors of this book from NBT.
    */
   public Collection<String> getAuthors(@NotNull ItemStack stack) {
-    if (stack.getTag() != null && stack.getTag().contains("Author")) {
-      return Collections.singleton(stack.getTag().getString("Author"));
+    CompoundTag tag = ItemStackNbt.getTag(stack);
+    if (tag != null && tag.contains("Author")) {
+      return Collections.singleton(tag.getString("Author"));
     }
     return Collections.emptySet();
   }
@@ -237,7 +241,9 @@ public class LinkbookItem extends Item {
    * Sets the display name of the linkbook.
    */
   public void setDisplayName(@NotNull ItemStack stack, String name) {
-    LinkOptions.setDisplayName(stack.getOrCreateTag(), name);
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
+    LinkOptions.setDisplayName(tag, name);
+    ItemStackNbt.setTag(stack, tag);
   }
 
   // --- Health/Durability ---
@@ -246,7 +252,7 @@ public class LinkbookItem extends Item {
    * Gets the display name of the linkbook.
    */
   public String getDisplayName(@NotNull ItemStack stack) {
-    return LinkOptions.getDisplayName(stack.getTag());
+    return LinkOptions.getDisplayName(ItemStackNbt.getTag(stack));
   }
 
   /**
@@ -254,14 +260,16 @@ public class LinkbookItem extends Item {
    */
   @Nullable
   public BlockPos getDestination(@NotNull ItemStack stack) {
-    return LinkOptions.getSpawn(stack.getTag());
+    return LinkOptions.getSpawn(ItemStackNbt.getTag(stack));
   }
 
   /**
    * Sets the destination position.
    */
   public void setDestination(@NotNull ItemStack stack, BlockPos pos) {
-    LinkOptions.setSpawn(stack.getOrCreateTag(), pos);
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
+    LinkOptions.setSpawn(tag, pos);
+    ItemStackNbt.setTag(stack, tag);
   }
 
   public boolean isDamageableItem() {
@@ -315,6 +323,6 @@ public class LinkbookItem extends Item {
    */
   @Override
   public boolean isFoil(@NotNull ItemStack stack) {
-    return LinkOptions.getFlag(stack.getTag(), LinkFlags.FOLLOWING);
+    return LinkOptions.getFlag(ItemStackNbt.getTag(stack), LinkFlags.FOLLOWING);
   }
 }

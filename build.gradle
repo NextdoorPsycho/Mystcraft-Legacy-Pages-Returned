@@ -37,11 +37,17 @@ idea {
                 "Forge 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
                     taskNames = [':forge:1.20.2:runServer']
                 }
-                "NeoForge 1.20.2 Client"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':neoforge:1.20.2:runClient']
+                "NeoForge 1.20.4 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':neoforge:1.20.4:runClient']
                 }
-                "NeoForge 1.20.2 Server"(org.jetbrains.gradle.ext.Gradle) {
-                    taskNames = [':neoforge:1.20.2:runServer']
+                "NeoForge 1.20.4 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':neoforge:1.20.4:runServer']
+                }
+                "NeoForge 1.20.6 Client"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':neoforge:1.20.6:runClient']
+                }
+                "NeoForge 1.20.6 Server"(org.jetbrains.gradle.ext.Gradle) {
+                    taskNames = [':neoforge:1.20.6:runServer']
                 }
             }
         }
@@ -56,7 +62,7 @@ tasks.register('cleanLibs') {
         def platforms = [
             'fabric:1.20.1', 'fabric:1.20.2',
             'forge:1.20.1', 'forge:1.20.2',
-            'neoforge:1.20.2'
+            'neoforge:1.20.4', 'neoforge:1.20.6'
         ]
         platforms.each { platform ->
             try {
@@ -88,10 +94,10 @@ tasks.register('cleanLibs') {
 // Build tasks
 tasks.register('buildAllVersions') {
     group = 'build'
-    description = 'Builds all platform/version combinations (5 JARs total)'
+    description = 'Builds all platform/version combinations (6 JARs total)'
     dependsOn ':fabric:1.20.1:build', ':fabric:1.20.2:build',
               ':forge:1.20.1:build', ':forge:1.20.2:build',
-              ':neoforge:1.20.2:build'
+              ':neoforge:1.20.4:build', ':neoforge:1.20.6:build'
     mustRunAfter 'cleanLibs'
 }
 
@@ -128,7 +134,11 @@ def registerCopyTask = { String name, String outputProp ->
             include '*.jar'
             exclude '*-sources*'
         }
-        from(project(':neoforge:1.20.2').layout.buildDirectory.dir('libs')) {
+        from(project(':neoforge:1.20.4').layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources*'
+        }
+        from(project(':neoforge:1.20.6').layout.buildDirectory.dir('libs')) {
             include '*.jar'
             exclude '*-sources*'
         }
@@ -258,6 +268,9 @@ subprojects {
     }
 
     processResources {
+        if (project.path.startsWith(':neoforge:')) {
+            return
+        }
         def expandProps = [
             'version'                      : version,
             'group'                        : project.group,
@@ -283,4 +296,3 @@ subprojects {
         inputs.properties(expandProps)
     }
 }
-

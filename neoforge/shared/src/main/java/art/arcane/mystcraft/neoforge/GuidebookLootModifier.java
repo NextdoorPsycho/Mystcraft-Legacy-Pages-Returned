@@ -1,0 +1,50 @@
+package art.arcane.mystcraft.neoforge;
+
+import art.arcane.mystcraft.neoforge.NeoForgeRegistries;
+import com.google.common.base.Suppliers;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.common.loot.LootModifier;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.function.Supplier;
+
+/**
+ * Loot modifier that adds the Mystcraft Guidebook to loot chests with a configurable chance.
+ */
+public class GuidebookLootModifier extends LootModifier {
+
+  public static final Supplier<MapCodec<GuidebookLootModifier>> CODEC = Suppliers.memoize(() ->
+      RecordCodecBuilder.mapCodec(inst -> codecStart(inst)
+          .and(Codec.FLOAT.fieldOf("chance").forGetter(m -> m.chance))
+          .apply(inst, GuidebookLootModifier::new)));
+
+  private final float chance;
+
+  public GuidebookLootModifier(LootItemCondition[] conditions, float chance) {
+    super(conditions);
+    this.chance = chance;
+  }
+
+  @Override
+  protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
+    if (context.getRandom().nextFloat() > chance) {
+      return generatedLoot;
+    }
+
+    generatedLoot.add(new ItemStack(NeoForgeRegistries.GUIDEBOOK.get()));
+
+    return generatedLoot;
+  }
+
+  @Override
+  public MapCodec<? extends IGlobalLootModifier> codec() {
+    return CODEC.get();
+  }
+}

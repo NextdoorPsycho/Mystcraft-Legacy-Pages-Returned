@@ -1,0 +1,175 @@
+plugins {
+    id 'net.neoforged.moddev' version '2.0.140'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+configurations {
+    shadow
+    implementation.extendsFrom shadow
+}
+
+version = "${project.version}"
+group = project.group
+description = project.findProperty('description') ?: project.description
+ext.minecraft_version = minecraft_version_1_20_6
+ext.minecraft_version_range = minecraft_version_range_1_20_6
+ext.neoforge_version = neoforge_version_1_20_6
+ext.neoforge_loader_version_range = neoforge_loader_version_range_1_20_6
+
+base {
+    archivesName = "mystcraft_legacy-${version}-${minecraft_version_1_20_6}-neoforge"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+
+neoForge {
+    version = neoforge_version_1_20_6
+
+    def at = project(':common').file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (at.exists()) {
+        accessTransformers.from(at)
+    }
+
+    runs {
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        }
+        server {
+            server()
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+            programArgument '--nogui'
+        }
+        gameTestServer {
+            type = "gameTestServer"
+            systemProperty 'neoforge.gameTestServer', 'true'
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+            systemProperty 'neoforge.enableGameTest', 'true'
+        }
+        data {
+            data()
+            programArguments.addAll '--mod', mod_id, '--all', '--output', file('src/generated/resources/').absolutePath, '--existing', file('src/main/resources/').absolutePath
+        }
+    }
+
+    mods {
+        mystcraft {
+            sourceSet sourceSets.main
+            sourceSet project(':common').sourceSets.main
+        }
+    }
+}
+
+sourceSets.main.resources.srcDir 'src/generated/resources'
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.neoforged.net/releases' }
+}
+
+dependencies {
+    compileOnly project(':common')
+}
+
+shadowJar {
+    configurations = [project.configurations.shadow]
+    archiveClassifier = ''
+}
+
+tasks.named('compileJava', JavaCompile) {
+    source(project(':common').sourceSets.main.allSource.matching {
+        exclude '**/network/LecternBookSyncPacket.java'
+        exclude '**/network/ExplosionPacket.java'
+        exclude '**/network/OpenLecternBookPacket.java'
+        // Exclude classes incompatible with 1.20.4+ API changes
+        exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
+        exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
+        exclude '**/advancements/WritingDeskWriteTrigger.java'
+        // 1.20.6 uses MapCodec in ChunkGenerator/BiomeSource
+        exclude '**/world/gen/AgeChunkGenerator.java'
+        exclude '**/world/gen/biome/AgeBiomeSource.java'
+        // 1.20.6 entity data definitions use SynchedEntityData.Builder
+        exclude '**/entity/LinkbookEntity.java'
+        exclude '**/entity/MystcraftFallingBlockEntity.java'
+        exclude '**/entity/MeteorEntity.java'
+        exclude '**/entity/ColoredLightningEntity.java'
+        // JigsawPlacement.addPieces signature changed in 1.20.4+ (requires PoolAliasLookup)
+        exclude '**/world/structure/AbandonedLibraryStructure.java'
+        exclude '**/world/structure/UndergroundArchiveStructure.java'
+        exclude '**/world/structure/ScatteredLibraryStructure.java'
+        // MinecraftSessionService.getTextures signature changed in 1.20.4+
+        exclude '**/util/PocketHeadUtils.java'
+    })
+    source(file("${rootDir}/neoforge/shared/src/main/java"))
+    // Include 1.20.4+ compatible classes from neoforge/1.20.4 (triggers, utils)
+    source(project(':neoforge:1.20.4').file('src/main/java/art/arcane/mystcraft/neoforge/NeoForgeTriggers.java'))
+    source(project(':neoforge:1.20.4').file('src/main/java/art/arcane/mystcraft/util/PocketHeadUtils.java'))
+    // 1.20.6 uses its own network, structure classes with MapCodec (in neoforge/1.20.6/src/main/java)
+}
+
+tasks.named('processResources', ProcessResources) {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    from project(':common').sourceSets.main.resources
+    from sourceSets.main.resources
+
+    def expandProps = [
+            'version'                      : project.version,
+            'group'                        : project.group,
+            'minecraft_version'            : minecraft_version_1_20_6,
+            'minecraft_version_range'      : minecraft_version_range_1_20_6,
+            'neoforge_version'             : neoforge_version_1_20_6,
+            'neoforge_loader_version_range': neoforge_loader_version_range_1_20_6,
+            'mod_name'                     : mod_name,
+            'mod_author'                   : mod_author,
+            'mod_id'                       : mod_id,
+            'license'                      : license,
+            'description'                  : project.findProperty('description') ?: project.description,
+            'mod_description'              : project.findProperty('description') ?: project.description,
+            'minecraft_version_range_1_20_6': minecraft_version_range_1_20_6,
+            'neoforge_version_1_20_6'       : neoforge_version_1_20_6,
+            'neoforge_loader_version_range_1_20_6': neoforge_loader_version_range_1_20_6,
+            'credits'                      : credits,
+            'java_version'                 : java_version
+    ]
+
+    filesMatching(['pack.mcmeta', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
+        expand expandProps
+    }
+
+    inputs.properties(expandProps)
+}
+
+tasks.named('sourcesJar', Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from project(':common').sourceSets.main.allSource
+    from project(':common').sourceSets.main.resources
+    from file("${rootDir}/neoforge/shared/src/main/java")
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveFileName = "mystcraft_legacy-neoforge-${neoforge_version_1_20_6}-${minecraft_version_1_20_6}.jar"
+
+    from(rootProject.file('LICENSE')) {
+        rename { "${it}_${mod_name}" }
+    }
+
+    manifest {
+        attributes([
+                'Specification-Title'   : mod_name,
+                'Specification-Vendor'  : mod_author,
+                'Specification-Version' : project.jar.archiveVersion,
+                'Implementation-Title'  : project.name,
+                'Implementation-Version': project.jar.archiveVersion,
+                'Implementation-Vendor' : mod_author,
+                'Built-On-Minecraft'    : minecraft_version_1_20_6
+        ])
+    }
+}
+
+sourcesJar {
+    archiveFileName = "mystcraft_legacy-neoforge-${neoforge_version_1_20_6}-${minecraft_version_1_20_6}-sources.jar"
+}

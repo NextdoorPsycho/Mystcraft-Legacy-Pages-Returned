@@ -3,6 +3,7 @@ package art.arcane.mystcraft.platform.services;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.FlowingFluid;
 
 import java.util.function.Consumer;
@@ -39,4 +40,9 @@ public interface IPlatformHelper {
    * Creates the Black Ink Flowing fluid.
    */
   FlowingFluid createBlackInkFlowing();
+
+  /**
+   * Returns the short grass block (Blocks.GRASS in 1.20.1-1.20.2, Blocks.SHORT_GRASS in 1.20.4+).
+   */
+  Block getShortGrassBlock();
 }

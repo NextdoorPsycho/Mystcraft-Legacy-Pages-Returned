@@ -3,6 +3,7 @@ package art.arcane.mystcraft.entity;
 import art.arcane.mystcraft.registry.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import art.arcane.mystcraft.util.NbtCompat;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -112,7 +113,7 @@ public class MystcraftFallingBlockEntity extends Entity {
     blockState = NbtUtils.readBlockState(level().holderLookup(net.minecraft.core.registries.Registries.BLOCK), tag.getCompound("BlockState"));
     time = tag.getInt("Time");
     if (tag.contains("StartPos")) {
-      startPos = NbtUtils.readBlockPos(tag.getCompound("StartPos"));
+      startPos = NbtCompat.readBlockPos(tag, "StartPos");
     }
   }
 

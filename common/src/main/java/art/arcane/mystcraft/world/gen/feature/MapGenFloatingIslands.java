@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.world.gen.feature;
 
 import art.arcane.mystcraft.api.world.logic.ITerrainAlteration;
+import art.arcane.mystcraft.platform.Services;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -1050,7 +1051,7 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     }
     if (decorNoise > 0.6) {
       return (pick % 2 == 0)
-          ? Blocks.GRASS.defaultBlockState()
+          ? Services.PLATFORM.getShortGrassBlock().defaultBlockState()
           : Blocks.FERN.defaultBlockState();
     }
     if (decorNoise < 0.45) {

@@ -3,6 +3,9 @@ package art.arcane.mystcraft.block;
 import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
 import art.arcane.mystcraft.platform.Services;
 import art.arcane.mystcraft.registry.ModBlockEntities;
+import art.arcane.mystcraft.util.BlockInteractionCompat;
+import art.arcane.mystcraft.util.CodecCompat;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
@@ -32,8 +35,9 @@ import java.util.List;
  * The Ink Mixer block.
  * Used to mix inks and dyes to create link panels with properties.
  */
-public class InkMixerBlock extends BaseEntityBlock {
+public class InkMixerBlock extends BaseEntityBlock implements BlockInteractionCompat {
 
+  public static final MapCodec<InkMixerBlock> CODEC = CodecCompat.simpleCodec(InkMixerBlock::new);
   public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
   public InkMixerBlock(Properties properties) {
@@ -44,6 +48,10 @@ public class InkMixerBlock extends BaseEntityBlock {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(FACING);
+  }
+
+  protected MapCodec<? extends BaseEntityBlock> codec() {
+    return CODEC;
   }
 
   @Override
@@ -74,7 +82,6 @@ public class InkMixerBlock extends BaseEntityBlock {
         (lvl, pos, blockState, blockEntity) -> blockEntity.tick());
   }
 
-  @Override
   @NotNull
   public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     if (level.isClientSide) {

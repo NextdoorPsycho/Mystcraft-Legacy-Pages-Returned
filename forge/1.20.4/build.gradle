@@ -1,6 +1,6 @@
 plugins {
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
-    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+    // Note: Mixin plugin removed - Forge 1.20.2+ bundles mixin, plugin causes duplicate service error
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
@@ -44,12 +44,8 @@ minecraft {
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
             property 'forge.enabledGameTestNamespaces', mod_id
-            mods {
-                mystcraft {
-                    source sourceSets.main
-                    source project(':common').sourceSets.main
-                }
-            }
+            // With merged sourceSets output, mod discovery happens via mods.toml on classpath
+            // No explicit mods block needed - avoids JPMS module layer conflicts
         }
 
         client {
@@ -74,12 +70,16 @@ minecraft {
 
 sourceSets.main.resources.srcDir 'src/generated/resources'
 
+// JPMS fix: Merge classes and resources into a single output directory
+// Java's JPMS expects modules to be in a single directory. Having separate directories for
+// classes and resources causes the module system to see them as separate modules.
+sourceSets.each {
+    def resourcesDir = it.output.resourcesDir
+    it.output.setResourcesDir(it.java.classesDirectory)
+}
+
 repositories {
     mavenCentral()
-    maven {
-        name = 'Sponge / Mixin'
-        url = 'https://repo.spongepowered.org/repository/maven-public/'
-    }
     maven {
         name = 'Minecraft Libraries'
         url = 'https://libraries.minecraft.net'
@@ -89,8 +89,7 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version_1_20_4}-${forge_version_1_20_4}"
     compileOnly project(':common')
-
-    annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
+    // Mixin annotation processor not needed - Forge 1.20.2+ bundles mixin
 }
 
 shadowJar {
@@ -194,6 +193,19 @@ sourcesJar {
 }
 
 shadowJar.finalizedBy('reobfShadowJar')
+
+// Copy gametest structure files to the runs directory so StructureUtils filesystem lookup finds them.
+// Working directory for all Forge runs is 'runs/', and StructureUtils looks for
+// gameteststructures/<template>.snbt relative to the working directory.
+tasks.register('copyGameTestStructures', Copy) {
+    from 'src/main/resources/data/mystcraft/gameteststructures'
+    into 'runs/gameteststructures'
+}
+afterEvaluate {
+    tasks.matching { it.name == 'runGameTestServer' }.configureEach {
+        dependsOn 'copyGameTestStructures'
+    }
+}
 
 // Disable IDE run configuration generation
 tasks.matching { it.name.startsWith('genIntellijRuns') || it.name.startsWith('prepareRuns') }.configureEach {

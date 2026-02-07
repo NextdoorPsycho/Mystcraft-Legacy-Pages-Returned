@@ -1,0 +1,38 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "display_name": "Spaghetti Caves",
+  "poem": [
+    "Twist",
+    "Hollow",
+    "Thread",
+    "Stone"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "spaghetti",
+        "density": {
+          "op": "sub",
+          "a": 0.35,
+          "b": {
+            "op": "abs",
+            "input": {
+              "op": "noise3",
+              "scale": 0.04,
+              "octaves": 4,
+              "seed": 8814
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

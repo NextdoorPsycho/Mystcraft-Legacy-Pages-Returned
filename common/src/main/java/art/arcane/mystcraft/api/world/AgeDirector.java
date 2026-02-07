@@ -662,6 +662,48 @@ public interface AgeDirector {
   void setObelisksEnabled(boolean enabled);
 
   /**
+   * Enables or disables bonefield formations.
+   *
+   * @param enabled true to enable
+   */
+  void setBonefieldsEnabled(boolean enabled);
+
+  /**
+   * Enables or disables meat pillar formations.
+   *
+   * @param enabled true to enable
+   */
+  void setMeatPillarsEnabled(boolean enabled);
+
+  /**
+   * Enables or disables shattered grid formations.
+   *
+   * @param enabled true to enable
+   */
+  void setShatteredGridEnabled(boolean enabled);
+
+  /**
+   * Enables or disables eyeblight formations.
+   *
+   * @param enabled true to enable
+   */
+  void setEyeblightEnabled(boolean enabled);
+
+  /**
+   * Enables or disables inverted tree formations.
+   *
+   * @param enabled true to enable
+   */
+  void setInvertedTreesEnabled(boolean enabled);
+
+  /**
+   * Enables or disables corrupted column formations.
+   *
+   * @param enabled true to enable
+   */
+  void setCorruptedColumnsEnabled(boolean enabled);
+
+  /**
    * Enables or disables star fissure generation.
    *
    * @param enabled true to enable

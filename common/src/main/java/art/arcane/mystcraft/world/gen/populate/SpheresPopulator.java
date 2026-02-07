@@ -128,7 +128,8 @@ public class SpheresPopulator implements IPopulate {
           boolean floating = chunkRand.nextFloat() < floatingChance;
           int radius = minRadius + chunkRand.nextInt(maxRadius - minRadius + 1);
           BlockState sphereBlock = getSphereMaterial(chunkRand, floating);
-          BlockState coreBlock = getCoreBlock(sphereBlock, chunkRand);
+          BlockState oreCoreBlock = getOreCoreBlock(chunkRand);
+          BlockState innerLayerBlock = getInnerLayerBlock(chunkRand);
 
           // Y offset random - consume regardless of skip
           int yOffset = floating ? (30 + chunkRand.nextInt(70)) : chunkRand.nextInt(20);
@@ -160,7 +161,8 @@ public class SpheresPopulator implements IPopulate {
           BlockPos center = new BlockPos(cx, y, cz);
           generateSphere(world, irregSeed, decorSubSeed, shapeSeed, shape,
               center, radius, floating,
-              sphereBlock, coreBlock, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
+              sphereBlock, oreCoreBlock, innerLayerBlock,
+              chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
         }
       }
     }
@@ -181,9 +183,13 @@ public class SpheresPopulator implements IPopulate {
   private void generateSphere(WorldGenLevel world, long irregSeed, long decorSubSeed,
                               long shapeSeed, SphereShape shape,
                               BlockPos center, int radius,
-                              boolean floating, BlockState sphereBlock, BlockState coreBlock,
+                              boolean floating, BlockState sphereBlock,
+                              BlockState oreCoreBlock, BlockState innerLayerBlock,
                               int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
-    int coreRadius = radius > 8 ? radius / 3 : 0;
+    double oreCoreThreshold = radius > 6 ? radius * 0.25 : 0;
+    double innerLayerThreshold = radius > 6 ? radius * 0.6 : 0;
+    double oreCoreSq = oreCoreThreshold * oreCoreThreshold;
+    double innerLayerSq = innerLayerThreshold * innerLayerThreshold;
     CrackPlanes crackPlanes = null;
     if (shape == SphereShape.CRACKED) {
       crackPlanes = new CrackPlanes(shapeSeed, radius);
@@ -221,8 +227,10 @@ public class SpheresPopulator implements IPopulate {
             }
 
             BlockState blockToPlace;
-            if (coreRadius > 0 && distSq <= (double) coreRadius * coreRadius) {
-              blockToPlace = coreBlock;
+            if (oreCoreThreshold > 0 && distSq <= oreCoreSq) {
+              blockToPlace = oreCoreBlock;
+            } else if (innerLayerThreshold > 0 && distSq <= innerLayerSq) {
+              blockToPlace = innerLayerBlock;
             } else {
               blockToPlace = sphereBlock;
             }
@@ -289,21 +297,45 @@ public class SpheresPopulator implements IPopulate {
     }
   }
 
-  private BlockState getCoreBlock(BlockState outerBlock, Random random) {
-    if (random.nextInt(3) == 0) {
-      int choice = random.nextInt(8);
-      return switch (choice) {
-        case 0 -> Blocks.OBSIDIAN.defaultBlockState();
-        case 1 -> Blocks.CRYING_OBSIDIAN.defaultBlockState();
-        case 2 -> Blocks.GLOWSTONE.defaultBlockState();
-        case 3 -> Blocks.SEA_LANTERN.defaultBlockState();
-        case 4 -> Blocks.GOLD_BLOCK.defaultBlockState();
-        case 5 -> Blocks.IRON_BLOCK.defaultBlockState();
-        case 6 -> Blocks.LAPIS_BLOCK.defaultBlockState();
-        default -> Blocks.DIAMOND_BLOCK.defaultBlockState();
-      };
+  private BlockState getOreCoreBlock(Random random) {
+    int roll = random.nextInt(100);
+    if (roll < 3) {
+      return Blocks.ANCIENT_DEBRIS.defaultBlockState();
+    } else if (roll < 10) {
+      return Blocks.DEEPSLATE_DIAMOND_ORE.defaultBlockState();
+    } else if (roll < 18) {
+      return Blocks.DIAMOND_ORE.defaultBlockState();
+    } else if (roll < 26) {
+      return Blocks.EMERALD_ORE.defaultBlockState();
+    } else if (roll < 36) {
+      return Blocks.GOLD_ORE.defaultBlockState();
+    } else if (roll < 46) {
+      return Blocks.DEEPSLATE_GOLD_ORE.defaultBlockState();
+    } else if (roll < 56) {
+      return Blocks.LAPIS_ORE.defaultBlockState();
+    } else if (roll < 66) {
+      return Blocks.REDSTONE_ORE.defaultBlockState();
+    } else if (roll < 76) {
+      return Blocks.DEEPSLATE_REDSTONE_ORE.defaultBlockState();
+    } else if (roll < 84) {
+      return Blocks.RAW_GOLD_BLOCK.defaultBlockState();
+    } else if (roll < 92) {
+      return Blocks.RAW_IRON_BLOCK.defaultBlockState();
+    } else {
+      return Blocks.RAW_COPPER_BLOCK.defaultBlockState();
     }
-    return outerBlock;
+  }
+
+  private BlockState getInnerLayerBlock(Random random) {
+    int choice = random.nextInt(6);
+    return switch (choice) {
+      case 0 -> Blocks.SMOOTH_STONE.defaultBlockState();
+      case 1 -> Blocks.POLISHED_DEEPSLATE.defaultBlockState();
+      case 2 -> Blocks.POLISHED_BLACKSTONE.defaultBlockState();
+      case 3 -> Blocks.DARK_PRISMARINE.defaultBlockState();
+      case 4 -> Blocks.CHISELED_STONE_BRICKS.defaultBlockState();
+      default -> Blocks.PURPUR_BLOCK.defaultBlockState();
+    };
   }
 
   private void addFloatingSphereDecorations(WorldGenLevel world, long decorSubSeed,

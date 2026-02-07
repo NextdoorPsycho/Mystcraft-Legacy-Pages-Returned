@@ -57,13 +57,23 @@ neoForge {
 
     mods {
         mystcraft {
+            // Only include local sourceSets.main - it already contains common sources
+            // compiled via the compileJava task. Including project(':common') would
+            // bring in Fabric's dependencies causing conflicts.
             sourceSet sourceSets.main
-            sourceSet project(':common').sourceSets.main
         }
     }
 }
 
 sourceSets.main.resources.srcDir 'src/generated/resources'
+
+// Copy gametest structure files to the run directory so StructureUtils filesystem lookup finds them.
+// NeoForge ModDev uses 'run/' as the working directory (--gameDir .).
+tasks.register('copyGameTestStructures', Copy) {
+    from 'src/main/resources/data/mystcraft/gameteststructures'
+    into 'run/gameteststructures'
+}
+tasks.named('runGameTestServer').configure { dependsOn 'copyGameTestStructures' }
 
 repositories {
     mavenCentral()
@@ -103,6 +113,8 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/world/structure/ScatteredLibraryStructure.java'
         // MinecraftSessionService.getTextures signature changed in 1.20.4+
         exclude '**/util/PocketHeadUtils.java'
+        // 1.20.6 data components replace old tag-based NBT APIs
+        exclude '**/util/ItemStackNbt.java'
     })
     source(file("${rootDir}/neoforge/shared/src/main/java"))
     // Include 1.20.4+ compatible classes from neoforge/1.20.4 (triggers, utils)

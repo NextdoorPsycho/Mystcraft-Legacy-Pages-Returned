@@ -1,0 +1,48 @@
+{
+  "category": "terrain",
+  "card_rank": 4,
+  "instability_cost": 11.0,
+  "display_name": "Floating Veins",
+  "poem": [
+    "Vein",
+    "Thread",
+    "Float",
+    "Pulse"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "floating_veins",
+        "density": {
+          "op": "add",
+          "a": {
+            "op": "sub",
+            "a": {
+              "op": "ridged3",
+              "scale": 0.025,
+              "octaves": 5,
+              "seed": 8844
+            },
+            "b": 0.65
+          },
+          "b": {
+            "op": "mul",
+            "a": {
+              "op": "smoothstep",
+              "edge0": 200,
+              "edge1": 30,
+              "value": { "var": "y" }
+            },
+            "b": 0.15
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 11.0
+    }
+  ]
+}

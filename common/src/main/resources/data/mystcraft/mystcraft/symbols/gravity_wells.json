@@ -1,0 +1,26 @@
+{
+  "category": "feature_large",
+  "card_rank": 4,
+  "instability_cost": 14.0,
+  "poem": [
+    "Void",
+    "Sphere",
+    "Inward",
+    "Gravity"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "gravity_wells_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:gravity_wells"
+    },
+    {
+      "type": "add_instability",
+      "value": 14.0
+    }
+  ]
+}

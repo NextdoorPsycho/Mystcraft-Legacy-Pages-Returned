@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 9.0,
+  "poem": [
+    "Metal",
+    "Gear",
+    "Ancient",
+    "Machine"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "clockwork_ruins_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:clockwork_ruins"
+    },
+    {
+      "type": "add_instability",
+      "value": 9.0
+    }
+  ]
+}

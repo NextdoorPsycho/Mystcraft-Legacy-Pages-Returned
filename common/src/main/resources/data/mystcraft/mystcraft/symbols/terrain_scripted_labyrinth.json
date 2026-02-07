@@ -1,0 +1,74 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "display_name": "Labyrinth",
+  "poem": [
+    "Wall",
+    "Turn",
+    "Lost",
+    "Maze"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "labyrinth",
+        "density": {
+          "op": "mul",
+          "a": {
+            "op": "sub",
+            "a": 90,
+            "b": { "var": "y" }
+          },
+          "b": {
+            "op": "max",
+            "a": {
+              "op": "step",
+              "edge": 0.8,
+              "value": {
+                "op": "fract",
+                "input": {
+                  "op": "add",
+                  "a": { "op": "mul", "a": { "var": "x" }, "b": 0.125 },
+                  "b": {
+                    "op": "mul",
+                    "a": {
+                      "op": "floor",
+                      "input": { "op": "mul", "a": { "var": "z" }, "b": 0.0625 }
+                    },
+                    "b": 0.5
+                  }
+                }
+              }
+            },
+            "b": {
+              "op": "step",
+              "edge": 0.8,
+              "value": {
+                "op": "fract",
+                "input": {
+                  "op": "add",
+                  "a": { "op": "mul", "a": { "var": "z" }, "b": 0.125 },
+                  "b": {
+                    "op": "mul",
+                    "a": {
+                      "op": "floor",
+                      "input": { "op": "mul", "a": { "var": "x" }, "b": 0.0625 }
+                    },
+                    "b": 0.5
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

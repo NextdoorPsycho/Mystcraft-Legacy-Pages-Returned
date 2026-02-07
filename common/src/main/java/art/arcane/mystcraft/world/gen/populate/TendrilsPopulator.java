@@ -144,7 +144,7 @@ public class TendrilsPopulator implements IPopulate {
 
       if (segment % 4 == 0) {
         curv += (pathRand.nextDouble() - 0.5) * 0.35;
-        curv = Math.max(-0.7, Math.min(0.7, curv));
+        curv = Math.max(-1.0, Math.min(1.0, curv));
       }
       angle += curv + (pathRand.nextDouble() - 0.5) * 0.15;
 
@@ -164,6 +164,16 @@ public class TendrilsPopulator implements IPopulate {
       if (surfaceY <= world.getMinBuildHeight() + 1 || surfaceY >= world.getMaxBuildHeight() - 2) {
         continue;
       }
+      // Verify the block at surfaceY is solid; scan down up to 4 blocks if not
+      for (int scan = 0; scan < 4; scan++) {
+        if (world.getBlockState(new BlockPos(centerBx, surfaceY, centerBz)).isSolid()) {
+          break;
+        }
+        surfaceY--;
+      }
+      if (surfaceY <= world.getMinBuildHeight() + 1) {
+        continue;
+      }
 
       double taper = 1.0 - (progress * 0.5);
       int thickness = (int) Math.max(1, Math.round(baseThickness * taper));
@@ -176,7 +186,7 @@ public class TendrilsPopulator implements IPopulate {
         long reachHash = positionHash(pathSeed ^ 0xABCD42L, centerBx, surfaceY, centerBz);
         if ((reachHash & 0x1F) == 0) {
           reachTimer = 4 + (int) ((reachHash >>> 5) & 0x7);
-          reachHeight = 4 + (int) ((reachHash >>> 9) & 0x7);
+          reachHeight = 6 + (int) ((reachHash >>> 9) & 0xF) % 11;
         }
       }
       if (reachTimer > 0) {
@@ -185,10 +195,29 @@ public class TendrilsPopulator implements IPopulate {
         reachTimer--;
       }
 
+      // occasional knots - rare 3x3 cluster
+      long knotHash = positionHash(pathSeed ^ 0xDEAD42L, centerBx, surfaceY, centerBz);
+      if ((knotHash & 0x3F) == 0) {
+        for (int kdx = -1; kdx <= 1; kdx++) {
+          for (int kdz = -1; kdz <= 1; kdz++) {
+            int kbx = centerBx + kdx;
+            int kbz = centerBz + kdz;
+            if (kbx >= chunkMinX && kbx <= chunkMaxX && kbz >= chunkMinZ && kbz <= chunkMaxZ) {
+              for (int kdy = 0; kdy <= 1; kdy++) {
+                BlockPos knotPos = new BlockPos(kbx, surfaceY + kdy, kbz);
+                if (shouldPlaceTendrilBlock(world, knotPos)) {
+                  world.setBlock(knotPos, tendrilBlock, 2);
+                }
+              }
+            }
+          }
+        }
+      }
+
       // occasional branching
       if (segment > 6 && segment < length - 8) {
         long branchHash = positionHash(pathSeed ^ 0xC0FFEE1L, centerBx, surfaceY, centerBz);
-        if ((branchHash & 0x3F) == 0) {
+        if ((branchHash & 0x1F) == 0) {
           int branchLength = 8 + (int) ((branchHash >>> 6) & 0x7);
           double branchAngle = angle + ((branchHash & 0x100) == 0 ? 1.0 : -1.0) * 0.8;
           generateBranch(world, branchHash, centerBx, centerBz, branchAngle,
@@ -232,9 +261,17 @@ public class TendrilsPopulator implements IPopulate {
         if (shouldPlaceTendrilBlock(world, rootPos)) {
           world.setBlock(rootPos, tendrilBlock, 2);
         }
-        BlockPos embedPos = rootPos.below();
-        if (shouldPlaceTendrilBlock(world, embedPos)) {
-          world.setBlock(embedPos, tendrilBlock, 2);
+        // Embed 3 layers deep for solid grounding
+        for (int embedDepth = 1; embedDepth <= 3; embedDepth++) {
+          BlockPos embedPos = new BlockPos(bx, centerBy - embedDepth, bz);
+          if (shouldPlaceTendrilBlock(world, embedPos)) {
+            world.setBlock(embedPos, tendrilBlock, 2);
+          }
+        }
+        // Visible hump: place above surface only if the block above is air
+        BlockPos abovePos = new BlockPos(bx, centerBy + 1, bz);
+        if (world.getBlockState(abovePos).isAir()) {
+          world.setBlock(abovePos, tendrilBlock, 2);
         }
       }
     }
@@ -281,6 +318,16 @@ public class TendrilsPopulator implements IPopulate {
       if (surfaceY <= world.getMinBuildHeight() + 1 || surfaceY >= world.getMaxBuildHeight() - 2) {
         continue;
       }
+      // Verify solid ground for branch placement
+      for (int scan = 0; scan < 4; scan++) {
+        if (world.getBlockState(new BlockPos(bx, surfaceY, bz)).isSolid()) {
+          break;
+        }
+        surfaceY--;
+      }
+      if (surfaceY <= world.getMinBuildHeight() + 1) {
+        continue;
+      }
       placeRootDisk(world, bx, surfaceY, bz, thickness, tendrilBlock,
           chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
     }
@@ -313,26 +360,27 @@ public class TendrilsPopulator implements IPopulate {
   private BlockState getTendrilMaterial(Random random) {
     int choice = random.nextInt(8);
     return switch (choice) {
-      case 0 -> Blocks.STONE.defaultBlockState();
-      case 1 -> Blocks.COBBLESTONE.defaultBlockState();
+      case 0 -> Blocks.SCULK.defaultBlockState();
+      case 1 -> Blocks.DEEPSLATE.defaultBlockState();
       case 2 -> Blocks.MOSSY_COBBLESTONE.defaultBlockState();
-      case 3 -> Blocks.ANDESITE.defaultBlockState();
+      case 3 -> Blocks.BONE_BLOCK.defaultBlockState();
       case 4 -> Blocks.DRIPSTONE_BLOCK.defaultBlockState();
       case 5 -> Blocks.BASALT.defaultBlockState();
       case 6 -> Blocks.BLACKSTONE.defaultBlockState();
-      default -> Blocks.STONE_BRICKS.defaultBlockState();
+      default -> Blocks.SOUL_SOIL.defaultBlockState();
     };
   }
 
   private BlockState getDecorationBlock(BlockState baseBlock, Random random) {
     if (random.nextInt(3) == 0) {
-      int choice = random.nextInt(5);
+      int choice = random.nextInt(6);
       return switch (choice) {
-        case 0 -> Blocks.MOSS_CARPET.defaultBlockState();
-        case 1 -> Blocks.HANGING_ROOTS.defaultBlockState();
-        case 2 -> Blocks.GLOW_LICHEN.defaultBlockState();
-        case 3 -> Blocks.SMALL_DRIPLEAF.defaultBlockState();
-        default -> Blocks.FERN.defaultBlockState();
+        case 0 -> Blocks.COBWEB.defaultBlockState();
+        case 1 -> Blocks.SCULK_VEIN.defaultBlockState();
+        case 2 -> Blocks.CAVE_VINES.defaultBlockState();
+        case 3 -> Blocks.HANGING_ROOTS.defaultBlockState();
+        case 4 -> Blocks.GLOW_LICHEN.defaultBlockState();
+        default -> Blocks.CHAIN.defaultBlockState();
       };
     }
     return baseBlock;

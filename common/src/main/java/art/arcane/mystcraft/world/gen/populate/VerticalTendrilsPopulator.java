@@ -30,7 +30,7 @@ public class VerticalTendrilsPopulator implements IPopulate {
   private static final int DEFAULT_NEIGHBOR_RANGE = 2;
   private static final int DEFAULT_MIN_THICKNESS = 2;
   private static final int DEFAULT_MAX_THICKNESS = 6;
-  private static final double DEFAULT_WOBBLE_RANGE = 0.25;
+  private static final double DEFAULT_WOBBLE_RANGE = 0.4;
   private final long seed;
   private final int tendrilsPerChunk;
   private final int minLength;
@@ -178,7 +178,17 @@ public class VerticalTendrilsPopulator implements IPopulate {
       long pillarHash = positionHash(pathSeed, (int) currentX, (int) currentY, (int) currentZ);
       int bulge = (int) ((pillarHash >>> 4) & 0x3) - 1;
       int thickness = baseThickness + bulge - (int) (progress * 1.4f);
-      thickness = Math.max(1, Math.min(baseThickness + 3, thickness));
+      // Flare at top 15% - mushroom cap effect
+      if (progress > 0.85f) {
+        float flareProgress = (progress - 0.85f) / 0.15f;
+        thickness += (int) (1 + flareProgress * 2);
+      }
+      // Root spread at base 10% - extra width
+      if (progress < 0.10f) {
+        float rootProgress = 1.0f - (progress / 0.10f);
+        thickness += (int) (rootProgress * 2);
+      }
+      thickness = Math.max(1, Math.min(baseThickness + 4, thickness));
 
       int centerBx = (int) Math.floor(currentX);
       int centerBy = (int) Math.floor(currentY);
@@ -193,6 +203,14 @@ public class VerticalTendrilsPopulator implements IPopulate {
             int bz = centerBz + dz;
 
             if (bx >= chunkMinX && bx <= chunkMaxX && bz >= chunkMinZ && bz <= chunkMaxZ) {
+              // For ground pillars, check local terrain height to avoid floating blocks
+              if (!fromCeiling && centerBy < startY + length) {
+                int localSurface = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz) - 1;
+                // Don't place blocks that would float above air below local terrain
+                if (centerBy > localSurface + 1 && world.getBlockState(new BlockPos(bx, centerBy - 1, bz)).isAir()) {
+                  continue;
+                }
+              }
               BlockPos tendrilPos = new BlockPos(bx, centerBy, bz);
               if (shouldPlaceBlock(world, tendrilPos)) {
                 world.setBlock(tendrilPos, tendrilBlock, 2);
@@ -203,11 +221,11 @@ public class VerticalTendrilsPopulator implements IPopulate {
       }
 
       // Occasional ribs/spines
-      if ((pillarHash & 0x1F) == 0) {
+      if ((pillarHash & 0xF) == 0) {
         int dir = (int) ((pillarHash >>> 6) & 0x3);
         int ddx = (dir == 0) ? 1 : (dir == 1) ? -1 : 0;
         int ddz = (dir == 2) ? 1 : (dir == 3) ? -1 : 0;
-        int spineLen = 1 + (int) ((pillarHash >>> 9) & 0x3);
+        int spineLen = 1 + (int) ((pillarHash >>> 9) & 0x5);
         for (int s = 1; s <= spineLen; s++) {
           int bx = centerBx + ddx * (thickness + s);
           int bz = centerBz + ddz * (thickness + s);
@@ -292,14 +310,14 @@ public class VerticalTendrilsPopulator implements IPopulate {
   private BlockState getTendrilMaterial(Random random) {
     int choice = random.nextInt(8);
     return switch (choice) {
-      case 0 -> Blocks.STONE.defaultBlockState();
-      case 1 -> Blocks.COBBLESTONE.defaultBlockState();
+      case 0 -> Blocks.SCULK.defaultBlockState();
+      case 1 -> Blocks.DEEPSLATE.defaultBlockState();
       case 2 -> Blocks.MOSSY_COBBLESTONE.defaultBlockState();
-      case 3 -> Blocks.ANDESITE.defaultBlockState();
+      case 3 -> Blocks.BONE_BLOCK.defaultBlockState();
       case 4 -> Blocks.DRIPSTONE_BLOCK.defaultBlockState();
       case 5 -> Blocks.BASALT.defaultBlockState();
       case 6 -> Blocks.BLACKSTONE.defaultBlockState();
-      default -> Blocks.STONE_BRICKS.defaultBlockState();
+      default -> Blocks.SOUL_SOIL.defaultBlockState();
     };
   }
 
@@ -307,12 +325,12 @@ public class VerticalTendrilsPopulator implements IPopulate {
     if (random.nextInt(3) == 0) {
       int choice = random.nextInt(6);
       return switch (choice) {
-        case 0 -> Blocks.GLOW_LICHEN.defaultBlockState();
-        case 1 -> Blocks.SCULK_VEIN.defaultBlockState();
-        case 2 -> Blocks.SHROOMLIGHT.defaultBlockState();
+        case 0 -> Blocks.COBWEB.defaultBlockState();
+        case 1 -> Blocks.CHAIN.defaultBlockState();
+        case 2 -> Blocks.SCULK_VEIN.defaultBlockState();
         case 3 -> Blocks.SOUL_LANTERN.defaultBlockState();
-        case 4 -> Blocks.OCHRE_FROGLIGHT.defaultBlockState();
-        default -> Blocks.LANTERN.defaultBlockState();
+        case 4 -> Blocks.GLOW_LICHEN.defaultBlockState();
+        default -> Blocks.CAVE_VINES.defaultBlockState();
       };
     }
     return baseBlock;

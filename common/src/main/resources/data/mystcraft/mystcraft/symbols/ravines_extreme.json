@@ -1,0 +1,31 @@
+{
+  "category": "feature_large",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "display_name": "Extreme Ravines",
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Chasm",
+    "Deep"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "ravines_enabled",
+      "value": true
+    },
+    {
+      "type": "register_terrain_alteration",
+      "id": "mystcraft:ravines",
+      "params": {
+        "rate": 8,
+        "fill_block": "minecraft:air"
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 6.0,
+  "display_name": "Crater Field",
+  "poem": [
+    "Impact",
+    "Scar",
+    "Hollow",
+    "Plain"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "crater_field",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "sub",
+            "a": 68,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "smoothstep",
+                "edge0": 0.4,
+                "edge1": 0.0,
+                "value": {
+                  "op": "cell_distance",
+                  "mode": "square",
+                  "size": 48
+                }
+              },
+              "b": 30
+            }
+          },
+          "b": {
+            "var": "y"
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
+  ]
+}

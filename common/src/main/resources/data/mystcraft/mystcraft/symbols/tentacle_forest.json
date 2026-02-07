@@ -1,0 +1,38 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "display_name": "Tentacle Forest",
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Writhe",
+    "Grove"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "vertical_tendrils_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:vertical_tendrils",
+      "params": {
+        "count": 1,
+        "min_length": 40,
+        "max_length": 120,
+        "ceiling_chance": 0.1,
+        "chance": 0.15,
+        "neighbor_range": 4,
+        "min_thickness": 4,
+        "max_thickness": 10,
+        "wobble_range": 0.6
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

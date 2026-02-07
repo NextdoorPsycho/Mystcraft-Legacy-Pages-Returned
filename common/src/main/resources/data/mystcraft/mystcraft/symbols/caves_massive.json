@@ -1,0 +1,32 @@
+{
+  "category": "feature_large",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "display_name": "Massive Caves",
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Cavern",
+    "Vast"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "caves_enabled",
+      "value": true
+    },
+    {
+      "type": "register_terrain_alteration",
+      "id": "mystcraft:caves",
+      "params": {
+        "rate": 8,
+        "size": 80,
+        "fill_block": "minecraft:air"
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

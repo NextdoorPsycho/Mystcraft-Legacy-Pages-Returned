@@ -103,6 +103,12 @@ public class AgeDirectorImpl implements AgeDirector {
   private boolean hugeTreesEnabled = false;
   private boolean netherFortEnabled = false;
   private boolean obelisksEnabled = false;
+  private boolean bonefieldsEnabled = false;
+  private boolean meatPillarsEnabled = false;
+  private boolean shatteredGridEnabled = false;
+  private boolean eyeblightEnabled = false;
+  private boolean invertedTreesEnabled = false;
+  private boolean corruptedColumnsEnabled = false;
   private boolean pvpEnabled = true;
   private boolean rainbowEnabled = false;
   private boolean spheresEnabled = false;
@@ -835,6 +841,60 @@ public class AgeDirectorImpl implements AgeDirector {
 
   public boolean areObelisksEnabled() {
     return obelisksEnabled;
+  }
+
+  @Override
+  public void setBonefieldsEnabled(boolean enabled) {
+    this.bonefieldsEnabled = enabled;
+  }
+
+  public boolean areBonefieldsEnabled() {
+    return bonefieldsEnabled;
+  }
+
+  @Override
+  public void setMeatPillarsEnabled(boolean enabled) {
+    this.meatPillarsEnabled = enabled;
+  }
+
+  public boolean areMeatPillarsEnabled() {
+    return meatPillarsEnabled;
+  }
+
+  @Override
+  public void setShatteredGridEnabled(boolean enabled) {
+    this.shatteredGridEnabled = enabled;
+  }
+
+  public boolean areShatteredGridEnabled() {
+    return shatteredGridEnabled;
+  }
+
+  @Override
+  public void setEyeblightEnabled(boolean enabled) {
+    this.eyeblightEnabled = enabled;
+  }
+
+  public boolean isEyeblightEnabled() {
+    return eyeblightEnabled;
+  }
+
+  @Override
+  public void setInvertedTreesEnabled(boolean enabled) {
+    this.invertedTreesEnabled = enabled;
+  }
+
+  public boolean areInvertedTreesEnabled() {
+    return invertedTreesEnabled;
+  }
+
+  @Override
+  public void setCorruptedColumnsEnabled(boolean enabled) {
+    this.corruptedColumnsEnabled = enabled;
+  }
+
+  public boolean areCorruptedColumnsEnabled() {
+    return corruptedColumnsEnabled;
   }
 
   public boolean isPvPEnabled() {

@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "poem": [
+    "Flesh",
+    "Growth",
+    "Decay",
+    "Horror"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "meat_pillars_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:meat_pillars"
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

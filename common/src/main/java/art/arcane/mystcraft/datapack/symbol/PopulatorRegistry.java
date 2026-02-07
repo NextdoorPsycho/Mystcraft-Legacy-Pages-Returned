@@ -62,6 +62,26 @@ public final class PopulatorRegistry {
     register(myst("lush_caves"), (seed, json) -> new LushCavesPopulator(seed, json));
     register(myst("deep_dark"), (seed, json) -> new DeepDarkPopulator(seed, json));
     register(myst("star_fissure"), (seed, json) -> new StarFissurePopulator(seed, json));
+    register(myst("obelisks"), (seed, json) -> new ObelisksPopulator(seed, json));
+    register(myst("crystal_formation"), (seed, json) -> new CrystalFormationPopulator(seed, json));
+    register(myst("bonefields"), (seed, json) -> new BonefieldsPopulator(seed, json));
+    register(myst("meat_pillars"), (seed, json) -> new MeatPillarsPopulator(seed, json));
+    register(myst("shattered_grid"), (seed, json) -> new ShatteredGridPopulator(seed, json));
+    register(myst("eyeblight"), (seed, json) -> new EyeblightPopulator(seed, json));
+    register(myst("inverted_trees"), (seed, json) -> new InvertedTreesPopulator(seed, json));
+    register(myst("corrupted_columns"), (seed, json) -> new CorruptedColumnsPopulator(seed, json));
+    register(myst("gravity_wells"), (seed, json) -> new GravityWellsPopulator(seed, json));
+    register(myst("phantom_bridges"), (seed, json) -> new PhantomBridgesPopulator(seed, json));
+    register(myst("void_holes"), (seed, json) -> new VoidHolesPopulator(seed, json));
+    register(myst("tesseract_chambers"), (seed, json) -> new TesseractChambersPopulator(seed, json));
+    register(myst("sculk_infestation"), (seed, json) -> new SculkInfestationPopulator(seed, json));
+    register(myst("fossilized_leviathan"), (seed, json) -> new FossilizedLeviathanPopulator(seed, json));
+    register(myst("mycelium_hive"), (seed, json) -> new MyceliumHivePopulator(seed, json));
+    register(myst("weeping_walls"), (seed, json) -> new WeepingWallsPopulator(seed, json));
+    register(myst("clockwork_ruins"), (seed, json) -> new ClockworkRuinsPopulator(seed, json));
+    register(myst("frozen_waves"), (seed, json) -> new FrozenWavesPopulator(seed, json));
+    register(myst("living_coral_towers"), (seed, json) -> new LivingCoralTowersPopulator(seed, json));
+    register(myst("obsidian_monoliths"), (seed, json) -> new ObsidianMonolithsPopulator(seed, json));
 
     register(myst("villages"), (seed, json) -> new VillagesPopulator(seed, json));
     register(myst("dungeons"), (seed, json) -> new DungeonPopulator(seed, json));

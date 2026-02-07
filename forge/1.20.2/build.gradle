@@ -1,6 +1,6 @@
 plugins {
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
-    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+    // Note: Mixin plugin removed - Forge 1.20.2+ bundles mixin, plugin causes duplicate service error
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
@@ -46,8 +46,10 @@ minecraft {
             property 'forge.enabledGameTestNamespaces', mod_id
             mods {
                 mystcraft {
+                    // Only include local sourceSets.main - it already contains common sources
+                    // compiled via the compileJava task. Including project(':common') would
+                    // bring in Fabric's mixin dependency causing duplicate mixin service error.
                     source sourceSets.main
-                    source project(':common').sourceSets.main
                 }
             }
         }
@@ -76,17 +78,12 @@ sourceSets.main.resources.srcDir 'src/generated/resources'
 
 repositories {
     mavenCentral()
-    maven {
-        name = 'Sponge / Mixin'
-        url = 'https://repo.spongepowered.org/repository/maven-public/'
-    }
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version_1_20_2}-${forge_version_1_20_2}"
     compileOnly project(':common')
-
-    annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
+    // Mixin annotation processor not needed - Forge 1.20.2+ bundles mixin
 }
 
 shadowJar {

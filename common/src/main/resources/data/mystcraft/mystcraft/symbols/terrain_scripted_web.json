@@ -1,0 +1,35 @@
+{
+  "category": "terrain",
+  "card_rank": 4,
+  "instability_cost": 10.0,
+  "display_name": "Terrain Web",
+  "poem": [
+    "Thread",
+    "Connect",
+    "Suspend",
+    "Void"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "web",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "ridged3",
+            "scale": 0.04,
+            "octaves": 3,
+            "seed": 6161
+          },
+          "b": 0.7
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 10.0
+    }
+  ]
+}

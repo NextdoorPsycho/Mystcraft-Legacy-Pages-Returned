@@ -277,6 +277,12 @@ public final class SymbolLogicTypes {
         case "dripstone_caves_enabled" -> director.setDripstoneCavesEnabled(value);
         case "lush_caves_enabled" -> director.setLushCavesEnabled(value);
         case "deep_dark_enabled" -> director.setDeepDarkEnabled(value);
+        case "bonefields_enabled" -> director.setBonefieldsEnabled(value);
+        case "meat_pillars_enabled" -> director.setMeatPillarsEnabled(value);
+        case "shattered_grid_enabled" -> director.setShatteredGridEnabled(value);
+        case "eyeblight_enabled" -> director.setEyeblightEnabled(value);
+        case "inverted_trees_enabled" -> director.setInvertedTreesEnabled(value);
+        case "corrupted_columns_enabled" -> director.setCorruptedColumnsEnabled(value);
         default -> Mystcraft.LOGGER.warn("[SymbolLogic] Unknown flag {}", flag);
       }
     }

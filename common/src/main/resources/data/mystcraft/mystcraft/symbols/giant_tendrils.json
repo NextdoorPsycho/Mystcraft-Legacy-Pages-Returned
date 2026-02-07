@@ -1,0 +1,36 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "display_name": "Giant Tendrils",
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Colossal",
+    "Vine"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "tendrils_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:tendrils",
+      "params": {
+        "count": 1,
+        "min_length": 80,
+        "max_length": 200,
+        "chance": 0.08,
+        "neighbor_range": 14,
+        "min_thickness": 6,
+        "max_thickness": 14
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "poem": [
+    "Dark",
+    "Spread",
+    "Living",
+    "Corruption"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "sculk_infestation_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:sculk_infestation"
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

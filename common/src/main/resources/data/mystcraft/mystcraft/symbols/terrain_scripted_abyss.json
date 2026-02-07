@@ -1,0 +1,51 @@
+{
+  "category": "terrain",
+  "card_rank": 4,
+  "instability_cost": 9.0,
+  "display_name": "Abyssal Depths",
+  "poem": [
+    "Deep",
+    "Trench",
+    "Abyss",
+    "Pressure"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "abyss",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 20,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "add",
+                "a": {
+                  "op": "ridged2",
+                  "scale": 0.005,
+                  "octaves": 5,
+                  "seed": 6677
+                },
+                "b": {
+                  "op": "mul",
+                  "a": { "op": "noise2", "scale": 0.02, "octaves": 3, "seed": 1199 },
+                  "b": 0.3
+                }
+              },
+              "b": 35
+            }
+          },
+          "b": { "var": "y" }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 9.0
+    }
+  ]
+}

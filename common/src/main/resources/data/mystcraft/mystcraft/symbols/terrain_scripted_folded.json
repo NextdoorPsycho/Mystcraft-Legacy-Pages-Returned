@@ -1,0 +1,54 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 6.0,
+  "display_name": "Folded Terrain",
+  "poem": [
+    "Fold",
+    "Crease",
+    "Peak",
+    "Pattern"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "folded",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 55,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "abs",
+                "input": {
+                  "op": "sin",
+                  "input": { "op": "mul", "a": { "var": "x" }, "b": 0.04 }
+                }
+              },
+              "b": {
+                "op": "mul",
+                "a": {
+                  "op": "abs",
+                  "input": {
+                    "op": "sin",
+                    "input": { "op": "mul", "a": { "var": "z" }, "b": 0.05 }
+                  }
+                },
+                "b": 50
+              }
+            }
+          },
+          "b": { "var": "y" }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
+  ]
+}

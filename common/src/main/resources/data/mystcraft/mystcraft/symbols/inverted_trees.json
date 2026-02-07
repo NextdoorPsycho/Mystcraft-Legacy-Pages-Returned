@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 6.0,
+  "poem": [
+    "Tree",
+    "Invert",
+    "Sky",
+    "Root"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "inverted_trees_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:inverted_trees"
+    },
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
+  ]
+}

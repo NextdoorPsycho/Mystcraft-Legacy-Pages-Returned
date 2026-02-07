@@ -1,0 +1,26 @@
+{
+  "category": "feature_large",
+  "card_rank": 4,
+  "instability_cost": 11.0,
+  "poem": [
+    "Fungal",
+    "Hive",
+    "Hollow",
+    "Spore"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "mycelium_hive_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:mycelium_hive"
+    },
+    {
+      "type": "add_instability",
+      "value": 11.0
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 9.0,
+  "display_name": "Tentacle Spires",
+  "poem": [
+    "Reach",
+    "Grasp",
+    "Writhe",
+    "Sky"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "tentacle_spires",
+        "density": {
+          "op": "mul",
+          "a": {
+            "op": "sub",
+            "a": {
+              "op": "ridged3",
+              "scale": 0.05,
+              "octaves": 4,
+              "seed": 2147
+            },
+            "b": 0.55
+          },
+          "b": {
+            "op": "smoothstep",
+            "edge0": 200,
+            "edge1": 20,
+            "value": {
+              "var": "y"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 9.0
+    }
+  ]
+}

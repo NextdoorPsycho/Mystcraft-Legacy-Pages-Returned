@@ -1,0 +1,38 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "display_name": "Bubble World",
+  "poem": [
+    "Sphere",
+    "Hollow",
+    "Float",
+    "Void"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "bubble",
+        "density": {
+          "op": "sub",
+          "a": 0.3,
+          "b": {
+            "op": "abs",
+            "input": {
+              "op": "noise3",
+              "scale": 0.015,
+              "octaves": 5,
+              "seed": 3258
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

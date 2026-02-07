@@ -7,7 +7,9 @@ import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.GameTestDontPrefix;
 
 /**
- * Forge-specific Mystcraft GameTests (1.20.2+).
+ * Forge-specific Mystcraft GameTests (1.20.4+).
+ * Uses @GameTestDontPrefix and full ResourceLocation templates since @GameTestHolder prefix
+ * uses dot notation for test names, not namespace for structure templates.
  */
 @GameTestHolder(value = Mystcraft.MOD_ID)
 @GameTestDontPrefix

@@ -1,0 +1,26 @@
+{
+  "category": "feature_large",
+  "card_rank": 4,
+  "instability_cost": 15.0,
+  "poem": [
+    "Form",
+    "Cube",
+    "Within",
+    "Infinite"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "tesseract_chambers_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:tesseract_chambers"
+    },
+    {
+      "type": "add_instability",
+      "value": 15.0
+    }
+  ]
+}

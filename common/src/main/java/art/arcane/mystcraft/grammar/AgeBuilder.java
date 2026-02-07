@@ -55,7 +55,8 @@ public class AgeBuilder {
   );
   private static final Set<String> VOID_INCOMPATIBLE_FEATURES = Set.of(
       "caves", "ravines", "dripstone_caves", "lush_caves", "deep_dark",
-      "surface_lakes", "deep_lakes", "perlin_worms"
+      "surface_lakes", "deep_lakes", "perlin_worms",
+      "bonefields", "corrupted_columns", "shattered_grid"
   );
   private static final Set<String> VOID_INCOMPATIBLE_STRUCTURES = Set.of(
       "villages", "dungeons", "mineshafts", "strongholds",
@@ -76,7 +77,7 @@ public class AgeBuilder {
   );
 
   // --- Biome/Terrain classification for coherence filtering ---
-  private static final float TERRAIN_BLOCK_CHANGE_CHANCE = 0.25f;
+  private static final float TERRAIN_BLOCK_CHANGE_CHANCE = 0.50f;
   private static final Block[] OVERWORLD_BLOCKS = {
       Blocks.GRANITE, Blocks.DIORITE, Blocks.ANDESITE,
       Blocks.DEEPSLATE, Blocks.TUFF, Blocks.CALCITE,
@@ -134,9 +135,9 @@ public class AgeBuilder {
       Blocks.SANDSTONE
   };
   // Chance that a random/incomplete age gets extra ore generation
-  private static final float ORE_BOOST_CHANCE = 0.15f;
+  private static final float ORE_BOOST_CHANCE = 0.30f;
   // Chance that a random/incomplete age gets an ore disabled
-  private static final float ORE_DISABLE_CHANCE = 0.08f;
+  private static final float ORE_DISABLE_CHANCE = 0.15f;
   private static final String[] EXTRA_ORE_SYMBOLS = {
       "extra_coal_ore", "extra_iron_ore", "extra_copper_ore",
       "extra_gold_ore", "extra_redstone_ore", "extra_diamond_ore",
@@ -148,22 +149,44 @@ public class AgeBuilder {
       "no_lapis_ore", "no_emerald_ore"
   };
   // Chance that a random age gets a non-default timescale
-  private static final float TIMESCALE_CHANGE_CHANCE = 0.10f;
+  private static final float TIMESCALE_CHANGE_CHANCE = 0.30f;
   private static final String[] TIMESCALE_SYMBOLS = {
       "env_longer_days", "env_shorter_days", "env_slow_time", "env_static_time"
   };
   // Weights: longer days is most common, static time is rarest
   private static final int[] TIMESCALE_WEIGHTS = {40, 30, 20, 10};
   // Chance that a random age with high instability gets an environment effect
-  private static final float ENV_EFFECT_CHANCE = 0.08f;
+  private static final float ENV_EFFECT_CHANCE = 0.20f;
   // Higher instability increases the chance of getting an environment effect
-  private static final float ENV_EFFECT_INSTABILITY_THRESHOLD = 20.0f;
+  private static final float ENV_EFFECT_INSTABILITY_THRESHOLD = 10.0f;
   private static final String[] ENV_EFFECT_SYMBOLS = {
       "env_accelerated", "env_meteors", "env_lightning",
       "env_scorched", "env_explosions"
   };
   // Weights: accelerated is most common, explosions rarest
   private static final int[] ENV_EFFECT_WEIGHTS = {35, 20, 25, 15, 5};
+  // Feature injection: 25% chance to add 1-2 random features
+  private static final float FEATURE_INJECTION_CHANCE = 0.25f;
+  private static final String[] INJECTABLE_FEATURES = {
+      "tendrils", "vertical_tendrils", "spheres", "spikes",
+      "obelisks", "crystal_formation", "perlin_worms",
+      "bonefields", "meat_pillars", "shattered_grid",
+      "eyeblight", "inverted_trees", "corrupted_columns"
+  };
+  // Biome chaos: 15% chance to inject nether/end biomes into overworld
+  private static final float BIOME_CHAOS_CHANCE = 0.15f;
+  private static final String[] CHAOS_BIOMES = {
+      "biome_nether_wastes", "biome_soul_sand_valley", "biome_crimson_forest",
+      "biome_warped_forest", "biome_basalt_deltas",
+      "biome_the_end", "biome_end_midlands", "biome_end_highlands"
+  };
+  // Celestial chaos chances
+  private static final float NO_SUN_CHANCE = 0.10f;
+  private static final float MULTI_SUN_CHANCE = 0.10f;
+  private static final float UNUSUAL_CELESTIAL_CHANCE = 0.15f;
+  // Color palette variety
+  private static final float MONOCHROME_CHANCE = 0.20f;
+  private static final float INVERTED_PALETTE_CHANCE = 0.10f;
   private static final int[] DEFAULT_SKY_COLORS = {
       0x87CEEB, 0x00BFFF, 0xB0C4DE, 0x6495ED, 0x4169E1,
       0xE0FFFF, 0xFFB6C1, 0xFFA07A, 0x98FB98, 0xDDA0DD,
@@ -427,6 +450,13 @@ public class AgeBuilder {
    * Preserves at least one biome to avoid leaving the age with no biomes.
    */
   private void filterRandomOceanBiomes() {
+    // 50% chance to skip ocean filtering entirely - allows wilder ages
+    Random filterRand = new Random(seed ^ 0x0CEA4L);
+    if (filterRand.nextFloat() < 0.5f) {
+      LOGGER.debug("[AgeBuilder] Skipping ocean biome filter (chaos roll)");
+      return;
+    }
+
     // Build set of user-provided biome paths
     Set<String> userBiomePaths = new HashSet<>();
     for (IAgeSymbol symbol : inputSymbols) {
@@ -525,10 +555,22 @@ public class AgeBuilder {
       }
     }
     if (removed && !hasTerrainSymbol()) {
-      IAgeSymbol fallback = SymbolRegistry.get(new ResourceLocation("mystcraft", "terrain_normal"));
+      List<IAgeSymbol> terrains = SymbolRegistry.getByCategory(SymbolCategory.TERRAIN);
+      List<IAgeSymbol> candidates = new ArrayList<>();
+      for (IAgeSymbol t : terrains) {
+        if (!"terrain_void".equals(t.getRegistryName().getPath())) {
+          candidates.add(t);
+        }
+      }
+      IAgeSymbol fallback;
+      if (!candidates.isEmpty()) {
+        fallback = candidates.get(new Random(seed ^ 0xF17C01DL).nextInt(candidates.size()));
+      } else {
+        fallback = SymbolRegistry.get(new ResourceLocation("mystcraft", "terrain_normal"));
+      }
       if (fallback != null) {
         expandedSymbols.add(fallback);
-        LOGGER.debug("[AgeBuilder] Added fallback terrain_normal after removing void terrain");
+        LOGGER.debug("[AgeBuilder] Added random fallback terrain {} after removing void terrain", fallback.getRegistryName());
       }
     }
   }
@@ -695,6 +737,9 @@ public class AgeBuilder {
       applyOreVariation(director, symbolRand, fallbackScale);
       applyTimescaleVariation(director, symbolRand, fallbackScale);
       applyEnvironmentEffects(director, symbolRand, fallbackScale);
+      applyFeatureInjection(director, symbolRand, fallbackScale);
+      applyBiomeChaos(director, symbolRand, fallbackScale);
+      applyCelestialChaos(director, symbolRand, fallbackScale);
       applyDefaultColors(director, symbolRand);
     } else {
       LOGGER.debug("[AgeBuilder] Skipping chaos fallbacks (completeness >= 0.8)");
@@ -1022,11 +1067,179 @@ public class AgeBuilder {
   }
 
   /**
+   * Injects 1-2 random features when the grammar didn't already generate them.
+   */
+  private void applyFeatureInjection(AgeDirectorImpl director, Random rand, float fallbackScale) {
+    if (rand.nextFloat() >= FEATURE_INJECTION_CHANCE * fallbackScale) {
+      return;
+    }
+
+    Set<String> existingFeatures = new HashSet<>();
+    for (IPopulate pop : director.getPopulateFunctions()) {
+      String id = pop.getIdentifier();
+      if (id != null && id.startsWith("mystcraft:")) {
+        existingFeatures.add(id.substring("mystcraft:".length()));
+      }
+    }
+
+    int injectCount = 1 + rand.nextInt(2);
+    List<String> candidates = new ArrayList<>();
+    for (String feature : INJECTABLE_FEATURES) {
+      if (!existingFeatures.contains(feature)) {
+        candidates.add(feature);
+      }
+    }
+
+    for (int i = 0; i < injectCount && !candidates.isEmpty(); i++) {
+      int idx = rand.nextInt(candidates.size());
+      String feature = candidates.remove(idx);
+      IAgeSymbol featureSymbol = SymbolRegistry.get(
+          new ResourceLocation("mystcraft", feature));
+      if (featureSymbol != null) {
+        featureSymbol.registerLogic(director, rand.nextLong());
+        director.addInstability(featureSymbol.getInstabilityCost() * 0.5f);
+        LOGGER.debug("[AgeBuilder] Injected feature: {}", feature);
+      }
+    }
+  }
+
+  /**
+   * Injects nether/end biomes into overworld terrain ages for truly alien dimensions.
+   */
+  private void applyBiomeChaos(AgeDirectorImpl director, Random rand, float fallbackScale) {
+    String terrainType = findTerrainType();
+    if (NETHER_TERRAINS.contains(terrainType) || END_TERRAINS.contains(terrainType)
+        || VOID_TERRAINS.contains(terrainType)) {
+      return;
+    }
+
+    if (rand.nextFloat() >= BIOME_CHAOS_CHANCE * fallbackScale) {
+      return;
+    }
+
+    int injectCount = 1 + rand.nextInt(2);
+    for (int i = 0; i < injectCount; i++) {
+      String biomePath = CHAOS_BIOMES[rand.nextInt(CHAOS_BIOMES.length)];
+      IAgeSymbol biomeSymbol = SymbolRegistry.get(
+          new ResourceLocation("mystcraft", biomePath));
+      if (biomeSymbol != null) {
+        expandedSymbols.add(biomeSymbol);
+        director.addInstability(biomeSymbol.getInstabilityCost());
+        LOGGER.debug("[AgeBuilder] Injected chaos biome: {}", biomePath);
+      }
+    }
+  }
+
+  /**
+   * Applies celestial chaos: no sun, multiple suns, unusual combinations.
+   */
+  private void applyCelestialChaos(AgeDirectorImpl director, Random rand, float fallbackScale) {
+    boolean hasCelestialSymbol = false;
+    for (IAgeSymbol symbol : expandedSymbols) {
+      SymbolCategory cat = symbol.getCategory();
+      if (cat == SymbolCategory.SUN || cat == SymbolCategory.MOON || cat == SymbolCategory.STARS) {
+        hasCelestialSymbol = true;
+        break;
+      }
+    }
+    if (hasCelestialSymbol) {
+      return;
+    }
+
+    float roll = rand.nextFloat();
+    if (roll < NO_SUN_CHANCE * fallbackScale) {
+      IAgeSymbol darkSun = SymbolRegistry.get(new ResourceLocation("mystcraft", "sun_dark"));
+      if (darkSun != null) {
+        darkSun.registerLogic(director, rand.nextLong());
+        director.addInstability(5.0f);
+        LOGGER.debug("[AgeBuilder] Celestial chaos: dark age (no sun)");
+      }
+    } else if (roll < (NO_SUN_CHANCE + MULTI_SUN_CHANCE) * fallbackScale) {
+      int sunCount = 2 + rand.nextInt(2);
+      IAgeSymbol sun = SymbolRegistry.get(new ResourceLocation("mystcraft", "sun_normal"));
+      if (sun != null) {
+        for (int i = 0; i < sunCount; i++) {
+          sun.registerLogic(director, rand.nextLong());
+        }
+        director.addInstability(sunCount * 3.0f);
+        LOGGER.debug("[AgeBuilder] Celestial chaos: {} suns", sunCount);
+      }
+    } else if (roll < (NO_SUN_CHANCE + MULTI_SUN_CHANCE + UNUSUAL_CELESTIAL_CHANCE) * fallbackScale) {
+      String[] unusualCombos = {"stars_end", "stars_dense", "stars_dark"};
+      String starType = unusualCombos[rand.nextInt(unusualCombos.length)];
+      IAgeSymbol stars = SymbolRegistry.get(new ResourceLocation("mystcraft", starType));
+      if (stars != null) {
+        stars.registerLogic(director, rand.nextLong());
+        director.addInstability(3.0f);
+        LOGGER.debug("[AgeBuilder] Celestial chaos: unusual stars ({})", starType);
+      }
+    }
+  }
+
+  /**
    * Generates random colors for sky, fog, cloud, grass, foliage, water,
    * sunset, night sky, and horizon when the grammar didn't produce color
    * symbols. Each Age gets a unique visual signature.
    */
   private void applyDefaultColors(AgeDirectorImpl director, Random rand) {
+    // Monochrome palette: pick a hue family and use it for everything
+    if (rand.nextFloat() < MONOCHROME_CHANCE) {
+      int[][] hueFamily = {
+          {0x4B0082, 0x6A0DAD, 0x9370DB, 0xB19CD9, 0xE6E6FA}, // Purple
+          {0x8B0000, 0xDC143C, 0xFF6347, 0xFFB6C1, 0xFFF0F5}, // Red/Rose
+          {0x006400, 0x228B22, 0x32CD32, 0x98FB98, 0xF0FFF0}, // Green
+          {0x00008B, 0x4169E1, 0x6495ED, 0xADD8E6, 0xF0F8FF}, // Blue
+          {0x8B4513, 0xD2691E, 0xDEB887, 0xFFDEAD, 0xFFF8DC}, // Brown/Amber
+      };
+      int[] family = hueFamily[rand.nextInt(hueFamily.length)];
+      if (director.getSkyColor() == -1 && !director.isSkyColorNatural()) {
+        director.setSkyColor(family[3]);
+      }
+      if (director.getFogColor() == -1 && !director.isFogColorNatural()) {
+        director.setFogColor(family[4]);
+      }
+      if (director.getCloudColor() == -1 && !director.isCloudColorNatural()) {
+        director.setCloudColor(family[4]);
+      }
+      if (director.getGrassColors().isEmpty() && !director.isGrassColorNatural()) {
+        director.setGrassColor(family[1]);
+      }
+      if (director.getFoliageColor() == -1 && !director.isFoliageColorNatural()) {
+        director.setFoliageColor(family[2]);
+      }
+      if (director.getWaterColor() == -1 && !director.isWaterColorNatural()) {
+        director.setWaterColor(family[0]);
+      }
+      director.addInstability(8.0f);
+      LOGGER.debug("[AgeBuilder] Applied monochrome color palette");
+      return;
+    }
+
+    // Inverted palette: dark sky, bright fog, unusual grass/foliage
+    if (rand.nextFloat() < INVERTED_PALETTE_CHANCE) {
+      if (director.getSkyColor() == -1 && !director.isSkyColorNatural()) {
+        director.setSkyColor(0x0A0A2E);
+      }
+      if (director.getFogColor() == -1 && !director.isFogColorNatural()) {
+        director.setFogColor(0xFFE4B5);
+      }
+      if (director.getCloudColor() == -1 && !director.isCloudColorNatural()) {
+        director.setCloudColor(0x2C2C54);
+      }
+      if (director.getGrassColors().isEmpty() && !director.isGrassColorNatural()) {
+        director.setGrassColor(0xFF4500);
+      }
+      if (director.getFoliageColor() == -1 && !director.isFoliageColorNatural()) {
+        director.setFoliageColor(0x9370DB);
+      }
+      if (director.getWaterColor() == -1 && !director.isWaterColorNatural()) {
+        director.setWaterColor(0x4B0082);
+      }
+      director.addInstability(10.0f);
+      LOGGER.debug("[AgeBuilder] Applied inverted color palette");
+      return;
+    }
+
     if (director.getSkyColor() == -1 && !director.isSkyColorNatural()) {
       int color = DEFAULT_SKY_COLORS[rand.nextInt(DEFAULT_SKY_COLORS.length)];
       director.setSkyColor(color);

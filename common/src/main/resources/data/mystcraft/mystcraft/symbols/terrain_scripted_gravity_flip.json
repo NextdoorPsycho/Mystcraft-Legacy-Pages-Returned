@@ -1,0 +1,46 @@
+{
+  "category": "terrain",
+  "card_rank": 4,
+  "instability_cost": 12.0,
+  "display_name": "Gravity Flip",
+  "poem": [
+    "Mirror",
+    "Invert",
+    "Above",
+    "Below"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "gravity_flip",
+        "density": {
+          "op": "max",
+          "a": {
+            "op": "add",
+            "a": { "op": "sub", "a": 50, "b": { "var": "y" } },
+            "b": {
+              "op": "mul",
+              "a": { "op": "noise2", "scale": 0.01, "octaves": 4, "seed": 3344 },
+              "b": 30
+            }
+          },
+          "b": {
+            "op": "add",
+            "a": { "op": "sub", "a": { "var": "y" }, "b": 190 },
+            "b": {
+              "op": "mul",
+              "a": { "op": "noise2", "scale": 0.01, "octaves": 4, "seed": 7788 },
+              "b": 30
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 12.0
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 5.0,
+  "display_name": "Shelf World",
+  "poem": [
+    "Edge",
+    "Cliff",
+    "Shelf",
+    "Abyss"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "shelf",
+        "density": {
+          "op": "mul",
+          "a": {
+            "op": "sub",
+            "a": 64,
+            "b": {
+              "var": "y"
+            }
+          },
+          "b": {
+            "op": "step",
+            "edge": 0.3,
+            "value": {
+              "op": "noise2",
+              "scale": 0.005,
+              "octaves": 3,
+              "seed": 6591
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 5.0
+    }
+  ]
+}

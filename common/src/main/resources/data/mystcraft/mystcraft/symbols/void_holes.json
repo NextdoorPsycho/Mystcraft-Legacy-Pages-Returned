@@ -1,0 +1,26 @@
+{
+  "category": "feature_large",
+  "card_rank": 4,
+  "instability_cost": 12.0,
+  "poem": [
+    "Void",
+    "Deep",
+    "Hollow",
+    "Abyss"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "void_holes_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:void_holes"
+    },
+    {
+      "type": "add_instability",
+      "value": 12.0
+    }
+  ]
+}

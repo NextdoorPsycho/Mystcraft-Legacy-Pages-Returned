@@ -1,0 +1,62 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 5.0,
+  "display_name": "Sine Wave Hills",
+  "poem": [
+    "Rise",
+    "Fall",
+    "Rhythm",
+    "Earth"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "sine_waves",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 64,
+            "b": {
+              "op": "add",
+              "a": {
+                "op": "mul",
+                "a": {
+                  "op": "sin",
+                  "input": {
+                    "op": "mul",
+                    "a": {
+                      "var": "x"
+                    },
+                    "b": 0.03
+                  }
+                },
+                "b": 20
+              },
+              "b": {
+                "op": "mul",
+                "a": {
+                  "op": "noise2",
+                  "scale": 0.02,
+                  "octaves": 3,
+                  "seed": 5501
+                },
+                "b": 8
+              }
+            }
+          },
+          "b": {
+            "var": "y"
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 5.0
+    }
+  ]
+}

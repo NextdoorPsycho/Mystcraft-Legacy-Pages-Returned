@@ -1,0 +1,83 @@
+{
+  "category": "terrain",
+  "card_rank": 4,
+  "instability_cost": 10.0,
+  "display_name": "Vortex Terrain",
+  "poem": [
+    "Spiral",
+    "Pull",
+    "Vortex",
+    "Center"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "vortex",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 30,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "max",
+                "a": 0,
+                "b": {
+                  "op": "sub",
+                  "a": 80,
+                  "b": {
+                    "op": "mul",
+                    "a": {
+                      "op": "sqrt",
+                      "input": {
+                        "op": "add",
+                        "a": { "op": "mul", "a": { "var": "x" }, "b": { "var": "x" } },
+                        "b": { "op": "mul", "a": { "var": "z" }, "b": { "var": "z" } }
+                      }
+                    },
+                    "b": 0.12
+                  }
+                }
+              },
+              "b": {
+                "op": "add",
+                "a": 1.0,
+                "b": {
+                  "op": "mul",
+                  "a": {
+                    "op": "sin",
+                    "input": {
+                      "op": "add",
+                      "a": {
+                        "op": "mul",
+                        "a": {
+                          "op": "sqrt",
+                          "input": {
+                            "op": "add",
+                            "a": { "op": "mul", "a": { "var": "x" }, "b": { "var": "x" } },
+                            "b": { "op": "mul", "a": { "var": "z" }, "b": { "var": "z" } }
+                          }
+                        },
+                        "b": 0.04
+                      },
+                      "b": { "op": "mul", "a": { "var": "x" }, "b": 0.015 }
+                    }
+                  },
+                  "b": 0.5
+                }
+              }
+            }
+          },
+          "b": { "var": "y" }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 10.0
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "display_name": "Concentric Rings",
+  "poem": [
+    "Ring",
+    "Center",
+    "Ripple",
+    "Radiate"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "rings",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 64,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "sin",
+                "input": {
+                  "op": "mul",
+                  "a": {
+                    "op": "sqrt",
+                    "input": {
+                      "op": "add",
+                      "a": { "op": "mul", "a": { "var": "x" }, "b": { "var": "x" } },
+                      "b": { "op": "mul", "a": { "var": "z" }, "b": { "var": "z" } }
+                    }
+                  },
+                  "b": 0.03
+                }
+              },
+              "b": 30
+            }
+          },
+          "b": {
+            "op": "add",
+            "a": { "var": "y" },
+            "b": {
+              "op": "mul",
+              "a": { "op": "noise2", "scale": 0.02, "octaves": 3, "seed": 4455 },
+              "b": 8
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

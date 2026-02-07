@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "poem": [
+    "Stone",
+    "Weep",
+    "Wall",
+    "Sorrow"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "weeping_walls_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:weeping_walls"
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

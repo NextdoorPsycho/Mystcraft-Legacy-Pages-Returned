@@ -1,6 +1,6 @@
 {
   "category": "feature_medium",
-  "card_rank": 4,
+  "card_rank": 3,
   "instability_cost": 4.0,
   "poem": [
     "Feature",
@@ -11,7 +11,7 @@
   "logic": [
     {
       "type": "register_populator_pool",
-      "count": 4,
+      "count": 5,
       "pool": [
         "mystcraft:spikes",
         "mystcraft:spheres",
@@ -23,7 +23,13 @@
         "mystcraft:deep_lakes",
         "mystcraft:obelisks",
         "mystcraft:crystal_formation",
-        "mystcraft:star_fissure"
+        "mystcraft:star_fissure",
+        "mystcraft:bonefields",
+        "mystcraft:meat_pillars",
+        "mystcraft:shattered_grid",
+        "mystcraft:eyeblight",
+        "mystcraft:inverted_trees",
+        "mystcraft:corrupted_columns"
       ]
     },
     {

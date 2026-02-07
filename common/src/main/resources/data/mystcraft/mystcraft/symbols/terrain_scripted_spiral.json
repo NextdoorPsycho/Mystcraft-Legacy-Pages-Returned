@@ -1,0 +1,66 @@
+{
+  "category": "terrain",
+  "card_rank": 4,
+  "instability_cost": 11.0,
+  "display_name": "Spiral Columns",
+  "poem": [
+    "Twist",
+    "Rise",
+    "Coil",
+    "Column"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "spiral",
+        "density": {
+          "op": "add",
+          "a": {
+            "op": "mul",
+            "a": {
+              "op": "sub",
+              "a": 1,
+              "b": {
+                "op": "abs",
+                "input": {
+                  "op": "sin",
+                  "input": {
+                    "op": "add",
+                    "a": { "op": "mul", "a": { "var": "x" }, "b": 0.06 },
+                    "b": { "op": "mul", "a": { "var": "y" }, "b": 0.04 }
+                  }
+                }
+              }
+            },
+            "b": {
+              "op": "sub",
+              "a": 1,
+              "b": {
+                "op": "abs",
+                "input": {
+                  "op": "cos",
+                  "input": {
+                    "op": "add",
+                    "a": { "op": "mul", "a": { "var": "z" }, "b": 0.06 },
+                    "b": { "op": "mul", "a": { "var": "y" }, "b": 0.04 }
+                  }
+                }
+              }
+            }
+          },
+          "b": {
+            "op": "mul",
+            "a": { "op": "noise3", "scale": 0.05, "octaves": 2, "seed": 5511 },
+            "b": 0.25
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 11.0
+    }
+  ]
+}

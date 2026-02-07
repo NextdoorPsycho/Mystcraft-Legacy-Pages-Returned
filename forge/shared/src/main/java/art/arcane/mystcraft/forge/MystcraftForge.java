@@ -2,6 +2,7 @@ package art.arcane.mystcraft.forge;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.registry.*;
+import net.minecraft.SharedConstants;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
@@ -77,6 +78,11 @@ public class MystcraftForge {
   }
 
   private void commonSetup(FMLCommonSetupEvent event) {
+    // Enable SNBT gametest structure loading in StructureTemplateManager.
+    // Must be set after entity registration (which fails with IS_RUNNING_IN_IDE=true due to
+    // missing data fixer schemas) but before StructureTemplateManager is constructed during server start.
+    SharedConstants.IS_RUNNING_IN_IDE = true;
+
     event.enqueueWork(() -> {
       art.arcane.mystcraft.advancements.ModAdvancements.register();
       invokeStaticNoArg(

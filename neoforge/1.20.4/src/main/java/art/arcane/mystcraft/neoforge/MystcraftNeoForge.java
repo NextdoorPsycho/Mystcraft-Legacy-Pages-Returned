@@ -2,6 +2,7 @@ package art.arcane.mystcraft.neoforge;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
+import net.minecraft.SharedConstants;
 import art.arcane.mystcraft.client.AgeColorUtils;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.network.NeoForgeMystcraftNetwork;
@@ -79,6 +80,11 @@ public class MystcraftNeoForge {
   }
 
   private void commonSetup(FMLCommonSetupEvent event) {
+    // Enable SNBT gametest structure loading in StructureTemplateManager.
+    // Must be set after entity registration (which fails with IS_RUNNING_IN_IDE=true due to
+    // missing data fixer schemas) but before StructureTemplateManager is constructed during server start.
+    SharedConstants.IS_RUNNING_IN_IDE = true;
+
     event.enqueueWork(() -> {
       NeoForgeMystcraftNetwork.register();
 

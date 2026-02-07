@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "poem": [
+    "Glass",
+    "Sky",
+    "Bridge",
+    "Phantom"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "phantom_bridges_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:phantom_bridges"
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

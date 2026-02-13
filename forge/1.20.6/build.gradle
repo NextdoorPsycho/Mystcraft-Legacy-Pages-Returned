@@ -92,6 +92,7 @@ dependencies {
 
 shadowJar {
     configurations = [project.configurations.shadow]
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     archiveClassifier = ''
     archiveFileName = "MystcraftLegacy_Forge-${minecraft_version_1_20_6}.jar"
     dependsOn(tasks.named('jar'))

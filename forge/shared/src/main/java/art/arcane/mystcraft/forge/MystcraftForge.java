@@ -78,10 +78,13 @@ public class MystcraftForge {
   }
 
   private void commonSetup(FMLCommonSetupEvent event) {
-    // Enable SNBT gametest structure loading in StructureTemplateManager.
-    // Must be set after entity registration (which fails with IS_RUNNING_IN_IDE=true due to
-    // missing data fixer schemas) but before StructureTemplateManager is constructed during server start.
-    SharedConstants.IS_RUNNING_IN_IDE = true;
+    // Never force dev-mode globally during normal gameplay.
+    // In large modpacks this enables strict startup validation and can crash clients with
+    // "Your game data is foobar" on otherwise non-fatal resource warnings.
+    if (Boolean.getBoolean("mystcraft.enableGameTestIdeMode")) {
+      SharedConstants.IS_RUNNING_IN_IDE = true;
+      Mystcraft.LOGGER.info("[Mystcraft] Enabled IS_RUNNING_IN_IDE via -Dmystcraft.enableGameTestIdeMode=true");
+    }
 
     event.enqueueWork(() -> {
       art.arcane.mystcraft.advancements.ModAdvancements.register();

@@ -10,6 +10,7 @@ import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.registry.ModSounds;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.util.ChunkStatusCompat;
+import art.arcane.mystcraft.util.MystcraftChunkLeases;
 import art.arcane.mystcraft.util.ServerPlayerTeleport;
 import art.arcane.mystcraft.world.*;
 import net.minecraft.core.BlockPos;
@@ -20,6 +21,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,6 +31,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -158,13 +161,16 @@ public final class LinkingManager {
     // findSafeY() needs the chunk loaded to read the heightmap and check block states.
     // Without this, unloaded chunks cause the player to spawn at the raw estimated Y,
     // which is often inside the ground.
+    MystcraftChunkLeases.leaseReturnWindow(sourceLevel, sourcePos);
+
     int destChunkX = targetPos.getX() >> 4;
     int destChunkZ = targetPos.getZ() >> 4;
-    net.minecraft.world.level.ChunkPos destChunkPos = new net.minecraft.world.level.ChunkPos(destChunkX, destChunkZ);
+    ChunkPos destChunkPos = new ChunkPos(destChunkX, destChunkZ);
     targetLevel.getChunkSource().addRegionTicket(
-        net.minecraft.server.level.TicketType.POST_TELEPORT,
+        TicketType.POST_TELEPORT,
         destChunkPos, 1, entity.getId()
     );
+    MystcraftChunkLeases.leaseReturnWindow(targetLevel, destChunkPos);
     // Force the chunk to load synchronously so findSafeY() can read terrain.
     // This is safe - vanilla does the same during teleportation (ServerPlayer.teleportTo).
     targetLevel.getChunk(destChunkX, destChunkZ);
@@ -419,6 +425,33 @@ public final class LinkingManager {
    */
   @Nullable
   public static ServerLevel findDimensionByUID(MinecraftServer server, int uid) {
+    ServerLevel loaded = findLoadedDimensionByUID(server, uid);
+    if (loaded != null) {
+      return loaded;
+    }
+
+    // Registered Mystcraft Ages are the only dimensions this method should load.
+    // This keeps lookup-heavy cleanup paths from materializing unrelated levels.
+    if (uid > 0) {
+      AgeManager ageManager = AgeManager.get(server);
+      ResourceLocation ageDimension = ageManager.getDimension(uid);
+      if (ageDimension != null) {
+        return AgeDimensionFactory.getOrCreateAgeDimension(server, uid);
+      }
+    }
+
+    if (uid == 1) {
+      return server.getLevel(Level.END);
+    }
+
+    return null;
+  }
+
+  /**
+   * Finds a ServerLevel by UID without creating or loading dimensions.
+   */
+  @Nullable
+  public static ServerLevel findLoadedDimensionByUID(MinecraftServer server, int uid) {
     // Check vanilla dimensions with negative or zero UIDs first
     if (uid == 0) {
       return server.getLevel(Level.OVERWORLD);
@@ -426,18 +459,12 @@ public final class LinkingManager {
       return server.getLevel(Level.NETHER);
     }
 
-    // For positive UIDs, check Mystcraft Ages BEFORE The End
-    // This ensures registered Ages take priority over the End's hardcoded UID 1
-    // (handles Ages with any positive UID)
+    // For positive UIDs, check registered Mystcraft Ages BEFORE The End.
     if (uid > 0) {
       AgeManager ageManager = AgeManager.get(server);
       ResourceLocation ageDimension = ageManager.getDimension(uid);
       if (ageDimension != null) {
-        // This is a Mystcraft Age, try to get or create the dimension
-        ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(server, uid);
-        if (ageLevel != null) {
-          return ageLevel;
-        }
+        return server.getLevel(ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, ageDimension));
       }
     }
 
@@ -446,7 +473,7 @@ public final class LinkingManager {
       return server.getLevel(Level.END);
     }
 
-    // Search for other custom dimensions by hash
+    // Search loaded custom dimensions by hash as a last-resort compatibility path.
     for (ServerLevel level : server.getAllLevels()) {
       if (getDimensionUID(level) == uid) {
         return level;

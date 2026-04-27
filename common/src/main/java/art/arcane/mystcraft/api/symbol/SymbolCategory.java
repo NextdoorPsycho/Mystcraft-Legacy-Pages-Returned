@@ -22,21 +22,6 @@ public enum SymbolCategory {
   BIOME("biome"),
 
   /**
-   * Sun configuration
-   */
-  SUN("sun"),
-
-  /**
-   * Moon configuration
-   */
-  MOON("moon"),
-
-  /**
-   * Stars configuration
-   */
-  STARS("stars"),
-
-  /**
    * Weather control (rain, snow, clear, etc.)
    */
   WEATHER("weather"),
@@ -47,7 +32,7 @@ public enum SymbolCategory {
   LIGHTING("lighting"),
 
   /**
-   * Color modifiers for celestial/world objects (pushed onto stack)
+   * Color modifiers for world objects (pushed onto stack)
    */
   COLOR("color"),
 

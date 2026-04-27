@@ -35,7 +35,6 @@ public class AgeDirectorImpl implements AgeDirector {
   private final List<ITerrainAlteration> terrainAlterations = new ArrayList<>();
   private final List<IChunkProviderFinalization> chunkFinalizers = new ArrayList<>();
   private final List<IPopulate> populateFunctions = new ArrayList<>();
-  private final List<ICelestial> celestials = new ArrayList<>();
   private final List<IDynamicColorProvider> dynamicColorProviders = new ArrayList<>();
   private final List<IStaticColorProvider> staticColorProviders = new ArrayList<>();
   private float instability = 0.0f;
@@ -52,11 +51,6 @@ public class AgeDirectorImpl implements AgeDirector {
   private BlockState subsurfaceBlock = null;
   // Biomes
   private String biomeController = "native";
-  // Celestials
-  private boolean sunVisible = true;
-  private boolean moonVisible = true;
-  private boolean starsVisible = true;
-  private String starType = "normal";
   // Weather
   private String weatherType = "normal";
   // Lighting
@@ -335,44 +329,6 @@ public class AgeDirectorImpl implements AgeDirector {
   @Override
   public List<Holder<Biome>> getBiomes() {
     return biomes;
-  }
-
-  // --- Celestials ---
-
-  public boolean isSunVisible() {
-    return sunVisible;
-  }
-
-  @Override
-  public void setSunVisible(boolean visible) {
-    this.sunVisible = visible;
-  }
-
-  public boolean isMoonVisible() {
-    return moonVisible;
-  }
-
-  @Override
-  public void setMoonVisible(boolean visible) {
-    this.moonVisible = visible;
-  }
-
-  @Override
-  public void setStarsVisible(boolean visible) {
-    this.starsVisible = visible;
-  }
-
-  public boolean areStarsVisible() {
-    return starsVisible;
-  }
-
-  public String getStarType() {
-    return starType;
-  }
-
-  @Override
-  public void setStarType(String type) {
-    this.starType = type;
   }
 
   // --- Weather ---
@@ -1370,15 +1326,6 @@ public class AgeDirectorImpl implements AgeDirector {
   }
 
   @Override
-  public void registerInterface(ICelestial celestial) {
-    if (celestial != null) {
-      LOGGER.info("[Director] Registered celestial: {} (total: {})",
-          celestial.getClass().getSimpleName(), celestials.size() + 1);
-      celestials.add(celestial);
-    }
-  }
-
-  @Override
   public ITerrainGenerator getTerrainGenerator() {
     return terrainGenerator;
   }
@@ -1411,11 +1358,6 @@ public class AgeDirectorImpl implements AgeDirector {
   @Override
   public IWeatherController getWeatherController() {
     return weatherControllerImpl;
-  }
-
-  @Override
-  public List<ICelestial> getCelestials() {
-    return celestials;
   }
 
   // --- Color Provider Registration ---

@@ -59,11 +59,9 @@ public final class MystcraftGameTestAssertions {
     assertSymbolExists("terrain_cave");
     assertSymbolExists("biome_plains");
     assertSymbolExists("biome_forest");
-    assertSymbolExists("sun");
-    assertSymbolExists("moon");
-    assertSymbolExists("stars_normal");
     assertSymbolExists("weather_normal");
     assertSymbolExists("lighting_normal");
+    assertSymbolExists("color_sky_natural");
   }
 
   public static void assertTableBlocksRegistered() {

@@ -180,36 +180,6 @@ public interface AgeDirector {
    */
   List<Holder<Biome>> getBiomes();
 
-  // ========================= Celestials =========================
-
-  /**
-   * Sets whether the sun is visible.
-   *
-   * @param visible true to show sun
-   */
-  void setSunVisible(boolean visible);
-
-  /**
-   * Sets whether the moon is visible.
-   *
-   * @param visible true to show moon
-   */
-  void setMoonVisible(boolean visible);
-
-  /**
-   * Sets whether stars are visible.
-   *
-   * @param visible true to show stars
-   */
-  void setStarsVisible(boolean visible);
-
-  /**
-   * Sets the star type (normal, twinkle, end, etc.)
-   *
-   * @param type The star type
-   */
-  void setStarType(String type);
-
   // ========================= Weather =========================
 
   /**
@@ -1108,14 +1078,6 @@ public interface AgeDirector {
   void registerInterface(IWeatherController controller);
 
   /**
-   * Registers a celestial object for this Age.
-   * Multiple celestials can be registered (multiple suns, moons, etc.)
-   *
-   * @param celestial The celestial implementation
-   */
-  void registerInterface(ICelestial celestial);
-
-  /**
    * Gets the registered terrain generator.
    *
    * @return The terrain generator, or null if none registered
@@ -1163,13 +1125,6 @@ public interface AgeDirector {
    * @return The weather controller, or null if none registered
    */
   IWeatherController getWeatherController();
-
-  /**
-   * Gets all registered celestial objects.
-   *
-   * @return List of celestials (never null)
-   */
-  List<ICelestial> getCelestials();
 
   // ========================= Color Provider Registration =========================
 

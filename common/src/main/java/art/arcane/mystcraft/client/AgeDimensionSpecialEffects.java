@@ -1,7 +1,6 @@
 package art.arcane.mystcraft.client;
 
 import art.arcane.mystcraft.Mystcraft;
-import art.arcane.mystcraft.api.world.logic.ICelestial;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.util.ColorUtils;
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -20,14 +19,11 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-import java.util.List;
-
 /**
  * Custom dimension special effects for Mystcraft Ages.
- * Provides control over sky rendering, celestials, and fog.
+ * Provides control over sky rendering colors and fog.
  * <p>
  * This class is responsible for rendering the custom sky, including:
- * - Multiple celestials (suns, moons, stars)
  * - Custom sky colors
  * - Void rendering
  * - Horizon hiding
@@ -100,33 +96,25 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     // Check if we should use custom sky rendering
     int ageUID = getCurrentAgeUID();
     if (ageUID < 0) return false; // Not in an age, let vanilla handle
-    boolean sunVisible = ClientAgeDataCache.isSunVisible(ageUID);
-    boolean moonVisible = ClientAgeDataCache.isMoonVisible(ageUID);
-    boolean starsVisible = ClientAgeDataCache.areStarsVisible(ageUID);
     int skyColor = ClientAgeDataCache.getSkyColor(ageUID);
     boolean horizonHidden = ClientAgeDataCache.isHorizonHidden(ageUID);
-    @SuppressWarnings("unchecked")
-    List<ICelestial> celestials = (List<ICelestial>) ClientAgeDataCache.getCelestials(ageUID);
 
     int fogColor = ClientAgeDataCache.getFogColor(ageUID);
     int nightSkyColor = ClientAgeDataCache.getNightSkyColor(ageUID);
 
     // Log once per age for render pipeline tracing
     if (LOGGED_SKY_AGES.add(ageUID)) {
-      Mystcraft.LOGGER.info("[SkyRender] Age {}: skyColor=0x{}, fogColor=0x{}, nightSky=0x{}, sunVis={}, moonVis={}, starsVis={}, horizonHidden={}, celestials={}, customRenderer={}",
+      Mystcraft.LOGGER.info("[SkyRender] Age {}: skyColor=0x{}, fogColor=0x{}, nightSky=0x{}, horizonHidden={}, customRenderer={}",
           ageUID,
           skyColor != -1 ? Integer.toHexString(skyColor) : "none",
           fogColor != -1 ? Integer.toHexString(fogColor) : "none",
           nightSkyColor != -1 ? Integer.toHexString(nightSkyColor) : "none",
-          sunVisible, moonVisible, starsVisible, horizonHidden,
-          celestials != null ? celestials.size() : 0,
-          skyColor != -1 || fogColor != -1 || nightSkyColor != -1 || !sunVisible || !moonVisible || !starsVisible || horizonHidden);
+          horizonHidden,
+          skyColor != -1 || fogColor != -1 || nightSkyColor != -1 || horizonHidden);
     }
 
-    // If all defaults, no custom colors, and no custom celestials, let vanilla handle it
-    if (sunVisible && moonVisible && starsVisible && skyColor == -1 &&
-        fogColor == -1 && nightSkyColor == -1 &&
-        !horizonHidden && (celestials == null || celestials.isEmpty())) {
+    // If all defaults and no custom colors, let vanilla handle it.
+    if (skyColor == -1 && fogColor == -1 && nightSkyColor == -1 && !horizonHidden) {
       return false;
     }
 
@@ -134,29 +122,18 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     setupFog.run();
 
     float dayTime = level.getTimeOfDay(partialTick);
-    float rainLevel = level.getRainLevel(partialTick);
 
     // Render sky dome
     renderSkyDome(poseStack, level, partialTick, skyColor, dayTime);
 
-    // Render stars (if visible and it's dark enough)
+    // Render vanilla-style stars if it's dark enough.
     float starBrightness = getStarBrightness(level, partialTick);
-    if (starsVisible && starBrightness > 0) {
+    if (starBrightness > 0) {
       renderStars(poseStack, level, partialTick, starBrightness);
     }
 
-    // Render custom celestials
-    if (celestials != null && !celestials.isEmpty()) {
-      renderCustomCelestials(poseStack, level, partialTick, dayTime, rainLevel, celestials);
-    } else {
-      // Render vanilla-style sun/moon if visible
-      if (sunVisible) {
-        renderDefaultSun(poseStack, level, partialTick, dayTime);
-      }
-      if (moonVisible) {
-        renderDefaultMoon(poseStack, level, partialTick, dayTime);
-      }
-    }
+    renderDefaultSun(poseStack, level, partialTick, dayTime);
+    renderDefaultMoon(poseStack, level, partialTick, dayTime);
 
     // Render void if player is below horizon
     renderVoid(poseStack, camera, horizonHidden);
@@ -220,13 +197,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
    */
   private void renderStars(PoseStack poseStack, ClientLevel level, float partialTick, float starBrightness) {
     int ageUID = getCurrentAgeUID();
-    String starType = ageUID >= 0 ? ClientAgeDataCache.getStarType(ageUID) : "normal";
-
-    if ("dark".equals(starType)) {
-      return;
-    }
-
-    boolean twinkle = "twinkle".equals(starType);
     long timeMs = System.currentTimeMillis();
 
     int nightSkyColor = ageUID >= 0 ? ClientAgeDataCache.getNightSkyColor(ageUID) : -1;
@@ -238,11 +208,11 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
     // Three layers at different rotation speeds for depth parallax
-    renderStarLayer(poseStack, dayTime, starBrightness * 0.5f, twinkle, timeMs,
+    renderStarLayer(poseStack, dayTime, starBrightness * 0.5f, false, timeMs,
         nightSkyColor, 10842L, 500, 0.7f, 0.08f, 0.13f, 0.0f);
-    renderStarLayer(poseStack, dayTime, starBrightness * 0.8f, twinkle, timeMs,
+    renderStarLayer(poseStack, dayTime, starBrightness * 0.8f, false, timeMs,
         nightSkyColor, 29471L, 750, 1.0f, 0.12f, 0.20f, 15.0f);
-    renderStarLayer(poseStack, dayTime, starBrightness, twinkle, timeMs,
+    renderStarLayer(poseStack, dayTime, starBrightness, false, timeMs,
         nightSkyColor, 58293L, 250, 1.15f, 0.18f, 0.35f, -8.0f);
 
     RenderSystem.depthMask(true);
@@ -332,18 +302,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
   }
 
   /**
-   * Renders custom celestials from the Age's celestial list.
-   */
-  private void renderCustomCelestials(PoseStack poseStack, ClientLevel level, float partialTick,
-                                      float dayTime, float rainLevel, List<ICelestial> celestials) {
-    for (ICelestial celestial : celestials) {
-      if (celestial.isVisible()) {
-        celestial.render(poseStack, level, partialTick, dayTime, rainLevel);
-      }
-    }
-  }
-
-  /**
    * Renders the default sun.
    */
   private void renderDefaultSun(PoseStack poseStack, ClientLevel level, float partialTick, float dayTime) {
@@ -354,9 +312,9 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
 
     poseStack.pushPose();
 
-    float celestialAngle = level.getSunAngle(partialTick);
+    float sunAngle = level.getSunAngle(partialTick);
     poseStack.mulPose(Axis.YP.rotationDegrees(-90.0F));
-    poseStack.mulPose(Axis.XP.rotationDegrees(celestialAngle * 360.0F));
+    poseStack.mulPose(Axis.XP.rotationDegrees(sunAngle * 360.0F));
 
     Matrix4f matrix = poseStack.last().pose();
     float size = 30.0F;
@@ -388,9 +346,9 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
 
     poseStack.pushPose();
 
-    float celestialAngle = level.getSunAngle(partialTick);
+    float moonAngle = level.getSunAngle(partialTick);
     poseStack.mulPose(Axis.YP.rotationDegrees(-90.0F));
-    poseStack.mulPose(Axis.XP.rotationDegrees(celestialAngle * 360.0F + 180.0F));
+    poseStack.mulPose(Axis.XP.rotationDegrees(moonAngle * 360.0F + 180.0F));
 
     Matrix4f matrix = poseStack.last().pose();
     float size = 20.0F;

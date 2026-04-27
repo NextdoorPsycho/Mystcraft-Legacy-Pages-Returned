@@ -95,7 +95,6 @@ TLDR: You can do just about everything you could before, it supports newer
 - Biomes: Single biome, lists, themed or randomized mixes.
 - Weather: Off, normal, rain, thunder, blizzard, etc.
 - Lighting: Normal, dark, bright, nether-like.
-- Celestials: Sun, moon, stars, gradients, colors, angles.
 - Features & Structures: Villages, dungeons, temples, strongholds, mansions,
   oceans, etc.
 - Colors: Sky, fog, water, grass, foliage, clouds, sunset, horizon.

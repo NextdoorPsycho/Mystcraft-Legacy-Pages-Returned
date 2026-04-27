@@ -48,10 +48,6 @@ public class AgeData extends SavedData {
   private static final String TAG_WATER_COLOR = "WaterColor";
   private static final String TAG_CLOUD_COLOR = "CloudColor";
   private static final String TAG_NIGHT_SKY_COLOR = "NightSkyColor";
-  private static final String TAG_SUN_VISIBLE = "SunVisible";
-  private static final String TAG_MOON_VISIBLE = "MoonVisible";
-  private static final String TAG_STARS_VISIBLE = "StarsVisible";
-  private static final String TAG_STAR_TYPE = "StarType";
   private static final String TAG_PVP_ENABLED = "PvPEnabled";
   private static final String TAG_METEORS_ENABLED = "MeteorsEnabled";
   private static final String TAG_LIGHTNING_ENABLED = "LightningEnabled";
@@ -106,10 +102,6 @@ public class AgeData extends SavedData {
   private int nightSkyColor = -1;
   private int horizonColor = -1;
   private int sunsetColor = -1;
-  private boolean sunVisible = true;
-  private boolean moonVisible = true;
-  private boolean starsVisible = true;
-  private String starType = "normal";
   private boolean pvpEnabled = true;
   private boolean meteorsEnabled = false;
   private boolean lightningEnabled = false;
@@ -244,11 +236,6 @@ public class AgeData extends SavedData {
       this.nightSkyColor = config.contains(TAG_NIGHT_SKY_COLOR) ? config.getInt(TAG_NIGHT_SKY_COLOR) : -1;
       this.horizonColor = config.contains(TAG_HORIZON_COLOR) ? config.getInt(TAG_HORIZON_COLOR) : -1;
       this.sunsetColor = config.contains(TAG_SUNSET_COLOR) ? config.getInt(TAG_SUNSET_COLOR) : -1;
-      this.sunVisible = !config.contains(TAG_SUN_VISIBLE) || config.getBoolean(TAG_SUN_VISIBLE);
-      this.moonVisible = !config.contains(TAG_MOON_VISIBLE) || config.getBoolean(TAG_MOON_VISIBLE);
-      this.starsVisible = !config.contains(TAG_STARS_VISIBLE) || config.getBoolean(TAG_STARS_VISIBLE);
-      this.starType = config.getString(TAG_STAR_TYPE);
-      if (this.starType.isEmpty()) this.starType = "normal";
       this.pvpEnabled = !config.contains(TAG_PVP_ENABLED) || config.getBoolean(TAG_PVP_ENABLED);
       this.meteorsEnabled = config.getBoolean(TAG_METEORS_ENABLED);
       this.lightningEnabled = config.getBoolean(TAG_LIGHTNING_ENABLED);
@@ -370,10 +357,6 @@ public class AgeData extends SavedData {
     if (nightSkyColor != -1) config.putInt(TAG_NIGHT_SKY_COLOR, nightSkyColor);
     if (horizonColor != -1) config.putInt(TAG_HORIZON_COLOR, horizonColor);
     if (sunsetColor != -1) config.putInt(TAG_SUNSET_COLOR, sunsetColor);
-    config.putBoolean(TAG_SUN_VISIBLE, sunVisible);
-    config.putBoolean(TAG_MOON_VISIBLE, moonVisible);
-    config.putBoolean(TAG_STARS_VISIBLE, starsVisible);
-    config.putString(TAG_STAR_TYPE, starType);
     config.putBoolean(TAG_PVP_ENABLED, pvpEnabled);
     config.putBoolean(TAG_METEORS_ENABLED, meteorsEnabled);
     config.putBoolean(TAG_LIGHTNING_ENABLED, lightningEnabled);
@@ -627,22 +610,6 @@ public class AgeData extends SavedData {
     return sunsetColor;
   }
 
-  public boolean isSunVisible() {
-    return sunVisible;
-  }
-
-  public boolean isMoonVisible() {
-    return moonVisible;
-  }
-
-  public boolean areStarsVisible() {
-    return starsVisible;
-  }
-
-  public String getStarType() {
-    return starType;
-  }
-
   public boolean isPvPEnabled() {
     return pvpEnabled;
   }
@@ -768,10 +735,6 @@ public class AgeData extends SavedData {
     this.nightSkyColor = director.getNightSkyColor();
     this.horizonColor = director.getHorizonColor();
     this.sunsetColor = director.getSunsetColor();
-    this.sunVisible = director.isSunVisible();
-    this.moonVisible = director.isMoonVisible();
-    this.starsVisible = director.areStarsVisible();
-    this.starType = director.getStarType();
     this.pvpEnabled = director.isPvPEnabled();
     this.meteorsEnabled = director.areMeteorsEnabled();
     this.lightningEnabled = director.isLightningEnabled();

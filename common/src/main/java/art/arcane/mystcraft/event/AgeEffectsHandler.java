@@ -11,6 +11,7 @@ import art.arcane.mystcraft.util.ServerPlayerTeleport;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.weather.*;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -20,6 +21,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
 
@@ -52,6 +54,7 @@ public class AgeEffectsHandler {
    */
   public static void onLevelTick(ServerLevel level) {
     if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) return;
+    if (level.players().isEmpty()) return;
 
     AgeData ageData = AgeData.getIfPresent(level);
     if (ageData == null) return;
@@ -72,7 +75,7 @@ public class AgeEffectsHandler {
     handleTimescale(level, ageData);
 
     handleMicroDimensions(level, ageData);
-    handlePersonalPocket(level);
+    handlePersonalPocket(level, ageData);
   }
 
   /**
@@ -208,7 +211,9 @@ public class AgeEffectsHandler {
 
     if (!controller.isEnabled()) return;
 
-    // Tick effects on chunks near each player
+    LongOpenHashSet processedChunks = new LongOpenHashSet();
+
+    // Tick effects on chunks near each player, but only once per chunk.
     for (ServerPlayer player : level.players()) {
       int chunkX = player.getBlockX() >> 4;
       int chunkZ = player.getBlockZ() >> 4;
@@ -217,7 +222,12 @@ public class AgeEffectsHandler {
       int radius = 4;
       for (int dx = -radius; dx <= radius; dx++) {
         for (int dz = -radius; dz <= radius; dz++) {
-          LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX + dx, chunkZ + dz);
+          int x = chunkX + dx;
+          int z = chunkZ + dz;
+          if (!processedChunks.add(ChunkPos.asLong(x, z))) {
+            continue;
+          }
+          LevelChunk chunk = level.getChunkSource().getChunkNow(x, z);
           if (chunk != null) {
             controller.tick(chunk);
           }
@@ -275,14 +285,13 @@ public class AgeEffectsHandler {
    * Handles personal pocket dimension enforcement.
    * Uses vanilla world border as physical barrier with teleportation fallback.
    */
-  private static void handlePersonalPocket(ServerLevel level) {
-    art.arcane.mystcraft.world.AgeData ageData = art.arcane.mystcraft.world.AgeData.getIfPresent(level);
-    boolean isPersonal = ageData != null && ageData.isPersonalPocket();
+  private static void handlePersonalPocket(ServerLevel level, AgeData ageData) {
+    boolean isPersonal = ageData.isPersonalPocket();
 
     // Debug logging (only once per 100 ticks to avoid spam)
     if (level.getGameTime() % 100 == 0 && level.players().size() > 0) {
       Mystcraft.LOGGER.debug("[PersonalPocket] Tick check: dim={}, ageData={}, isPersonal={}",
-          level.dimension().location(), ageData != null ? "exists" : "null", isPersonal);
+          level.dimension().location(), "exists", isPersonal);
     }
 
     if (!isPersonal) {

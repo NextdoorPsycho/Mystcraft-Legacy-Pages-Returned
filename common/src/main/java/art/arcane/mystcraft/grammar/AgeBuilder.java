@@ -180,10 +180,6 @@ public class AgeBuilder {
       "biome_warped_forest", "biome_basalt_deltas",
       "biome_the_end", "biome_end_midlands", "biome_end_highlands"
   };
-  // Celestial chaos chances
-  private static final float NO_SUN_CHANCE = 0.10f;
-  private static final float MULTI_SUN_CHANCE = 0.10f;
-  private static final float UNUSUAL_CELESTIAL_CHANCE = 0.15f;
   // Color palette variety
   private static final float MONOCHROME_CHANCE = 0.20f;
   private static final float INVERTED_PALETTE_CHANCE = 0.10f;
@@ -739,7 +735,6 @@ public class AgeBuilder {
       applyEnvironmentEffects(director, symbolRand, fallbackScale);
       applyFeatureInjection(director, symbolRand, fallbackScale);
       applyBiomeChaos(director, symbolRand, fallbackScale);
-      applyCelestialChaos(director, symbolRand, fallbackScale);
       applyDefaultColors(director, symbolRand);
     } else {
       LOGGER.debug("[AgeBuilder] Skipping chaos fallbacks (completeness >= 0.8)");
@@ -762,10 +757,9 @@ public class AgeBuilder {
         colorHex(director.getWaterColor()), colorHex(director.getCloudColor()));
     LOGGER.debug("[AgeBuilder]   Biomes: {} registered, controller={}",
         director.getBiomes().size(), director.getBiomeController());
-    LOGGER.debug("[AgeBuilder]   Registered interfaces: {} alterations, {} populators, {} celestials",
+    LOGGER.debug("[AgeBuilder]   Registered interfaces: {} alterations, {} populators",
         director.getTerrainAlterations().size(),
-        director.getPopulateFunctions().size(),
-        director.getCelestials().size());
+        director.getPopulateFunctions().size());
     if (!director.getTerrainAlterations().isEmpty()) {
       for (var alt : director.getTerrainAlterations()) {
         LOGGER.debug("[AgeBuilder]     Alteration: {}", alt.getClass().getSimpleName());
@@ -1126,52 +1120,6 @@ public class AgeBuilder {
         expandedSymbols.add(biomeSymbol);
         director.addInstability(biomeSymbol.getInstabilityCost());
         LOGGER.debug("[AgeBuilder] Injected chaos biome: {}", biomePath);
-      }
-    }
-  }
-
-  /**
-   * Applies celestial chaos: no sun, multiple suns, unusual combinations.
-   */
-  private void applyCelestialChaos(AgeDirectorImpl director, Random rand, float fallbackScale) {
-    boolean hasCelestialSymbol = false;
-    for (IAgeSymbol symbol : expandedSymbols) {
-      SymbolCategory cat = symbol.getCategory();
-      if (cat == SymbolCategory.SUN || cat == SymbolCategory.MOON || cat == SymbolCategory.STARS) {
-        hasCelestialSymbol = true;
-        break;
-      }
-    }
-    if (hasCelestialSymbol) {
-      return;
-    }
-
-    float roll = rand.nextFloat();
-    if (roll < NO_SUN_CHANCE * fallbackScale) {
-      IAgeSymbol darkSun = SymbolRegistry.get(new ResourceLocation("mystcraft", "sun_dark"));
-      if (darkSun != null) {
-        darkSun.registerLogic(director, rand.nextLong());
-        director.addInstability(5.0f);
-        LOGGER.debug("[AgeBuilder] Celestial chaos: dark age (no sun)");
-      }
-    } else if (roll < (NO_SUN_CHANCE + MULTI_SUN_CHANCE) * fallbackScale) {
-      int sunCount = 2 + rand.nextInt(2);
-      IAgeSymbol sun = SymbolRegistry.get(new ResourceLocation("mystcraft", "sun_normal"));
-      if (sun != null) {
-        for (int i = 0; i < sunCount; i++) {
-          sun.registerLogic(director, rand.nextLong());
-        }
-        director.addInstability(sunCount * 3.0f);
-        LOGGER.debug("[AgeBuilder] Celestial chaos: {} suns", sunCount);
-      }
-    } else if (roll < (NO_SUN_CHANCE + MULTI_SUN_CHANCE + UNUSUAL_CELESTIAL_CHANCE) * fallbackScale) {
-      String[] unusualCombos = {"stars_end", "stars_dense", "stars_dark"};
-      String starType = unusualCombos[rand.nextInt(unusualCombos.length)];
-      IAgeSymbol stars = SymbolRegistry.get(new ResourceLocation("mystcraft", starType));
-      if (stars != null) {
-        stars.registerLogic(director, rand.nextLong());
-        director.addInstability(3.0f);
-        LOGGER.debug("[AgeBuilder] Celestial chaos: unusual stars ({})", starType);
       }
     }
   }

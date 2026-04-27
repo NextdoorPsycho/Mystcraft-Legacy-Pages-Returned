@@ -94,18 +94,6 @@ public class MystcraftCommands {
     }
     return SharedSuggestionProvider.suggest(categories, builder);
   };
-  // Celestial variant symbol IDs for random book generation
-  private static final String[] RANDOM_SUN_VARIANTS = {
-      "mystcraft:sun", "mystcraft:sun_large", "mystcraft:sun_small",
-      "mystcraft:sun_fast", "mystcraft:sun_slow", "mystcraft:sun_dark"
-  };
-  private static final String[] RANDOM_MOON_VARIANTS = {
-      "mystcraft:moon", "mystcraft:moon_large", "mystcraft:moon_small",
-      "mystcraft:moon_full", "mystcraft:moon_fast", "mystcraft:moon_slow"
-  };
-  private static final String[] RANDOM_STAR_VARIANTS = {
-      "mystcraft:stars", "mystcraft:stars_dense", "mystcraft:stars_sparse"
-  };
   private static final String[] RANDOM_GRADIENT_SYMBOLS = {
       "mystcraft:gradient_sunset", "mystcraft:gradient_dawn",
       "mystcraft:gradient_dusk", "mystcraft:gradient_aurora",
@@ -579,7 +567,6 @@ public class MystcraftCommands {
       source.sendSuccess(() -> Component.literal("  BiomeController: " + director.getBiomeController()), false);
       source.sendSuccess(() -> Component.literal("  Weather: " + director.getWeatherType()), false);
       source.sendSuccess(() -> Component.literal("  Lighting: " + director.getLightingType()), false);
-      source.sendSuccess(() -> Component.literal("  Stars: " + director.getStarType()), false);
       source.sendSuccess(() -> Component.literal("  StarFissure: " + director.isStarFissureEnabled()), false);
       source.sendSuccess(() -> Component.literal("  FloatingIslands: " + director.areFloatingIslandsEnabled()), false);
       source.sendSuccess(() -> Component.literal("  Caves: " + director.areCavesEnabled()), false);
@@ -757,7 +744,6 @@ public class MystcraftCommands {
       out.append("weather: ").append(ageData.getWeatherType()).append("\n");
       out.append("lighting: ").append(ageData.getLightingType()).append("\n");
       out.append("biome_controller: ").append(ageData.getBiomeController()).append("\n");
-      out.append("stars: ").append(ageData.getStarType()).append("\n");
       out.append("pages: ").append(ageData.getPages().size()).append("\n");
 
       out.append("\n# Pages\n");
@@ -1154,12 +1140,6 @@ public class MystcraftCommands {
         budget--;
       }
     }
-
-    // --- Celestials: pick a sun, moon, and stars variant ---
-
-    if (budget > 0 && addRandomSymbolFromPool(pages, seen, RANDOM_SUN_VARIANTS, random)) budget--;
-    if (budget > 0 && addRandomSymbolFromPool(pages, seen, RANDOM_MOON_VARIANTS, random)) budget--;
-    if (budget > 0 && addRandomSymbolFromPool(pages, seen, RANDOM_STAR_VARIANTS, random)) budget--;
 
     // --- Gradient: 50% chance to include one ---
 

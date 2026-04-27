@@ -64,24 +64,6 @@ public final class GrammarData {
 
   // World effects
   /**
-   * Generates a Sun
-   */
-  public static final ResourceLocation SUN = asMyst("sun");
-
-  // Celestial tokens
-  /**
-   * Generates a Moon
-   */
-  public static final ResourceLocation MOON = asMyst("moon");
-  /**
-   * Generates a Starfield
-   */
-  public static final ResourceLocation STARFIELD = asMyst("starfield");
-  /**
-   * Generates a Doodad (decorative celestial object)
-   */
-  public static final ResourceLocation DOODAD = asMyst("doodad");
-  /**
    * Generates a Block Modifier which is a valid Terrain Block
    */
   public static final ResourceLocation BLOCK_TERRAIN = asMyst("block_terrain");
@@ -134,7 +116,7 @@ public final class GrammarData {
    */
   public static final ResourceLocation ANGLE_SEQ = asMyst("angle");
 
-  // Modifier sequence tokens (for celestials)
+  // Modifier sequence tokens
   /**
    * Generates a Period sequence
    */

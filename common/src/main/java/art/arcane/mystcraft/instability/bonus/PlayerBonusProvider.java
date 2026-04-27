@@ -4,7 +4,6 @@ import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.instability.InstabilityBonusManager;
 import art.arcane.mystcraft.instability.InstabilityBonusManager.IInstabilityBonusProvider;
 import art.arcane.mystcraft.world.AgeData;
-import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -86,19 +85,8 @@ public class PlayerBonusProvider implements IInstabilityBonusProvider {
       return;
     }
 
-    // Find the level with this dimension ID
-    ServerLevel level = null;
     AgeManager ageManager = AgeManager.get(server);
-    for (ServerLevel serverLevel : server.getAllLevels()) {
-      if (AgeDimensionFactory.isMystcraftAge(serverLevel.dimension())) {
-        int ageId = ageManager.getAgeUID(serverLevel.dimension());
-        if (ageId == dimId) {
-          level = serverLevel;
-          break;
-        }
-      }
-    }
-
+    ServerLevel level = ageManager.getAgeLevel(server, dimId);
     if (level == null) {
       return;
     }

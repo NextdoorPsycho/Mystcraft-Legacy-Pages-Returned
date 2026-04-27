@@ -6,7 +6,7 @@
     "Terrain",
     "Transform",
     "Form",
-    "Celestial"
+    "Sky"
   ],
   "logic": [
     {

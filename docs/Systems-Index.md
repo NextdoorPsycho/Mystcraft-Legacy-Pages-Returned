@@ -21,7 +21,7 @@ This index lists the major systems covered in the docs.
 ## World Generation Controls
 
 - Terrain, Biomes, Weather, Lighting
-- Celestials and Colors
+- Colors
 - Features and Structures
 - Environment effects
 

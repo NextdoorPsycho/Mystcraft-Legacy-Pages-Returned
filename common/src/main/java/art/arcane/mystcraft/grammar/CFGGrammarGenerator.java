@@ -356,16 +356,12 @@ public final class CFGGrammarGenerator {
         GrammarData.BIOME,
         GrammarData.WEATHER,
         GrammarData.LIGHTING,
-        GrammarData.SUN,
-        GrammarData.MOON,
-        GrammarData.STARFIELD,
         GrammarData.EFFECT,
         GrammarData.VISUAL_EFFECT,
         GrammarData.FEATURE_LARGE,
         GrammarData.FEATURE_MEDIUM,
         GrammarData.FEATURE_SMALL,
-        GrammarData.BLOCK_SEA,
-        GrammarData.DOODAD
+        GrammarData.BLOCK_SEA
     };
 
     int unpopulated = 0;

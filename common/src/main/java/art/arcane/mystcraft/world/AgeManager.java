@@ -3,6 +3,7 @@ package art.arcane.mystcraft.world;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.platform.Services;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -243,12 +244,7 @@ public class AgeManager extends SavedData {
       return null;
     }
 
-    for (ServerLevel level : server.getAllLevels()) {
-      if (level.dimension().location().equals(dimLoc)) {
-        return level;
-      }
-    }
-    return null;
+    return server.getLevel(ResourceKey.create(Registries.DIMENSION, dimLoc));
   }
 
   /**

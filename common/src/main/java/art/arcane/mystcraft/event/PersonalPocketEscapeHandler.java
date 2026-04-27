@@ -5,6 +5,7 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.entity.PersonalPocketProxyEntity;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.registry.ModSounds;
+import art.arcane.mystcraft.util.MystcraftChunkLeases;
 import art.arcane.mystcraft.util.ServerPlayerTeleport;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.PersonalPocketData;
@@ -122,6 +123,7 @@ public final class PersonalPocketEscapeHandler {
     PersonalPocketData data = PersonalPocketData.get(server);
     removeActiveProxy(server, player.getUUID());
     rememberMockOwner(player);
+    MystcraftChunkLeases.leaseReturnWindow(sourceLevel, player.blockPosition());
 
     PersonalPocketProxyEntity proxy = new PersonalPocketProxyEntity(sourceLevel);
     proxy.setOwner(player.getGameProfile(), returnLink);
@@ -276,6 +278,12 @@ public final class PersonalPocketEscapeHandler {
     PersonalPocketData data = PersonalPocketData.get(server);
     PersonalPocketData.ProxyState state = data.getActiveProxy(playerId);
     if (state == null || findProxy(server, state) != null) {
+      if (state != null) {
+        ServerLevel loadedLevel = LinkingManager.findLoadedDimensionByUID(server, state.dimensionUid());
+        if (loadedLevel != null) {
+          MystcraftChunkLeases.leaseReturnWindow(loadedLevel, state.position());
+        }
+      }
       return;
     }
 
@@ -285,6 +293,7 @@ public final class PersonalPocketEscapeHandler {
           playerId, state.dimensionUid());
       return;
     }
+    MystcraftChunkLeases.leaseReturnWindow(sourceLevel, state.position());
 
     PersonalPocketProxyEntity proxy = new PersonalPocketProxyEntity(sourceLevel);
     ServerPlayer owner = server.getPlayerList().getPlayer(playerId);
@@ -311,7 +320,7 @@ public final class PersonalPocketEscapeHandler {
   }
 
   private static PersonalPocketProxyEntity findProxy(MinecraftServer server, PersonalPocketData.ProxyState state) {
-    ServerLevel level = LinkingManager.findDimensionByUID(server, state.dimensionUid());
+    ServerLevel level = LinkingManager.findLoadedDimensionByUID(server, state.dimensionUid());
     if (level == null) {
       return null;
     }

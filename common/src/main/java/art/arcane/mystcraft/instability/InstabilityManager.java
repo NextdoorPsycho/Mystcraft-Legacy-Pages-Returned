@@ -130,6 +130,10 @@ public final class InstabilityManager {
       return;
     }
 
+    if (level.players().isEmpty()) {
+      return;
+    }
+
     // Get age instability
     AgeData ageData = AgeData.getIfPresent(level);
     if (ageData == null) {

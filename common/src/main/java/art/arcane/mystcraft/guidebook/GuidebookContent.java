@@ -37,9 +37,6 @@ public class GuidebookContent {
     chapters.add(createSymbolSystem());
     chapters.add(createTerrainSymbols());
     chapters.add(createBiomeSymbols());
-    chapters.add(createSunSymbols());
-    chapters.add(createMoonSymbols());
-    chapters.add(createStarSymbols());
     chapters.add(createWeatherSymbols());
     chapters.add(createLightingSymbols());
     chapters.add(createFeatureSymbols());
@@ -75,7 +72,7 @@ public class GuidebookContent {
                 "instability, and creates a new dimension.")
         .addPage("Symbols",
             "Symbols are the building blocks of Age design. They define " +
-                "terrain, biome distribution, weather, lighting, celestials, " +
+                "terrain, biome distribution, weather, lighting, " +
                 "colors, features, structures, and environment. Each symbol " +
                 "has an instability cost.")
         .addPage("Instability",
@@ -241,10 +238,7 @@ public class GuidebookContent {
                 "BIOME_CONTROLLER: Singleton\n" +
                 "BIOME: Multiple allowed\n" +
                 "WEATHER: Singleton\n" +
-                "LIGHTING: Singleton\n" +
-                "SUN: Multiple allowed\n" +
-                "MOON: Multiple allowed\n" +
-                "STARS: Multiple allowed")
+                "LIGHTING: Singleton")
         .addPage("More Categories",
             "FEATURE_LARGE: Caves, ravines\n" +
                 "FEATURE_MEDIUM: Ores, spikes\n" +
@@ -339,67 +333,7 @@ public class GuidebookContent {
                 "All instability 0.0, rank 1.");
   }
 
-  // --- Chapter 8: Sun Symbols ---
-
-  private GuidebookChapter createSunSymbols() {
-    return GuidebookChapter.create("Suns")
-        .addPage("Sun Symbols",
-            "sun_normal: Standard sun, 20-min day (0.0)\n" +
-                "sun_dark: Eclipse silhouette (5.0)\n" +
-                "sun_large: 2.5x normal size (5.0)\n" +
-                "sun_small: 0.4x normal size (3.0)\n" +
-                "sun_fast: 10-min day, 2x speed (8.0)\n" +
-                "sun_slow: 40-min day, 0.5x speed (5.0)")
-        .addPage("Sun Rendering",
-            "Sun renders with: core disc, animated corona (48 segments), " +
-                "24 radial rays, and outer glow halo. Pulsing animation " +
-                "(0.92-1.0 scale), rotating rays, wobbling corona. Dark sun " +
-                "renders black disc with bright corona ring.")
-        .addPage("Sun Colors",
-            "Default sun color: gold (255, 242, 204). Overridable via " +
-                "color modifier symbols placed before the sun symbol. " +
-                "Multiple suns allowed per Age. An Age with no sun is " +
-                "eternally dark.");
-  }
-
-  // --- Chapter 9: Moon Symbols ---
-
-  private GuidebookChapter createMoonSymbols() {
-    return GuidebookChapter.create("Moons")
-        .addPage("Moon Symbols",
-            "moon_normal: Standard moon with phases (0.0)\n" +
-                "moon_dark: Lunar eclipse (3.0)\n" +
-                "moon_large: 2.5x normal size (3.0)\n" +
-                "moon_small: 0.4x normal size (3.0)\n" +
-                "moon_full: Always full phase (2.0)\n" +
-                "moon_fast: 2x phase cycle (5.0)\n" +
-                "moon_slow: 0.5x phase cycle (3.0)")
-        .addPage("Moon Rendering",
-            "Renders with: textured disc (32 segments), procedural " +
-                "craters, atmospheric glow (48 segments). Phase-aware " +
-                "shading (0-1 range). Full moon symbol locks at max phase. " +
-                "Dark moon shows corona ring.");
-  }
-
-  // --- Chapter 10: Star Symbols ---
-
-  private GuidebookChapter createStarSymbols() {
-    return GuidebookChapter.create("Stars")
-        .addPage("Star Symbols",
-            "stars_normal: Standard 1500 stars (0.0)\n" +
-                "stars_twinkle: Enhanced twinkle (0.0)\n" +
-                "stars_end: End-dimension particles (5.0)\n" +
-                "stars_dark: No stars rendered (2.0)\n" +
-                "stars_dense: 4000 stars (3.0)\n" +
-                "stars_sparse: 400 stars (0.0)")
-        .addPage("Star Rendering",
-            "Multi-layer parallax at different rotation speeds. Varied " +
-                "color temperatures from blue-white to orange-red. Per-star " +
-                "twinkle effect. Configurable count (100-8000). Features nebula " +
-                "clouds, shooting stars, brightness fade at dawn/dusk.");
-  }
-
-  // --- Chapter 11: Weather Symbols ---
+  // --- Chapter 8: Weather Symbols ---
 
   private GuidebookChapter createWeatherSymbols() {
     return GuidebookChapter.create("Weather")
@@ -565,15 +499,13 @@ public class GuidebookContent {
                 "mod_north: 0 degrees\n" +
                 "mod_east: 90 degrees\n" +
                 "mod_south: 180 degrees\n" +
-                "mod_west: 270 degrees\n\n" +
-                "Applied to celestial bodies for positioning.")
+                "mod_west: 270 degrees")
         .addPage("Phase Modifiers",
             "Category: PHASE\n\n" +
                 "mod_nadir: Bottom (0 degrees)\n" +
                 "mod_rising: Rising (90 degrees)\n" +
                 "mod_zenith: Top (180 degrees)\n" +
-                "mod_setting: Setting (270 degrees)\n\n" +
-                "Controls orbital phase of celestials.")
+                "mod_setting: Setting (270 degrees)")
         .addPage("Length Modifiers",
             "Category: LENGTH\n\n" +
                 "mod_zero: 0.0 (frozen)\n" +
@@ -1121,7 +1053,7 @@ public class GuidebookContent {
             "Each preset specifies:\n\n" +
                 "Fixed symbols: terrain, biome controller, lighting, weather\n\n" +
                 "Pool picks: e.g., 'pick 6 biomes from 13 options'\n\n" +
-                "Pool categories: biomes, celestials, structures, ores, " +
+                "Pool categories: biomes, structures, ores, " +
                 "features, modifiers, gradients");
   }
 

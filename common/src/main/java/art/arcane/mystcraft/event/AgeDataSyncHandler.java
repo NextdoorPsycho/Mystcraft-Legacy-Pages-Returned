@@ -86,12 +86,6 @@ public class AgeDataSyncHandler {
     if (ageData.getHorizonColor() != -1) config.putInt("HorizonColor", ageData.getHorizonColor());
     if (ageData.getSunsetColor() != -1) config.putInt("SunsetColor", ageData.getSunsetColor());
 
-    // Celestials
-    config.putBoolean("SunVisible", ageData.isSunVisible());
-    config.putBoolean("MoonVisible", ageData.isMoonVisible());
-    config.putBoolean("StarsVisible", ageData.areStarsVisible());
-    config.putString("StarType", ageData.getStarType());
-
     // Special
     config.putBoolean("HorizonHidden", ageData.isHorizonHidden());
 

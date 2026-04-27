@@ -638,9 +638,6 @@ public final class PersonalPocketDimension {
     director.setTerrainBlock(Blocks.SMOOTH_STONE.defaultBlockState());
     director.setWeatherType("off");
     director.setLightingType("bright");
-    director.setSunVisible(true);
-    director.setMoonVisible(false);
-    director.setStarsVisible(false);
     director.setTimescale(0.0f);
 
     // Disable all world generation features

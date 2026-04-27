@@ -145,9 +145,6 @@ public final class SymbolRegistry {
       case TERRAIN -> GrammarData.TERRAIN;
       case BIOME_CONTROLLER -> GrammarData.BIOMECONTROLLER;
       case BIOME -> GrammarData.BIOME;
-      case SUN -> GrammarData.SUN;
-      case MOON -> GrammarData.MOON;
-      case STARS -> GrammarData.STARFIELD;
       case WEATHER -> GrammarData.WEATHER;
       case LIGHTING -> GrammarData.LIGHTING;
       case FEATURE_LARGE -> GrammarData.FEATURE_LARGE;

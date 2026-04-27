@@ -38,14 +38,6 @@ public final class GrammarRules {
   private static final ResourceLocation FEATURE_SMALL_GEN = asMyst("feature_small_adv");
   private static final ResourceLocation EFFECT_GEN = asMyst("effects_adv");
   private static final ResourceLocation EFFECT_EXT = asMyst("effects_ext");
-  private static final ResourceLocation SUN_GEN = asMyst("suns_adv");
-  private static final ResourceLocation SUN_EXT = asMyst("suns_ext");
-  private static final ResourceLocation MOON_GEN = asMyst("moons_adv");
-  private static final ResourceLocation MOON_EXT = asMyst("moons_ext");
-  private static final ResourceLocation STARFIELD_GEN = asMyst("starfields_adv");
-  private static final ResourceLocation STARFIELD_EXT = asMyst("starfields_ext");
-  private static final ResourceLocation DOODAD_GEN = asMyst("doodads_adv");
-  private static final ResourceLocation DOODAD_EXT = asMyst("doodads_ext");
   // Modifier extension tokens
   private static final ResourceLocation ANGLE_GEN = asMyst("angle_adv");
   private static final ResourceLocation PERIOD_GEN = asMyst("period_adv");
@@ -82,9 +74,6 @@ public final class GrammarRules {
         GrammarData.LIGHTING,
         GrammarData.BLOCK_SEA,
         asMyst("spawning0"),
-        asMyst("suns0"),
-        asMyst("moons0"),
-        asMyst("starfields0"),
         asMyst("visuals0"),
         asMyst("feature_smalls0"),
         asMyst("feature_mediums0"),
@@ -102,40 +91,6 @@ public final class GrammarRules {
     registerRule(buildRule(null, GrammarData.BIOME_LIST, BIOME_EXT, GrammarData.BIOME));
     registerRule(buildRule(null, BIOME_EXT, BIOME_EXT, GrammarData.BIOME_LIST));
     registerRule(buildRule(1, BIOME_EXT));
-
-    // Sun rules
-    registerRule(buildRule(1, asMyst("suns0"), SUN_GEN));
-    registerRule(buildRule(4, SUN_GEN, SUN_GEN, GrammarData.SUN));
-    registerRule(buildRule(2, SUN_GEN, GrammarData.SUN));
-    registerRule(buildRule(null, asMyst("suns0"), SUN_EXT, GrammarData.SUN));
-    registerRule(buildRule(null, SUN_EXT, SUN_EXT, GrammarData.SUN));
-    registerRule(buildRule(1, SUN_EXT));
-
-    // Moon rules
-    registerRule(buildRule(1, asMyst("moons0"), MOON_GEN));
-    registerRule(buildRule(2, MOON_GEN, MOON_GEN, GrammarData.MOON));
-    registerRule(buildRule(2, MOON_GEN, GrammarData.MOON));
-    registerRule(buildRule(null, asMyst("moons0"), MOON_EXT, GrammarData.MOON));
-    registerRule(buildRule(null, MOON_EXT, MOON_EXT, GrammarData.MOON));
-    registerRule(buildRule(1, MOON_EXT));
-
-    // Starfield rules
-    registerRule(buildRule(1, asMyst("starfields0"), STARFIELD_GEN));
-    registerRule(buildRule(3, STARFIELD_GEN, STARFIELD_GEN, GrammarData.STARFIELD));
-    registerRule(buildRule(2, STARFIELD_GEN, GrammarData.STARFIELD));
-    registerRule(buildRule(null, asMyst("starfields0"), STARFIELD_EXT, GrammarData.STARFIELD));
-    registerRule(buildRule(null, STARFIELD_EXT, STARFIELD_EXT, GrammarData.STARFIELD));
-    registerRule(buildRule(1, STARFIELD_EXT));
-    registerRule(buildRule(1, GrammarData.STARFIELD)); // Epsilon
-
-    // Doodad rules
-    registerRule(buildRule(1, asMyst("doodads0"), DOODAD_GEN));
-    registerRule(buildRule(5, DOODAD_GEN, DOODAD_GEN, GrammarData.DOODAD));
-    registerRule(buildRule(2, DOODAD_GEN, GrammarData.DOODAD));
-    registerRule(buildRule(null, asMyst("doodads0"), DOODAD_EXT, GrammarData.DOODAD));
-    registerRule(buildRule(null, DOODAD_EXT, DOODAD_EXT, GrammarData.DOODAD));
-    registerRule(buildRule(1, DOODAD_EXT));
-    registerRule(buildRule(0, GrammarData.DOODAD)); // Epsilon
 
     // Visual effects rules
     registerRule(buildRule(1, asMyst("visuals0"), VISUAL_EFFECT_GEN));

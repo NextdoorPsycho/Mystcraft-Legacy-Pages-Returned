@@ -70,8 +70,6 @@ public final class SymbolLogicTypes {
     registerSimpleString("set_biome_controller", AgeDirector::setBiomeController);
     registerSimpleString("set_weather_type", AgeDirector::setWeatherType);
     registerSimpleString("set_lighting_type", AgeDirector::setLightingType);
-    registerSimpleString("set_star_type", AgeDirector::setStarType);
-
     registerSimpleInt("set_average_ground_level", AgeDirector::setAverageGroundLevel);
     registerSimpleInt("set_sea_level", AgeDirector::setSeaLevel);
     registerSimpleInt("set_sky_color", AgeDirector::setSkyColor, AgeDirector::setSkyColorNatural);
@@ -89,9 +87,6 @@ public final class SymbolLogicTypes {
     registerSimpleFloat("set_timescale", AgeDirector::setTimescale);
 
     registerSimpleBoolean("set_has_sea", AgeDirector::setHasSea);
-    registerSimpleBoolean("set_sun_visible", AgeDirector::setSunVisible);
-    registerSimpleBoolean("set_moon_visible", AgeDirector::setMoonVisible);
-    registerSimpleBoolean("set_stars_visible", AgeDirector::setStarsVisible);
 
     registerSimpleInt("push_color", (director, value) -> director.pushColor(value), null);
     registerSimpleInt("push_gradient", (director, value) -> director.pushGradient(value), null);

@@ -132,11 +132,6 @@ public class DrawableWordManager {
     registerWord("dark", 18, 19);
     registerWord("color", 20, 21, 22);
 
-    // Celestial words
-    registerWord("celestial", 4, 5, 6);
-    registerWord("sun", 7, 8);
-    registerWord("moon", 9, 10);
-    registerWord("star", 11, 12);
     registerWord("image", 13, 14);
     registerWord("stimulate", 15, 16);
     registerWord("reflect", 17, 18);

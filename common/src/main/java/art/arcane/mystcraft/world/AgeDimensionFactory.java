@@ -540,11 +540,6 @@ public class AgeDimensionFactory {
       return DIM_TYPE_DARK;
     }
 
-    // Check celestial visibility - no sun AND no moon suggests a dark world
-    if (!director.isSunVisible() && !director.isMoonVisible()) {
-      return DIM_TYPE_DARK;
-    }
-
     // Default to normal
     return DIM_TYPE_NORMAL;
   }

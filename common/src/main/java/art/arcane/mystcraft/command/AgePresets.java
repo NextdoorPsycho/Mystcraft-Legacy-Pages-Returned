@@ -36,9 +36,6 @@ public final class AgePresets {
                 "mystcraft:biome_dark_forest", "mystcraft:biome_taiga", "mystcraft:biome_meadow",
                 "mystcraft:biome_flower_forest", "mystcraft:biome_savanna", "mystcraft:biome_swamp",
                 "mystcraft:biome_cherry_grove"),
-            pool(1, "mystcraft:sun_normal", "mystcraft:sun_large", "mystcraft:sun_small"),
-            pool(1, "mystcraft:moon_normal", "mystcraft:moon_large", "mystcraft:moon_full"),
-            pool(1, "mystcraft:stars_normal", "mystcraft:stars_twinkle", "mystcraft:stars_dense"),
             pool(4, "mystcraft:villages", "mystcraft:dungeons", "mystcraft:mineshafts",
                 "mystcraft:strongholds", "mystcraft:trail_ruins", "mystcraft:shipwrecks"),
             pool(2, "mystcraft:lush_caves", "mystcraft:deep_lakes", "mystcraft:perlin_worms",
@@ -48,8 +45,8 @@ public final class AgePresets {
 
     // 2. Lush Paradise - Bright, rainbow, many biomes
     register(new Preset("paradise", "Lush Paradise",
-        list("mystcraft:terrain_normal", "mystcraft:biome_medium", "mystcraft:sun_normal",
-            "mystcraft:moon_normal", "mystcraft:lighting_bright", "mystcraft:weather_normal",
+        list("mystcraft:terrain_normal", "mystcraft:biome_medium",
+            "mystcraft:lighting_bright", "mystcraft:weather_normal",
             "mystcraft:caves", "mystcraft:lush_caves", "mystcraft:huge_trees",
             "mystcraft:surface_lakes", "mystcraft:deep_lakes", "mystcraft:color_sky_natural",
             "mystcraft:color_grass_natural", "mystcraft:color_foliage_natural",
@@ -71,8 +68,8 @@ public final class AgePresets {
 
     // 3. Towering Peaks - Mountain peaks, snow, aurora, amplified
     register(new Preset("alpine", "Towering Peaks",
-        list("mystcraft:terrain_amplified", "mystcraft:biome_large", "mystcraft:sun_normal",
-            "mystcraft:moon_normal", "mystcraft:stars_normal", "mystcraft:lighting_normal",
+        list("mystcraft:terrain_amplified", "mystcraft:biome_large",
+            "mystcraft:lighting_normal",
             "mystcraft:weather_normal", "mystcraft:caves", "mystcraft:ravines",
             "mystcraft:deep_lakes", "mystcraft:dripstone_caves", "mystcraft:cloud_high",
             "mystcraft:color_sky_natural", "mystcraft:color_fog_natural", "mystcraft:perlin_worms"),
@@ -92,8 +89,8 @@ public final class AgePresets {
 
     // 4. Drowned World - Ocean-heavy with islands
     register(new Preset("archipelago", "Drowned World",
-        list("mystcraft:terrain_normal", "mystcraft:biome_large", "mystcraft:sun_normal",
-            "mystcraft:moon_normal", "mystcraft:stars_twinkle", "mystcraft:lighting_normal",
+        list("mystcraft:terrain_normal", "mystcraft:biome_large",
+            "mystcraft:lighting_normal",
             "mystcraft:weather_rain", "mystcraft:caves", "mystcraft:deep_lakes",
             "mystcraft:surface_lakes", "mystcraft:color_sky_natural", "mystcraft:color_turquoise",
             "mystcraft:color_water", "mystcraft:color_sapphire", "mystcraft:color_fog"),
@@ -112,8 +109,8 @@ public final class AgePresets {
 
     // 5. Scorched Sands - Hot, dry, desert/badlands mix
     register(new Preset("savanna", "Scorched Sands",
-        list("mystcraft:terrain_normal", "mystcraft:biome_large", "mystcraft:sun_large",
-            "mystcraft:moon_small", "mystcraft:stars_sparse", "mystcraft:lighting_bright",
+        list("mystcraft:terrain_normal", "mystcraft:biome_large",
+            "mystcraft:lighting_bright",
             "mystcraft:weather_off", "mystcraft:caves", "mystcraft:ravines", "mystcraft:color_amber",
             "mystcraft:color_sky", "mystcraft:color_gold", "mystcraft:color_fog",
             "mystcraft:env_scorched", "mystcraft:cloud_none", "mystcraft:env_shorter_days"),
@@ -133,8 +130,8 @@ public final class AgePresets {
 
     // 6. Ancient Woodland - Dense forests, dark forest, mushroom fields
     register(new Preset("woodland", "Ancient Woodland",
-        list("mystcraft:terrain_normal", "mystcraft:biome_huge", "mystcraft:sun_normal",
-            "mystcraft:moon_full", "mystcraft:stars_twinkle", "mystcraft:lighting_normal",
+        list("mystcraft:terrain_normal", "mystcraft:biome_huge",
+            "mystcraft:lighting_normal",
             "mystcraft:weather_rain", "mystcraft:caves", "mystcraft:lush_caves",
             "mystcraft:huge_trees", "mystcraft:surface_lakes", "mystcraft:color_sky_natural",
             "mystcraft:color_fog_natural", "mystcraft:color_jade", "mystcraft:color_grass",
@@ -160,8 +157,8 @@ public final class AgePresets {
 
     // 7. Sky Archipelago - Floating islands, bright sky, no sea
     register(new Preset("skylands", "Sky Archipelago",
-        list("mystcraft:terrain_skylands", "mystcraft:biome_small", "mystcraft:sun_large",
-            "mystcraft:moon_small", "mystcraft:lighting_bright", "mystcraft:weather_off",
+        list("mystcraft:terrain_skylands", "mystcraft:biome_small",
+            "mystcraft:lighting_bright", "mystcraft:weather_off",
             "mystcraft:floating_islands", "mystcraft:cloud_high", "mystcraft:color_light_blue",
             "mystcraft:color_sky", "mystcraft:color_ivory", "mystcraft:color_fog",
             "mystcraft:color_silver", "mystcraft:color_cloud", "mystcraft:rainbow",
@@ -170,7 +167,6 @@ public final class AgePresets {
             pool(6, "mystcraft:biome_plains", "mystcraft:biome_flower_forest", "mystcraft:biome_meadow",
                 "mystcraft:biome_birch_forest", "mystcraft:biome_forest", "mystcraft:biome_cherry_grove",
                 "mystcraft:biome_mushroom_fields"),
-            pool(1, "mystcraft:stars_twinkle", "mystcraft:stars_dense"),
             pool(2, "mystcraft:dense_ores", "mystcraft:huge_trees", "mystcraft:extra_diamond_ore",
                 "mystcraft:extra_emerald_ore"),
             pool(2, "mystcraft:crystal_formation", "mystcraft:obelisks",
@@ -181,7 +177,7 @@ public final class AgePresets {
 
     // 8. Vast Caverns - Underground cave terrain, dark, sculk
     register(new Preset("cavern", "Vast Caverns",
-        list("mystcraft:terrain_cave", "mystcraft:biome_medium", "mystcraft:stars_dark",
+        list("mystcraft:terrain_cave", "mystcraft:biome_medium",
             "mystcraft:lighting_dark", "mystcraft:weather_off", "mystcraft:caves",
             "mystcraft:dripstone_caves", "mystcraft:lush_caves", "mystcraft:deep_dark",
             "mystcraft:dense_ores", "mystcraft:perlin_worms", "mystcraft:color_dark_gray",
@@ -203,8 +199,8 @@ public final class AgePresets {
 
     // 9. Ethereal Realm - Lavender/jade fantasy, crystal formations
     register(new Preset("ethereal", "Ethereal Realm",
-        list("mystcraft:terrain_amplified", "mystcraft:biome_small", "mystcraft:sun_small",
-            "mystcraft:moon_small", "mystcraft:stars_dense", "mystcraft:lighting_bright",
+        list("mystcraft:terrain_amplified", "mystcraft:biome_small",
+            "mystcraft:lighting_bright",
             "mystcraft:weather_off", "mystcraft:floating_islands", "mystcraft:cloud_high",
             "mystcraft:color_lavender", "mystcraft:color_sky", "mystcraft:color_ivory",
             "mystcraft:color_fog", "mystcraft:color_violet", "mystcraft:color_cloud",
@@ -228,8 +224,8 @@ public final class AgePresets {
 
     // 10. Eternal Twilight - Perpetual dusk, slow time, eerie
     register(new Preset("twilight", "Eternal Twilight",
-        list("mystcraft:terrain_normal", "mystcraft:biome_medium", "mystcraft:sun_slow",
-            "mystcraft:moon_slow", "mystcraft:stars_twinkle", "mystcraft:lighting_normal",
+        list("mystcraft:terrain_normal", "mystcraft:biome_medium",
+            "mystcraft:lighting_normal",
             "mystcraft:weather_cloudy", "mystcraft:caves", "mystcraft:lush_caves",
             "mystcraft:surface_lakes", "mystcraft:color_indigo", "mystcraft:color_sky",
             "mystcraft:color_lavender", "mystcraft:color_fog", "mystcraft:color_olive",
@@ -251,8 +247,8 @@ public final class AgePresets {
 
     // 11. Fungal Kingdom - Mushroom biomes, huge trees, teal/lime
     register(new Preset("fungal", "Fungal Kingdom",
-        list("mystcraft:terrain_normal", "mystcraft:biome_huge", "mystcraft:sun_normal",
-            "mystcraft:moon_full", "mystcraft:stars_twinkle", "mystcraft:lighting_normal",
+        list("mystcraft:terrain_normal", "mystcraft:biome_huge",
+            "mystcraft:lighting_normal",
             "mystcraft:weather_rain", "mystcraft:caves", "mystcraft:lush_caves",
             "mystcraft:huge_trees", "mystcraft:surface_lakes", "mystcraft:deep_lakes",
             "mystcraft:color_sky_natural", "mystcraft:color_fog_natural", "mystcraft:color_lime",
@@ -273,8 +269,8 @@ public final class AgePresets {
 
     // 12. Ancient Civilization - Ancient cities, dark, bronze/olive theme
     register(new Preset("ancient", "Ancient Civilization",
-        list("mystcraft:terrain_normal", "mystcraft:biome_large", "mystcraft:sun_dark",
-            "mystcraft:moon_full", "mystcraft:stars_normal", "mystcraft:lighting_dark",
+        list("mystcraft:terrain_normal", "mystcraft:biome_large",
+            "mystcraft:lighting_dark",
             "mystcraft:weather_cloudy", "mystcraft:caves", "mystcraft:ravines",
             "mystcraft:deep_dark", "mystcraft:dripstone_caves", "mystcraft:perlin_worms",
             "mystcraft:color_bronze", "mystcraft:color_sky", "mystcraft:color_olive",
@@ -301,8 +297,8 @@ public final class AgePresets {
 
     // 13. Infernal Wastes - Nether terrain, lava sea, crimson
     register(new Preset("infernal", "Infernal Wastes",
-        list("mystcraft:terrain_nether", "mystcraft:biome_medium", "mystcraft:sun_dark",
-            "mystcraft:moon_dark", "mystcraft:stars_end", "mystcraft:lighting_nether",
+        list("mystcraft:terrain_nether", "mystcraft:biome_medium",
+            "mystcraft:lighting_nether",
             "mystcraft:weather_off", "mystcraft:sea_lava", "mystcraft:dense_ores",
             "mystcraft:color_crimson", "mystcraft:color_sky", "mystcraft:color_maroon",
             "mystcraft:color_fog", "mystcraft:env_scorched", "mystcraft:gradient_blood_sky",
@@ -323,7 +319,7 @@ public final class AgePresets {
 
     // 14. Void Rift - End terrain with void, floating islands
     register(new Preset("void_rift", "Void Rift",
-        list("mystcraft:terrain_end", "mystcraft:biome_medium", "mystcraft:stars_end",
+        list("mystcraft:terrain_end", "mystcraft:biome_medium",
             "mystcraft:lighting_dark", "mystcraft:weather_off", "mystcraft:color_indigo",
             "mystcraft:color_sky", "mystcraft:color_violet", "mystcraft:color_fog",
             "mystcraft:hide_horizon", "mystcraft:cloud_none", "mystcraft:env_static_time"),
@@ -341,8 +337,8 @@ public final class AgePresets {
 
     // 15. Blood Moon Rising - Crimson everything, lightning, creepy tendrils
     register(new Preset("blood_moon", "Blood Moon Rising",
-        list("mystcraft:terrain_normal", "mystcraft:biome_large", "mystcraft:sun_dark",
-            "mystcraft:moon_large", "mystcraft:stars_sparse", "mystcraft:lighting_dark",
+        list("mystcraft:terrain_normal", "mystcraft:biome_large",
+            "mystcraft:lighting_dark",
             "mystcraft:weather_storm", "mystcraft:caves", "mystcraft:ravines",
             "mystcraft:env_lightning", "mystcraft:cloud_low", "mystcraft:color_crimson",
             "mystcraft:color_sky", "mystcraft:color_maroon", "mystcraft:color_fog",
@@ -364,8 +360,8 @@ public final class AgePresets {
 
     // 16. Blighted Wasteland - Wasteland, scorched, meteors, no ores
     register(new Preset("desolation", "Blighted Wasteland",
-        list("mystcraft:terrain_flat", "mystcraft:biome_single", "mystcraft:sun_dark",
-            "mystcraft:moon_dark", "mystcraft:stars_dark", "mystcraft:lighting_dark",
+        list("mystcraft:terrain_flat", "mystcraft:biome_single",
+            "mystcraft:lighting_dark",
             "mystcraft:weather_storm", "mystcraft:no_ores", "mystcraft:biome_badlands",
             "mystcraft:env_scorched", "mystcraft:env_lightning", "mystcraft:color_maroon",
             "mystcraft:color_sky", "mystcraft:color_brown", "mystcraft:color_fog",
@@ -383,8 +379,8 @@ public final class AgePresets {
 
     // 17. Shattered Realm - Mixed biomes from all dimensions, unstable
     register(new Preset("chaos", "Shattered Realm",
-        list("mystcraft:terrain_checkerboard", "mystcraft:biome_grid", "mystcraft:sun_fast",
-            "mystcraft:moon_fast", "mystcraft:stars_twinkle", "mystcraft:lighting_normal",
+        list("mystcraft:terrain_checkerboard", "mystcraft:biome_grid",
+            "mystcraft:lighting_normal",
             "mystcraft:weather_fast", "mystcraft:caves", "mystcraft:ravines",
             "mystcraft:dense_ores", "mystcraft:floating_islands", "mystcraft:perlin_worms",
             "mystcraft:color_coral", "mystcraft:color_sky", "mystcraft:color_amber",
@@ -412,8 +408,8 @@ public final class AgePresets {
 
     // 18. Miner's Paradise - Dense ores, all extra ores, caves everywhere
     register(new Preset("miner", "Miner's Paradise",
-        list("mystcraft:terrain_normal", "mystcraft:biome_native", "mystcraft:sun_normal",
-            "mystcraft:moon_normal", "mystcraft:stars_normal", "mystcraft:lighting_normal",
+        list("mystcraft:terrain_normal", "mystcraft:biome_native",
+            "mystcraft:lighting_normal",
             "mystcraft:weather_normal", "mystcraft:caves", "mystcraft:ravines",
             "mystcraft:dripstone_caves", "mystcraft:lush_caves", "mystcraft:dense_ores",
             "mystcraft:perlin_worms", "mystcraft:extra_diamond_ore", "mystcraft:extra_iron_ore",
@@ -433,8 +429,8 @@ public final class AgePresets {
 
     // 19. Hoard of Ages - Many structures, huge biomes, long days
     register(new Preset("explorer", "Hoard of Ages",
-        list("mystcraft:terrain_normal", "mystcraft:biome_medium", "mystcraft:sun_normal",
-            "mystcraft:moon_normal", "mystcraft:stars_normal", "mystcraft:lighting_normal",
+        list("mystcraft:terrain_normal", "mystcraft:biome_medium",
+            "mystcraft:lighting_normal",
             "mystcraft:weather_normal", "mystcraft:caves", "mystcraft:ravines",
             "mystcraft:dense_ores", "mystcraft:perlin_worms", "mystcraft:extra_diamond_ore",
             "mystcraft:extra_gold_ore", "mystcraft:extra_emerald_ore", "mystcraft:color_sky_natural",
@@ -454,8 +450,8 @@ public final class AgePresets {
 
     // 20. Glacial Tomb - Ice age, blizzard, packed ice
     register(new Preset("frozen", "Glacial Tomb",
-        list("mystcraft:terrain_normal", "mystcraft:biome_large", "mystcraft:sun_small",
-            "mystcraft:moon_large", "mystcraft:lighting_bright", "mystcraft:weather_blizzard",
+        list("mystcraft:terrain_normal", "mystcraft:biome_large",
+            "mystcraft:lighting_bright", "mystcraft:weather_blizzard",
             "mystcraft:block_minecraft_packed_ice", "mystcraft:sea_blue_ice", "mystcraft:caves",
             "mystcraft:cloud_low", "mystcraft:color_light_blue", "mystcraft:color_sky",
             "mystcraft:color_silver", "mystcraft:color_fog", "mystcraft:color_sapphire",
@@ -465,7 +461,6 @@ public final class AgePresets {
                 "mystcraft:biome_snowy_plains", "mystcraft:biome_frozen_river",
                 "mystcraft:biome_snowy_taiga", "mystcraft:biome_grove", "mystcraft:biome_snowy_slopes",
                 "mystcraft:biome_snowy_beach"),
-            pool(1, "mystcraft:stars_twinkle", "mystcraft:stars_dense"),
             pool(3, "mystcraft:spikes", "mystcraft:crystal_formation", "mystcraft:obelisks",
                 "mystcraft:spheres", "mystcraft:dripstone_caves"),
             pool(2, "mystcraft:extra_diamond_ore", "mystcraft:extra_iron_ore",
@@ -478,8 +473,8 @@ public final class AgePresets {
 
     // 21. Sanctuary - Anti-PVP, star fissure, rainbow, lush
     register(new Preset("peaceful", "Sanctuary",
-        list("mystcraft:terrain_normal", "mystcraft:biome_medium", "mystcraft:sun_normal",
-            "mystcraft:moon_normal", "mystcraft:stars_twinkle", "mystcraft:lighting_bright",
+        list("mystcraft:terrain_normal", "mystcraft:biome_medium",
+            "mystcraft:lighting_bright",
             "mystcraft:weather_normal", "mystcraft:caves", "mystcraft:lush_caves",
             "mystcraft:surface_lakes", "mystcraft:deep_lakes", "mystcraft:huge_trees",
             "mystcraft:anti_pvp", "mystcraft:star_fissure", "mystcraft:rainbow",
@@ -501,8 +496,8 @@ public final class AgePresets {
 
     // 22. Temporal Rift - Fast time, accelerated, short days, blend terrain
     register(new Preset("temporal", "Temporal Rift",
-        list("mystcraft:terrain_blend", "mystcraft:biome_small", "mystcraft:sun_fast",
-            "mystcraft:moon_fast", "mystcraft:stars_twinkle", "mystcraft:lighting_normal",
+        list("mystcraft:terrain_blend", "mystcraft:biome_small",
+            "mystcraft:lighting_normal",
             "mystcraft:weather_fast", "mystcraft:caves", "mystcraft:ravines",
             "mystcraft:env_shorter_days", "mystcraft:env_accelerated", "mystcraft:color_amber",
             "mystcraft:color_sky", "mystcraft:color_gold", "mystcraft:color_fog",
@@ -528,8 +523,8 @@ public final class AgePresets {
 
     // 23. Horrible Instability - All negative effects, horrible instability
     register(new Preset("unstable", "Horrible Instability",
-        list("mystcraft:terrain_normal", "mystcraft:biome_small", "mystcraft:sun_fast",
-            "mystcraft:moon_fast", "mystcraft:stars_end", "mystcraft:lighting_dark",
+        list("mystcraft:terrain_normal", "mystcraft:biome_small",
+            "mystcraft:lighting_dark",
             "mystcraft:weather_storm", "mystcraft:caves", "mystcraft:ravines",
             "mystcraft:env_meteors", "mystcraft:env_lightning", "mystcraft:env_scorched",
             "mystcraft:env_explosions", "mystcraft:env_accelerated", "mystcraft:dense_ores",
@@ -556,13 +551,12 @@ public final class AgePresets {
 
     // 24. The Empty - Empty void, dark, star fissures only
     register(new Preset("void", "The Empty",
-        list("mystcraft:terrain_void", "mystcraft:biome_single", "mystcraft:sun_dark",
-            "mystcraft:moon_dark", "mystcraft:lighting_dark", "mystcraft:weather_off",
+        list("mystcraft:terrain_void", "mystcraft:biome_single",
+            "mystcraft:lighting_dark", "mystcraft:weather_off",
             "mystcraft:no_ores", "mystcraft:biome_plains", "mystcraft:color_black",
             "mystcraft:color_sky", "mystcraft:color_dark_gray", "mystcraft:color_fog",
             "mystcraft:hide_horizon", "mystcraft:cloud_none", "mystcraft:env_static_time"),
         list(
-            pool(1, "mystcraft:stars_end", "mystcraft:stars_sparse", "mystcraft:stars_dark"),
             pool(3, "mystcraft:star_fissure_feature", "mystcraft:crystal_formation",
                 "mystcraft:obelisks", "mystcraft:floating_islands", "mystcraft:spheres"),
             pool(1, "mystcraft:env_meteors", "mystcraft:env_lightning", "mystcraft:rainbow")
@@ -571,8 +565,8 @@ public final class AgePresets {
 
     // 25. Corrupted Overworld - Nether biomes on overworld terrain, storms, lava
     register(new Preset("corrupted", "Corrupted Overworld",
-        list("mystcraft:terrain_normal", "mystcraft:biome_medium", "mystcraft:sun_dark",
-            "mystcraft:moon_dark", "mystcraft:stars_end", "mystcraft:lighting_nether",
+        list("mystcraft:terrain_normal", "mystcraft:biome_medium",
+            "mystcraft:lighting_nether",
             "mystcraft:weather_storm", "mystcraft:block_minecraft_netherrack", "mystcraft:sea_lava",
             "mystcraft:caves", "mystcraft:ravines", "mystcraft:perlin_worms",
             "mystcraft:env_lightning", "mystcraft:env_scorched", "mystcraft:color_crimson",

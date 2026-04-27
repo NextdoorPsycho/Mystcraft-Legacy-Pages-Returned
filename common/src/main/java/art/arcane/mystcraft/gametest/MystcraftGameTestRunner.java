@@ -683,9 +683,7 @@ public final class MystcraftGameTestRunner {
         requiredSymbol("biome_plains"),
         requiredSymbol("weather_normal"),
         requiredSymbol("lighting_normal"),
-        requiredSymbol("sun"),
-        requiredSymbol("moon"),
-        requiredSymbol("stars_normal")
+        requiredSymbol("color_sky_natural")
     ), 12345L);
     AgeDirectorImpl director = builder.build();
 
@@ -701,12 +699,8 @@ public final class MystcraftGameTestRunner {
       helper.fail("AgeBuilder did not apply normal lighting");
       return;
     }
-    if (!director.isSunVisible() || !director.isMoonVisible() || !director.areStarsVisible()) {
-      helper.fail("AgeBuilder did not apply celestial visibility symbols");
-      return;
-    }
-    if (!"normal".equals(director.getStarType())) {
-      helper.fail("AgeBuilder did not apply normal stars");
+    if (!director.isSkyColorNatural()) {
+      helper.fail("AgeBuilder did not apply natural sky color");
       return;
     }
     helper.succeed();
@@ -863,10 +857,6 @@ public final class MystcraftGameTestRunner {
     director.setWeatherType("storm");
     director.setLightingType("bright");
     director.setBiomeController("single");
-    director.setSunVisible(false);
-    director.setMoonVisible(true);
-    director.setStarsVisible(true);
-    director.setStarType("dense");
     director.setMeteorsEnabled(true);
     director.setLightningEnabled(true);
     director.setExplosionsEnabled(true);
@@ -884,10 +874,6 @@ public final class MystcraftGameTestRunner {
     }
     if (!"single".equals(ageData.getBiomeController())) {
       helper.fail("AgeData did not persist biome controller");
-      return;
-    }
-    if (ageData.isSunVisible() || !ageData.isMoonVisible() || !ageData.areStarsVisible()) {
-      helper.fail("AgeData did not persist celestial visibility");
       return;
     }
     if (!ageData.areMeteorsEnabled() || !ageData.isLightningEnabled() || !ageData.areExplosionsEnabled()) {

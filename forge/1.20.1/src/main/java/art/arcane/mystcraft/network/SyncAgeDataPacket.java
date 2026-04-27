@@ -1,13 +1,11 @@
 package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
-import art.arcane.mystcraft.api.world.logic.ICelestial;
 import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Packet sent from server to client to sync Age data.
@@ -157,30 +155,6 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
       return config != null && config.contains("HorizonColor") ? config.getInt("HorizonColor") : -1;
     }
 
-    public static boolean isSunVisible(int ageUID) {
-      CompoundTag config = getConfig(ageUID);
-      return config == null || !config.contains("SunVisible") || config.getBoolean("SunVisible");
-    }
-
-    public static boolean isMoonVisible(int ageUID) {
-      CompoundTag config = getConfig(ageUID);
-      return config == null || !config.contains("MoonVisible") || config.getBoolean("MoonVisible");
-    }
-
-    public static boolean areStarsVisible(int ageUID) {
-      CompoundTag config = getConfig(ageUID);
-      return config == null || !config.contains("StarsVisible") || config.getBoolean("StarsVisible");
-    }
-
-    public static String getStarType(int ageUID) {
-      CompoundTag config = getConfig(ageUID);
-      if (config != null && config.contains("StarType")) {
-        String type = config.getString("StarType");
-        return type.isEmpty() ? "normal" : type;
-      }
-      return "normal";
-    }
-
     public static String getLightingType(int ageUID) {
       CompoundTag config = getConfig(ageUID);
       if (config != null && config.contains("LightingType")) {
@@ -230,18 +204,5 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
       return config != null && config.contains("HorizonHeight") ? config.getFloat("HorizonHeight") : 0.0f;
     }
 
-    /**
-     * Gets the list of celestial objects for the age.
-     * Currently returns empty list - celestials are not synced via packets yet.
-     * This will be populated when custom celestial symbols are implemented.
-     *
-     * @param ageUID The age UID
-     * @return List of celestials (may be empty)
-     */
-    public static List<ICelestial> getCelestials(int ageUID) {
-      // TODO: Implement celestial serialization/deserialization when celestial symbols are added
-      // For now, return empty list to use default sun/moon rendering
-      return Collections.emptyList();
-    }
   }
 }

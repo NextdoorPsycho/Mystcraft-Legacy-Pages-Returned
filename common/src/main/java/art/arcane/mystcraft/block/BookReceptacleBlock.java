@@ -1,12 +1,15 @@
 package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
+import art.arcane.mystcraft.network.MystcraftNetwork;
+import art.arcane.mystcraft.network.OpenLecternBookPacket;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.util.BlockInteractionCompat;
 import art.arcane.mystcraft.util.CodecCompat;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -34,18 +37,35 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The Book Receptacle block.
- * Holds a descriptive book and creates a portal when attached to a crystal.
- * Can be placed on any face of a crystal block.
+ * The Book Receptacle block — a thin platform that mounts on any face of a
+ * Crystal block and accepts a Linkbook or Agebook to fire the portal frame.
+ * <p>
+ * The {@link #FACING} property records which face of the supporting Crystal the
+ * receptacle is attached to (i.e. the direction <em>away</em> from that
+ * Crystal). Five orientations are valid:
+ * <ul>
+ *   <li>{@code FACING=UP} — sits on top of a floor-mounted Crystal.</li>
+ *   <li>{@code FACING=NORTH/SOUTH/EAST/WEST} — clings to a wall-mounted Crystal.</li>
+ * </ul>
+ * Ceiling mounting ({@code FACING=DOWN}) is intentionally disallowed: the
+ * placed book would render upside down with no clean visual treatment.
+ * <p>
+ * Right-click behaviour:
+ * <ul>
+ *   <li>Empty hand + book inside → opens the book screen for reading/editing the link.</li>
+ *   <li>Sneak + empty hand + book inside → retrieves the book (and tears down the portal).</li>
+ *   <li>Holding a Linkbook/Agebook on an empty receptacle → places it (firing the portal).</li>
+ * </ul>
  */
 public class BookReceptacleBlock extends BaseEntityBlock implements BlockInteractionCompat {
 
   public static final MapCodec<BookReceptacleBlock> CODEC = CodecCompat.simpleCodec(BookReceptacleBlock::new);
   public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
-  // Shapes for each facing direction (thin block against the crystal)
+  // Per-face platform shapes — a 6-thick slab on the side touching the Crystal.
+  // The slab sits on the face OPPOSITE to FACING, since FACING points away from
+  // the Crystal.
   private static final VoxelShape SHAPE_UP = Block.box(0, 0, 0, 16, 6, 16);
-  private static final VoxelShape SHAPE_DOWN = Block.box(0, 10, 0, 16, 16, 16);
   private static final VoxelShape SHAPE_NORTH = Block.box(0, 0, 10, 16, 16, 16);
   private static final VoxelShape SHAPE_SOUTH = Block.box(0, 0, 0, 16, 16, 6);
   private static final VoxelShape SHAPE_WEST = Block.box(10, 0, 0, 16, 16, 16);
@@ -69,20 +89,30 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
   public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
     return switch (state.getValue(FACING)) {
       case UP -> SHAPE_UP;
-      case DOWN -> SHAPE_DOWN;
       case NORTH -> SHAPE_NORTH;
       case SOUTH -> SHAPE_SOUTH;
       case WEST -> SHAPE_WEST;
       case EAST -> SHAPE_EAST;
+      default -> SHAPE_UP; // DOWN is rejected at placement; defensive fallback
     };
   }
 
+  /**
+   * Validate placement up front: the clicked block must be a Crystal and the
+   * resulting orientation cannot be ceiling-mount. Returning {@code null}
+   * cancels placement entirely so we never temporarily place a doomed block.
+   */
+  @Nullable
   @Override
   public BlockState getStateForPlacement(BlockPlaceContext context) {
     Direction facing = context.getClickedFace();
-    // Cannot place facing down (book would be upside down on top of crystal)
     if (facing == Direction.DOWN) {
-      return null;
+      return null; // Ceiling-mount disallowed
+    }
+    BlockPos placedAt = context.getClickedPos();
+    BlockPos supportPos = placedAt.relative(facing.getOpposite());
+    if (!context.getLevel().getBlockState(supportPos).is(ModBlocks.CRYSTAL.get())) {
+      return null; // Must mount on a Crystal
     }
     return defaultBlockState().setValue(FACING, facing);
   }
@@ -91,18 +121,18 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
   public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
     Direction facing = state.getValue(FACING);
     BlockPos crystalPos = pos.relative(facing.getOpposite());
-    BlockState crystalState = level.getBlockState(crystalPos);
-    return crystalState.is(ModBlocks.CRYSTAL.get());
+    return level.getBlockState(crystalPos).is(ModBlocks.CRYSTAL.get());
   }
 
+  /**
+   * Pop off if the supporting Crystal is removed.
+   */
   @Override
-  public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+  public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
+                                LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
     Direction facing = state.getValue(FACING);
-    if (direction == facing.getOpposite()) {
-      // The crystal behind us changed
-      if (!neighborState.is(ModBlocks.CRYSTAL.get())) {
-        return Blocks.AIR.defaultBlockState();
-      }
+    if (direction == facing.getOpposite() && !neighborState.is(ModBlocks.CRYSTAL.get())) {
+      return Blocks.AIR.defaultBlockState();
     }
     return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
   }
@@ -130,32 +160,49 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
   }
 
   @NotNull
-  public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-    if (level.isClientSide) {
-      return InteractionResult.SUCCESS;
-    }
-
-    BlockEntity blockEntity = level.getBlockEntity(pos);
-    if (!(blockEntity instanceof BookReceptacleBlockEntity receptacle)) {
+  public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
+                               InteractionHand hand, BlockHitResult hit) {
+    BlockEntity be = level.getBlockEntity(pos);
+    if (!(be instanceof BookReceptacleBlockEntity receptacle)) {
       return InteractionResult.PASS;
     }
 
     ItemStack held = player.getItemInHand(hand);
 
+    // --- Receptacle has a book ---
     if (receptacle.hasBook()) {
-      // Book is in receptacle - retrieve it
+      // Sneak + empty hand → take the book back (also shuts the portal down)
+      if (player.isShiftKeyDown() && held.isEmpty()) {
+        if (!level.isClientSide) {
+          ItemStack book = receptacle.takeBook();
+          if (!player.getInventory().add(book)) {
+            player.drop(book, false);
+          }
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
+      }
+      // Empty hand → open the book. Server sends the actual screen-open packet
+      // so the client receives an up-to-date book ItemStack with full NBT.
       if (held.isEmpty()) {
-        player.setItemInHand(hand, receptacle.getBook());
-        receptacle.setBook(ItemStack.EMPTY);
-        return InteractionResult.CONSUME;
+        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+          MystcraftNetwork.sendToPlayer(new OpenLecternBookPacket(pos, receptacle.getBook()), serverPlayer);
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
       }
-    } else {
-      // No book in receptacle - try to place one
-      if (!held.isEmpty() && BookReceptacleBlockEntity.isValidPortalActivator(held)) {
-        receptacle.setBook(held.copy());
-        player.setItemInHand(hand, ItemStack.EMPTY);
-        return InteractionResult.CONSUME;
+      return InteractionResult.PASS;
+    }
+
+    // --- Empty receptacle: try to insert a book to fire the portal ---
+    if (BookReceptacleBlockEntity.isValidPortalActivator(held)) {
+      if (!level.isClientSide) {
+        ItemStack inserted = held.copy();
+        inserted.setCount(1);
+        receptacle.setBook(inserted);
+        if (!player.getAbilities().instabuild) {
+          held.shrink(1);
+        }
       }
+      return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     return InteractionResult.PASS;
@@ -164,8 +211,7 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
   @Override
   public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
     if (!state.is(newState.getBlock())) {
-      BlockEntity blockEntity = level.getBlockEntity(pos);
-      if (blockEntity instanceof BookReceptacleBlockEntity receptacle) {
+      if (level.getBlockEntity(pos) instanceof BookReceptacleBlockEntity receptacle) {
         receptacle.dropContents();
         level.updateNeighbourForOutputSignal(pos, this);
       }
@@ -180,8 +226,7 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
 
   @Override
   public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
-    BlockEntity blockEntity = level.getBlockEntity(pos);
-    if (blockEntity instanceof BookReceptacleBlockEntity receptacle) {
+    if (level.getBlockEntity(pos) instanceof BookReceptacleBlockEntity receptacle) {
       return receptacle.getAnalogOutputSignal();
     }
     return 0;

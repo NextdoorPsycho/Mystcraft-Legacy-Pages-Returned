@@ -58,7 +58,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   private RegistryObject<Block> inkMixer;
   private RegistryObject<Block> bookBinder;
   private RegistryObject<Block> bookReceptacle;
-  private RegistryObject<Block> bookstand;
   private RegistryObject<Block> linkModifier;
   private RegistryObject<Block> writingDesk;
   private RegistryObject<Block> crystal;
@@ -82,7 +81,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   private RegistryObject<Item> inkMixerItem;
   private RegistryObject<Item> bookBinderItem;
   private RegistryObject<Item> bookReceptacleItem;
-  private RegistryObject<Item> bookstandItem;
   private RegistryObject<Item> linkModifierItem;
   private RegistryObject<Item> writingDeskItem;
   private RegistryObject<Item> crystalItem;
@@ -92,7 +90,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   private RegistryObject<BlockEntityType<InkMixerBlockEntity>> inkMixerBE;
   private RegistryObject<BlockEntityType<BookBinderBlockEntity>> bookBinderBE;
   private RegistryObject<BlockEntityType<BookReceptacleBlockEntity>> bookReceptacleBE;
-  private RegistryObject<BlockEntityType<BookstandBlockEntity>> bookstandBE;
   private RegistryObject<BlockEntityType<WritingDeskBlockEntity>> writingDeskBE;
   private RegistryObject<BlockEntityType<StarFissureBlockEntity>> starFissureBE;
   private RegistryObject<BlockEntityType<LinkModifierBlockEntity>> linkModifierBE;
@@ -180,8 +177,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
         () -> new BookBinderBlock(BlockDefinitions.BOOK_BINDER));
     bookReceptacle = MystcraftForgeRegistries.BLOCKS.register("blockbookreceptacle",
         () -> new BookReceptacleBlock(BlockDefinitions.BOOK_RECEPTACLE));
-    bookstand = MystcraftForgeRegistries.BLOCKS.register("blockbookstand",
-        () -> new BookstandBlock(BlockDefinitions.BOOKSTAND));
     linkModifier = MystcraftForgeRegistries.BLOCKS.register("blocklinkmodifier",
         () -> new LinkModifierBlock(BlockDefinitions.LINK_MODIFIER));
     writingDesk = MystcraftForgeRegistries.BLOCKS.register("writingdesk",
@@ -232,8 +227,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
         () -> new BlockItem(bookBinder.get(), ItemDefinitions.blockItem()));
     bookReceptacleItem = MystcraftForgeRegistries.ITEMS.register("blockbookreceptacle",
         () -> new BlockItem(bookReceptacle.get(), ItemDefinitions.blockItem()));
-    bookstandItem = MystcraftForgeRegistries.ITEMS.register("blockbookstand",
-        () -> new BlockItem(bookstand.get(), ItemDefinitions.blockItem()));
     linkModifierItem = MystcraftForgeRegistries.ITEMS.register("blocklinkmodifier",
         () -> new BlockItem(linkModifier.get(), ItemDefinitions.blockItem()));
     writingDeskItem = MystcraftForgeRegistries.ITEMS.register("writingdesk",
@@ -251,8 +244,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
         () -> BlockEntityType.Builder.of(BookBinderBlockEntity::new, bookBinder.get()).build(null));
     bookReceptacleBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("book_receptacle",
         () -> BlockEntityType.Builder.of(BookReceptacleBlockEntity::new, bookReceptacle.get()).build(null));
-    bookstandBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("bookstand",
-        () -> BlockEntityType.Builder.of(BookstandBlockEntity::new, bookstand.get()).build(null));
     writingDeskBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("writing_desk",
         () -> BlockEntityType.Builder.of(WritingDeskBlockEntity::new, writingDesk.get()).build(null));
     starFissureBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("star_fissure",
@@ -341,7 +332,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
     ModBlocks.INK_MIXER = inkMixer;
     ModBlocks.BOOK_BINDER = bookBinder;
     ModBlocks.BOOK_RECEPTACLE = bookReceptacle;
-    ModBlocks.BOOKSTAND = bookstand;
     ModBlocks.LINK_MODIFIER = linkModifier;
     ModBlocks.WRITING_DESK = writingDesk;
     ModBlocks.CRYSTAL = crystal;
@@ -365,7 +355,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
     ModItems.INK_MIXER_ITEM = inkMixerItem;
     ModItems.BOOK_BINDER_ITEM = bookBinderItem;
     ModItems.BOOK_RECEPTACLE_ITEM = bookReceptacleItem;
-    ModItems.BOOKSTAND_ITEM = bookstandItem;
     ModItems.LINK_MODIFIER_ITEM = linkModifierItem;
     ModItems.WRITING_DESK_ITEM = writingDeskItem;
     ModItems.CRYSTAL_ITEM = crystalItem;
@@ -375,7 +364,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
     ModBlockEntities.INK_MIXER = inkMixerBE;
     ModBlockEntities.BOOK_BINDER = bookBinderBE;
     ModBlockEntities.BOOK_RECEPTACLE = bookReceptacleBE;
-    ModBlockEntities.BOOKSTAND = bookstandBE;
     ModBlockEntities.WRITING_DESK = writingDeskBE;
     ModBlockEntities.STAR_FISSURE = starFissureBE;
     ModBlockEntities.LINK_MODIFIER = linkModifierBE;

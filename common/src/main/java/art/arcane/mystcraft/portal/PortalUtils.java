@@ -3,6 +3,7 @@ package art.arcane.mystcraft.portal;
 import art.arcane.mystcraft.block.BookReceptacleBlock;
 import art.arcane.mystcraft.block.CrystalBlock;
 import art.arcane.mystcraft.block.LinkPortalBlock;
+import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
 import art.arcane.mystcraft.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -12,396 +13,302 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * Utility class for portal management.
- * Handles portal creation, validation, and destruction.
+ * Portal management — frame discovery, ignition, and teardown.
+ *
+ * <h3>Design</h3>
+ * <ul>
+ *   <li>The portal lies in the plane perpendicular to the receptacle's facing
+ *       axis: {@code FACING=UP/DOWN → AXIS=Y} (horizontal portal),
+ *       {@code FACING=NORTH/SOUTH → AXIS=Z}, {@code FACING=EAST/WEST → AXIS=X}.</li>
+ *   <li>Portal blocks are placed by a 2-D flood-fill bounded by Crystal frame
+ *       blocks. Frame blocks act as walls — the BFS does not propagate
+ *       through them — so any closed loop of Crystals encloses a fillable
+ *       interior of any shape (rectangular, L-shaped, donut-shaped, …).</li>
+ *   <li>If the flood-fill exceeds {@link #MAX_PORTAL_BLOCKS}, the frame is
+ *       considered open and ignition silently aborts (player keeps the book in
+ *       the receptacle but no portal blocks are placed).</li>
+ *   <li>Receptacle discovery from any portal/crystal block is a 6-direction
+ *       BFS through connected portal-structure blocks. There is no per-block
+ *       "back-pointer" to track.</li>
+ * </ul>
+ *
+ * <p>All operations are server-side and bail early on the client.
  */
 public final class PortalUtils {
+
+  /** Hard cap on portal blocks placed in a single ignition. Larger frames are rejected. */
+  private static final int MAX_PORTAL_BLOCKS = 1024;
+
+  /** Hard cap on BFS visits during receptacle discovery / teardown. */
+  private static final int MAX_DISCOVERY_VISITS = 4096;
 
   private PortalUtils() {
   }
 
-  /**
-   * Gets the portal block.
-   */
+  // ---------------------------------------------------------------------------
+  // Public API
+  // ---------------------------------------------------------------------------
+
   public static Block getPortalBlock() {
     return ModBlocks.LINK_PORTAL.get();
   }
 
-  /**
-   * Gets the crystal frame block.
-   */
   public static Block getFrameBlock() {
     return ModBlocks.CRYSTAL.get();
   }
 
-  /**
-   * Gets the receptacle block.
-   */
   public static Block getReceptacleBlock() {
     return ModBlocks.BOOK_RECEPTACLE.get();
   }
 
-  /**
-   * Checks if a block state is a valid portal/frame block.
-   *
-   * @return 1 if valid, 0 if not
-   */
-  public static int isValidLinkPortalBlock(BlockState state) {
-    if (state.getBlock() == getFrameBlock()) return 1;
-    if (state.getBlock() == getPortalBlock()) return 1;
-    if (state.getBlock() == getReceptacleBlock()) return 1;
-    return 0;
+  /** @return {@code true} if the block is a frame, portal, or receptacle. */
+  public static boolean isPortalStructure(BlockState state) {
+    Block b = state.getBlock();
+    return b == getFrameBlock() || b == getPortalBlock() || b == getReceptacleBlock();
   }
 
   /**
-   * Gets the source direction from a portal-related block state.
-   */
-  private static Direction getBlockFacing(BlockState state) {
-    if (state.getBlock() == getFrameBlock()) {
-      return state.getValue(CrystalBlock.SOURCE_DIRECTION);
-    }
-    if (state.getBlock() == getPortalBlock()) {
-      return state.getValue(LinkPortalBlock.SOURCE_DIRECTION);
-    }
-    if (state.getBlock() == getReceptacleBlock()) {
-      return state.getValue(BookReceptacleBlock.FACING);
-    }
-    return Direction.DOWN;
-  }
-
-  /**
-   * Checks if a portal block is active (part of a portal).
-   */
-  private static boolean isBlockActive(BlockState state) {
-    if (state.getBlock() == getFrameBlock()) {
-      return state.getValue(CrystalBlock.ACTIVE);
-    }
-    if (state.getBlock() == getPortalBlock()) {
-      return state.getValue(LinkPortalBlock.ACTIVE);
-    }
-    return false;
-  }
-
-  /**
-   * Gets a state with direction and active flag set.
-   */
-  private static BlockState getDirectedState(BlockState state, Direction facing) {
-    if (state.getBlock() == getFrameBlock()) {
-      return state.setValue(CrystalBlock.ACTIVE, true)
-          .setValue(CrystalBlock.SOURCE_DIRECTION, facing);
-    }
-    if (state.getBlock() == getPortalBlock()) {
-      return state.setValue(LinkPortalBlock.ACTIVE, true)
-          .setValue(LinkPortalBlock.SOURCE_DIRECTION, facing);
-    }
-    return state;
-  }
-
-  /**
-   * Gets a state with active flag disabled.
-   */
-  private static BlockState getDisabledState(BlockState state) {
-    if (state.getBlock() == getFrameBlock()) {
-      return state.setValue(CrystalBlock.ACTIVE, false);
-    }
-    if (state.getBlock() == getPortalBlock()) {
-      return state.setValue(LinkPortalBlock.ACTIVE, false);
-    }
-    return state;
-  }
-
-  /**
-   * Validates a portal starting from the given position.
-   * Removes invalid portal blocks.
-   */
-  public static void validatePortal(Level level, BlockPos start) {
-    if (level.isClientSide) return;
-
-    List<BlockPos> blocks = new LinkedList<>();
-    blocks.add(start);
-    while (!blocks.isEmpty()) {
-      BlockPos pos = blocks.remove(0);
-      if (level.getBlockState(pos).getBlock() != getPortalBlock()) {
-        continue;
-      }
-      validatePortalBlock(level, pos, blocks);
-    }
-  }
-
-  /**
-   * Fires (activates) a portal from the receptacle position.
-   * Flood fill starts from the crystal behind the receptacle, not the receptacle itself.
+   * Light up the portal driven by the receptacle at {@code receptaclePos}.
+   * <p>
+   * Steps:
+   * <ol>
+   *   <li>Locate the supporting Crystal under the receptacle's mount face.</li>
+   *   <li>Flood-fill air cells in the plane perpendicular to the receptacle's
+   *       facing axis. Crystal frame blocks act as walls.</li>
+   *   <li>Mark every Crystal reachable from the receptacle as ACTIVE.</li>
+   * </ol>
+   * Safe to call repeatedly; redundant invocations are no-ops.
    */
   public static void firePortal(Level level, BlockPos receptaclePos) {
-    if (level.isClientSide) return;
-
+    if (level.isClientSide) {
+      return;
+    }
     BlockState receptacleState = level.getBlockState(receptaclePos);
-    BlockPos crystalPos = receptaclePos;
-    if (receptacleState.getBlock() == getReceptacleBlock()) {
-      Direction facing = receptacleState.getValue(BookReceptacleBlock.FACING);
-      crystalPos = receptaclePos.relative(facing.getOpposite());
+    if (!(receptacleState.getBlock() instanceof BookReceptacleBlock)) {
+      return;
+    }
+    Direction facing = receptacleState.getValue(BookReceptacleBlock.FACING);
+    BlockPos crystalSeed = receptaclePos.relative(facing.getOpposite());
+    if (!level.getBlockState(crystalSeed).is(getFrameBlock())) {
+      return; // Receptacle has lost its supporting crystal; ignition impossible.
     }
 
-    createPortalBlocks(level, crystalPos);
-    pathToReceptacle(level, receptaclePos);
+    fillPortalBlocks(level, crystalSeed, facing.getAxis());
+    activateConnectedCrystals(level, receptaclePos);
   }
 
   /**
-   * Shuts down (deactivates) a portal from the receptacle position.
+   * Tear down the portal owned by the receptacle at {@code receptaclePos}.
+   * <p>
+   * BFS from the receptacle through every connected portal-structure block.
+   * Portal blocks are removed; Crystals are deactivated but kept; the
+   * receptacle itself is left untouched (it's the source of truth).
+   * <p>
+   * Safe to call when no portal is currently lit.
    */
   public static void shutdownPortal(Level level, BlockPos receptaclePos) {
-    if (level.isClientSide) return;
-
-    depolarizeAll(level, receptaclePos);
-  }
-
-  /**
-   * Creates portal blocks in valid air spaces near the receptacle.
-   */
-  private static void createPortalBlocks(Level level, BlockPos start) {
-    LinkedList<BlockPos> toCheck = new LinkedList<>();
-    Stack<BlockPos> created = new Stack<>();
-    addSurrounding(toCheck, start);
-
-    while (!toCheck.isEmpty()) {
-      BlockPos pos = toCheck.remove(0);
-      expandPortal(level, pos, toCheck, created);
+    if (level.isClientSide) {
+      return;
     }
+    Set<BlockPos> visited = new HashSet<>();
+    Deque<BlockPos> queue = new ArrayDeque<>();
+    queue.add(receptaclePos);
 
-    // Validate newly created blocks
-    while (!created.isEmpty()) {
-      BlockPos pos = created.pop();
-      if (!checkPortalTension(level, pos)) {
-        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_NONE);
+    while (!queue.isEmpty() && visited.size() < MAX_DISCOVERY_VISITS) {
+      BlockPos pos = queue.poll();
+      if (!visited.add(pos)) {
+        continue;
       }
-    }
-  }
-
-  /**
-   * Paths all portal/crystal blocks to point toward the receptacle.
-   */
-  private static void pathToReceptacle(Level level, BlockPos receptaclePos) {
-    List<BlockPos> crystals = new LinkedList<>();
-    List<BlockPos> portals = new LinkedList<>();
-    List<BlockPos> repath = new LinkedList<>();
-    List<BlockPos> redraw = new LinkedList<>();
-    crystals.add(receptaclePos);
-
-    while (!portals.isEmpty() || !crystals.isEmpty()) {
-      while (!crystals.isEmpty()) {
-        BlockPos pos = crystals.remove(0);
-        directPortal(level, pos.east(), Direction.WEST, crystals, portals);
-        directPortal(level, pos.above(), Direction.DOWN, crystals, portals);
-        directPortal(level, pos.south(), Direction.NORTH, crystals, portals);
-        directPortal(level, pos.west(), Direction.EAST, crystals, portals);
-        directPortal(level, pos.below(), Direction.UP, crystals, portals);
-        directPortal(level, pos.north(), Direction.SOUTH, crystals, portals);
-        redraw.add(pos);
+      BlockState state = level.getBlockState(pos);
+      if (!isPortalStructure(state)) {
+        continue;
       }
-      if (!portals.isEmpty()) {
-        BlockPos pos = portals.remove(0);
-        directPortal(level, pos.east(), Direction.WEST, crystals, portals);
-        directPortal(level, pos.above(), Direction.DOWN, crystals, portals);
-        directPortal(level, pos.south(), Direction.NORTH, crystals, portals);
-        directPortal(level, pos.west(), Direction.EAST, crystals, portals);
-        directPortal(level, pos.below(), Direction.UP, crystals, portals);
-        directPortal(level, pos.north(), Direction.SOUTH, crystals, portals);
-        if (level.getBlockState(pos).getBlock() == getPortalBlock()) {
-          repath.add(pos);
+      if (state.getBlock() == getFrameBlock()) {
+        if (state.getValue(CrystalBlock.ACTIVE)) {
+          level.setBlock(pos, state.setValue(CrystalBlock.ACTIVE, false), Block.UPDATE_CLIENTS);
         }
+      } else if (state.getBlock() == getPortalBlock()) {
+        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
       }
-    }
-
-    // Validate repathable blocks
-    while (!repath.isEmpty()) {
-      BlockPos pos = repath.remove(0);
-      if (level.getBlockState(pos).getBlock() == getPortalBlock()) {
-        if (!isPortalBlockStable(level, pos)) {
-          level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_NONE);
-          addSurrounding(repath, pos);
-        } else {
-          redraw.add(pos);
-        }
-      }
-    }
-
-    // Update all affected blocks
-    for (BlockPos pos : redraw) {
-      if (level.hasChunkAt(pos)) {
-        BlockState state = level.getBlockState(pos);
-        level.sendBlockUpdated(pos, state, state, Block.UPDATE_ALL);
-      }
+      enqueueAllNeighbors(queue, visited, pos);
     }
   }
 
   /**
-   * Depolarizes all portal blocks connected to the receptacle.
+   * Re-validate the portal containing {@code start}. Triggered from
+   * {@link LinkPortalBlock#neighborChanged} and {@link CrystalBlock#neighborChanged}
+   * when an adjacent block mutates externally (player breaks frame, removes
+   * receptacle, …): if the controlling receptacle can no longer be reached
+   * <em>or</em> has no book, the entire structure is collapsed.
    */
-  private static void depolarizeAll(Level level, BlockPos start) {
-    List<BlockPos> blocks = new LinkedList<>();
-    List<BlockPos> notify = new LinkedList<>();
-    blocks.add(start);
-
-    while (!blocks.isEmpty()) {
-      BlockPos pos = blocks.remove(0);
-      depolarize(level, pos.east(), blocks);
-      depolarize(level, pos.above(), blocks);
-      depolarize(level, pos.south(), blocks);
-      depolarize(level, pos.west(), blocks);
-      depolarize(level, pos.below(), blocks);
-      depolarize(level, pos.north(), blocks);
-      notify.add(pos);
+  public static void validatePortal(Level level, BlockPos start) {
+    if (level.isClientSide) {
+      return;
     }
-
-    for (BlockPos pos : notify) {
-      if (level.hasChunkAt(pos)) {
-        BlockState state = level.getBlockState(pos);
-        level.sendBlockUpdated(pos, state, state, Block.UPDATE_ALL);
+    BlockEntity be = findReceptacle(level, start);
+    if (be instanceof BookReceptacleBlockEntity receptacle && receptacle.hasBook()) {
+      return; // Still anchored to a live receptacle — leave alone.
+    }
+    // No live receptacle reachable: tear everything down from this point.
+    Set<BlockPos> visited = new HashSet<>();
+    Deque<BlockPos> queue = new ArrayDeque<>();
+    queue.add(start);
+    while (!queue.isEmpty() && visited.size() < MAX_DISCOVERY_VISITS) {
+      BlockPos pos = queue.poll();
+      if (!visited.add(pos)) {
+        continue;
+      }
+      BlockState state = level.getBlockState(pos);
+      if (state.getBlock() == getPortalBlock()) {
+        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+        enqueueAllNeighbors(queue, visited, pos);
+      } else if (state.getBlock() == getFrameBlock() && state.getValue(CrystalBlock.ACTIVE)) {
+        level.setBlock(pos, state.setValue(CrystalBlock.ACTIVE, false), Block.UPDATE_CLIENTS);
+        enqueueAllNeighbors(queue, visited, pos);
       }
     }
   }
 
   /**
-   * Checks if a portal block is stable (has tension and connects to receptacle).
+   * Find the controlling receptacle for any portal/crystal block via BFS
+   * through connected portal-structure blocks. Returns {@code null} if no
+   * receptacle is reachable within {@link #MAX_DISCOVERY_VISITS} blocks.
+   * <p>
+   * Used by {@link LinkPortalBlock#entityInside} (teleport routing) and the
+   * client-side portal tint colour handler.
    */
-  private static boolean isPortalBlockStable(Level level, BlockPos pos) {
-    if (level.isClientSide) return true;
-    if (!checkPortalTension(level, pos)) return false;
-    return findReceptacle(level, pos) != null;
+  public static BlockEntity findReceptacle(Level level, BlockPos start) {
+    Set<BlockPos> visited = new HashSet<>();
+    Deque<BlockPos> queue = new ArrayDeque<>();
+    queue.add(start);
+
+    while (!queue.isEmpty() && visited.size() < MAX_DISCOVERY_VISITS) {
+      BlockPos pos = queue.poll();
+      if (!visited.add(pos)) {
+        continue;
+      }
+      BlockState state = level.getBlockState(pos);
+      if (!isPortalStructure(state)) {
+        continue;
+      }
+      if (state.getBlock() == getReceptacleBlock()) {
+        return level.getBlockEntity(pos);
+      }
+      enqueueAllNeighbors(queue, visited, pos);
+    }
+    return null;
   }
 
-  /**
-   * Checks if a portal block has enough support (tension).
-   * A portal block needs at least 2 axes with valid neighbors on opposite sides.
-   */
-  private static boolean checkPortalTension(Level level, BlockPos pos) {
-    if (level.isClientSide) return true;
-
-    int score = 0;
-    // X axis
-    if (isValidLinkPortalBlock(level.getBlockState(pos.east())) > 0 &&
-        isValidLinkPortalBlock(level.getBlockState(pos.west())) > 0) {
-      ++score;
-    }
-    // Y axis
-    if (isValidLinkPortalBlock(level.getBlockState(pos.above())) > 0 &&
-        isValidLinkPortalBlock(level.getBlockState(pos.below())) > 0) {
-      ++score;
-    }
-    // Z axis
-    if (isValidLinkPortalBlock(level.getBlockState(pos.south())) > 0 &&
-        isValidLinkPortalBlock(level.getBlockState(pos.north())) > 0) {
-      ++score;
-    }
-    return score > 1;
-  }
+  // ---------------------------------------------------------------------------
+  // Internal: ignition pipeline
+  // ---------------------------------------------------------------------------
 
   /**
-   * Validates a single portal block and removes it if invalid.
+   * 2-D flood-fill of air cells in the plane perpendicular to {@code axis},
+   * seeded from the in-plane neighbors of {@code crystalSeed}.
+   * <p>
+   * Frame blocks (and existing portal/receptacle blocks) act as walls: the
+   * BFS does not enter them. The air cells reached form the portal interior.
+   * <p>
+   * If the fill exceeds {@link #MAX_PORTAL_BLOCKS} the frame is considered
+   * open (leaks to outside) and the entire ignition is aborted — no portal
+   * blocks are placed.
    */
-  private static void validatePortalBlock(Level level, BlockPos pos, Collection<BlockPos> blocks) {
-    if (!isPortalBlockStable(level, pos)) {
-      level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-      addSurrounding(blocks, pos);
+  private static void fillPortalBlocks(Level level, BlockPos crystalSeed, Direction.Axis axis) {
+    Set<BlockPos> tentative = new HashSet<>();
+    Set<BlockPos> visited = new HashSet<>();
+    Deque<BlockPos> frontier = new ArrayDeque<>();
+    addInPlaneNeighbors(frontier, crystalSeed, axis);
+
+    while (!frontier.isEmpty()) {
+      BlockPos pos = frontier.poll();
+      if (!visited.add(pos)) {
+        continue;
+      }
+      BlockState s = level.getBlockState(pos);
+      if (!s.isAir()) {
+        continue; // Walls (frame, existing portal, anything solid) stop the fill.
+      }
+      tentative.add(pos);
+      if (tentative.size() > MAX_PORTAL_BLOCKS) {
+        // Frame is open — air leaks to the outside world. Abort silently.
+        return;
+      }
+      addInPlaneNeighbors(frontier, pos, axis);
     }
-  }
 
-  /**
-   * Adds all surrounding positions (6 direct + 12 edge neighbors) to a collection.
-   */
-  private static void addSurrounding(Collection<BlockPos> set, BlockPos pos) {
-    // Direct neighbors
-    set.add(pos.east());
-    set.add(pos.west());
-    set.add(pos.above());
-    set.add(pos.below());
-    set.add(pos.south());
-    set.add(pos.north());
+    if (tentative.isEmpty()) {
+      return;
+    }
 
-    // Edge neighbors
-    set.add(pos.east().above());
-    set.add(pos.west().above());
-    set.add(pos.east().below());
-    set.add(pos.west().below());
-    set.add(pos.south().above());
-    set.add(pos.north().above());
-    set.add(pos.south().below());
-    set.add(pos.north().below());
-    set.add(pos.east().south());
-    set.add(pos.west().south());
-    set.add(pos.east().north());
-    set.add(pos.west().north());
-  }
-
-  /**
-   * Expands portal by creating a portal block at an air position if valid.
-   */
-  private static void expandPortal(Level level, BlockPos pos, Collection<BlockPos> set, Stack<BlockPos> created) {
-    if (!level.getBlockState(pos).isAir()) return;
-
-    int score = isValidLinkPortalBlock(level.getBlockState(pos.east())) +
-        isValidLinkPortalBlock(level.getBlockState(pos.west())) +
-        isValidLinkPortalBlock(level.getBlockState(pos.above())) +
-        isValidLinkPortalBlock(level.getBlockState(pos.below())) +
-        isValidLinkPortalBlock(level.getBlockState(pos.south())) +
-        isValidLinkPortalBlock(level.getBlockState(pos.north()));
-
-    if (score > 1) {
-      level.setBlock(pos, getPortalBlock().defaultBlockState(), Block.UPDATE_NONE);
-      created.push(pos);
-      addSurrounding(set, pos);
+    BlockState portalState = getPortalBlock().defaultBlockState().setValue(LinkPortalBlock.AXIS, axis);
+    for (BlockPos pos : tentative) {
+      level.setBlock(pos, portalState, Block.UPDATE_NONE);
+    }
+    // Single batched client update.
+    for (BlockPos pos : tentative) {
+      BlockState updated = level.getBlockState(pos);
+      level.sendBlockUpdated(pos, updated, updated, Block.UPDATE_ALL);
     }
   }
 
   /**
-   * Directs a portal/crystal block toward the receptacle.
+   * BFS from the receptacle through connected portal-structure blocks and mark
+   * every Crystal as ACTIVE. Crystals that aren't part of the lit network keep
+   * their default unlit state.
    */
-  private static void directPortal(Level level, BlockPos pos, Direction facing, List<BlockPos> crystals, List<BlockPos> portals) {
-    BlockState state = level.getBlockState(pos);
-    if (isValidLinkPortalBlock(state) == 0) return;
-    if (isBlockActive(state)) return;
+  private static void activateConnectedCrystals(Level level, BlockPos receptaclePos) {
+    Set<BlockPos> visited = new HashSet<>();
+    Deque<BlockPos> queue = new ArrayDeque<>();
+    queue.add(receptaclePos);
 
-    level.setBlock(pos, getDirectedState(state, facing), Block.UPDATE_NONE);
-    if (state.getBlock() == getPortalBlock()) {
-      portals.add(pos);
-    } else {
-      crystals.add(pos);
+    while (!queue.isEmpty() && visited.size() < MAX_DISCOVERY_VISITS) {
+      BlockPos pos = queue.poll();
+      if (!visited.add(pos)) {
+        continue;
+      }
+      BlockState state = level.getBlockState(pos);
+      if (!isPortalStructure(state)) {
+        continue;
+      }
+      if (state.getBlock() == getFrameBlock() && !state.getValue(CrystalBlock.ACTIVE)) {
+        level.setBlock(pos, state.setValue(CrystalBlock.ACTIVE, true), Block.UPDATE_CLIENTS);
+      }
+      enqueueAllNeighbors(queue, visited, pos);
     }
   }
 
-  /**
-   * Depolarizes (deactivates) a portal/crystal block.
-   */
-  private static void depolarize(Level level, BlockPos pos, List<BlockPos> blocks) {
-    BlockState state = level.getBlockState(pos);
-    if (isValidLinkPortalBlock(state) == 0) return;
-    if (!isBlockActive(state)) return;
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
 
-    level.setBlock(pos, state.getBlock().defaultBlockState(), Block.UPDATE_NONE);
-    if (state.getBlock() == getPortalBlock() && !isPortalBlockStable(level, pos)) {
-      level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+  /**
+   * Add the four neighbors of {@code pos} that lie in the plane perpendicular
+   * to {@code axis}. Used by the planar flood-fill so propagation never
+   * leaves the portal plane.
+   */
+  private static void addInPlaneNeighbors(Deque<BlockPos> queue, BlockPos pos, Direction.Axis axis) {
+    for (Direction d : Direction.values()) {
+      if (d.getAxis() == axis) {
+        continue;
+      }
+      queue.add(pos.relative(d));
     }
-    blocks.add(pos);
   }
 
-  /**
-   * Finds the receptacle block entity by following the direction chain from a portal block.
-   */
-  public static BlockEntity findReceptacle(Level level, BlockPos pos) {
-    HashSet<BlockPos> visited = new HashSet<>();
-    BlockState state = level.getBlockState(pos);
-
-    while (state.getBlock() != getReceptacleBlock()) {
-      if (isValidLinkPortalBlock(state) == 0) return null;
-      if (!isBlockActive(state)) return null;
-      if (!visited.add(pos)) return null; // Cycle detection
-
-      pos = pos.relative(getBlockFacing(state));
-      state = level.getBlockState(pos);
+  /** Add all six face-neighbors of {@code pos} (BFS over the structure). */
+  private static void enqueueAllNeighbors(Deque<BlockPos> queue, Set<BlockPos> visited, BlockPos pos) {
+    for (Direction d : Direction.values()) {
+      BlockPos next = pos.relative(d);
+      if (!visited.contains(next)) {
+        queue.add(next);
+      }
     }
-    return level.getBlockEntity(pos);
   }
 }

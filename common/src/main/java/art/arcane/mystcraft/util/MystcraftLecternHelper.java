@@ -46,7 +46,7 @@ public final class MystcraftLecternHelper {
   private static Method openForBlockMethod;
 
   /**
-   * Opens the book screen for a book placed on a block (lectern/bookstand).
+   * Opens the book screen for a book placed on a vanilla Lectern.
    * Must be called on the client side only.
    * Uses reflection to avoid loading client classes on the server.
    *

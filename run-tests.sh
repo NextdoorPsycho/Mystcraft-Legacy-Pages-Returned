@@ -19,6 +19,8 @@ FAST_SUITES=(core book_travel book_crafting age_creation)
 SELECTED_SUITES=()
 
 PLATFORM_KEYS=(fabric forge)
+PLATFORM_NAMES=(Fabric Forge)
+PLATFORM_VERSIONS=("1.20.1" "1.20.1")
 PLATFORM_LABELS=("Fabric 1.20.1" "Forge 1.20.1")
 PLATFORM_TASKS=(":fabric:1.20.1:runGametest" ":forge:1.20.1:runGametest")
 PLATFORM_STATUS=(PENDING PENDING)
@@ -33,7 +35,7 @@ usage() {
   echo "fast: core, book_travel, book_crafting, age_creation"
   echo "full/all: every suite, including commands and world_rules"
   echo ""
-  echo "Policy: any GameTest failure, skipped test, ignored test, disabled test, or missing pass summary fails the run."
+  echo "Policy: any GameTest failure, skipped test, ignored test, disabled test, fatal server log marker, or missing pass summary fails the run."
 }
 
 suite_count() {
@@ -41,7 +43,7 @@ suite_count() {
     core) echo 1 ;;
     book_travel) echo 5 ;;
     book_crafting) echo 6 ;;
-    age_creation) echo 4 ;;
+    age_creation) echo 5 ;;
     world_rules) echo 2 ;;
     commands) echo 1 ;;
     *) echo 0 ;;
@@ -186,7 +188,7 @@ print_graph() {
   echo ""
   echo -e "${BOLD}Test Status Graph${NC}"
   echo "Selected suites: $(suite_list)"
-  echo "Policy: fail on failed, skipped, ignored, disabled, or missing GameTest summaries."
+  echo "Policy: fail on failed, skipped, ignored, disabled, fatal server log markers, or missing GameTest summaries."
   printf "Overall  [%s] %d/%d passed, %d failed\n" \
     "$(progress_bar "$total_passed" "$total_expected" "PASS")" \
     "$total_passed" "$total_expected" "$total_failed"
@@ -224,8 +226,72 @@ print_graph() {
   echo ""
 }
 
+print_final_summary() {
+  local expected="$1"
+  local final_status="$2"
+  local index
+
+  echo ""
+  echo -e "${BOLD}Final Platform Statuses${NC}"
+  echo "Selected suites: $(suite_list)"
+  echo "Policy: fail on failed, skipped, ignored, disabled, fatal server log markers, or missing GameTest summaries."
+  printf "%-10s %-9s %-8s %-15s %-10s %s\n" \
+    "Platform" "Version" "Status" "Selected" "Reported" "Details"
+  printf "%-10s %-9s %-8s %-15s %-10s %s\n" \
+    "--------" "-------" "------" "--------" "--------" "-------"
+
+  for ((index = 0; index < ${#PLATFORM_KEYS[@]}; index++)); do
+    local status="${PLATFORM_STATUS[$index]}"
+    local color
+    color="$(status_color "$status")"
+    local passed="${PLATFORM_PASSED[$index]}"
+    local reported="${PLATFORM_REPORTED[$index]}"
+    local details="${PLATFORM_DETAILS[$index]}"
+    if [[ -z "$details" ]]; then
+      details="-"
+    fi
+
+    printf "%-10s %-9s %b%-8s%b %2d/%-11d %-10d %s\n" \
+      "${PLATFORM_NAMES[$index]}" \
+      "${PLATFORM_VERSIONS[$index]}" \
+      "$color" "$status" "$NC" \
+      "$passed" "$expected" "$reported" "$details"
+  done
+
+  echo ""
+  if [[ "$final_status" -eq 0 ]]; then
+    echo -e "${GREEN}Final result: PASS${NC}"
+  else
+    echo -e "${RED}Final result: FAIL${NC}"
+  fi
+}
+
 skip_pattern() {
   echo '(<skipped|GameTest[^[:alnum:]]+.*(skip|skipped|ignored|disabled)|game test[^[:alnum:]]+.*(skip|skipped|ignored|disabled)|tests?[^[:alnum:]]+.*(skip|skipped|ignored|disabled)|(skip|skipped|ignored|disabled)[^[:alnum:]]+.*(GameTest|game test|tests?))'
+}
+
+fatal_log_pattern() {
+  echo '(POI data mismatch|Exception stopping the server|Game test server crashed|FAILED REQUIRED TEST)'
+}
+
+clean_gametest_worlds() {
+  local paths=(
+    "${SCRIPT_DIR}/fabric/1.20.1/runs/gametest/world"
+    "${SCRIPT_DIR}/forge/1.20.1/runs/gametest/world"
+    "${SCRIPT_DIR}/forge/1.20.1/runs/world"
+  )
+  local path
+
+  echo -e "${CYAN}Cleaning generated GameTest worlds${NC}"
+  for path in "${paths[@]}"; do
+    if [[ -e "$path" ]]; then
+      rm -rf "$path"
+      echo "  removed ${path}"
+    else
+      echo "  already clean ${path}"
+    fi
+  done
+  echo ""
 }
 
 analyze_log() {
@@ -234,9 +300,11 @@ analyze_log() {
   local expected="$3"
   local passed_count
   local skip_count
+  local fatal_count
 
   passed_count="$(sed -nE 's/.*All ([0-9]+) required tests passed.*/\1/p' "$log_file" | tail -n 1)"
   skip_count="$(grep -Eic "$(skip_pattern)" "$log_file" || true)"
+  fatal_count="$(grep -Eic "$(fatal_log_pattern)" "$log_file" || true)"
 
   ANALYZED_REPORTED="${passed_count:-0}"
   ANALYZED_SELECTED_PASSED=0
@@ -257,6 +325,23 @@ analyze_log() {
     ANALYZED_DETAIL="${skip_count} skipped/ignored/disabled test marker(s)"
     return
   fi
+
+  if [[ "$fatal_count" -gt 0 ]]; then
+    ANALYZED_DETAIL="${fatal_count} fatal server log marker(s)"
+    return
+  fi
+
+  local suite
+  for suite in "${SELECTED_SUITES[@]}"; do
+    local expected_suite_count
+    local discovered_suite_count
+    expected_suite_count="$(suite_count "$suite")"
+    discovered_suite_count="$(sed -nE "s/.*Running test batch '${suite}(:[0-9]+)?' \\(([0-9]+) tests\\).*/\\2/p" "$log_file" | awk '{ total += $1 } END { print total + 0 }')"
+    if [[ "$discovered_suite_count" -lt "$expected_suite_count" ]]; then
+      ANALYZED_DETAIL="${suite} discovered ${discovered_suite_count}/${expected_suite_count} tests"
+      return
+    fi
+  done
 
   if [[ "$passed_count" -lt "$expected" ]]; then
     ANALYZED_DETAIL="reported ${passed_count}, expected at least ${expected}"
@@ -297,7 +382,7 @@ run_platform() {
   PLATFORM_PASSED[$index]="$ANALYZED_SELECTED_PASSED"
   PLATFORM_REPORTED[$index]="$ANALYZED_REPORTED"
   if [[ "$ANALYZED_STATUS" == "PASS" ]]; then
-    PLATFORM_DETAILS[$index]="complete"
+    PLATFORM_DETAILS[$index]="complete; log: ${log_file}"
   else
     PLATFORM_DETAILS[$index]="${ANALYZED_DETAIL}; log: ${log_file}"
   fi
@@ -331,6 +416,7 @@ echo -e "${CYAN}Running Mystcraft GameTests (${REQUESTED_SUITE})${NC}"
 echo "Logs: ${LOG_DIR}"
 echo ""
 
+clean_gametest_worlds
 print_graph "$EXPECTED_PER_PLATFORM"
 
 for ((i = 0; i < ${#PLATFORM_KEYS[@]}; i++)); do
@@ -349,4 +435,6 @@ if [[ "$FINAL_STATUS" -eq 0 ]]; then
 else
   echo -e "${RED}Tests failed (${REQUESTED_SUITE})${NC}"
 fi
+
+print_final_summary "$EXPECTED_PER_PLATFORM" "$FINAL_STATUS"
 exit "$FINAL_STATUS"

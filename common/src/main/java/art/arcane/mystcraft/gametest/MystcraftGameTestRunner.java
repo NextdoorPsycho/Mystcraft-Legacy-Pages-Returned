@@ -3,6 +3,7 @@ package art.arcane.mystcraft.gametest;
 import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
 import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.command.MystcraftCommands;
 import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.data.LinkFlags;
@@ -706,6 +707,122 @@ public final class MystcraftGameTestRunner {
     helper.succeed();
   }
 
+  public static void runAgebookWithEveryPageCreatesDimensionTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.AGE_CREATION)) {
+      return;
+    }
+    ServerLevel originLevel = helper.getLevel();
+    MinecraftServer server = originLevel.getServer();
+    ServerPlayer player = createMockServerPlayer(helper);
+    if (player == null) {
+      return;
+    }
+
+    List<IAgeSymbol> allSymbols = new ArrayList<>(SymbolRegistry.getAll());
+    allSymbols.removeIf(symbol -> symbol == null || symbol.getRegistryName() == null);
+    allSymbols.sort((left, right) -> left.getRegistryName().toString().compareTo(right.getRegistryName().toString()));
+    if (allSymbols.size() < 400) {
+      helper.fail("Expected hundreds of page symbols before every-page age test, found: " + allSymbols.size());
+      return;
+    }
+
+    List<ItemStack> pages = new ArrayList<>(allSymbols.size() + 1);
+    pages.add(Page.createLinkPage(LinkFlags.FOLLOWING));
+    Set<ResourceLocation> expectedSymbols = new java.util.HashSet<>();
+    for (IAgeSymbol symbol : allSymbols) {
+      ResourceLocation symbolId = symbol.getRegistryName();
+      expectedSymbols.add(symbolId);
+      pages.add(Page.createSymbolPage(symbolId));
+    }
+
+    ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
+    AgebookItem.create(agebook, player, pages, "Every Page Age");
+    AgebookItem agebookItem = (AgebookItem) ModItems.AGEBOOK.get();
+    if (agebookItem.getPageList(agebook).size() != pages.size()) {
+      helper.fail("Every-page Agebook did not retain its full page list before activation");
+      return;
+    }
+
+    BlockPos originPos = helper.absolutePos(new BlockPos(10, 2, 10));
+    ServerPlayerTeleport.teleport(player, originLevel, originPos.getX() + 0.5, originPos.getY(), originPos.getZ() + 0.5, 0.0F, 0.0F);
+    AgeManager ageManager = AgeManager.get(server);
+    Set<Integer> beforeAges = ageIdSet(ageManager);
+
+    agebookItem.activate(agebook, originLevel, player);
+    Integer ageUid = linkedAgeUid(agebook);
+    if (ageUid == null) {
+      helper.fail("Every-page Agebook did not receive an age UID");
+      return;
+    }
+    if (beforeAges.contains(ageUid)) {
+      helper.fail("Every-page Agebook reused an existing age UID: " + ageUid);
+      return;
+    }
+    if (AgebookItem.isNewAgebook(agebook)) {
+      helper.fail("Every-page Agebook stayed marked as new after activation");
+      return;
+    }
+
+    ServerLevel ageLevel = ageManager.getAgeLevel(server, ageUid);
+    if (ageLevel == null) {
+      helper.fail("Every-page Agebook UID did not resolve to a loaded age");
+      return;
+    }
+    // This stress age intentionally enables nearly every worldgen path. The
+    // GameTest only needs to prove creation/travel/page state, not persist the
+    // disposable stress world during server teardown.
+    ageLevel.noSave = true;
+    if (!AgeDimensionFactory.isMystcraftAge(ageLevel.dimension())) {
+      helper.fail("Every-page Agebook created a non-Mystcraft dimension: " + ageLevel.dimension().location());
+      return;
+    }
+    if (player.level() != ageLevel) {
+      helper.fail("Every-page Agebook created an age but did not link the player into it");
+      return;
+    }
+
+    AgeData ageData = AgeData.get(ageLevel);
+    if (!"Every Page Age".equals(ageData.getAgeName())) {
+      helper.fail("Every-page AgeData kept wrong name: " + ageData.getAgeName());
+      return;
+    }
+    if (!ageData.isSpawnSet()) {
+      helper.fail("Every-page AgeData did not set a spawn");
+      return;
+    }
+
+    List<ItemStack> storedPages = ageData.getPages();
+    if (storedPages.size() != pages.size()) {
+      helper.fail("Every-page AgeData stored " + storedPages.size() + " pages instead of " + pages.size());
+      return;
+    }
+
+    int linkPanelCount = 0;
+    Set<ResourceLocation> storedSymbols = new java.util.HashSet<>();
+    for (ItemStack page : storedPages) {
+      if (Page.isLinkPanel(page)) {
+        linkPanelCount++;
+        continue;
+      }
+      ResourceLocation storedSymbol = Page.getSymbol(page);
+      if (storedSymbol != null) {
+        storedSymbols.add(storedSymbol);
+      }
+    }
+    if (linkPanelCount != 1) {
+      helper.fail("Every-page AgeData stored " + linkPanelCount + " link panels instead of 1");
+      return;
+    }
+    if (storedSymbols.size() != expectedSymbols.size() || !storedSymbols.containsAll(expectedSymbols)) {
+      expectedSymbols.removeAll(storedSymbols);
+      ResourceLocation firstMissing = expectedSymbols.stream().findFirst().orElse(null);
+      helper.fail("Every-page AgeData lost symbol pages; missing count=" + expectedSymbols.size() + ", first=" + firstMissing);
+      return;
+    }
+
+    helper.succeed();
+  }
+
   public static void runMultipleAgebooksCreateDistinctAgesTest(GameTestHelper helper) {
     if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.AGE_CREATION)) {
       return;
@@ -939,11 +1056,9 @@ public final class MystcraftGameTestRunner {
     ServerLevel level = helper.getLevel();
     BlockPos inkMixerPos = new BlockPos(1, 1, 1);
     BlockPos bookBinderPos = new BlockPos(3, 1, 1);
-    BlockPos bookstandPos = new BlockPos(5, 1, 1);
 
     helper.setBlock(inkMixerPos, ModBlocks.INK_MIXER.get().defaultBlockState());
     helper.setBlock(bookBinderPos, ModBlocks.BOOK_BINDER.get().defaultBlockState());
-    helper.setBlock(bookstandPos, ModBlocks.BOOKSTAND.get().defaultBlockState());
 
     helper.runAtTickTime(5, () -> {
       if (!(level.getBlockEntity(helper.absolutePos(inkMixerPos)) instanceof InkMixerBlockEntity)) {
@@ -952,10 +1067,6 @@ public final class MystcraftGameTestRunner {
       }
       if (!(level.getBlockEntity(helper.absolutePos(bookBinderPos)) instanceof BookBinderBlockEntity)) {
         helper.fail("Book Binder block entity was not created");
-        return;
-      }
-      if (!(level.getBlockEntity(helper.absolutePos(bookstandPos)) instanceof art.arcane.mystcraft.blockentity.BookstandBlockEntity)) {
-        helper.fail("Bookstand block entity was not created");
         return;
       }
       helper.succeed();

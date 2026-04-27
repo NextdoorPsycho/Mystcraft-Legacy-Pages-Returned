@@ -3,7 +3,6 @@ package art.arcane.mystcraft.fabric;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.client.FabricAgeBlockColorHandler;
 import art.arcane.mystcraft.client.PocketHeadClientSync;
-import art.arcane.mystcraft.client.model.BookstandModel;
 import art.arcane.mystcraft.client.model.WritingDeskModel;
 import art.arcane.mystcraft.client.render.DrawableWordManager;
 import art.arcane.mystcraft.client.render.PageItemRendererBEWLR;
@@ -50,7 +49,6 @@ public class MystcraftFabricClient implements ClientModInitializer {
     ScreenRegistry.register(FabricRegistries.PORTFOLIO_MENU.get(), PortfolioScreen::new);
 
     // Register block entity renderers
-    BlockEntityRendererRegistry.register(FabricRegistries.BOOKSTAND_BE.get(), BookstandRenderer::new);
     BlockEntityRendererRegistry.register(FabricRegistries.STAR_FISSURE_BE.get(), StarFissureRenderer::new);
     BlockEntityRendererRegistry.register(FabricRegistries.WRITING_DESK_BE.get(), WritingDeskRenderer::new);
     BlockEntityRendererRegistry.register(FabricRegistries.BOOK_RECEPTACLE_BE.get(), BookReceptacleRenderer::new);
@@ -63,7 +61,6 @@ public class MystcraftFabricClient implements ClientModInitializer {
     EntityRendererRegistry.register(FabricRegistries.COLORED_LIGHTNING_ENTITY.get(), ColoredLightningRenderer::new);
 
     // Register model layers
-    EntityModelLayerRegistry.registerModelLayer(BookstandModel.LAYER_LOCATION, BookstandModel::createBodyLayer);
     EntityModelLayerRegistry.registerModelLayer(WritingDeskModel.LAYER_LOCATION, WritingDeskModel::createBodyLayer);
 
     // Register item colors

@@ -24,7 +24,6 @@ public final class ModItems {
   public static Supplier<Item> INK_MIXER_ITEM;
   public static Supplier<Item> BOOK_BINDER_ITEM;
   public static Supplier<Item> BOOK_RECEPTACLE_ITEM;
-  public static Supplier<Item> BOOKSTAND_ITEM;
   public static Supplier<Item> LINK_MODIFIER_ITEM;
   public static Supplier<Item> WRITING_DESK_ITEM;
   public static Supplier<Item> CRYSTAL_ITEM;

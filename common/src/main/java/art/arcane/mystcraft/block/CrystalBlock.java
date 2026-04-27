@@ -2,35 +2,37 @@ package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.portal.PortalUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 
 /**
- * The Crystal block.
- * Powers book receptacles to create portals.
- * When active, becomes part of the portal structure.
+ * The Crystal block. Forms the frame of a Mystcraft portal.
+ * <p>
+ * The crystal is non-directional; orientation is irrelevant since the visual
+ * model is symmetric. Only the {@link #ACTIVE} property is tracked, which:
+ * <ul>
+ *   <li>Lights the block when part of a live portal frame.</li>
+ *   <li>Drives the analog redstone signal.</li>
+ *   <li>Marks crystals participating in portal generation/teardown.</li>
+ * </ul>
+ * Receptacle attachment, frame discovery, and chain validation are all handled
+ * by {@link PortalUtils} via breadth-first traversal — no per-block direction
+ * pointer is required.
  */
 public class CrystalBlock extends Block {
 
   public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
-  public static final DirectionProperty SOURCE_DIRECTION = BlockStateProperties.FACING;
 
   public CrystalBlock(Properties properties) {
     super(properties);
-    registerDefaultState(stateDefinition.any()
-        .setValue(ACTIVE, false)
-        .setValue(SOURCE_DIRECTION, Direction.DOWN));
+    registerDefaultState(stateDefinition.any().setValue(ACTIVE, false));
   }
 
   /**
-   * Gets the light level based on active state.
-   * This is handled via block properties in 1.20.
+   * Light level used by the block properties — bright when active, dim otherwise.
    */
   public static int getLightLevel(BlockState state) {
     return state.getValue(ACTIVE) ? 8 : 0;
@@ -38,22 +40,20 @@ public class CrystalBlock extends Block {
 
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-    builder.add(ACTIVE, SOURCE_DIRECTION);
+    builder.add(ACTIVE);
   }
 
   @Override
-  public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
-    if (level.isClientSide) {
+  public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+                              BlockPos neighborPos, boolean movedByPiston) {
+    if (level.isClientSide || !state.getValue(ACTIVE)) {
       return;
     }
 
-    if (!state.getValue(ACTIVE)) {
-      return;
-    }
-
-    // Follow the full direction chain to verify the receptacle is still reachable.
+    // If the live portal we belong to can no longer reach a receptacle,
+    // tear it down. validatePortal() handles the cascading cleanup.
     if (PortalUtils.findReceptacle(level, pos) == null) {
-      level.setBlock(pos, defaultBlockState(), 2);
+      level.setBlock(pos, defaultBlockState(), Block.UPDATE_CLIENTS);
       PortalUtils.validatePortal(level, pos);
     }
   }

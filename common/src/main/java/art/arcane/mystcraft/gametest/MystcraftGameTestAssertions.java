@@ -68,7 +68,6 @@ public final class MystcraftGameTestAssertions {
     assertBlockRegistered("writingdesk");
     assertBlockRegistered("blockinkmixer");
     assertBlockRegistered("blockbookbinder");
-    assertBlockRegistered("blockbookstand");
     assertBlockRegistered("blockbookreceptacle");
   }
 

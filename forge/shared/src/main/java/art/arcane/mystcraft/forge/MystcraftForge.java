@@ -213,8 +213,6 @@ public class MystcraftForge {
     public static void onRegisterLayerDefinitions(net.minecraftforge.client.event.EntityRenderersEvent.RegisterLayerDefinitions event) {
       Mystcraft.LOGGER.info("[Mystcraft] Registering model layers");
 
-      event.registerLayerDefinition(art.arcane.mystcraft.client.model.BookstandModel.LAYER_LOCATION,
-          art.arcane.mystcraft.client.model.BookstandModel::createBodyLayer);
       event.registerLayerDefinition(art.arcane.mystcraft.client.model.WritingDeskModel.LAYER_LOCATION,
           art.arcane.mystcraft.client.model.WritingDeskModel::createBodyLayer);
     }
@@ -223,8 +221,6 @@ public class MystcraftForge {
     public static void onRegisterRenderers(net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
       Mystcraft.LOGGER.info("[Mystcraft] Registering renderers");
 
-      event.registerBlockEntityRenderer(ModBlockEntities.BOOKSTAND.get(),
-          art.arcane.mystcraft.client.renderer.BookstandRenderer::new);
       event.registerBlockEntityRenderer(ModBlockEntities.STAR_FISSURE.get(),
           art.arcane.mystcraft.client.renderer.StarFissureRenderer::new);
       event.registerBlockEntityRenderer(ModBlockEntities.WRITING_DESK.get(),

@@ -14,7 +14,6 @@ public final class ModBlockEntities {
   public static Supplier<BlockEntityType<InkMixerBlockEntity>> INK_MIXER;
   public static Supplier<BlockEntityType<BookBinderBlockEntity>> BOOK_BINDER;
   public static Supplier<BlockEntityType<BookReceptacleBlockEntity>> BOOK_RECEPTACLE;
-  public static Supplier<BlockEntityType<BookstandBlockEntity>> BOOKSTAND;
   public static Supplier<BlockEntityType<WritingDeskBlockEntity>> WRITING_DESK;
   public static Supplier<BlockEntityType<StarFissureBlockEntity>> STAR_FISSURE;
   public static Supplier<BlockEntityType<LinkModifierBlockEntity>> LINK_MODIFIER;

@@ -18,10 +18,6 @@
     "facing=up": {
       "model": "mystcraft:block/bookreceptacle_model",
       "x": 270
-    },
-    "facing=down": {
-      "model": "mystcraft:block/bookreceptacle_model",
-      "x": 90
     }
   }
 }

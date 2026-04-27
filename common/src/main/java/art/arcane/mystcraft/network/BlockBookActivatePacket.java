@@ -1,6 +1,5 @@
 package art.arcane.mystcraft.network;
 
-import art.arcane.mystcraft.blockentity.BookstandBlockEntity;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import net.minecraft.core.BlockPos;
@@ -11,9 +10,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
 
 /**
- * Packet sent from client to server to activate a book on a block entity (bookstand or vanilla lectern).
+ * Packet sent from client to server to activate a book on a vanilla Lectern.
  * This is sent when the player clicks the "Link" button in the book GUI
- * that was opened from a bookstand or lectern.
+ * that was opened from a lectern.
  */
 public class BlockBookActivatePacket {
 
@@ -47,13 +46,11 @@ public class BlockBookActivatePacket {
         return;
       }
 
-      // Get the block entity - can be BookstandBlockEntity or vanilla LecternBlockEntity
+      // Get the block entity - vanilla LecternBlockEntity
       BlockEntity be = player.level().getBlockEntity(packet.blockPos);
       ItemStack book;
 
-      if (be instanceof BookstandBlockEntity bookstand) {
-        book = bookstand.getBook();
-      } else if (be instanceof LecternBlockEntity lectern) {
+      if (be instanceof LecternBlockEntity lectern) {
         book = lectern.getBook();
       } else {
         return;

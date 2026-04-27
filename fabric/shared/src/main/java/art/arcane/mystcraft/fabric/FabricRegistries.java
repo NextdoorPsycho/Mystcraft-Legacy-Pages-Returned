@@ -81,11 +81,6 @@ public final class FabricRegistries {
           .mapColor(MapColor.STONE)
           .strength(3.5F)
           .requiresCorrectToolForDrops()));
-  public static final Supplier<Block> BOOKSTAND = registerBlock("blockbookstand",
-      new BookstandBlock(BlockBehaviour.Properties.of()
-          .mapColor(MapColor.WOOD)
-          .strength(2.0F)
-          .requiresCorrectToolForDrops()));
   public static final Supplier<Block> LINK_MODIFIER = registerBlock("blocklinkmodifier",
       new LinkModifierBlock(BlockBehaviour.Properties.of()
           .mapColor(MapColor.STONE)
@@ -149,7 +144,6 @@ public final class FabricRegistries {
   public static final Supplier<Item> INK_MIXER_ITEM = registerBlockItem("blockinkmixer", INK_MIXER);
   public static final Supplier<Item> BOOK_BINDER_ITEM = registerBlockItem("blockbookbinder", BOOK_BINDER);
   public static final Supplier<Item> BOOK_RECEPTACLE_ITEM = registerBlockItem("blockbookreceptacle", BOOK_RECEPTACLE);
-  public static final Supplier<Item> BOOKSTAND_ITEM = registerBlockItem("blockbookstand", BOOKSTAND);
   public static final Supplier<Item> LINK_MODIFIER_ITEM = registerBlockItem("blocklinkmodifier", LINK_MODIFIER);
   public static final Supplier<Item> WRITING_DESK_ITEM = registerBlockItem("writingdesk", WRITING_DESK);
   public static final Supplier<Item> CRYSTAL_ITEM = registerBlockItem("blockcrystal", CRYSTAL);
@@ -203,9 +197,6 @@ public final class FabricRegistries {
   public static final Supplier<BlockEntityType<BookReceptacleBlockEntity>> BOOK_RECEPTACLE_BE =
       registerBlockEntity("book_receptacle",
           FabricBlockEntityTypeBuilder.create(BookReceptacleBlockEntity::new, BOOK_RECEPTACLE.get()).build());
-  public static final Supplier<BlockEntityType<BookstandBlockEntity>> BOOKSTAND_BE =
-      registerBlockEntity("bookstand",
-          FabricBlockEntityTypeBuilder.create(BookstandBlockEntity::new, BOOKSTAND.get()).build());
   public static final Supplier<BlockEntityType<WritingDeskBlockEntity>> WRITING_DESK_BE =
       registerBlockEntity("writing_desk",
           FabricBlockEntityTypeBuilder.create(WritingDeskBlockEntity::new, WRITING_DESK.get()).build());
@@ -348,7 +339,7 @@ public final class FabricRegistries {
     // Villagers
     PoiType poiType = PointOfInterestHelper.register(
         new ResourceLocation(Mystcraft.MOD_ID, "archivist"),
-        1, 1, BOOKSTAND.get());
+        1, 1, BOOK_BINDER.get());
     ARCHIVIST_POI = () -> poiType;
 
     VillagerProfession profession = new VillagerProfession(
@@ -396,7 +387,6 @@ public final class FabricRegistries {
           output.accept(INK_MIXER_ITEM.get());
           output.accept(BOOK_BINDER_ITEM.get());
           output.accept(LINK_MODIFIER_ITEM.get());
-          output.accept(BOOKSTAND_ITEM.get());
           output.accept(BOOK_RECEPTACLE_ITEM.get());
           output.accept(CRYSTAL_ITEM.get());
           output.accept(DECAY_ITEM.get());
@@ -455,7 +445,6 @@ public final class FabricRegistries {
     ModBlocks.INK_MIXER = INK_MIXER;
     ModBlocks.BOOK_BINDER = BOOK_BINDER;
     ModBlocks.BOOK_RECEPTACLE = BOOK_RECEPTACLE;
-    ModBlocks.BOOKSTAND = BOOKSTAND;
     ModBlocks.LINK_MODIFIER = LINK_MODIFIER;
     ModBlocks.WRITING_DESK = WRITING_DESK;
     ModBlocks.CRYSTAL = CRYSTAL;
@@ -479,7 +468,6 @@ public final class FabricRegistries {
     ModItems.INK_MIXER_ITEM = INK_MIXER_ITEM;
     ModItems.BOOK_BINDER_ITEM = BOOK_BINDER_ITEM;
     ModItems.BOOK_RECEPTACLE_ITEM = BOOK_RECEPTACLE_ITEM;
-    ModItems.BOOKSTAND_ITEM = BOOKSTAND_ITEM;
     ModItems.LINK_MODIFIER_ITEM = LINK_MODIFIER_ITEM;
     ModItems.WRITING_DESK_ITEM = WRITING_DESK_ITEM;
     ModItems.CRYSTAL_ITEM = CRYSTAL_ITEM;
@@ -489,7 +477,6 @@ public final class FabricRegistries {
     ModBlockEntities.INK_MIXER = INK_MIXER_BE;
     ModBlockEntities.BOOK_BINDER = BOOK_BINDER_BE;
     ModBlockEntities.BOOK_RECEPTACLE = BOOK_RECEPTACLE_BE;
-    ModBlockEntities.BOOKSTAND = BOOKSTAND_BE;
     ModBlockEntities.WRITING_DESK = WRITING_DESK_BE;
     ModBlockEntities.STAR_FISSURE = STAR_FISSURE_BE;
     ModBlockEntities.LINK_MODIFIER = LINK_MODIFIER_BE;

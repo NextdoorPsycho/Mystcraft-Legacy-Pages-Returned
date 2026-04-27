@@ -132,12 +132,12 @@ public final class MystcraftRegistries {
   // ==================== Villager Registrations ====================
 
   /**
-   * POI type for the Archivist workstation (Bookstand).
+   * POI type for the Archivist workstation (Book Binder).
    */
   public static final RegistryObject<PoiType> ARCHIVIST_POI = POI_TYPES.register(
       "archivist",
       () -> new PoiType(
-          ImmutableSet.copyOf(ModBlocks.BOOKSTAND.get().getStateDefinition().getPossibleStates()),
+          ImmutableSet.copyOf(ModBlocks.BOOK_BINDER.get().getStateDefinition().getPossibleStates()),
           1, 1
       )
   );
@@ -185,7 +185,6 @@ public final class MystcraftRegistries {
                 output.accept(ModItems.INK_MIXER_ITEM.get());
                 output.accept(ModItems.BOOK_BINDER_ITEM.get());
                 output.accept(ModItems.LINK_MODIFIER_ITEM.get());
-                output.accept(ModItems.BOOKSTAND_ITEM.get());
                 output.accept(ModItems.BOOK_RECEPTACLE_ITEM.get());
                 output.accept(ModItems.CRYSTAL_ITEM.get());
                 output.accept(ModItems.DECAY_ITEM.get());

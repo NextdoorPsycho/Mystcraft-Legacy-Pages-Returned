@@ -29,7 +29,7 @@ TLDR: You can do just about everything you could before, it supports newer
 
 ## Current Status (Important Notes)
 
-- Block renderers for portals, writing desks, bookstands/lecterns, and similar
+- Block renderers for portals, writing desks, vanilla lecterns, and similar
   display blocks are not working as intended yet.
   Visuals may appear incorrect or missing while the backend logic still
   functions.
@@ -73,7 +73,7 @@ TLDR: You can do just about everything you could before, it supports newer
 - Link Modifier: Applies link flags to books. (Borked)
 - Book Receptacle: Holds a book and activates a portal. (Borked)
 - Crystal Block + Link Portal: Portal frame and portal surface. (Borked)
-- Bookstand/Lectern: Displays and opens books. (Borked)
+- Lectern (Vanilla): Displays and opens Mystcraft books. (Borked)
 
 ---
 

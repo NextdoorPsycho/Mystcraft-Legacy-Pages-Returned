@@ -3,7 +3,7 @@
 ## Current Limitations
 
 - Some block renderers are not working as intended yet:
-    - Portals, Writing Desks, Bookstands/Lecterns, and display blocks.
+    - Portals, Writing Desks, vanilla Lecterns, and display blocks.
     - Backend logic works, visuals may be incorrect or missing.
 
 ## Gameplay Notes

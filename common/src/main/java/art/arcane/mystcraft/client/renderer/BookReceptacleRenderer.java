@@ -57,26 +57,22 @@ public class BookReceptacleRenderer implements BlockEntityRenderer<BookReceptacl
     // Translate to center of block (matches old: x + 0.5, y + 0.5, z + 0.5)
     poseStack.translate(0.5, 0.5, 0.5);
 
-    // Apply rotation based on facing - matches old RenderBookReceptacle switch
+    // Apply rotation based on facing — matches the per-face platform shape so
+    // the book sits flat on the receptacle slab. DOWN is excluded because the
+    // block disallows ceiling mounting (see BookReceptacleBlock).
     switch (facing) {
-      case DOWN -> {
-        // No rotation needed (default orientation)
-      }
       case UP -> {
         poseStack.mulPose(Axis.XN.rotationDegrees(90));
         poseStack.mulPose(Axis.YP.rotationDegrees(90));
       }
-      case NORTH -> {
-        poseStack.mulPose(Axis.YN.rotationDegrees(90));
-      }
-      case SOUTH -> {
-        poseStack.mulPose(Axis.YP.rotationDegrees(90));
-      }
+      case NORTH -> poseStack.mulPose(Axis.YN.rotationDegrees(90));
+      case SOUTH -> poseStack.mulPose(Axis.YP.rotationDegrees(90));
+      case EAST -> poseStack.mulPose(Axis.YP.rotationDegrees(180));
       case WEST -> {
-        // No Y rotation (matches old default)
+        // No Y rotation — default orientation.
       }
-      case EAST -> {
-        poseStack.mulPose(Axis.YP.rotationDegrees(180));
+      default -> {
+        // DOWN should never reach here.
       }
     }
 

@@ -160,29 +160,28 @@ public class GuidebookContent {
                 "Applies flags to links: following, disarm, generate platform, " +
                 "intra-linking, relative, maintain momentum.")
         .addPage("Book Receptacle",
-            "Holds a book and creates a portal. Stone, hardness 3.5. Must " +
-                "be placed on a Crystal Block. Insert a linked book to activate " +
-                "portal, retrieve to deactivate. Redstone 15 when book present. " +
-                "Fires PortalUtils to create portal.")
-        .addPage("Bookstand",
-            "Display pedestal for books. Wood, hardness 2.0. Right-click to " +
-                "open book GUI. Shift+empty-hand to pick up book. Custom block " +
-                "entity renderer shows open book model. Redstone based on " +
-                "book presence.")
+            "Mounts on any face of a Crystal Block (top or sides — not the " +
+                "bottom). Insert a Linkbook or Agebook to fire the portal " +
+                "frame; sneak + empty hand to retrieve the book and shut the " +
+                "portal down. Right-click with an empty hand to open the " +
+                "stored book. Emits a redstone signal of 15 while a book is " +
+                "present.")
         .addPage("Lectern",
-            "Alternative book display stand. Wood, hardness 2.0. Same " +
-                "function as Bookstand with different appearance. Registered " +
-                "as Archivist villager's point-of-interest workstation block.")
+            "Vanilla display stand for readable books. Open a linked book " +
+                "from the lectern GUI to use its link controls without adding " +
+                "another custom Mystcraft block.")
         .addPage("Crystal Block",
-            "Frame block for portal structures. Has ACTIVE and " +
-                "SOURCE_DIRECTION properties. Becomes part of portal when " +
-                "activated by a receptacle. Redstone 15 when active. " +
-                "Configurable light level (0-15).")
+            "Frame block for portal structures. Tracks a single ACTIVE " +
+                "boolean — symmetric, so orientation is irrelevant. Lights up " +
+                "and emits a redstone signal of 15 when part of a live portal. " +
+                "Build a closed loop of crystals around an air pocket and mount " +
+                "a Book Receptacle on one of them to fire the portal.")
         .addPage("Link Portal Block",
-            "The teleportation surface within portals. Has ACTIVE and " +
-                "SOURCE_DIRECTION properties. Light level 11. No collision. " +
-                "100-tick (5 second) cooldown between teleports per entity. " +
-                "Finds receptacle via PortalUtils.")
+            "The translucent teleportation slab inside a fired portal. Tracks " +
+                "an AXIS (X/Y/Z) derived from the controlling receptacle's " +
+                "facing — so portals can be vertical or horizontal. Light " +
+                "level 11, no collision. Each entity has a 100-tick (5 second) " +
+                "cooldown between teleports.")
         .addPage("Decay Block",
             "Instability corruption block. Unbreakable by default. " +
                 "5 types:\n" +

@@ -27,11 +27,6 @@ public final class BlockDefinitions {
       .strength(3.5F)
       .requiresCorrectToolForDrops();
 
-  public static final BlockBehaviour.Properties BOOKSTAND = BlockBehaviour.Properties.of()
-      .mapColor(MapColor.WOOD)
-      .strength(2.0F)
-      .requiresCorrectToolForDrops();
-
   public static final BlockBehaviour.Properties LINK_MODIFIER = BlockBehaviour.Properties.of()
       .mapColor(MapColor.STONE)
       .strength(3.0F)

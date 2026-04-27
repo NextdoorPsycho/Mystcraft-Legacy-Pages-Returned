@@ -76,6 +76,11 @@ public class MystcraftFabricGameTests implements FabricGameTest {
     MystcraftGameTestRunner.runAgeBuilderStableRulesTest(helper);
   }
 
+  @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = MystcraftGameTestSuites.AGE_CREATION, timeoutTicks = 300)
+  public void age_creation_agebook_with_every_page_creates_dimension(GameTestHelper helper) {
+    MystcraftGameTestRunner.runAgebookWithEveryPageCreatesDimensionTest(helper);
+  }
+
   @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = MystcraftGameTestSuites.AGE_CREATION, timeoutTicks = 180)
   public void age_creation_multiple_agebooks_create_distinct_dimensions(GameTestHelper helper) {
     MystcraftGameTestRunner.runMultipleAgebooksCreateDistinctAgesTest(helper);

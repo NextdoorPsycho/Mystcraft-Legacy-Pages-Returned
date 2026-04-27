@@ -59,7 +59,7 @@ public class BookScreen extends Screen {
   private final ItemStack book;
   private final InteractionHand hand;
   private final int entityId;
-  private final BlockPos blockPos;  // Non-null when book is on a block entity (bookstand/lectern)
+  private final BlockPos blockPos;  // Non-null when book is on a vanilla Lectern
   private final boolean isAgebook;
   private final boolean isLinkbook;
 
@@ -89,9 +89,9 @@ public class BookScreen extends Screen {
   }
 
   /**
-   * Constructor for block entity-based book viewing (bookstand/lectern).
+   * Constructor for vanilla Lectern-based book viewing.
    *
-   * @param blockPos the position of the block entity holding the book
+   * @param blockPos the position of the lectern holding the book
    */
   public BookScreen(ItemStack book, BlockPos blockPos) {
     this(book, InteractionHand.MAIN_HAND, HAND_BASED, blockPos);
@@ -101,7 +101,7 @@ public class BookScreen extends Screen {
    * Full constructor for all book viewing modes.
    *
    * @param entityId -1 for non-entity, or the entity ID for LinkbookEntity-based
-   * @param blockPos null for non-block, or the position for bookstand/lectern-based
+   * @param blockPos null for non-block, or the position for the vanilla Lectern holding the book
    */
   private BookScreen(ItemStack book, InteractionHand hand, int entityId, BlockPos blockPos) {
     super(getBookTitle(book));
@@ -164,7 +164,7 @@ public class BookScreen extends Screen {
   }
 
   /**
-   * Opens a book screen for a book on a block entity (bookstand/lectern).
+   * Opens a book screen for a book on a vanilla Lectern.
    */
   public static void openForBlock(ItemStack book, BlockPos blockPos) {
     if (book.getItem() instanceof AgebookItem || book.getItem() instanceof LinkbookItem) {
@@ -494,7 +494,7 @@ public class BookScreen extends Screen {
    */
   private void performLink() {
     if (blockPos != null) {
-      // Book is on a block entity (bookstand/lectern)
+      // Book is on a vanilla Lectern
       MystcraftNetwork.sendToServer(new BlockBookActivatePacket(blockPos));
     } else if (entityId == HAND_BASED) {
       // Book is in player's hand

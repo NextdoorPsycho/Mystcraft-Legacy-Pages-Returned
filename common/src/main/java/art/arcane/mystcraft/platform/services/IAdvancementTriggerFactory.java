@@ -3,13 +3,7 @@ package art.arcane.mystcraft.platform.services;
 import net.minecraft.advancements.CriterionTrigger;
 
 /**
- * Factory for creating version-specific advancement criterion triggers.
- * <p>
- * The CriterionTrigger API changed between 1.20.1 and 1.20.2:
- * <ul>
- *   <li>1.20.1: createInstance(JsonObject, ContextAwarePredicate, DeserializationContext) with getId() method</li>
- *   <li>1.20.2: createInstance(JsonObject, Optional&lt;ContextAwarePredicate&gt;, DeserializationContext) without getId()</li>
- * </ul>
+ * Factory for creating advancement criterion triggers for the supported 1.20.1 API.
  */
 public interface IAdvancementTriggerFactory {
 

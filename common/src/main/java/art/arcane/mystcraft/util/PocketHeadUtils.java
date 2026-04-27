@@ -133,8 +133,11 @@ public final class PocketHeadUtils {
   }
 
   private static GameProfile resolveProfile(MinecraftServer server, UUID owner) {
-    Optional<GameProfile> cached = server.getProfileCache().get(owner);
-    GameProfile profile = cached.orElseGet(() -> new GameProfile(owner, ""));
+    GameProfile profile = new GameProfile(owner, "");
+    if (server.getProfileCache() != null) {
+      Optional<GameProfile> cached = server.getProfileCache().get(owner);
+      profile = cached.orElse(profile);
+    }
     try {
       Object sessionService = server.getSessionService();
       java.lang.reflect.Method fill = sessionService.getClass().getMethod("fillProfileProperties", GameProfile.class, boolean.class);
@@ -150,6 +153,9 @@ public final class PocketHeadUtils {
 
   @Nullable
   private static GameProfile resolveProfileByName(MinecraftServer server, String name) {
+    if (server.getProfileCache() == null) {
+      return null;
+    }
     Optional<GameProfile> cached = server.getProfileCache().get(name);
     if (cached.isEmpty()) {
       return null;

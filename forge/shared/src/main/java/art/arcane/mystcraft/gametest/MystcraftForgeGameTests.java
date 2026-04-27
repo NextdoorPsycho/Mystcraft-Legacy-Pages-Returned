@@ -6,87 +6,102 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
-/**
- * Forge-specific Mystcraft GameTests.
- */
 @GameTestHolder(value = Mystcraft.MOD_ID)
 @PrefixGameTestTemplate(false)
 public class MystcraftForgeGameTests {
 
-  // ===== REGISTRATION TESTS =====
-
-  @GameTest(template = "empty", batch = "mystcraft")
-  public void symbols_loaded_400_plus(GameTestHelper helper) {
-    MystcraftGameTestAssertions.assertSymbolsLoaded();
-    helper.succeed();
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.CORE)
+  public void core_content_supports_gameplay(GameTestHelper helper) {
+    MystcraftGameTestRunner.runCoreGameplayContentLoaded(helper);
   }
 
-  @GameTest(template = "empty", batch = "mystcraft")
-  public void creative_tabs_loaded(GameTestHelper helper) {
-    MystcraftGameTestAssertions.assertCreativeTabsLoaded();
-    helper.succeed();
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 40)
+  public void book_travel_personal_book_stays_carried(GameTestHelper helper) {
+    MystcraftGameTestRunner.runPersonalBookAlwaysStaysCarriedTest(helper);
   }
 
-  @GameTest(template = "empty", batch = "mystcraft")
-  public void datapacks_loaded(GameTestHelper helper) {
-    MystcraftGameTestAssertions.assertDatapacksLoaded();
-    helper.succeed();
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 40)
+  public void book_travel_normal_linkbook_respects_drop_rules(GameTestHelper helper) {
+    MystcraftGameTestRunner.runNormalLinkbookDropOnReadFollowsFlagsTest(helper);
   }
 
-  // ===== BOOK DROP ENTITY TESTS =====
-
-  @GameTest(template = "empty", batch = "mystcraft")
-  public void books_drop_as_linkbook_entity(GameTestHelper helper) {
-    MystcraftGameTestRunner.runBookDropsAsEntityTest(helper);
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 40)
+  public void book_travel_personal_proxy_state_lifecycle(GameTestHelper helper) {
+    MystcraftGameTestRunner.runPersonalProxyStateLifecycleTest(helper);
   }
 
-  // ===== DIMENSION CREATION TESTS =====
-
-  @GameTest(template = "empty", batch = "mystcraft", timeoutTicks = 200)
-  public void personal_book_creates_dimension(GameTestHelper helper) {
-    MystcraftGameTestRunner.runPersonalBookCreatesAndTeleportsTest(helper);
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 120)
+  public void book_travel_personal_pocket_damage_and_death_return_to_body(GameTestHelper helper) {
+    MystcraftGameTestRunner.runPersonalPocketDamageAndDeathReturnTest(helper);
   }
 
-  @GameTest(template = "empty", batch = "mystcraft", timeoutTicks = 300)
-  public void random_book_5_symbols_creates_dimension(GameTestHelper helper) {
-    MystcraftGameTestRunner.runRandomBookWith5SymbolsTest(helper);
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 40)
+  public void book_travel_dropped_books_take_damage_and_drop_parts(GameTestHelper helper) {
+    MystcraftGameTestRunner.runLinkbookEntityDamageAndDropsTest(helper);
   }
 
-  // ===== DECAY TESTS =====
-
-  @GameTest(template = "empty", batch = "mystcraft", timeoutTicks = 200)
-  public void linkbook_decays_personal_does_not(GameTestHelper helper) {
-    MystcraftGameTestRunner.runLinkbookDecaysButPersonalDoesNotTest(helper);
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_CRAFTING, timeoutTicks = 40)
+  public void book_crafting_folder_orders_writes_and_extracts(GameTestHelper helper) {
+    MystcraftGameTestRunner.runFolderWorkflowTest(helper);
   }
 
-  // ===== DAMAGE TESTS =====
-
-  @GameTest(template = "empty", batch = "mystcraft", timeoutTicks = 40)
-  public void book_dies_in_fluid(GameTestHelper helper) {
-    MystcraftGameTestRunner.runBookDiesInFluidTest(helper);
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_CRAFTING, timeoutTicks = 40)
+  public void book_crafting_portfolio_imports_counts_and_limits(GameTestHelper helper) {
+    MystcraftGameTestRunner.runPortfolioWorkflowTest(helper);
   }
 
-  @GameTest(template = "empty", batch = "mystcraft", timeoutTicks = 40)
-  public void book_dies_at_5_damage(GameTestHelper helper) {
-    MystcraftGameTestRunner.runBookDiesAt5DamageTest(helper);
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_CRAFTING, timeoutTicks = 40)
+  public void book_crafting_booster_pack_opens_into_pages(GameTestHelper helper) {
+    MystcraftGameTestRunner.runBoosterPackPlayerUseTest(helper);
   }
 
-  @GameTest(template = "empty", batch = "mystcraft", timeoutTicks = 40)
-  public void book_drops_page_and_leather_on_death(GameTestHelper helper) {
-    MystcraftGameTestRunner.runBookDropsPageAndLeatherOnDeathTest(helper);
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_CRAFTING, timeoutTicks = 40)
+  public void book_crafting_binder_builds_descriptive_book(GameTestHelper helper) {
+    MystcraftGameTestRunner.runBookBinderWorkflowTest(helper);
   }
 
-  // ===== LECTERN TESTS =====
-
-  @GameTest(template = "empty", batch = "mystcraft", timeoutTicks = 40)
-  public void lectern_can_hold_mystcraft_book(GameTestHelper helper) {
-    MystcraftGameTestRunner.runLecternBookPlacementTest(helper);
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_CRAFTING, timeoutTicks = 40)
+  public void book_crafting_ink_mixer_builds_link_panel(GameTestHelper helper) {
+    MystcraftGameTestRunner.runInkMixerWorkflowTest(helper);
   }
 
-  // ===== TABLE TESTS =====
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_CRAFTING, timeoutTicks = 60)
+  public void book_crafting_writing_desk_writes_symbols(GameTestHelper helper) {
+    MystcraftGameTestRunner.runWritingDeskWorkflowTest(helper);
+  }
 
-  @GameTest(template = "empty", batch = "mystcraft", timeoutTicks = 40)
-  public void table_blocks_have_block_entities(GameTestHelper helper) {
-    MystcraftGameTestRunner.runTableBlockEntitiesTest(helper);
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.AGE_CREATION, timeoutTicks = 40)
+  public void age_creation_agebook_keeps_pages_author_title_and_flags(GameTestHelper helper) {
+    MystcraftGameTestRunner.runAgebookCreationDataWorkflowTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.AGE_CREATION, timeoutTicks = 40)
+  public void age_creation_symbols_build_stable_rules(GameTestHelper helper) {
+    MystcraftGameTestRunner.runAgeBuilderStableRulesTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.AGE_CREATION, timeoutTicks = 180)
+  public void age_creation_multiple_agebooks_create_distinct_dimensions(GameTestHelper helper) {
+    MystcraftGameTestRunner.runMultipleAgebooksCreateDistinctAgesTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.AGE_CREATION, timeoutTicks = 120)
+  public void age_creation_safe_story_death_returns_to_entry(GameTestHelper helper) {
+    MystcraftGameTestRunner.runAgeDeathReturnUsesStoredEntryTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.WORLD_RULES, timeoutTicks = 40)
+  public void world_rules_director_state_persists_to_age_data(GameTestHelper helper) {
+    MystcraftGameTestRunner.runWorldRulesPersistToAgeDataTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.WORLD_RULES, timeoutTicks = 60)
+  public void world_rules_table_blocks_create_expected_state(GameTestHelper helper) {
+    MystcraftGameTestRunner.runTableBlocksCreateExpectedStateTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.COMMANDS, timeoutTicks = 80)
+  public void commands_player_and_admin_workflows_are_registered(GameTestHelper helper) {
+    MystcraftGameTestRunner.runCommandWorkflowTest(helper);
   }
 }

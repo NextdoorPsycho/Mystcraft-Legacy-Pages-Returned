@@ -484,7 +484,7 @@ public class AgebookItem extends Item implements TooltipCompat {
 
   /**
    * Forge: Q-dropped agebooks should spawn as LinkbookEntity, not ItemEntity.
-   * On Forge/NeoForge, subclasses override hasCustomEntity/createEntity.
+   * On Forge, subclasses override hasCustomEntity/createEntity.
    */
   public boolean hasCustomEntity(@NotNull ItemStack stack) {
     return MystcraftConfig.droppedBooksBecomeLivingEntities.get();

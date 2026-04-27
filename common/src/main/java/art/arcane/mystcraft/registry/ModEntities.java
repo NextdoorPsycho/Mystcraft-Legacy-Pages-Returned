@@ -4,6 +4,7 @@ import art.arcane.mystcraft.entity.ColoredLightningEntity;
 import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.entity.MystcraftFallingBlockEntity;
+import art.arcane.mystcraft.entity.PersonalPocketProxyEntity;
 import net.minecraft.world.entity.EntityType;
 
 import java.util.function.Supplier;
@@ -15,6 +16,7 @@ import java.util.function.Supplier;
 public final class ModEntities {
 
   public static Supplier<EntityType<LinkbookEntity>> LINKBOOK;
+  public static Supplier<EntityType<PersonalPocketProxyEntity>> PERSONAL_POCKET_PROXY;
   public static Supplier<EntityType<MystcraftFallingBlockEntity>> FALLING_BLOCK;
   public static Supplier<EntityType<MeteorEntity>> METEOR;
   public static Supplier<EntityType<ColoredLightningEntity>> COLORED_LIGHTNING;

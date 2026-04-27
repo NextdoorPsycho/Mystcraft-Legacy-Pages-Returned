@@ -7,11 +7,9 @@ The project follows a multi-loader structure:
 - `common/`
   Shared code (logic, mechanics, resources). Most development happens here.
 - `fabric/`
-  Fabric-specific implementations for 1.20.1 and 1.20.2.
+  Fabric-specific implementation for 1.20.1.
 - `forge/`
-  Forge-specific implementations for 1.20.1 and 1.20.2.
-- `neoforge/`
-  NeoForge-specific implementations for 1.20.4 and 1.20.6.
+  Forge-specific implementation for 1.20.1.
 - `docs/`
   Documentation (see below).
 

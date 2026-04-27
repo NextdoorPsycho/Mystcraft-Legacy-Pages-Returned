@@ -1,34 +1,25 @@
 package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
-import art.arcane.mystcraft.blockentity.BookstandBlockEntity;
 import art.arcane.mystcraft.config.MystcraftConfig;
-import art.arcane.mystcraft.data.LinkOptions;
-import art.arcane.mystcraft.link.LinkingManager;
-import art.arcane.mystcraft.registry.ModBlocks;
-import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.util.PocketHeadUtils;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
-import art.arcane.mystcraft.util.ItemStackNbt;
 import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundInitializeBorderPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.border.WorldBorder;
 import org.jetbrains.annotations.Nullable;
@@ -43,15 +34,13 @@ import java.util.UUID;
  * Surrounded by configurable inner shell then outer shell.
  * Spawn point is at the bottom of the hollow interior.
  * <p>
- * Size validation automatically caps to Minecraft version limits:
- * - 1.20.2+: max dimension height 4064 (min_y -2032 to max_y 2032)
- * - Earlier versions may have smaller limits; values will be capped accordingly.
+ * Size validation automatically caps to the configured 1.20.1 dimension limits.
  */
 public final class PersonalPocketDimension {
 
   /**
    * Minecraft dimension limits for personal pockets.
-   * These represent the maximum possible range in 1.20.2+ with custom dimension types.
+   * These represent the configured personal-pocket dimension type range.
    * For personal pockets, we use a dimension type configured to these limits.
    */
   public static final int MIN_BUILD_Y = -2032;
@@ -143,7 +132,7 @@ public final class PersonalPocketDimension {
       } else {
         Mystcraft.LOGGER.warn("[PersonalPocket] Y half-size {} exceeds Minecraft dimension limits, capped to {} (max height: {} blocks)",
             requested, clamped, clamped * 2);
-        Mystcraft.LOGGER.info("[PersonalPocket] Minecraft 1.20.2 max dimension height: {} blocks. " +
+        Mystcraft.LOGGER.info("[PersonalPocket] Minecraft 1.20.1 max dimension height: {} blocks. " +
                 "With shell thickness {}, max inner Y half-size is {}.",
             DIMENSION_HEIGHT, getInnerThickness() + getOuterThickness(), getMaxSupportedHalfSizeY());
       }
@@ -312,24 +301,10 @@ public final class PersonalPocketDimension {
   }
 
   /**
-   * Returns spawn position beside the bookstand (offset by 1 block on X axis).
+   * Returns the player spawn position above the generated personal-pocket floor.
    */
   public static BlockPos getPocketSpawn() {
     return new BlockPos(1, getInnerMinY() + 1, 0);
-  }
-
-  /**
-   * Returns the position for the bookstand (center of the pocket floor).
-   */
-  public static BlockPos getBookstandPos() {
-    return new BlockPos(0, getInnerMinY() + 1, 0);
-  }
-
-  /**
-   * Returns the position for the floor block under the bookstand.
-   */
-  public static BlockPos getFloorBlockPos() {
-    return new BlockPos(0, getInnerMinY(), 0);
   }
 
   public static boolean isPersonalPocket(ServerLevel level) {
@@ -417,70 +392,7 @@ public final class PersonalPocketDimension {
     configurePersonalRules(level);
     enforceBorder(level);
 
-    // Place the return bookstand with linkbook pointing back to where the player came from
-    placeReturnBookstand(level, owner);
-
     return level;
-  }
-
-  /**
-   * Places a bookstand in the center of the pocket floor with a linkbook
-   * that links back to where the player entered from.
-   */
-  private static void placeReturnBookstand(ServerLevel level, UUID owner) {
-    // Get the return link data (stored before pocket creation)
-    CompoundTag returnLink = PersonalPocketData.get(level.getServer()).getReturnLink(owner);
-    if (returnLink == null) {
-      // Fallback to overworld spawn if no return link exists
-      ServerLevel overworld = level.getServer().overworld();
-      returnLink = new CompoundTag();
-      LinkOptions.setDimensionUID(returnLink, LinkingManager.getDimensionUID(overworld));
-      LinkOptions.setSpawn(returnLink, overworld.getSharedSpawnPos());
-      LinkOptions.setSpawnYaw(returnLink, 0.0f);
-      Mystcraft.LOGGER.warn("[PersonalPocket] No return link found for {}, using overworld spawn", owner);
-    }
-
-    // Place floor block at center
-    BlockPos floorPos = getFloorBlockPos();
-    level.setBlock(floorPos, Blocks.SMOOTH_STONE.defaultBlockState(), 2);
-
-    // Place bookstand on top of floor
-    BlockPos bookstandPos = getBookstandPos();
-    BlockState bookstandState = ModBlocks.BOOKSTAND.get().defaultBlockState();
-    level.setBlock(bookstandPos, bookstandState, 2);
-
-    // Get the bookstand block entity and put a linkbook on it
-    BlockEntity blockEntity = level.getBlockEntity(bookstandPos);
-    if (blockEntity instanceof BookstandBlockEntity bookstand) {
-      // Create the return linkbook
-      ItemStack linkbook = new ItemStack(ModItems.LINKBOOK.get());
-      CompoundTag tag = ItemStackNbt.getOrCreateTag(linkbook);
-
-      // Copy return link data to the linkbook
-      Integer dimUID = LinkOptions.getDimensionUID(returnLink);
-      if (dimUID != null) {
-        LinkOptions.setDimensionUID(tag, dimUID);
-      }
-      BlockPos spawnPos = LinkOptions.getSpawn(returnLink);
-      if (spawnPos != null) {
-        LinkOptions.setSpawn(tag, spawnPos);
-      }
-      Float yaw = LinkOptions.getSpawnYaw(returnLink);
-      if (yaw != null) {
-        LinkOptions.setSpawnYaw(tag, yaw);
-      }
-      LinkOptions.setDisplayName(tag, "Return Home");
-      ItemStackNbt.setTag(linkbook, tag);
-      tag.putBoolean("NoDecay", true);
-
-      // Place the linkbook on the bookstand
-      bookstand.setBook(linkbook);
-
-      Mystcraft.LOGGER.info("[PersonalPocket] Placed return bookstand at {} with linkbook pointing to UID {}",
-          bookstandPos, dimUID);
-    } else {
-      Mystcraft.LOGGER.warn("[PersonalPocket] Failed to get bookstand block entity at {}", bookstandPos);
-    }
   }
 
   public static int reskinPocket(ServerLevel level) {
@@ -852,8 +764,10 @@ public final class PersonalPocketDimension {
   public static void syncBorderToPlayers(ServerLevel level, WorldBorder border) {
     ClientboundInitializeBorderPacket packet = new ClientboundInitializeBorderPacket(border);
     for (ServerPlayer player : level.players()) {
-      player.connection.send(packet);
-      Mystcraft.LOGGER.debug("[PersonalPocket] Synced border to player {}", player.getName().getString());
+      if (player.connection != null) {
+        player.connection.send(packet);
+        Mystcraft.LOGGER.debug("[PersonalPocket] Synced border to player {}", player.getName().getString());
+      }
     }
   }
 }

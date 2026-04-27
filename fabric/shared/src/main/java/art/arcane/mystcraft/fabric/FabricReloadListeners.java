@@ -7,7 +7,7 @@ import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Consolidated Fabric reload listeners for Mystcraft 1.20.2.
+ * Consolidated Fabric reload listeners for Mystcraft 1.20.1.
  */
 public final class FabricReloadListeners {
 

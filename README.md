@@ -1,4 +1,4 @@
-# Mystcraft Legacy (Multiloader)
+# Mystcraft Legacy
 
 Mystcraft is a recreation of the lore of the Myst series in Minecraft. It allows
 for the writing of and travel to new dimensions, called Ages.
@@ -10,23 +10,20 @@ Discord (`https://discord.gg/pRGH45W`).
 
 ## Project Overview
 
-Mystcraft Legacy is a multi-loader continuation of Mystcraft with modern
-versions in mind. The mod preserves the core experience while moving symbol
+Mystcraft Legacy is a Fabric and Forge continuation of Mystcraft targeting
+Minecraft 1.20.1. The mod preserves the core experience while moving symbol
 content to datapacks for maximum flexibility.
 
 TLDR: You can do just about everything you could before, it supports newer
-versions, and it is designed to keep evolving.
+1.20.1, and it is designed to keep evolving.
 
 ---
 
 ## Supported Versions
 
-| Version    | Fabric | Forge | NeoForge |
-|:-----------|:------:|:-----:|:--------:|
-| **1.20.1** |   ✅    |   ✅   |    ❌     |
-| **1.20.2** |   ✅    |   ✅   |    ❌     |
-| **1.20.4** |   ❌    |   ❌   |    ✅     |
-| **1.20.6** |   ❌    |   ❌   |    ✅     |
+| Version    | Fabric | Forge |
+|:-----------|:------:|:-----:|
+| **1.20.1** |   ✅    |   ✅   |
 
 ---
 
@@ -155,7 +152,7 @@ versions, and it is designed to keep evolving.
 ### Prerequisites
 
 - **Java:** JDK 17
-- **Minecraft Versions:** 1.20.1, 1.20.2 (Fabric/Forge); 1.20.4, 1.20.6 (NeoForge)
+- **Minecraft Version:** 1.20.1
 
 ### Build Commands
 
@@ -171,21 +168,12 @@ The project uses Gradle.
 
 ```bash
 ./gradlew :fabric:1.20.1:runClient
-./gradlew :fabric:1.20.2:runClient
 ```
 
 **Run Client (Forge):**
 
 ```bash
 ./gradlew :forge:1.20.1:runClient
-./gradlew :forge:1.20.2:runClient
-```
-
-**Run Client (NeoForge):**
-
-```bash
-./gradlew :neoforge:1.20.4:runClient
-./gradlew :neoforge:1.20.6:runClient
 ```
 
 ---
@@ -197,16 +185,12 @@ This mod requires access to private Minecraft fields (e.g.,
 
 | Loader       | File Location                                                       | Field Naming           |
 |--------------|---------------------------------------------------------------------|------------------------|
-| **Forge**    | `forge/1.20.x/src/main/resources/META-INF/accesstransformer.cfg`    | SRG names (`f_59527_`) |
-| **NeoForge** | `common/src/main/resources/META-INF/accesstransformer.cfg`          | Mojang names (`book`)  |
-| **Fabric**   | `fabric/1.20.x/src/main/resources/mystcraft.accesswidener`          | Mojang names (`book`)  |
+| **Forge**    | `forge/1.20.1/src/main/resources/META-INF/accesstransformer.cfg`    | SRG names (`f_59527_`) |
+| **Fabric**   | `fabric/1.20.1/src/main/resources/mystcraft.accesswidener`          | Mojang names (`book`)  |
 
 **Why different names?** Forge's AT processor runs on the SRG-mapped JAR before
-remapping to Mojang names. NeoForge and Fabric process ATs after Mojang mapping
+remapping to Mojang names. Fabric process access wideners after Mojang mapping
 is applied.
-
-**Important:** The `common/` module contains an AT file with Mojang names. Forge
-build.gradle files exclude this and use their own SRG-named AT files instead.
 
 When adding new AT entries for Forge, look up the SRG name (format: `f_NNNNN_`
 for fields, `m_NNNNN_` for methods) from the MCP mappings or Forge decompiled

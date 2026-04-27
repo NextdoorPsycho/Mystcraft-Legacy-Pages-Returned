@@ -15,6 +15,7 @@ import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.ServerPlayerTeleport;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
@@ -371,7 +372,7 @@ public class MystcraftCommands {
     }
 
     BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
-    player.teleportTo(ageLevel, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5,
+    ServerPlayerTeleport.teleport(player, ageLevel, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5,
         player.getYRot(), player.getXRot());
 
     source.sendSuccess(() -> Component.literal("Teleported to Age " + ageId), true);
@@ -1700,7 +1701,7 @@ public class MystcraftCommands {
 
     if (teleport) {
       AgeDataSyncHandler.syncAgeDataToPlayer(player, ageLevel);
-      player.teleportTo(ageLevel, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5,
+      ServerPlayerTeleport.teleport(player, ageLevel, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5,
           player.getYRot(), player.getXRot());
       source.sendSuccess(() -> Component.literal("Teleported to age " + ageUID), true);
     }

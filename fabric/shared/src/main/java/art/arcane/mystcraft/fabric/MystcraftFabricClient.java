@@ -20,14 +20,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
 
 /**
- * Fabric client entry point for Mystcraft 1.20.2.
+ * Fabric client entry point for Mystcraft 1.20.1.
  * Self-contained - does not pull from fabric/src.
  */
 public class MystcraftFabricClient implements ClientModInitializer {
 
   @Override
   public void onInitializeClient() {
-    Mystcraft.LOGGER.info("[Mystcraft] Client setup (1.20.2)");
+    Mystcraft.LOGGER.info("[Mystcraft] Client setup (1.20.1)");
 
     // Register client-side network receivers for S->C packets
     FabricMystcraftNetwork.registerClient();
@@ -57,6 +57,7 @@ public class MystcraftFabricClient implements ClientModInitializer {
 
     // Register entity renderers
     EntityRendererRegistry.register(FabricRegistries.LINKBOOK_ENTITY.get(), LinkbookEntityRenderer::new);
+    EntityRendererRegistry.register(FabricRegistries.PERSONAL_POCKET_PROXY_ENTITY.get(), PersonalPocketProxyRenderer::new);
     EntityRendererRegistry.register(FabricRegistries.METEOR_ENTITY.get(), MeteorEntityRenderer::new);
     EntityRendererRegistry.register(FabricRegistries.FALLING_BLOCK_ENTITY.get(), MystcraftFallingBlockRenderer::new);
     EntityRendererRegistry.register(FabricRegistries.COLORED_LIGHTNING_ENTITY.get(), ColoredLightningRenderer::new);

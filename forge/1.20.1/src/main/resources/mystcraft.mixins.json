@@ -3,7 +3,9 @@
   "package": "art.arcane.mystcraft.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "mystcraft.refmap.json",
-  "mixins": [],
+  "mixins": [
+    "DataFixerSchemaMixin"
+  ],
   "client": [],
   "server": [],
   "minVersion": "0.8"

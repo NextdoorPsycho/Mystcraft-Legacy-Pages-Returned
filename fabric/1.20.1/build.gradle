@@ -22,7 +22,6 @@ tasks.withType(JavaExec).configureEach {
 }
 
 loom {
-    // Use 1.20.1-specific access widener with different CriteriaTriggers signature
     accessWidenerPath = file("src/main/resources/${mod_id}.accesswidener")
     mixin {
         defaultRefmapName.set("${mod_id}.refmap.json")
@@ -32,19 +31,19 @@ loom {
         client {
             client()
             setConfigName("Fabric 1.20.1 Client")
-            ideConfigGenerated(false)
+            ideConfigGenerated(true)
             runDir("runs/client")
         }
         server {
             server()
             setConfigName("Fabric 1.20.1 Server")
-            ideConfigGenerated(false)
+            ideConfigGenerated(true)
             runDir("runs/server")
         }
         gametest {
             server()
             setConfigName("Fabric 1.20.1 GameTest")
-            ideConfigGenerated(false)
+            ideConfigGenerated(true)
             runDir("runs/gametest")
             vmArg "-Dfabric-api.gametest"
             vmArg "-Dfabric-api.gametest.report-file=${project.buildDir}/junit.xml"
@@ -63,7 +62,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_1}"
     compileOnly project(':common')
 
-    // TOML config library (same as Forge/NeoForge use)
+    // TOML config library (same as Forge uses)
     implementation "com.electronwill.night-config:core:3.6.7"
     implementation "com.electronwill.night-config:toml:3.6.7"
     include "com.electronwill.night-config:core:3.6.7"
@@ -72,9 +71,9 @@ dependencies {
 
 tasks.named('compileJava', JavaCompile) {
     source(project(':common').sourceSets.main.allSource.matching {
-        exclude '**/gametest/**'
-        // Use 1.20.1-specific client helper
-        exclude '**/platform/FabricClientHelper.java'
+        // Fabric registers tests through the loader-specific wrapper, but the
+        // shared scenario runner/assertions live in common.
+        exclude '**/gametest/MystcraftGameTests.java'
         // Use 1.20.1-specific advancement triggers
         exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
         exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
@@ -82,11 +81,7 @@ tasks.named('compileJava', JavaCompile) {
         // Platform-specific packet implementations (use access widener for direct field access)
         exclude '**/network/LecternBookSyncPacket.java'
     })
-    source(fileTree("${rootDir}/fabric/shared/src/main/java") {
-        exclude '**/platform/FabricAdvancementTriggerFactory.java'
-        exclude '**/platform/FabricClientHelper.java'
-        exclude '**/platform/FabricVersionHelper.java'
-    })
+    source(fileTree("${rootDir}/fabric/shared/src/main/java"))
     source(sourceSets.main.java)
 }
 
@@ -107,7 +102,7 @@ tasks.named('processResources', ProcessResources) {
             'mod_author'             : mod_author,
             'mod_id'                 : mod_id,
             'license'                : license,
-            'description'            : project.findProperty('description'),
+            'description'            : mod_description,
             'credits'                : credits,
             'java_version'           : java_version
     ]
@@ -118,27 +113,13 @@ tasks.named('processResources', ProcessResources) {
 
     inputs.properties(expandProps)
 
-    // Fix the problematic properties that get overridden by Gradle's built-in properties
-    doLast {
-        def fabricModJson = file("${destinationDir}/fabric.mod.json")
-        if (fabricModJson.exists()) {
-            def content = fabricModJson.text
-            content = content.replace('"minecraft": "~1.20.2"', '"minecraft": "~1.20.1"')
-            content = content.replace('"description": "Processes main resources."', '"description": "Mystcraft 2 Legacy - Pages Returned brings the Myst series to Minecraft, allowing players to write and travel to custom Ages (dimensions)."')
-            fabricModJson.text = content
-        }
-    }
 }
 
 tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
-    from fileTree("${rootDir}/fabric/shared/src/main/java") {
-        exclude '**/platform/FabricAdvancementTriggerFactory.java'
-        exclude '**/platform/FabricClientHelper.java'
-        exclude '**/platform/FabricVersionHelper.java'
-    }
+    from fileTree("${rootDir}/fabric/shared/src/main/java")
 }
 
 jar {

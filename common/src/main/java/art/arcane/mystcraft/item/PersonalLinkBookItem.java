@@ -2,11 +2,13 @@ package art.arcane.mystcraft.item;
 
 import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.data.LinkOptions;
+import art.arcane.mystcraft.event.PersonalPocketEscapeHandler;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.world.PersonalPocketData;
 import art.arcane.mystcraft.world.PersonalPocketDimension;
 import art.arcane.mystcraft.util.ItemStackNbt;
 import art.arcane.mystcraft.util.TooltipCompat;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -22,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Personal link book that links to a player-specific pocket dimension.
@@ -29,6 +32,25 @@ import java.util.List;
 public class PersonalLinkBookItem extends LinkbookItem implements TooltipCompat {
 
   public static final String TOOLTIP_KEY = "item.mystcraft.personal_link_book.tooltip";
+  private static final Set<String> STORED_LINK_KEYS = Set.of(
+      "Dimension",
+      "AgeUID",
+      "DimensionKey",
+      "TargetUUID",
+      "SpawnX",
+      "SpawnY",
+      "SpawnZ",
+      "SpawnYaw",
+      "DisplayName",
+      "LinkColor",
+      "LinkDead",
+      "Flags",
+      "Props",
+      "LinkOptions",
+      "MaxHealth",
+      "damage",
+      "NoDecay"
+  );
 
   public PersonalLinkBookItem(Properties properties) {
     super(properties.stacksTo(1));
@@ -43,39 +65,36 @@ public class PersonalLinkBookItem extends LinkbookItem implements TooltipCompat 
   }
 
   @Override
+  @NotNull
+  public Component getName(@NotNull ItemStack stack) {
+    return Component.translatable(getDescriptionId(stack));
+  }
+
+  @Override
+  public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slotId, boolean isSelected) {
+    clearStoredLinkData(stack);
+  }
+
+  @Override
+  public void validate(@Nullable Level level, @NotNull ItemStack stack, @Nullable Entity entity) {
+    clearStoredLinkData(stack);
+  }
+
+  @Override
   protected void initialize(@Nullable Level level, @NotNull ItemStack stack, @Nullable Entity entity) {
-    if (!MystcraftConfig.enablePersonalLinkBooks.get()) {
-      return;
-    }
-    if (!(level instanceof ServerLevel serverLevel) || !(entity instanceof ServerPlayer player)) {
-      return;
-    }
-
-    // Ensure the personal dimension exists before the first link.
-    PersonalPocketDimension.getOrCreate(serverLevel.getServer(), player.getUUID());
-
-    CompoundTag tag = new CompoundTag();
-    LinkOptions.setDimensionUID(tag, PersonalPocketDimension.getPersonalAgeUid(player.getUUID()));
-    LinkOptions.setSpawn(tag, PersonalPocketDimension.getPocketSpawn());
-    LinkOptions.setSpawnYaw(tag, player.getYRot());
-    LinkOptions.setDisplayName(tag, "Personal Pocket");
-    tag.putFloat("MaxHealth", 10.0f);
-    tag.putFloat("damage", 0.0f);
-    tag.putBoolean("NoDecay", true);
-
-    ItemStackNbt.setTag(stack, tag);
+    clearStoredLinkData(stack);
   }
 
   @Override
   @NotNull
   public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
     ItemStack stack = player.getItemInHand(hand);
+    clearStoredLinkData(stack);
     if (!level.isClientSide) {
       if (!MystcraftConfig.enablePersonalLinkBooks.get()) {
         player.displayClientMessage(Component.literal("Personal link books are disabled in the config."), true);
         return InteractionResultHolder.fail(stack);
       }
-      validate(level, stack, player);
     }
     return super.use(level, player, hand);
   }
@@ -94,21 +113,11 @@ public class PersonalLinkBookItem extends LinkbookItem implements TooltipCompat 
     if (!(level instanceof ServerLevel serverLevel) || !(entity instanceof ServerPlayer player)) {
       return;
     }
+    clearStoredLinkData(stack);
 
     // If already inside the pocket, use the stored return link instead.
     if (PersonalPocketDimension.isPersonalPocket(serverLevel)) {
-      CompoundTag returnLink = PersonalPocketData.get(serverLevel.getServer()).getReturnLink(player.getUUID());
-      if (returnLink == null) {
-        returnLink = new CompoundTag();
-        LinkOptions.setDimensionUID(returnLink, LinkingManager.getDimensionUID(serverLevel.getServer().overworld()));
-        LinkOptions.setSpawn(returnLink, serverLevel.getServer().overworld().getSharedSpawnPos());
-        LinkOptions.setSpawnYaw(returnLink, player.getYRot());
-        art.arcane.mystcraft.Mystcraft.LOGGER.warn("[PersonalPocket] Missing return link for {}, using overworld spawn", player.getGameProfile().getName());
-      }
-      LinkingManager.LinkResult result = LinkingManager.performLink(player, returnLink);
-      if (result != LinkingManager.LinkResult.SUCCESS) {
-        art.arcane.mystcraft.Mystcraft.LOGGER.warn("[PersonalPocket] Return link failed for {}: {}", player.getGameProfile().getName(), result);
-      }
+      PersonalPocketEscapeHandler.returnToEntryPoint(player, false);
       return;
     }
 
@@ -120,33 +129,111 @@ public class PersonalLinkBookItem extends LinkbookItem implements TooltipCompat 
     PersonalPocketData.get(serverLevel.getServer()).setReturnLink(player.getUUID(), returnData);
 
     // Ensure the pocket dimension exists before linking.
-    PersonalPocketDimension.getOrCreate(serverLevel.getServer(), player.getUUID());
+    ServerLevel pocketLevel = PersonalPocketDimension.getOrCreate(serverLevel.getServer(), player.getUUID());
+    if (pocketLevel == null) {
+      art.arcane.mystcraft.Mystcraft.LOGGER.warn("[PersonalPocket] Failed to create pocket for {}", player.getGameProfile().getName());
+      return;
+    }
 
-    // Ensure link data is initialized and up-to-date.
-    validate(serverLevel, stack, player);
-    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
-    if (LinkOptions.getDimensionUID(tag) == null) {
-      LinkOptions.setDimensionUID(tag, PersonalPocketDimension.getPersonalAgeUid(player.getUUID()));
+    if (!PersonalPocketEscapeHandler.spawnOrReplaceProxy(player, returnData)) {
+      player.displayClientMessage(Component.literal("Unable to create your personal pocket anchor."), true);
+      return;
     }
-    if (LinkOptions.getSpawn(tag) == null) {
-      LinkOptions.setSpawn(tag, PersonalPocketDimension.getPocketSpawn());
-    }
-    if (LinkOptions.getSpawnYaw(tag) == 0.0f) {
-      LinkOptions.setSpawnYaw(tag, player.getYRot());
-    }
-    ItemStackNbt.setTag(stack, tag);
-    onLink(stack, level, entity);
-    LinkingManager.LinkResult result = LinkingManager.performLink(player, tag);
+
+    CompoundTag pocketLink = createPocketLink(player);
+    LinkingManager.LinkResult result = LinkingManager.performLink(player, pocketLink);
     if (result != LinkingManager.LinkResult.SUCCESS) {
+      PersonalPocketEscapeHandler.removeActiveProxy(serverLevel.getServer(), player.getUUID());
       art.arcane.mystcraft.Mystcraft.LOGGER.warn("[PersonalPocket] Link failed for {}: {}", player.getGameProfile().getName(), result);
     }
+    clearStoredLinkData(stack);
   }
 
   @Override
   protected void onLink(@NotNull ItemStack stack, Level level, Entity entity) {
-    if (level instanceof ServerLevel serverLevel && PersonalPocketDimension.isPersonalPocket(serverLevel)) {
+    // Personal books are always carried through the link and never use the normal drop-on-link path.
+  }
+
+  @Override
+  public boolean dropItemOnLink(@NotNull ItemStack stack) {
+    return false;
+  }
+
+  @Override
+  public boolean hasCustomEntity(@NotNull ItemStack stack) {
+    return false;
+  }
+
+  @Override
+  public Entity createEntity(Level level, Entity location, @NotNull ItemStack stack) {
+    return null;
+  }
+
+  @Override
+  public void setDisplayName(@NotNull ItemStack stack, String name) {
+    clearStoredLinkData(stack);
+  }
+
+  @Override
+  @Nullable
+  public BlockPos getDestination(@NotNull ItemStack stack) {
+    return null;
+  }
+
+  @Override
+  public void setDestination(@NotNull ItemStack stack, BlockPos pos) {
+    clearStoredLinkData(stack);
+  }
+
+  @Override
+  public String getDisplayName(@NotNull ItemStack stack) {
+    return "???";
+  }
+
+  @Override
+  public boolean isDamageableItem() {
+    return false;
+  }
+
+  @Override
+  public boolean isDamaged(@NotNull ItemStack stack) {
+    return false;
+  }
+
+  @Override
+  public int getDamage(@NotNull ItemStack stack) {
+    return 0;
+  }
+
+  @Override
+  public void setDamage(@NotNull ItemStack stack, int damage) {
+  }
+
+  @Override
+  public int getMaxDamage(@NotNull ItemStack stack) {
+    return 0;
+  }
+
+  private static CompoundTag createPocketLink(ServerPlayer player) {
+    CompoundTag tag = new CompoundTag();
+    LinkOptions.setDimensionUID(tag, PersonalPocketDimension.getPersonalAgeUid(player.getUUID()));
+    LinkOptions.setSpawn(tag, PersonalPocketDimension.getPocketSpawn());
+    LinkOptions.setSpawnYaw(tag, player.getYRot());
+    return tag;
+  }
+
+  private static void clearStoredLinkData(ItemStack stack) {
+    CompoundTag tag = ItemStackNbt.getTag(stack);
+    if (tag == null) {
       return;
     }
-    super.onLink(stack, level, entity);
+    for (String key : STORED_LINK_KEYS) {
+      tag.remove(key);
+    }
+    if (tag.getAllKeys().isEmpty()) {
+      ItemStackNbt.setTag(stack, null);
+    } else {
+      ItemStackNbt.setTag(stack, tag);
+    }
   }
 }

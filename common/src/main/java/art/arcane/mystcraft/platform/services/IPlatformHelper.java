@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 public interface IPlatformHelper {
 
   /**
-   * Returns the name of the current platform (e.g. "Forge", "Fabric", "NeoForge").
+   * Returns the name of the current platform (e.g. "Forge" or "Fabric").
    */
   String getPlatformName();
 
@@ -42,7 +42,7 @@ public interface IPlatformHelper {
   FlowingFluid createBlackInkFlowing();
 
   /**
-   * Returns the short grass block (Blocks.GRASS in 1.20.1-1.20.2, Blocks.SHORT_GRASS in 1.20.4+).
+   * Returns the short grass block for the supported Minecraft version.
    */
   Block getShortGrassBlock();
 }

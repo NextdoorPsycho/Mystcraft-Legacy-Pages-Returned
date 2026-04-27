@@ -19,7 +19,7 @@ public final class ModRegistrations {
    * Initializes all registrations via the platform's registration helper.
    * This should be called from the platform entry point after initialize().
    *
-   * @param modEventBus The platform-specific event bus (IEventBus for Forge/NeoForge)
+   * @param modEventBus The platform-specific event bus (IEventBus for Forge)
    */
   public static void registerAll(Object modEventBus) {
     Services.REGISTRATION.initialize(modEventBus);

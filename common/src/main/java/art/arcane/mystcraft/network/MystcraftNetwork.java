@@ -33,6 +33,9 @@ public final class MystcraftNetwork {
    * Sends a packet to a specific player (server -> client).
    */
   public static void sendToPlayer(Object packet, ServerPlayer player) {
+    if (player == null || player.connection == null || sendToPlayerHandler == null) {
+      return;
+    }
     sendToPlayerHandler.accept(packet, player);
   }
 

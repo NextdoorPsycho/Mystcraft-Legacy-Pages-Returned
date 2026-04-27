@@ -106,7 +106,7 @@ tasks.named('reobfShadowJar') {
 }
 
 tasks.named('compileJava', JavaCompile) {
-    // Add common sources with exclusions for 1.20.2-specific classes
+    // Add common sources with 1.20.1-specific platform implementations.
     source(project(':common').sourceSets.main.allSource.matching {
         exclude '**/client/GuidebookClientHelper.java'
         exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
@@ -119,13 +119,7 @@ tasks.named('compileJava', JavaCompile) {
         exclude '**/network/PocketHeadSyncPacket.java'
         exclude '**/network/OpenLecternBookPacket.java'
     })
-    source(project.fileTree("${rootDir}/forge/shared/src/main/java") {
-        exclude '**/platform/ForgeAdvancementTriggerFactory.java'
-        exclude '**/platform/ForgeClientHelper.java'
-        exclude '**/platform/ForgePlatformHelper.java'
-        exclude '**/platform/ForgeVersionHelper.java'
-        exclude '**/network/ForgeMystcraftNetwork.java'
-    })
+    source(project.fileTree("${rootDir}/forge/shared/src/main/java"))
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -147,7 +141,7 @@ tasks.named('processResources', ProcessResources) {
             'mod_author'                : mod_author,
             'mod_id'                    : mod_id,
             'license'                   : license,
-            'description'               : description,
+            'description'               : mod_description,
             'credits'                   : credits,
             'java_version'              : java_version
     ]
@@ -162,36 +156,13 @@ tasks.named('processResources', ProcessResources) {
 
     inputs.properties(expandProps)
 
-    // Fix mods.toml for 1.20.1 (override problematic properties that Gradle expands incorrectly)
-    doLast {
-        def modsToml = file("${destinationDir}/META-INF/mods.toml")
-        if (modsToml.exists()) {
-            def content = modsToml.text
-            // Fix loader version range (Gradle global property [48,) -> [47,))
-            content = content.replace('loaderVersion = "[48,)"', 'loaderVersion = "[47,)"')
-            // Fix minecraft version range (1.20.2 -> 1.20.1)
-            content = content.replace('versionRange = "[1.20.2,1.21)"', 'versionRange = "[1.20.1,1.20.2)"')
-            // Fix forge version range (48.1.0 -> 47.0.0)
-            content = content.replace('versionRange = "[48.1.0,)"', 'versionRange = "[47.0.0,)"')
-            // Fix description (Gradle's task description leaks through)
-            content = content.replace("description = '''Processes main resources.'''",
-                    "description = '''Mystcraft 2 Legacy - Pages Returned brings the Myst series to Minecraft, allowing players to write and travel to custom Ages (dimensions).'''")
-            modsToml.text = content
-        }
-    }
 }
 
 tasks.named('sourcesJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':common').sourceSets.main.allSource
     from project(':common').sourceSets.main.resources
-    from fileTree("${rootDir}/forge/shared/src/main/java") {
-        exclude '**/platform/ForgeAdvancementTriggerFactory.java'
-        exclude '**/platform/ForgeClientHelper.java'
-        exclude '**/platform/ForgePlatformHelper.java'
-        exclude '**/platform/ForgeVersionHelper.java'
-        exclude '**/network/ForgeMystcraftNetwork.java'
-    }
+    from fileTree("${rootDir}/forge/shared/src/main/java")
 }
 
 jar {
@@ -220,8 +191,3 @@ sourcesJar {
 }
 
 jar.finalizedBy('reobfJar')
-
-// Disable IDE run configuration generation
-tasks.matching { it.name.startsWith('genIntellijRuns') || it.name.startsWith('prepareRuns') }.configureEach {
-    enabled = false
-}

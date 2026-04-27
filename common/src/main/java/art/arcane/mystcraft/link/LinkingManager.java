@@ -10,6 +10,7 @@ import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.registry.ModSounds;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.util.ChunkStatusCompat;
+import art.arcane.mystcraft.util.ServerPlayerTeleport;
 import art.arcane.mystcraft.world.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -501,7 +502,7 @@ public final class LinkingManager {
    */
   private static void teleportEntity(Entity entity, ServerLevel targetLevel, Vec3 targetPos, float yaw) {
     if (entity instanceof ServerPlayer player) {
-      player.teleportTo(targetLevel, targetPos.x, targetPos.y, targetPos.z, yaw, player.getXRot());
+      ServerPlayerTeleport.teleport(player, targetLevel, targetPos.x, targetPos.y, targetPos.z, yaw, player.getXRot());
     } else {
       entity.teleportTo(targetLevel, targetPos.x, targetPos.y, targetPos.z, null, yaw, entity.getXRot());
     }

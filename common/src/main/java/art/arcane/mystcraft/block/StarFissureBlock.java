@@ -4,6 +4,7 @@ import art.arcane.mystcraft.blockentity.StarFissureBlockEntity;
 import art.arcane.mystcraft.registry.ModSounds;
 import art.arcane.mystcraft.util.BlockInteractionCompat;
 import art.arcane.mystcraft.util.CodecCompat;
+import art.arcane.mystcraft.util.ServerPlayerTeleport;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -121,7 +122,7 @@ public class StarFissureBlock extends BaseEntityBlock implements BlockInteractio
       if (respawnPos == null || player.getRespawnDimension() != Level.OVERWORLD) {
         respawnPos = overworld.getSharedSpawnPos();
       }
-      player.teleportTo(overworld, respawnPos.getX() + 0.5, respawnPos.getY(), respawnPos.getZ() + 0.5,
+      ServerPlayerTeleport.teleport(player, overworld, respawnPos.getX() + 0.5, respawnPos.getY(), respawnPos.getZ() + 0.5,
           entity.getYRot(), entity.getXRot());
       // Play arrival sound in overworld
       overworld.playSound(null, respawnPos, ModSounds.LINKING_LINK.get(),

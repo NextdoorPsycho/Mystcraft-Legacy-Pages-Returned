@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Interface for population functions that add decorations to generated terrain.
  * Examples include trees, flowers, ores, and custom decorations.
  * <p>
- * In 1.20.2+, population happens during the FEATURES chunk status via
+ * Population happens during the FEATURES chunk status via
  * applyBiomeDecoration(), NOT after chunk loading. The WorldGenLevel
  * parameter is typically a WorldGenRegion which provides a limited view
  * of the world optimized for world generation.

@@ -49,9 +49,11 @@ public class BoosterPackItem extends Item {
       // Consume the booster pack
       stack.shrink(1);
 
-      player.displayClientMessage(
-          Component.translatable("item.mystcraft.booster.opened", pages.size()),
-          true);
+      if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) || serverPlayer.connection != null) {
+        player.displayClientMessage(
+            Component.translatable("item.mystcraft.booster.opened", pages.size()),
+            true);
+      }
     }
 
     return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());

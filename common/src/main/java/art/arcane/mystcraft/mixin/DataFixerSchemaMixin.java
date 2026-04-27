@@ -24,6 +24,7 @@ public abstract class DataFixerSchemaMixin {
     schema.registerSimple(entities, "mystcraft:falling_block");
     schema.registerSimple(entities, "mystcraft:meteor");
     schema.registerSimple(entities, "mystcraft:colored_lightning");
+    schema.registerSimple(entities, "mystcraft:personal_pocket_proxy");
     cir.setReturnValue(entities);
   }
 }

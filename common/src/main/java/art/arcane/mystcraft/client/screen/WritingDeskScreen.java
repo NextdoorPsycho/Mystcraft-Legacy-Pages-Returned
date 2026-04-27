@@ -464,7 +464,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     return handleMouseScroll(mouseX, mouseY, delta);
   }
 
-  // 1.20.2 signature (4 params)
+  // Newer screen API compatibility overload.
   public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
     return handleMouseScroll(mouseX, mouseY, scrollY);
   }

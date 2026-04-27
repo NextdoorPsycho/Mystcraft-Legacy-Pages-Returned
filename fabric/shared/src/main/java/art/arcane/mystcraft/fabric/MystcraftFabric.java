@@ -1,11 +1,13 @@
 package art.arcane.mystcraft.fabric;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.entity.PersonalPocketProxyEntity;
 import art.arcane.mystcraft.network.FabricMystcraftNetwork;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeManager;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
@@ -25,19 +27,21 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * Fabric mod entry point for Mystcraft 1.20.2.
- * Self-contained - does not pull from fabric/src.
+ * Fabric mod entry point for Mystcraft 1.20.1.
  */
 public class MystcraftFabric implements ModInitializer {
 
   @Override
   public void onInitialize() {
-    Mystcraft.LOGGER.info("[Mystcraft] Fabric 1.20.2 initialization starting...");
+    Mystcraft.LOGGER.info("[Mystcraft] Fabric 1.20.1 initialization starting...");
 
     FabricMystcraftConfig.load();
 
     // Register all content via consolidated registries
     FabricRegistries.register();
+    FabricDefaultAttributeRegistry.register(
+        FabricRegistries.PERSONAL_POCKET_PROXY_ENTITY.get(),
+        PersonalPocketProxyEntity.createAttributes());
 
     // Populate common stubs from Fabric registry objects
     FabricRegistries.populateCommonRegistries();
@@ -82,7 +86,7 @@ public class MystcraftFabric implements ModInitializer {
     // Register lectern interaction handler for Mystcraft books
     LecternInteractionHandler.register();
 
-    Mystcraft.LOGGER.info("[Mystcraft] Fabric 1.20.2 registration complete");
+    Mystcraft.LOGGER.info("[Mystcraft] Fabric 1.20.1 registration complete");
   }
 
   /**

@@ -11,6 +11,7 @@ import art.arcane.mystcraft.entity.ColoredLightningEntity;
 import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.entity.MystcraftFallingBlockEntity;
+import art.arcane.mystcraft.entity.PersonalPocketProxyEntity;
 import art.arcane.mystcraft.item.*;
 import art.arcane.mystcraft.menu.*;
 import art.arcane.mystcraft.registry.*;
@@ -57,7 +58,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Consolidated Fabric registrations for Mystcraft 1.20.2.
+ * Consolidated Fabric registrations for Mystcraft 1.20.1.
  * Combines: FabricModBlocks, FabricModItems, FabricModEntities, FabricModBlockEntities,
  * FabricModSounds, FabricModMenuTypes, FabricModFluids, FabricModStructures, ModVillagers,
  * ModWorldGen, ModCreativeTabs.
@@ -161,6 +162,14 @@ public final class FabricRegistries {
               .clientTrackingRange(10)
               .updateInterval(20)
               .build(new ResourceLocation(Mystcraft.MOD_ID, "linkbook").toString()));
+  public static final Supplier<EntityType<PersonalPocketProxyEntity>> PERSONAL_POCKET_PROXY_ENTITY =
+      registerEntity("personal_pocket_proxy",
+          EntityType.Builder.<PersonalPocketProxyEntity>of(PersonalPocketProxyEntity::new, MobCategory.MISC)
+              .noSave()
+              .sized(0.6F, 1.8F)
+              .clientTrackingRange(10)
+              .updateInterval(3)
+              .build(new ResourceLocation(Mystcraft.MOD_ID, "personal_pocket_proxy").toString()));
   public static final Supplier<EntityType<MystcraftFallingBlockEntity>> FALLING_BLOCK_ENTITY =
       registerEntity("falling_block",
           EntityType.Builder.<MystcraftFallingBlockEntity>of(MystcraftFallingBlockEntity::new, MobCategory.MISC)
@@ -487,6 +496,7 @@ public final class FabricRegistries {
 
     // Entities
     ModEntities.LINKBOOK = LINKBOOK_ENTITY;
+    ModEntities.PERSONAL_POCKET_PROXY = PERSONAL_POCKET_PROXY_ENTITY;
     ModEntities.FALLING_BLOCK = FALLING_BLOCK_ENTITY;
     ModEntities.METEOR = METEOR_ENTITY;
     ModEntities.COLORED_LIGHTNING = COLORED_LIGHTNING_ENTITY;

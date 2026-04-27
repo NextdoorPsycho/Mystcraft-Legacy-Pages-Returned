@@ -7,6 +7,7 @@ import art.arcane.mystcraft.entity.ColoredLightningEntity;
 import art.arcane.mystcraft.entity.LinkbookEntity;
 import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.entity.MystcraftFallingBlockEntity;
+import art.arcane.mystcraft.entity.PersonalPocketProxyEntity;
 import art.arcane.mystcraft.forge.BlackInkFluid;
 import art.arcane.mystcraft.forge.BlackInkFluidType;
 import art.arcane.mystcraft.forge.ForgeMystcraftConfig;
@@ -98,6 +99,7 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
 
   // Entities
   private RegistryObject<EntityType<LinkbookEntity>> linkbookEntity;
+  private RegistryObject<EntityType<PersonalPocketProxyEntity>> personalPocketProxyEntity;
   private RegistryObject<EntityType<MystcraftFallingBlockEntity>> fallingBlockEntity;
   private RegistryObject<EntityType<MeteorEntity>> meteorEntity;
   private RegistryObject<EntityType<ColoredLightningEntity>> coloredLightningEntity;
@@ -266,6 +268,13 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
             .clientTrackingRange(10)
             .updateInterval(20)
             .build(new ResourceLocation(Mystcraft.MOD_ID, "linkbook").toString()));
+    personalPocketProxyEntity = MystcraftForgeRegistries.ENTITIES.register("personal_pocket_proxy",
+        () -> EntityType.Builder.<PersonalPocketProxyEntity>of(PersonalPocketProxyEntity::new, MobCategory.MISC)
+            .noSave()
+            .sized(0.6F, 1.8F)
+            .clientTrackingRange(10)
+            .updateInterval(3)
+            .build(new ResourceLocation(Mystcraft.MOD_ID, "personal_pocket_proxy").toString()));
     fallingBlockEntity = MystcraftForgeRegistries.ENTITIES.register("falling_block",
         () -> EntityType.Builder.<MystcraftFallingBlockEntity>of(MystcraftFallingBlockEntity::new, MobCategory.MISC)
             .sized(0.98F, 0.98F)
@@ -373,6 +382,7 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
 
     // Entities
     ModEntities.LINKBOOK = linkbookEntity;
+    ModEntities.PERSONAL_POCKET_PROXY = personalPocketProxyEntity;
     ModEntities.FALLING_BLOCK = fallingBlockEntity;
     ModEntities.METEOR = meteorEntity;
     ModEntities.COLORED_LIGHTNING = coloredLightningEntity;

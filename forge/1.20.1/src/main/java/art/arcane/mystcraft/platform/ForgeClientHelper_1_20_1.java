@@ -6,7 +6,7 @@ import net.minecraft.client.gui.screens.Screen;
 
 /**
  * Forge 1.20.1-specific client helper.
- * Handles API differences for 1.20.1 compared to 1.20.2.
+ * Handles Forge client API calls for Minecraft 1.20.1.
  */
 public class ForgeClientHelper_1_20_1 implements IClientHelper {
 

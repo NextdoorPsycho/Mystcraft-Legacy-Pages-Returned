@@ -9,7 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Consolidated Fabric instability bonuses for Mystcraft 1.20.2.
+ * Consolidated Fabric instability bonuses for Mystcraft 1.20.1.
  * Combines FabricPlayerKilledBonus and FabricPlayerSurvivalBonus.
  */
 public final class FabricInstabilityBonuses {

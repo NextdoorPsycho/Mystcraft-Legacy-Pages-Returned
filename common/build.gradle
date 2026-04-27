@@ -33,15 +33,15 @@ loom {
 
 dependencies {
     // Minecraft (via loom - provides actual deobfuscated classes)
-    minecraft "com.mojang:minecraft:${minecraft_version_1_20_4}"
+    minecraft "com.mojang:minecraft:${minecraft_version_1_20_1}"
     mappings loom.officialMojangMappings()
 
     // Fabric Loader + API (for IDE resolution of Fabric classes)
-    modCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version_1_20_4}"
-    modCompileOnly "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_4}"
+    modCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version_1_20_1}"
+    modCompileOnly "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_1}"
 
     // Forge (for IDE resolution of Forge classes)
-    compileOnly "net.minecraftforge:forge:${minecraft_version_1_20_4}-${forge_version_1_20_4}"
+    compileOnly "net.minecraftforge:forge:${minecraft_version_1_20_1}-${forge_version_1_20_1}"
 
     // Night Config (used for TOML config parsing)
     compileOnly "com.electronwill.night-config:core:3.6.7"

@@ -150,7 +150,7 @@ public class PortfolioItem extends Item implements TooltipCompat {
         IAgeSymbol symbol = SymbolRegistry.get(symbolId);
         if (symbol != null) {
           String category = symbol.getCategory().getName().toLowerCase();
-          String name = symbol.getLocalizedName().toLowerCase();
+          String name = symbol.getRegistryName().toString().toLowerCase();
           return category + "_" + name;
         }
         return "zzz_" + symbolId;

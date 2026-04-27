@@ -1198,6 +1198,11 @@ public class AgeChunkGenerator extends ChunkGenerator {
           int shellLayer = Math.max(Math.max(layerX, layerY), layerZ);
 
           if (shellLayer == 0) {
+            // Keep the return area in terrain generation now that personal pockets no longer place a bookstand.
+            if (worldY == centerY - innerHalfY && Math.abs(worldX) <= 2 && Math.abs(worldZ) <= 2) {
+              pos.set(localX, worldY, localZ);
+              chunk.setBlockState(pos, Blocks.SMOOTH_STONE.defaultBlockState(), false);
+            }
             // Inside inner void - leave as air
             continue;
           } else if (shellLayer <= innerThick) {

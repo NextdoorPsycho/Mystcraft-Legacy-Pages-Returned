@@ -12,22 +12,19 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Abstracts version-specific Minecraft APIs that changed between 1.20.1 and 1.20.2.
+ * Centralizes Minecraft API calls that are sensitive to mappings or loader setup.
  */
 public interface IVersionHelper {
 
   /**
    * Gets the Minecraft version this helper targets.
    *
-   * @return Version string like "1.20.1" or "1.20.2"
+   * @return Target Minecraft version string.
    */
   String getMinecraftVersion();
 
   /**
-   * Computes or loads SavedData using the version-appropriate API.
-   * <p>
-   * In 1.20.1: Uses computeIfAbsent(Function, Supplier, String)
-   * In 1.20.2: Uses computeIfAbsent(SavedData.Factory, String)
+   * Computes or loads SavedData using the supported 1.20.1 API.
    *
    * @param level       The server level to get data storage from
    * @param constructor Supplier for creating new instances
@@ -44,23 +41,21 @@ public interface IVersionHelper {
   );
 
   /**
-   * Checks if the screen API uses the 4-parameter mouseScrolled method.
+   * Checks if the screen API uses the newer 4-parameter mouseScrolled method.
    *
-   * @return true for 1.20.2+ (4 params: mouseX, mouseY, scrollX, scrollY),
-   * false for 1.20.1 (3 params: mouseX, mouseY, scrollDelta)
+   * @return false for the supported 1.20.1 API.
    */
   default boolean usesNewScrollAPI() {
-    return true;
+    return false;
   }
 
   /**
-   * Checks if the screen API uses the 4-parameter renderBackground method.
+   * Checks if the screen API uses the newer 4-parameter renderBackground method.
    *
-   * @return true for 1.20.2+ (4 params: graphics, mouseX, mouseY, partialTick),
-   * false for 1.20.1 (1 param: graphics)
+   * @return false for the supported 1.20.1 API.
    */
   default boolean usesNewRenderBackgroundAPI() {
-    return true;
+    return false;
   }
 
   /**

@@ -132,8 +132,8 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     if (stack.getItem() instanceof AgebookItem) {
       return true;
     }
-    // Can write to linkbooks (add pages)
-    return stack.getItem() instanceof LinkbookItem;
+    // Can write to normal linkbooks (add pages)
+    return stack.getItem() instanceof LinkbookItem && !(stack.getItem() instanceof PersonalLinkBookItem);
   }
 
   /**
@@ -144,7 +144,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     return stack.getItem() instanceof FolderItem ||
         stack.getItem() instanceof PortfolioItem ||
         stack.getItem() instanceof AgebookItem ||
-        stack.getItem() instanceof LinkbookItem;
+        (stack.getItem() instanceof LinkbookItem && !(stack.getItem() instanceof PersonalLinkBookItem));
   }
 
   /**

@@ -170,7 +170,7 @@ public class AgeData extends SavedData {
   @Nullable
   public static AgeData getIfPresent(ServerLevel level) {
     // Use the computeSavedData method which works across versions
-    // In 1.20.2, we could use get() but for cross-version compatibility we just compute
+    // Computes or loads the age data through the active platform helper.
     return Services.VERSION.computeSavedData(
         level,
         AgeData::new,

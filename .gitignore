@@ -97,6 +97,9 @@ locations.gradle
 **/.ai/
 **/.agents/
 **/AGENTS.md
+**/CODE_STYLE_DART.md
+**/CODE_STYLE_MODDING.md
+**/TotalFixes.md
 **/.llm/
 **/.aiconfig
 **/.airc

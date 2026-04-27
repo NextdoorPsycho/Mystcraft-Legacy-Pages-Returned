@@ -4,6 +4,7 @@ import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.registry.ModSounds;
+import art.arcane.mystcraft.util.ServerPlayerTeleport;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeReturnData;
 import net.minecraft.core.BlockPos;
@@ -77,7 +78,8 @@ public final class AgeReturnHandler {
     player.setDeltaMovement(0.0, 0.0, 0.0);
     player.fallDistance = 0.0f;
 
-    player.teleportTo(
+    ServerPlayerTeleport.teleport(
+        player,
         targetLevel,
         targetPos.getX() + 0.5,
         targetPos.getY(),
@@ -89,7 +91,7 @@ public final class AgeReturnHandler {
     targetLevel.playSound(null, targetPos, ModSounds.LINKING_LINK.get(), SoundSource.PLAYERS, 1.0f, 1.0f);
 
     if (targetLevel.dimension() != Level.OVERWORLD) {
-      player.connection.send(new net.minecraft.network.protocol.game.ClientboundPlayerAbilitiesPacket(player.getAbilities()));
+      ServerPlayerTeleport.syncAbilitiesIfConnected(player);
     }
   }
 }

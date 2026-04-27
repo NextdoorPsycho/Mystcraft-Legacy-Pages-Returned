@@ -1,6 +1,9 @@
 package art.arcane.mystcraft.forge;
 
 import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.entity.PersonalPocketProxyEntity;
+import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_20_1;
+import art.arcane.mystcraft.platform.ForgeEventHelper_1_20_1;
 import art.arcane.mystcraft.registry.*;
 import net.minecraft.SharedConstants;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
@@ -51,16 +54,14 @@ public class MystcraftForge {
 
     modEventBus.addListener(this::commonSetup);
     modEventBus.addListener(this::registerGameTests);
+    modEventBus.addListener(this::registerEntityAttributes);
 
     MinecraftForge.EVENT_BUS.register(this);
 
-    // Register all events via a version-specific ForgeEventHelper
-    Object eventHelper = instantiateFirst(
-        "art.arcane.mystcraft.platform.ForgeEventHelper",
-        "art.arcane.mystcraft.platform.ForgeEventHelper_1_20_1");
-    invokeNoArg(eventHelper, "registerServerEvents");
-    invokeNoArg(eventHelper, "registerClientEvents");
-    invokeNoArg(eventHelper, "registerCommonEvents");
+    ForgeEventHelper_1_20_1 eventHelper = new ForgeEventHelper_1_20_1();
+    eventHelper.registerServerEvents();
+    eventHelper.registerClientEvents();
+    eventHelper.registerCommonEvents();
 
     Mystcraft.init();
 
@@ -77,6 +78,10 @@ public class MystcraftForge {
     }
   }
 
+  private void registerEntityAttributes(net.minecraftforge.event.entity.EntityAttributeCreationEvent event) {
+    event.put(ModEntities.PERSONAL_POCKET_PROXY.get(), PersonalPocketProxyEntity.createAttributes().build());
+  }
+
   private void commonSetup(FMLCommonSetupEvent event) {
     // Never force dev-mode globally during normal gameplay.
     // In large modpacks this enables strict startup validation and can crash clients with
@@ -88,10 +93,7 @@ public class MystcraftForge {
 
     event.enqueueWork(() -> {
       art.arcane.mystcraft.advancements.ModAdvancements.register();
-      invokeStaticNoArg(
-          "art.arcane.mystcraft.network.ForgeMystcraftNetwork",
-          "art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_20_1",
-          "register");
+      ForgeMystcraftNetwork_1_20_1.register();
 
       Mystcraft.commonSetup();
 
@@ -232,6 +234,8 @@ public class MystcraftForge {
 
       event.registerEntityRenderer(ModEntities.LINKBOOK.get(),
           art.arcane.mystcraft.client.renderer.LinkbookEntityRenderer::new);
+      event.registerEntityRenderer(ModEntities.PERSONAL_POCKET_PROXY.get(),
+          art.arcane.mystcraft.client.renderer.PersonalPocketProxyRenderer::new);
       event.registerEntityRenderer(ModEntities.METEOR.get(),
           art.arcane.mystcraft.client.renderer.MeteorEntityRenderer::new);
       event.registerEntityRenderer(ModEntities.FALLING_BLOCK.get(),
@@ -378,23 +382,6 @@ public class MystcraftForge {
     }
   }
 
-  private static Object instantiateFirst(String preferredClass, String fallbackClass) {
-    Class<?> type = loadClass(preferredClass, fallbackClass);
-    try {
-      return type.getDeclaredConstructor().newInstance();
-    } catch (ReflectiveOperationException e) {
-      throw new RuntimeException("Failed to instantiate " + type.getName(), e);
-    }
-  }
-
-  private static void invokeNoArg(Object target, String methodName) {
-    try {
-      target.getClass().getMethod(methodName).invoke(target);
-    } catch (ReflectiveOperationException e) {
-      throw new RuntimeException("Failed to invoke " + methodName + " on " + target.getClass().getName(), e);
-    }
-  }
-
   private static net.minecraft.world.level.block.Block resolveShortGrass() {
     try {
       return (net.minecraft.world.level.block.Block) net.minecraft.world.level.block.Blocks.class.getField("SHORT_GRASS").get(null);
@@ -409,24 +396,4 @@ public class MystcraftForge {
     return net.minecraft.world.level.block.Blocks.GRASS_BLOCK;
   }
 
-  private static void invokeStaticNoArg(String preferredClass, String fallbackClass, String methodName) {
-    Class<?> type = loadClass(preferredClass, fallbackClass);
-    try {
-      type.getMethod(methodName).invoke(null);
-    } catch (ReflectiveOperationException e) {
-      throw new RuntimeException("Failed to invoke " + methodName + " on " + type.getName(), e);
-    }
-  }
-
-  private static Class<?> loadClass(String preferredClass, String fallbackClass) {
-    try {
-      return Class.forName(preferredClass);
-    } catch (ClassNotFoundException ignored) {
-      try {
-        return Class.forName(fallbackClass);
-      } catch (ClassNotFoundException e) {
-        throw new RuntimeException("Missing expected class: " + preferredClass + " or " + fallbackClass, e);
-      }
-    }
-  }
 }

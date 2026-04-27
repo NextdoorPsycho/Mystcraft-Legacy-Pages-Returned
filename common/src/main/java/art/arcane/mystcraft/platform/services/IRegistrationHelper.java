@@ -13,16 +13,16 @@ import java.util.function.Supplier;
 
 /**
  * Abstracts platform-specific registry operations.
- * Each platform implements this to handle DeferredRegister (Forge/NeoForge) or direct registration (Fabric).
+ * Each platform implements this to handle DeferredRegister (Forge) or direct registration (Fabric).
  */
 public interface IRegistrationHelper {
 
   /**
    * Initializes the registration system with the platform's mod event bus.
-   * For Forge/NeoForge this is the IEventBus, for Fabric this may be null.
+   * For Forge this is the IEventBus, for Fabric this may be null.
    * Must be called before any registrations.
    *
-   * @param modEventBus Platform-specific event bus (IEventBus for Forge/NeoForge, null for Fabric)
+   * @param modEventBus Platform-specific event bus (IEventBus for Forge, null for Fabric)
    */
   void initialize(Object modEventBus);
 

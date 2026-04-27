@@ -31,7 +31,7 @@ import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import java.lang.reflect.Field;
 
 /**
- * Consolidated Fabric event helper for Mystcraft 1.20.2.
+ * Consolidated Fabric event helper for Mystcraft 1.20.1.
  * Combines: FabricEventRegistration, FabricVillageStructureHandler, FabricArchivistTrades,
  * and the IEventHelper interface implementation.
  */
@@ -46,6 +46,7 @@ public final class FabricEventHelper implements IEventHelper {
     ServerTickEvents.END_WORLD_TICK.register(level -> {
       InstabilityManager.onLevelTick(level);
       AgeEffectsHandler.onLevelTick(level);
+      PersonalPocketEscapeHandler.tickProxyCleanup(level);
     });
 
     // Command registration
@@ -81,6 +82,7 @@ public final class FabricEventHelper implements IEventHelper {
       ServerPlayer player = handler.getPlayer();
       AgeDataSyncHandler.onPlayerLoggedIn(player);
       GuidebookHandler.onPlayerLoggedIn(player);
+      PersonalPocketEscapeHandler.syncProxyForPlayer(player);
     });
 
     // Player respawn: death handler and data re-sync
@@ -94,6 +96,7 @@ public final class FabricEventHelper implements IEventHelper {
     // Player dimension change: age data sync
     ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {
       AgeDataSyncHandler.onPlayerChangeDimension(player);
+      PersonalPocketEscapeHandler.syncProxyForPlayer(player);
     });
 
     // Network events (symbol sync on join)

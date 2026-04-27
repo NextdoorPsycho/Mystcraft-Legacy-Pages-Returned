@@ -2,6 +2,7 @@ package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.platform.Services;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -25,9 +26,19 @@ public class PersonalPocketData extends SavedData {
   private static final String TAG_HEADS = "HeadBlocks";
   private static final String TAG_FACES = "Faces";
   private static final String TAG_BLOCKS = "Blocks";
+  private static final String TAG_PROXIES = "ActiveProxies";
+  private static final String TAG_DIMENSION = "Dimension";
+  private static final String TAG_X = "X";
+  private static final String TAG_Y = "Y";
+  private static final String TAG_Z = "Z";
+  private static final String TAG_YAW = "Yaw";
+  private static final String TAG_PITCH = "Pitch";
+  private static final String TAG_PROXY = "Proxy";
+  private static final String TAG_OWNER_NAME = "OwnerName";
 
   private final Map<UUID, CompoundTag> returnLinks = new HashMap<>();
   private final Map<UUID, Map<AgeData.PocketHeadFace, List<String>>> headBlocks = new HashMap<>();
+  private final Map<UUID, ProxyState> activeProxies = new HashMap<>();
 
   public static PersonalPocketData load(CompoundTag tag) {
     PersonalPocketData data = new PersonalPocketData();
@@ -48,6 +59,7 @@ public class PersonalPocketData extends SavedData {
   private void loadFromTag(CompoundTag tag) {
     returnLinks.clear();
     headBlocks.clear();
+    activeProxies.clear();
     if (!tag.contains(TAG_RETURNS)) {
       // continue to head blocks
     } else {
@@ -57,41 +69,74 @@ public class PersonalPocketData extends SavedData {
         if (!entry.contains(TAG_PLAYER) || !entry.contains(TAG_LINK)) {
           continue;
         }
-        UUID playerId = UUID.fromString(entry.getString(TAG_PLAYER));
+        UUID playerId = parseUuid(entry.getString(TAG_PLAYER));
+        if (playerId == null) {
+          continue;
+        }
         CompoundTag link = entry.getCompound(TAG_LINK);
         returnLinks.put(playerId, link.copy());
       }
     }
 
     if (!tag.contains(TAG_HEADS)) {
+      // continue to proxies
+    } else {
+      ListTag headList = tag.getList(TAG_HEADS, Tag.TAG_COMPOUND);
+      for (int i = 0; i < headList.size(); i++) {
+        CompoundTag entry = headList.getCompound(i);
+        if (!entry.contains(TAG_PLAYER) || !entry.contains(TAG_FACES)) {
+          continue;
+        }
+        UUID playerId = parseUuid(entry.getString(TAG_PLAYER));
+        if (playerId == null) {
+          continue;
+        }
+        CompoundTag facesTag = entry.getCompound(TAG_FACES);
+        Map<AgeData.PocketHeadFace, List<String>> map = new EnumMap<>(AgeData.PocketHeadFace.class);
+        for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
+          if (!facesTag.contains(face.name(), Tag.TAG_LIST)) {
+            continue;
+          }
+          ListTag blocks = facesTag.getList(face.name(), Tag.TAG_STRING);
+          if (blocks.size() != 64) {
+            continue;
+          }
+          List<String> list = new ArrayList<>(64);
+          for (int b = 0; b < blocks.size(); b++) {
+            list.add(blocks.getString(b));
+          }
+          map.put(face, list);
+        }
+        if (map.size() == AgeData.PocketHeadFace.values().length) {
+          headBlocks.put(playerId, map);
+        }
+      }
+    }
+
+    if (!tag.contains(TAG_PROXIES)) {
       return;
     }
-    ListTag headList = tag.getList(TAG_HEADS, Tag.TAG_COMPOUND);
-    for (int i = 0; i < headList.size(); i++) {
-      CompoundTag entry = headList.getCompound(i);
-      if (!entry.contains(TAG_PLAYER) || !entry.contains(TAG_FACES)) {
+    ListTag proxyList = tag.getList(TAG_PROXIES, Tag.TAG_COMPOUND);
+    for (int i = 0; i < proxyList.size(); i++) {
+      CompoundTag entry = proxyList.getCompound(i);
+      if (!entry.contains(TAG_PLAYER) || !entry.contains(TAG_DIMENSION) || !entry.contains(TAG_LINK)) {
         continue;
       }
-      UUID playerId = UUID.fromString(entry.getString(TAG_PLAYER));
-      CompoundTag facesTag = entry.getCompound(TAG_FACES);
-      Map<AgeData.PocketHeadFace, List<String>> map = new EnumMap<>(AgeData.PocketHeadFace.class);
-      for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
-        if (!facesTag.contains(face.name(), Tag.TAG_LIST)) {
-          continue;
-        }
-        ListTag blocks = facesTag.getList(face.name(), Tag.TAG_STRING);
-        if (blocks.size() != 64) {
-          continue;
-        }
-        List<String> list = new ArrayList<>(64);
-        for (int b = 0; b < blocks.size(); b++) {
-          list.add(blocks.getString(b));
-        }
-        map.put(face, list);
+      UUID playerId = parseUuid(entry.getString(TAG_PLAYER));
+      UUID proxyId = parseUuid(entry.getString(TAG_PROXY));
+      if (playerId == null || proxyId == null) {
+        continue;
       }
-      if (map.size() == AgeData.PocketHeadFace.values().length) {
-        headBlocks.put(playerId, map);
-      }
+      BlockPos position = new BlockPos(entry.getInt(TAG_X), entry.getInt(TAG_Y), entry.getInt(TAG_Z));
+      activeProxies.put(playerId, new ProxyState(
+          entry.getString(TAG_OWNER_NAME),
+          entry.getInt(TAG_DIMENSION),
+          position,
+          entry.getFloat(TAG_YAW),
+          entry.getFloat(TAG_PITCH),
+          proxyId,
+          entry.getCompound(TAG_LINK)
+      ));
     }
   }
 
@@ -121,6 +166,24 @@ public class PersonalPocketData extends SavedData {
       headList.add(item);
     }
     tag.put(TAG_HEADS, headList);
+
+    ListTag proxyList = new ListTag();
+    for (Map.Entry<UUID, ProxyState> entry : activeProxies.entrySet()) {
+      ProxyState state = entry.getValue();
+      CompoundTag item = new CompoundTag();
+      item.putString(TAG_PLAYER, entry.getKey().toString());
+      item.putString(TAG_OWNER_NAME, state.ownerName());
+      item.putInt(TAG_DIMENSION, state.dimensionUid());
+      item.putInt(TAG_X, state.position().getX());
+      item.putInt(TAG_Y, state.position().getY());
+      item.putInt(TAG_Z, state.position().getZ());
+      item.putFloat(TAG_YAW, state.yaw());
+      item.putFloat(TAG_PITCH, state.pitch());
+      item.putString(TAG_PROXY, state.proxyId().toString());
+      item.put(TAG_LINK, state.returnLink());
+      proxyList.add(item);
+    }
+    tag.put(TAG_PROXIES, proxyList);
     return tag;
   }
 
@@ -164,5 +227,50 @@ public class PersonalPocketData extends SavedData {
       copy.put(entry.getKey(), new ArrayList<>(entry.getValue()));
     }
     return copy;
+  }
+
+  public void setActiveProxy(UUID playerId, ProxyState state) {
+    activeProxies.put(playerId, state);
+    setDirty();
+  }
+
+  @Nullable
+  public ProxyState getActiveProxy(UUID playerId) {
+    return activeProxies.get(playerId);
+  }
+
+  public Set<UUID> getActiveProxyOwners() {
+    return new HashSet<>(activeProxies.keySet());
+  }
+
+  public void clearActiveProxy(UUID playerId) {
+    if (activeProxies.remove(playerId) != null) {
+      setDirty();
+    }
+  }
+
+  @Nullable
+  private static UUID parseUuid(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return UUID.fromString(value);
+    } catch (IllegalArgumentException ignored) {
+      return null;
+    }
+  }
+
+  public record ProxyState(String ownerName, int dimensionUid, BlockPos position, float yaw, float pitch,
+                           UUID proxyId, CompoundTag returnLink) {
+    public ProxyState {
+      ownerName = ownerName == null ? "" : ownerName;
+      returnLink = returnLink == null ? new CompoundTag() : returnLink.copy();
+    }
+
+    @Override
+    public CompoundTag returnLink() {
+      return returnLink.copy();
+    }
   }
 }

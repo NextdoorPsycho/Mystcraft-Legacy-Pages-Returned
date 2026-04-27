@@ -41,10 +41,7 @@ public interface IClientHelper {
   void registerRenderTypes();
 
   /**
-   * Renders the screen background using the version-appropriate API.
-   * <p>
-   * In 1.20.1: calls screen.renderBackground(graphics)
-   * In 1.20.2: calls screen.renderBackground(graphics, mouseX, mouseY, partialTick)
+   * Renders the screen background using the supported 1.20.1 API.
    *
    * @param screen      The screen to render background for
    * @param graphics    The GuiGraphics context
@@ -55,17 +52,13 @@ public interface IClientHelper {
   void renderScreenBackground(Screen screen, GuiGraphics graphics, int mouseX, int mouseY, float partialTick);
 
   /**
-   * Handles mouse scroll events using the version-appropriate API.
-   * <p>
-   * In 1.20.1: passes (mouseX, mouseY, scrollDelta) - scrollDelta combines X and Y
-   * In 1.20.2: passes (mouseX, mouseY, scrollX, scrollY) - separate scroll axes
+   * Handles mouse scroll events using the supported 1.20.1 API.
    *
    * @param scrollX Horizontal scroll amount (0 in 1.20.1)
    * @param scrollY Vertical scroll amount (scrollDelta in 1.20.1)
    * @return The effective scroll delta for vertical scrolling
    */
   default double getEffectiveScrollDelta(double scrollX, double scrollY) {
-    // Default to 1.20.2 behavior where scrollY is the vertical delta
     return scrollY;
   }
 }

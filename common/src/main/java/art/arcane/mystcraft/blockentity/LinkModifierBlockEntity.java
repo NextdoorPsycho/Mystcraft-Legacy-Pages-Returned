@@ -5,6 +5,7 @@ import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
 import art.arcane.mystcraft.item.PageItem;
+import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.menu.LinkModifierMenu;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.util.ItemStackNbt;
@@ -47,7 +48,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
     @Override
     public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
       if (slot == SLOT_BOOK) {
-        return stack.getItem() instanceof LinkbookItem;
+        return isModifiableLinkbook(stack);
       }
       if (slot >= SLOT_MODIFIER_START && slot <= SLOT_MODIFIER_END) {
         return stack.getItem() instanceof PageItem && Page.hasLinkProperties(stack);
@@ -143,7 +144,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    */
   public boolean canModify() {
     ItemStack book = getBook();
-    if (book.isEmpty() || !(book.getItem() instanceof LinkbookItem)) {
+    if (!isModifiableLinkbook(book)) {
       return false;
     }
 
@@ -215,7 +216,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    */
   public void setBookTitle(@NotNull Player player, @NotNull String title) {
     ItemStack book = getBook();
-    if (book.isEmpty()) return;
+    if (!isModifiableLinkbook(book)) return;
     ItemStackNbt.setHoverName(book, Component.literal(title));
     setChanged();
     markForUpdate();
@@ -226,7 +227,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    */
   public boolean getLinkFlag(@NotNull String flagId) {
     ItemStack book = getBook();
-    if (book.isEmpty()) return false;
+    if (!isModifiableLinkbook(book)) return false;
     return Page.hasLinkProperty(book, flagId);
   }
 
@@ -235,7 +236,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    */
   public void setLinkFlag(@NotNull String flagId, boolean value) {
     ItemStack book = getBook();
-    if (book.isEmpty()) return;
+    if (!isModifiableLinkbook(book)) return;
 
     if (value) {
       Page.addLinkProperty(book, flagId);
@@ -326,7 +327,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    */
   public void recycleDimension() {
     ItemStack book = getBook();
-    if (book.isEmpty()) return;
+    if (!isModifiableLinkbook(book)) return;
 
     LinkOptions options = LinkOptions.fromItemStack(book);
     if (options == null) return;
@@ -348,5 +349,11 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
   @Override
   public AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
     return new LinkModifierMenu(containerId, playerInventory, this);
+  }
+
+  private static boolean isModifiableLinkbook(ItemStack stack) {
+    return !stack.isEmpty()
+        && stack.getItem() instanceof LinkbookItem
+        && !(stack.getItem() instanceof PersonalLinkBookItem);
   }
 }

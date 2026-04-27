@@ -361,7 +361,7 @@ public class BiomeDecorationPopulator implements IPopulate {
       BlockState ground = world.getBlockState(belowPos);
       if (ground.is(Blocks.GRASS_BLOCK) || ground.is(BlockTags.DIRT)) {
         if (world.getBlockState(grassPos).isAir()) {
-          // Choose grass type - use platform service for SHORT_GRASS (renamed in 1.20.4+)
+          // Choose grass type through the platform service.
           BlockState shortGrass = Services.PLATFORM.getShortGrassBlock().defaultBlockState();
           BlockState grass = random.nextInt(3) == 0 ?
               Blocks.TALL_GRASS.defaultBlockState() :

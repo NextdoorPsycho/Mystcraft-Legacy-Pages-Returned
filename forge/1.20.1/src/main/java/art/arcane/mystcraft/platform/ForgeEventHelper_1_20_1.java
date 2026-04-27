@@ -183,6 +183,8 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
 
     // Instability effects
     InstabilityManager.onLevelTick(serverLevel);
+
+    PersonalPocketEscapeHandler.tickProxyCleanup(serverLevel);
   }
 
   private void onPlayerDeath(LivingDeathEvent event) {
@@ -224,6 +226,7 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
 
       // Age data sync
       AgeDataSyncHandler.onPlayerLoggedIn(player);
+      PersonalPocketEscapeHandler.syncProxyForPlayer(player);
 
       // Symbol sync
       ForgeMystcraftNetwork_1_20_1.sendToPlayer(new SymbolSyncPacket(), player);
@@ -236,6 +239,7 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
   private void onPlayerChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
     if (event.getEntity() instanceof ServerPlayer player) {
       AgeDataSyncHandler.onPlayerChangeDimension(player);
+      PersonalPocketEscapeHandler.syncProxyForPlayer(player);
       Mystcraft.LOGGER.debug("Player {} changed dimension from {} to {}",
           player.getName().getString(), event.getFrom(), event.getTo());
     }

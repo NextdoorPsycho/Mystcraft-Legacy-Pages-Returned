@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Fabric-side configuration for Mystcraft (1.20.2).
- * Uses TOML file storage to match Forge/NeoForge format.
+ * Fabric-side configuration for Mystcraft 1.20.1.
+ * Uses TOML file storage to match Forge format.
  * Fields expose .get() methods to match the ForgeConfigSpec API used by common code.
  */
 public class FabricMystcraftConfig {
@@ -178,7 +178,7 @@ public class FabricMystcraftConfig {
     pocketInnerHalfSizeXZ.set(config.getOrElse("personal_pocket.innerHalfSizeXZ", pocketInnerHalfSizeXZ.defaultValue));
 
     setCommentAndDefault(config, "personal_pocket.innerHalfSizeY", pocketInnerHalfSizeY.defaultValue,
-        "Half the inner void space vertically (Y axis). Range: 2-4096. Minecraft 1.20.2 max is ~4048 due to dimension height.");
+        "Half the inner void space vertically (Y axis). Range: 2-4096. Minecraft 1.20.1 max is ~4048 due to dimension height.");
     pocketInnerHalfSizeY.set(config.getOrElse("personal_pocket.innerHalfSizeY", pocketInnerHalfSizeY.defaultValue));
 
     setCommentAndDefault(config, "personal_pocket.innerThickness", pocketInnerThickness.defaultValue,

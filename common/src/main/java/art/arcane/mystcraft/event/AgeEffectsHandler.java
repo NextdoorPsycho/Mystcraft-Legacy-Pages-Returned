@@ -7,6 +7,7 @@ import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.instability.InstabilityController;
 import art.arcane.mystcraft.registry.ModEntities;
 import art.arcane.mystcraft.registry.ModSounds;
+import art.arcane.mystcraft.util.ServerPlayerTeleport;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.weather.*;
@@ -330,7 +331,8 @@ public class AgeEffectsHandler {
     BlockPos spawn = AgeDimensionFactory.getAgeSpawn(level);
     player.setDeltaMovement(0.0, 0.0, 0.0);
     player.fallDistance = 0.0f;
-    player.teleportTo(
+    ServerPlayerTeleport.teleport(
+        player,
         level,
         spawn.getX() + 0.5,
         spawn.getY(),

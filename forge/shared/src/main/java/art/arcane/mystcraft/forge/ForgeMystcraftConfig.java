@@ -218,7 +218,7 @@ public class ForgeMystcraftConfig {
             "Half the inner void space vertically (Y axis) in blocks.",
             "Default: 24 (48 block height).",
             "Min: 2 (4 block height). Max: 4096 (8192 block height).",
-            "Note: Minecraft 1.20.2 dimension height is 4064, so ~4048 is the practical max."
+            "Note: Minecraft 1.20.1 dimension height is 4064, so ~4048 is the practical max."
         )
         .defineInRange("innerHalfSizeY", 24, 2, 4096);
 

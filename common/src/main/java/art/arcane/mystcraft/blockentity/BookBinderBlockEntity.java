@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.blockentity;
 
 import art.arcane.mystcraft.config.MystcraftConfig;
+import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.FolderItem;
@@ -344,15 +345,31 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
     }
 
     if (output.getItem() instanceof AgebookItem) {
+      // Capture cover item id BEFORE we shrink/clear the cover stack so the
+      // procedural book texture factory can pick the right cover palette.
+      ItemStack cover = getCoverStack();
+      ResourceLocation coverId = cover.isEmpty() ? null
+          : BuiltInRegistries.ITEM.getKey(cover.getItem());
+
       // Create the agebook with pages
       AgebookItem.create(output, player, new ArrayList<>(pages), pendingTitle);
+
+      // Persist cover material into the agebook's LinkOptions tag.
+      if (coverId != null) {
+        LinkOptions opts = LinkOptions.fromItemStack(output);
+        if (opts == null) {
+          opts = new LinkOptions(null);
+        }
+        CompoundTag data = opts.getTagCompound();
+        LinkOptions.setCoverItemId(data, coverId);
+        opts.toItemStack(output);
+      }
 
       // Clear the pages
       pages.clear();
       pendingTitle = null;
 
       // Consume one cover
-      ItemStack cover = getCoverStack();
       cover.shrink(1);
       if (cover.isEmpty()) {
         inventory.setItem(COVER_SLOT, ItemStack.EMPTY);

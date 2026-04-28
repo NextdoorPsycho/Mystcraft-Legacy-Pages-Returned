@@ -529,6 +529,8 @@ public final class FabricRegistries {
     MystcraftConfig.droppedBooksBecomeLivingEntities = () -> FabricMystcraftConfig.droppedBooksBecomeLivingEntities.get();
     MystcraftConfig.dropBooksOnRead = () -> FabricMystcraftConfig.dropBooksOnRead.get();
     MystcraftConfig.disabledSymbols = () -> FabricMystcraftConfig.disabledSymbols.get();
+    MystcraftConfig.proceduralUiEnabled = () -> FabricMystcraftConfig.proceduralUiEnabled.get();
+    MystcraftConfig.proceduralBookCoversEnabled = () -> FabricMystcraftConfig.proceduralBookCoversEnabled.get();
     MystcraftConfig.instabilityEnabled = () -> FabricMystcraftConfig.instabilityEnabled.get();
     MystcraftConfig.deathEffectsEnabled = () -> FabricMystcraftConfig.deathEffectsEnabled.get();
     MystcraftConfig.allowUnstableAges = () -> FabricMystcraftConfig.allowUnstableAges.get();

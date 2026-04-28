@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.client.screen;
 
+import art.arcane.mystcraft.client.gui.procedural.BookTextureFactory;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.AgebookItem;
@@ -32,16 +33,6 @@ import java.util.List;
  * Navigate with left/right clicks. Agebooks have gold borders.
  */
 public class BookScreen extends Screen {
-
-  // Book textures
-  private static final ResourceLocation BOOK_COVER =
-      new ResourceLocation("mystcraft", "gui/bookui_cover.png");
-  private static final ResourceLocation BOOK_PAGE_LEFT =
-      new ResourceLocation("mystcraft", "gui/bookui_pagel.png");
-  private static final ResourceLocation BOOK_PAGE_RIGHT =
-      new ResourceLocation("mystcraft", "gui/bookui_pager.png");
-  private static final ResourceLocation BOOK_PAGE_RIGHT_SOLID =
-      new ResourceLocation("mystcraft", "gui/bookui_rpage_full.png");
 
   // Book dimensions (327x199)
   private static final int BOOK_TEX_WIDTH = 327;
@@ -200,22 +191,26 @@ public class BookScreen extends Screen {
     guiGraphics.pose().translate(leftPos, topPos, 0);
     guiGraphics.pose().scale(xScale, yScale, 1);
 
-    // Draw book cover/backing
+    // Draw book cover/backing using a procedurally generated texture whose
+    // appearance depends on the book's cover material, ink tint, page count,
+    // and link properties. Falls back to neutral leather for old saves.
+    ResourceLocation coverTex = BookTextureFactory.getCoverTexture(book, isAgebook);
     RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-    guiGraphics.blit(BOOK_COVER, 0, 7, 152, 0, 34, 192, 256, 256);  // Left border
-    guiGraphics.blit(BOOK_COVER, 34, 7, 49, 0, 103, 192, 256, 256); // Left panel
-    guiGraphics.blit(BOOK_COVER, 137, 7, 45, 0, 4, 192, 256, 256);  // Left panel edge
-    guiGraphics.blit(BOOK_COVER, 141, 7, 0, 0, 186, 192, 256, 256); // Spine + right
+    guiGraphics.blit(coverTex, 0, 7, 152, 0, 34, 192, 256, 256);  // Left border
+    guiGraphics.blit(coverTex, 34, 7, 49, 0, 103, 192, 256, 256); // Left panel
+    guiGraphics.blit(coverTex, 137, 7, 45, 0, 4, 192, 256, 256);  // Left panel edge
+    guiGraphics.blit(coverTex, 141, 7, 0, 0, 186, 192, 256, 256); // Spine + right
 
-    // Gold borders for Agebooks
+    // Gold borders for Agebooks (legacy {186,0,34,192} sub-region of the cover
+    // texture is filled with the gold-border art when isAgebook=true).
     if (isAgebook) {
-      guiGraphics.blit(BOOK_COVER, 0, 7, 186, 0, 34, 192, 256, 256);   // Left gold border
-      guiGraphics.blit(BOOK_COVER, 293, 7, 186, 0, 34, 192, 256, 256); // Right gold border
+      guiGraphics.blit(coverTex, 0, 7, 186, 0, 34, 192, 256, 256);   // Left gold border
+      guiGraphics.blit(coverTex, 293, 7, 186, 0, 34, 192, 256, 256); // Right gold border
     }
 
-    // Draw left page if not on page 0
+    // Draw left page parchment if not on page 0
     if (currentPageIndex > 0 && !pages.isEmpty()) {
-      guiGraphics.blit(BOOK_PAGE_LEFT, 7, 0, 0, 0, 156, 195, 256, 256);
+      drawPageInterior(guiGraphics, 7, 0, 156, 195);
     }
 
     // Draw right page with link panel
@@ -224,25 +219,23 @@ public class BookScreen extends Screen {
 
     // On page 0 (title page), draw the link panel
     if (currentPageIndex == 0) {
+      // Draw right page parchment under the panel
+      drawPageInterior(guiGraphics, 163, 0, 156, 195);
       // Link panel area (173, 20) size (132, 83)
       drawLinkPanel(guiGraphics, 173, 20, 132, 83);
-
-      // Draw right page with panel cutout
-      guiGraphics.blit(BOOK_PAGE_RIGHT, 163, 0, 0, 0, 156, 195, 256, 256);
-
       // Draw title and authors on left page
       drawTitlePage(guiGraphics);
     } else if (hasLinkPanel) {
       // Link panel on non-title page
+      drawPageInterior(guiGraphics, 163, 0, 156, 195);
       drawLinkPanel(guiGraphics, 173, 20, 132, 83);
-      guiGraphics.blit(BOOK_PAGE_RIGHT, 163, 0, 0, 0, 156, 195, 256, 256);
     } else if (!currentPage.isEmpty()) {
       // Solid right page for symbol pages
-      guiGraphics.blit(BOOK_PAGE_RIGHT_SOLID, 163, 0, 0, 0, 156, 195, 256, 256);
+      drawPageInterior(guiGraphics, 163, 0, 156, 195);
       // Could render symbol here if we implement symbol rendering
     } else {
       // Empty page - just show solid right page
-      guiGraphics.blit(BOOK_PAGE_RIGHT_SOLID, 163, 0, 0, 0, 156, 195, 256, 256);
+      drawPageInterior(guiGraphics, 163, 0, 156, 195);
     }
 
     // Draw page numbers
@@ -251,6 +244,35 @@ public class BookScreen extends Screen {
     guiGraphics.pose().popPose();
 
     super.render(guiGraphics, mouseX, mouseY, partialTick);
+  }
+
+  /**
+   * Draws a parchment-coloured page interior with subtle horizontal ruling
+   * and an inner shadow, replacing the legacy
+   * {@code bookui_pagel.png} / {@code bookui_pager.png} / {@code bookui_rpage_full.png} blits.
+   */
+  private void drawPageInterior(GuiGraphics g, int x, int y, int w, int h) {
+    int parchment = 0xFFF1E8CC;
+    int shade = 0x40A88E5C;
+    int rule = 0x40A88E5C;
+    int frame = 0xFF8C6E3A;
+
+    g.fill(x, y, x + w, y + h, parchment);
+    // Inner shadow at top + spine-side edge so the page reads as recessed
+    g.fill(x, y, x + w, y + 2, shade);
+    g.fill(x, y, x + 2, y + h, shade);
+    // Bottom + outer-edge highlight
+    g.fill(x, y + h - 1, x + w, y + h, 0x30FFFFFF);
+    g.fill(x + w - 1, y, x + w, y + h, 0x30FFFFFF);
+    // Frame outline
+    g.fill(x, y, x + w, y + 1, frame);
+    g.fill(x, y + h - 1, x + w, y + h, frame);
+    g.fill(x, y, x + 1, y + h, frame);
+    g.fill(x + w - 1, y, x + w, y + h, frame);
+    // Faint ruled lines
+    for (int ly = y + 12; ly < y + h - 8; ly += 12) {
+      g.fill(x + 8, ly, x + w - 8, ly + 1, rule);
+    }
   }
 
   /**

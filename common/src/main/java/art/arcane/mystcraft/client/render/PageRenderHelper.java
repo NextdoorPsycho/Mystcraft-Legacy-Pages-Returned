@@ -1,7 +1,7 @@
 package art.arcane.mystcraft.client.render;
 
-import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.client.gui.procedural.PageTextureFactory;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -19,14 +19,13 @@ import java.util.List;
  */
 public class PageRenderHelper {
 
-  private static final ResourceLocation PAGE_BACKGROUND =
-      new ResourceLocation(Mystcraft.MOD_ID, "gui/bookui_pagel.png");
-
-  // Texture coordinates for page background in book_page_left.png
-  private static final int PAGE_TEX_U = 156;
-  private static final int PAGE_TEX_V = 0;
-  private static final int PAGE_TEX_WIDTH = 30;
-  private static final int PAGE_TEX_HEIGHT = 40;
+  // Texture coordinates for page background sub-region (matches the legacy
+  // {@code bookui_pagel.png} {156, 0, 30, 40} layout so existing draw maths
+  // does not change). The actual image now comes from PageTextureFactory.
+  private static final int PAGE_TEX_U = PageTextureFactory.SUB_U;
+  private static final int PAGE_TEX_V = PageTextureFactory.SUB_V;
+  private static final int PAGE_TEX_WIDTH = PageTextureFactory.SUB_W;
+  private static final int PAGE_TEX_HEIGHT = PageTextureFactory.SUB_H;
 
   // Symbol component constants
   private static final int ICON_SIZE = 64;
@@ -64,12 +63,15 @@ public class PageRenderHelper {
   }
 
   /**
-   * Draws the page background texture.
+   * Draws the page background texture. The texture is generated procedurally
+   * by {@link PageTextureFactory} with style varying by page kind (blank,
+   * symbol, link panel) and ink tint.
    */
   private static void drawPageBackground(GuiGraphics guiGraphics, ItemStack page,
                                          float x, float y, float width, float height, float zLevel) {
+    ResourceLocation pageTex = PageTextureFactory.getPageBackground(page);
     RenderSystem.setShader(GameRenderer::getPositionTexShader);
-    RenderSystem.setShaderTexture(0, PAGE_BACKGROUND);
+    RenderSystem.setShaderTexture(0, pageTex);
     RenderSystem.enableBlend();
     RenderSystem.defaultBlendFunc();
 

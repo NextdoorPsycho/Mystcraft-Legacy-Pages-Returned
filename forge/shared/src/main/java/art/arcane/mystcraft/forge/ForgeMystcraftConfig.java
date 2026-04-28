@@ -36,6 +36,9 @@ public class ForgeMystcraftConfig {
   public static final ForgeConfigSpec.BooleanValue droppedBooksBecomeLivingEntities;
   public static final ForgeConfigSpec.BooleanValue dropBooksOnRead;
   public static final ForgeConfigSpec.ConfigValue<List<? extends String>> disabledSymbols;
+  // Procedural UI / book-cover toggles
+  public static final ForgeConfigSpec.BooleanValue proceduralUiEnabled;
+  public static final ForgeConfigSpec.BooleanValue proceduralBookCoversEnabled;
   // Personal pocket dimension settings
   public static final ForgeConfigSpec.IntValue pocketInnerHalfSizeXZ;
   public static final ForgeConfigSpec.IntValue pocketInnerHalfSizeY;
@@ -192,6 +195,26 @@ public class ForgeMystcraftConfig {
             // Ancient debris
             "mystcraft:block_minecraft_ancient_debris"
         ), ForgeMystcraftConfig::isValidSymbolId);
+
+    proceduralUiEnabled = COMMON_BUILDER
+        .comment(
+            "Master switch for the procedural GUI theme. When false the optional",
+            "resource-pack 'assets/mystcraft/gui/theme.json' colour overrides are",
+            "ignored and the built-in defaults are forced. Procedural draws still",
+            "apply (no PNG fallback exists for menus).",
+            "Default: true"
+        )
+        .define("proceduralUiEnabled", true);
+
+    proceduralBookCoversEnabled = COMMON_BUILDER
+        .comment(
+            "When false the open book renders with a uniform leather cover and",
+            "neutral ink regardless of the binding material or ink that was used,",
+            "saving VRAM on low-end clients. Page count and link-panel sigils still",
+            "vary so the book remains legible.",
+            "Default: true"
+        )
+        .define("proceduralBookCoversEnabled", true);
 
     COMMON_BUILDER.pop();
 

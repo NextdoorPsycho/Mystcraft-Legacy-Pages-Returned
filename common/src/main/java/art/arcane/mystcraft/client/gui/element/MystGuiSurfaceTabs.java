@@ -1,9 +1,9 @@
 package art.arcane.mystcraft.client.gui.element;
 
-import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.client.gui.procedural.GuiTheme;
+import art.arcane.mystcraft.client.gui.procedural.ProceduralUI;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,9 +14,6 @@ import java.util.List;
  * Tab interface for page collections (folders/portfolios) on the side of the Writing Desk.
  */
 public class MystGuiSurfaceTabs extends MystGuiElement {
-
-  private static final ResourceLocation TEXTURE =
-      new ResourceLocation(Mystcraft.MOD_ID, "gui/writingdesk.png");
 
   private static final int TAB_COUNT = 4;
   private static final int TAB_WIDTH = 58;
@@ -54,13 +51,24 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
 
     int tabY = guiTop;
 
+    // Themed accents (fall back to legacy colors for unknown keys).
+    int dark = GuiTheme.color("panel_border_dark");
+    int activeBg = GuiTheme.color("accent_link");
+    int activeInner = ProceduralUI.lighten(activeBg, 1.18f);
+    int idleBg = ProceduralUI.darken(GuiTheme.color("panel_bg"), 0.55f);
+    int idleInner = ProceduralUI.lighten(idleBg, 1.18f);
+    int textOn = GuiTheme.color("panel_border_light");
+    int textOff = 0xFFA0A0A0;
+    int arrowOn = textOn;
+    int arrowOff = 0xFF666666;
+
     // Up arrow
-    int upArrowColor = topSlot > 0 ? 0xFFFFFFFF : 0xFF666666;
+    int upArrowColor = topSlot > 0 ? arrowOn : arrowOff;
     if (activeSlot < topSlot) {
-      upArrowColor = 0xFF8080FF; // Blue tint if active is above
+      upArrowColor = activeBg | 0xFF000000;
     }
-    graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + ARROW_HEIGHT, 0xFF303030);
-    graphics.drawCenteredString(mc.font, Component.literal("^"), guiLeft + TAB_WIDTH / 2, tabY + 1, upArrowColor);
+    graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + ARROW_HEIGHT, dark);
+    ProceduralUI.drawChevron(graphics, guiLeft + TAB_WIDTH / 2 - 3, tabY + 2, 5, ProceduralUI.ChevronDir.UP, upArrowColor);
     tabY += ARROW_HEIGHT;
 
     // Render tabs
@@ -68,14 +76,13 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
       int slot = topSlot + i;
       boolean isActive = (slot == activeSlot);
 
-      // Tab background
-      int bgColor = isActive ? 0xFF404080 : 0xFF303030;
-      graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + TAB_HEIGHT, bgColor);
-      graphics.fill(guiLeft + 1, tabY + 1, guiLeft + TAB_WIDTH - 1, tabY + TAB_HEIGHT - 1,
-          isActive ? 0xFF505090 : 0xFF404040);
+      int bg = isActive ? activeBg : idleBg;
+      int inner = isActive ? activeInner : idleInner;
+      graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + TAB_HEIGHT, bg);
+      graphics.fill(guiLeft + 1, tabY + 1, guiLeft + TAB_WIDTH - 1, tabY + TAB_HEIGHT - 1, inner);
 
       // Slot number
-      graphics.drawString(mc.font, String.valueOf(slot), guiLeft + 4, tabY + 3, 0xFFFFFF);
+      graphics.drawString(mc.font, String.valueOf(slot), guiLeft + 4, tabY + 3, textOn);
 
       // Item name if present
       ItemStack stack = handler.getItemInSlot(slot);
@@ -89,7 +96,7 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
           }
           name = name + "...";
         }
-        graphics.drawString(mc.font, name, guiLeft + 4, tabY + TAB_HEIGHT - 12, 0xA0A0A0);
+        graphics.drawString(mc.font, name, guiLeft + 4, tabY + TAB_HEIGHT - 12, textOff);
 
         // Render item icon
         graphics.renderItem(stack, guiLeft + TAB_WIDTH - 20, tabY + 8);
@@ -99,12 +106,12 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
     }
 
     // Down arrow
-    int downArrowColor = topSlot < maxTabs - TAB_COUNT ? 0xFFFFFFFF : 0xFF666666;
+    int downArrowColor = topSlot < maxTabs - TAB_COUNT ? arrowOn : arrowOff;
     if (activeSlot >= topSlot + TAB_COUNT) {
-      downArrowColor = 0xFF8080FF; // Blue tint if active is below
+      downArrowColor = activeBg | 0xFF000000;
     }
-    graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + ARROW_HEIGHT, 0xFF303030);
-    graphics.drawCenteredString(mc.font, Component.literal("v"), guiLeft + TAB_WIDTH / 2, tabY + 1, downArrowColor);
+    graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + ARROW_HEIGHT, dark);
+    ProceduralUI.drawChevron(graphics, guiLeft + TAB_WIDTH / 2 - 3, tabY + 2, 5, ProceduralUI.ChevronDir.DOWN, downArrowColor);
   }
 
   @Override

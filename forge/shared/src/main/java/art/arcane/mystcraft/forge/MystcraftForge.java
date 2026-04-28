@@ -376,6 +376,12 @@ public class MystcraftForge {
       event.register(ageEffectsKey, new art.arcane.mystcraft.client.AgeDimensionSpecialEffects());
       Mystcraft.LOGGER.info("Registered shared DimensionSpecialEffects under key '{}'", ageEffectsKey);
     }
+
+    @SubscribeEvent
+    public static void onRegisterClientReloadListeners(net.minecraftforge.client.event.RegisterClientReloadListenersEvent event) {
+      event.registerReloadListener(art.arcane.mystcraft.client.gui.procedural.ProceduralUiReload.instance());
+      Mystcraft.LOGGER.info("Registered procedural UI reload listener");
+    }
   }
 
   private static net.minecraft.world.level.block.Block resolveShortGrass() {

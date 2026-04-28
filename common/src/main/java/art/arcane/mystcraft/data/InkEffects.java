@@ -4,7 +4,6 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +33,11 @@ public final class InkEffects {
   /**
    * Initializes the ink effects registry.
    * Should be called during mod setup.
+   * <p>
+   * Item-level effects are now data-driven via the {@link InkAffinity} datapack
+   * loader (JSONs under {@code data/mystcraft/mystcraft/ink_affinity/}). This
+   * method only registers the property colors used to render link panels and
+   * the procedural Book UI.
    */
   public static void init() {
     if (initialized) return;
@@ -47,77 +51,6 @@ public final class InkEffects {
     registerPropertyColor(LinkFlags.DISARM, new PropertyColor(1f, 0f, 0f));                  // Red
     registerPropertyColor(LinkFlags.RELATIVE, new PropertyColor(0.6f, 0f, 0.6f));            // Purple
     registerPropertyColor(LinkFlags.FOLLOWING, new PropertyColor(1f, 0.5f, 0f));             // Orange
-
-    // Register item effects
-    // Gunpowder - Disarm
-    addPropertyToItem(Items.GUNPOWDER, LinkFlags.DISARM, 0.2f);
-
-    // Mushroom Stew - Disarm (weak)
-    addPropertyToItem(Items.MUSHROOM_STEW, LinkFlags.DISARM, 0.05f);
-
-    // Clay Ball - Generate Platform
-    addPropertyToItem(Items.CLAY_BALL, LinkFlags.GENERATE_PLATFORM, 0.25f);
-
-    // Experience Bottle - Intra-Linking
-    addPropertyToItem(Items.EXPERIENCE_BOTTLE, LinkFlags.INTRA_LINKING, 0.15f);
-
-    // Ender Pearl - Intra-Linking + Disarm
-    addPropertyToItem(Items.ENDER_PEARL, LinkFlags.INTRA_LINKING, 0.15f);
-    addPropertyToItem(Items.ENDER_PEARL, LinkFlags.DISARM, 0.15f);
-
-    // Feather - Maintain Momentum
-    addPropertyToItem(Items.FEATHER, LinkFlags.MAINTAIN_MOMENTUM, 0.15f);
-
-    // Fire Charge - Disarm
-    addPropertyToItem(Items.FIRE_CHARGE, LinkFlags.DISARM, 0.25f);
-
-    // Ghast Tear - Relative
-    addPropertyToItem(Items.GHAST_TEAR, LinkFlags.RELATIVE, 0.15f);
-
-    // Slime Ball - Maintain Momentum
-    addPropertyToItem(Items.SLIME_BALL, LinkFlags.MAINTAIN_MOMENTUM, 0.1f);
-
-    // Magma Cream - Following
-    addPropertyToItem(Items.MAGMA_CREAM, LinkFlags.FOLLOWING, 0.2f);
-
-    // Blaze Powder - Disarm + Following
-    addPropertyToItem(Items.BLAZE_POWDER, LinkFlags.DISARM, 0.1f);
-    addPropertyToItem(Items.BLAZE_POWDER, LinkFlags.FOLLOWING, 0.1f);
-
-    // Eye of Ender - Intra-Linking + Following
-    addPropertyToItem(Items.ENDER_EYE, LinkFlags.INTRA_LINKING, 0.2f);
-    addPropertyToItem(Items.ENDER_EYE, LinkFlags.FOLLOWING, 0.15f);
-
-    // Chorus Fruit - Relative
-    addPropertyToItem(Items.CHORUS_FRUIT, LinkFlags.RELATIVE, 0.2f);
-
-    // Prismarine Crystals - Generate Platform
-    addPropertyToItem(Items.PRISMARINE_CRYSTALS, LinkFlags.GENERATE_PLATFORM, 0.2f);
-
-    // Nether Star - All effects (rare!)
-    addPropertyToItem(Items.NETHER_STAR, LinkFlags.INTRA_LINKING, 0.1f);
-    addPropertyToItem(Items.NETHER_STAR, LinkFlags.GENERATE_PLATFORM, 0.1f);
-    addPropertyToItem(Items.NETHER_STAR, LinkFlags.MAINTAIN_MOMENTUM, 0.1f);
-    addPropertyToItem(Items.NETHER_STAR, LinkFlags.FOLLOWING, 0.1f);
-
-    // Gold ingots - Intra-Linking + Generate Platform
-    addPropertyToItem(Items.GOLD_INGOT, LinkFlags.INTRA_LINKING, 0.1f);
-    addPropertyToItem(Items.GOLD_INGOT, LinkFlags.GENERATE_PLATFORM, 0.05f);
-
-    // Diamond - Multiple weak effects
-    addPropertyToItem(Items.DIAMOND, LinkFlags.INTRA_LINKING, 0.1f);
-    addPropertyToItem(Items.DIAMOND, LinkFlags.MAINTAIN_MOMENTUM, 0.05f);
-    addPropertyToItem(Items.DIAMOND, LinkFlags.GENERATE_PLATFORM, 0.05f);
-
-    // Emerald - Following
-    addPropertyToItem(Items.EMERALD, LinkFlags.FOLLOWING, 0.15f);
-
-    // Amethyst - Relative
-    addPropertyToItem(Items.AMETHYST_SHARD, LinkFlags.RELATIVE, 0.1f);
-
-    // Echo Shard - Relative + Intra-Linking
-    addPropertyToItem(Items.ECHO_SHARD, LinkFlags.RELATIVE, 0.15f);
-    addPropertyToItem(Items.ECHO_SHARD, LinkFlags.INTRA_LINKING, 0.15f);
   }
 
   /**
@@ -230,17 +163,24 @@ public final class InkEffects {
   public static Map<String, Float> getItemEffects(ItemStack stack) {
     if (stack.isEmpty()) return null;
 
-    // Check direct item mapping first
+    // Check direct item mapping first (legacy in-code registrations)
     Map<String, Float> effects = ITEM_EFFECTS.get(stack.getItem());
-    if (effects != null) {
+    if (effects != null && !effects.isEmpty()) {
       return Collections.unmodifiableMap(effects);
     }
 
-    // Check tag mappings
+    // Check tag mappings (legacy in-code registrations)
     for (Map.Entry<TagKey<Item>, Map<String, Float>> entry : TAG_EFFECTS.entrySet()) {
-      if (stack.is(entry.getKey())) {
+      if (stack.is(entry.getKey()) && !entry.getValue().isEmpty()) {
         return Collections.unmodifiableMap(entry.getValue());
       }
+    }
+
+    // Fall back to datapack-driven InkAffinity entries.
+    InkAffinity.Entry affinity = InkAffinity.getAffinity(stack);
+    Map<String, Float> linkEffects = affinity.linkPropertyWeights();
+    if (linkEffects != null && !linkEffects.isEmpty()) {
+      return Collections.unmodifiableMap(linkEffects);
     }
 
     return null;

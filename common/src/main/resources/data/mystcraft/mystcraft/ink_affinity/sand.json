@@ -1,0 +1,18 @@
+{
+  "items": ["minecraft:sand", "minecraft:red_sand"],
+  "tags": ["forge:sand"],
+  "amount_per_item": 0.4,
+  "tier_bonus": 0,
+  "symbol_weights": {
+    "mystcraft:biome_desert": 0.5
+  },
+  "category_weights": {
+    "biome": 0.15
+  },
+  "poem_token_weights": {
+    "Desert": 0.4,
+    "Dry": 0.3,
+    "Burnt": 0.2,
+    "Drought": 0.25
+  }
+}

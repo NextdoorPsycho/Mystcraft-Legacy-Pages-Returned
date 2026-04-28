@@ -424,6 +424,8 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
     art.arcane.mystcraft.config.MystcraftConfig.dropBooksOnRead = ForgeMystcraftConfig.dropBooksOnRead::get;
     art.arcane.mystcraft.config.MystcraftConfig.disabledSymbols =
         () -> List.copyOf(ForgeMystcraftConfig.disabledSymbols.get());
+    art.arcane.mystcraft.config.MystcraftConfig.proceduralUiEnabled = ForgeMystcraftConfig.proceduralUiEnabled::get;
+    art.arcane.mystcraft.config.MystcraftConfig.proceduralBookCoversEnabled = ForgeMystcraftConfig.proceduralBookCoversEnabled::get;
     art.arcane.mystcraft.config.MystcraftConfig.instabilityEnabled = ForgeMystcraftConfig.instabilityEnabled::get;
     art.arcane.mystcraft.config.MystcraftConfig.deathEffectsEnabled = ForgeMystcraftConfig.deathEffectsEnabled::get;
     art.arcane.mystcraft.config.MystcraftConfig.allowUnstableAges = ForgeMystcraftConfig.allowUnstableAges::get;

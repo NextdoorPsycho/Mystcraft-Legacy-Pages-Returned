@@ -1,0 +1,16 @@
+{
+  "items": ["minecraft:rotten_flesh"],
+  "amount_per_item": 0.3,
+  "tier_bonus": 0,
+  "symbol_weights": {
+    "mystcraft:biome_swamp": 0.2
+  },
+  "category_weights": {
+    "environment": 0.2
+  },
+  "poem_token_weights": {
+    "Decay": 0.4,
+    "Rot": 0.3,
+    "Dark": 0.15
+  }
+}

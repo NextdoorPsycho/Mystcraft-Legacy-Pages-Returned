@@ -1,10 +1,11 @@
 package art.arcane.mystcraft.client.screen;
 
-import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
 import art.arcane.mystcraft.client.gui.element.*;
+import art.arcane.mystcraft.client.gui.procedural.GuiTheme;
+import art.arcane.mystcraft.client.gui.procedural.ProceduralUI;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.FolderItem;
 import art.arcane.mystcraft.item.PortfolioItem;
@@ -33,9 +34,6 @@ import java.util.List;
  * button bar (18px), total 409x185.
  */
 public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> {
-
-  private static final ResourceLocation TEXTURE =
-      new ResourceLocation(Mystcraft.MOD_ID, "gui/writingdesk.png");
 
   // Layout constants
   private static final int LEFT_SIZE = 228;
@@ -190,13 +188,22 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     RenderSystem.setShader(GameRenderer::getPositionTexShader);
     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
-    // Draw right panel background (main inventory texture) at (guiLeft + guiCenter, guiTop + mainTop)
-    guiGraphics.blit(TEXTURE, rightPanelLeft, rightPanelTop, 0, 0, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+    // Optional decorative panel behind the left workspace (tabs + page surface).
+    // Drawn so the parchment-colored backdrop frames the active tab content.
+    int leftPanelHeight = WINDOW_SIZE_Y;
+    ProceduralUI.drawPanel(guiGraphics,
+        this.leftPos + TAB_WIDTH,
+        this.topPos + MAIN_TOP,
+        LEFT_SIZE - TAB_WIDTH,
+        leftPanelHeight);
 
-    // Draw slot backgrounds for better visibility
+    // Right panel background (procedural panel; replaces writingdesk.png blit)
+    ProceduralUI.drawPanel(guiGraphics, rightPanelLeft, rightPanelTop, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+
+    // Slot backgrounds (writing/paper/container in/out + player inventory + hotbar)
     renderSlotBackgrounds(guiGraphics);
 
-    // Draw border around book page list area
+    // Border around the book page list area
     renderBookPageListBorder(guiGraphics);
 
     // Render GUI elements
@@ -208,42 +215,28 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
   }
 
   /**
-   * Draws 3D slot backgrounds for the main inventory slots.
+   * Draws 3D slot backgrounds for the main inventory slots and player inventory.
    */
   private void renderSlotBackgrounds(GuiGraphics guiGraphics) {
-    // Slot background colors (Minecraft style)
-    int borderDark = 0xFF373737;
-    int borderLight = 0xFFFFFFFF;
-    int slotBg = 0xFF8B8B8B;
+    // Main slots — coordinates match WritingDeskMenu.java X_SHIFT/Y_SHIFT (233/20).
+    // ProceduralUI.drawSlot positions the inset border at (x,y) with size 18; the
+    // item icon will be rendered at (slot.x + leftPos, slot.y + topPos) above.
+    ProceduralUI.drawSlot(guiGraphics, this.leftPos + 8 + GUI_CENTER - 1, this.topPos + 60 + MAIN_TOP - 1);
+    ProceduralUI.drawSlot(guiGraphics, this.leftPos + 8 + GUI_CENTER - 1, this.topPos + 8 + MAIN_TOP - 1);
+    ProceduralUI.drawSlot(guiGraphics, this.leftPos + 152 + GUI_CENTER - 1, this.topPos + 8 + MAIN_TOP - 1);
+    ProceduralUI.drawSlot(guiGraphics, this.leftPos + 152 + GUI_CENTER - 1, this.topPos + 60 + MAIN_TOP - 1);
 
-    // Writing slot at (8+xShift, 60+yShift) relative to rightPanelLeft/rightPanelTop
-    drawSlotBackground(guiGraphics, this.leftPos + 8 + GUI_CENTER, this.topPos + 60 + MAIN_TOP, borderDark, borderLight, slotBg);
+    // Player inventory (3x9 at (8 + col*18 + X_SHIFT, 84 + row*18 + Y_SHIFT))
+    ProceduralUI.drawSlotGrid(guiGraphics,
+        this.leftPos + 8 + GUI_CENTER - 1,
+        this.topPos + 84 + MAIN_TOP - 1,
+        9, 3, 0);
 
-    // Paper slot at (8+xShift, 8+yShift)
-    drawSlotBackground(guiGraphics, this.leftPos + 8 + GUI_CENTER, this.topPos + 8 + MAIN_TOP, borderDark, borderLight, slotBg);
-
-    // Container in slot at (152+xShift, 8+yShift)
-    drawSlotBackground(guiGraphics, this.leftPos + 152 + GUI_CENTER, this.topPos + 8 + MAIN_TOP, borderDark, borderLight, slotBg);
-
-    // Container out slot at (152+xShift, 60+yShift)
-    drawSlotBackground(guiGraphics, this.leftPos + 152 + GUI_CENTER, this.topPos + 60 + MAIN_TOP, borderDark, borderLight, slotBg);
-  }
-
-  /**
-   * Draws a single 3D slot background at the given position.
-   */
-  private void drawSlotBackground(GuiGraphics guiGraphics, int x, int y, int borderDark, int borderLight, int slotBg) {
-    int size = 18; // Standard slot size
-    // Top edge (dark)
-    guiGraphics.fill(x - 1, y - 1, x + size - 1, y, borderDark);
-    // Left edge (dark)
-    guiGraphics.fill(x - 1, y - 1, x, y + size - 1, borderDark);
-    // Bottom edge (light)
-    guiGraphics.fill(x - 1, y + size - 2, x + size - 1, y + size - 1, borderLight);
-    // Right edge (light)
-    guiGraphics.fill(x + size - 2, y - 1, x + size - 1, y + size - 1, borderLight);
-    // Inner background
-    guiGraphics.fill(x, y, x + size - 2, y + size - 2, slotBg);
+    // Hotbar (1x9 at (8 + col*18 + X_SHIFT, 142 + Y_SHIFT))
+    ProceduralUI.drawSlotGrid(guiGraphics,
+        this.leftPos + 8 + GUI_CENTER - 1,
+        this.topPos + 142 + MAIN_TOP - 1,
+        9, 1, 0);
   }
 
   /**
@@ -256,18 +249,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     int listWidth = WINDOW_SIZE_X - 47 - 9 - 19; // 101
     int listHeight = 50;
 
-    int borderDark = 0xFF373737;
-    int borderLight = 0xFFAAAAAA;
-
-    // Draw inset border
-    // Top edge (dark)
-    guiGraphics.fill(listX - 1, listY - 1, listX + listWidth + 1, listY, borderDark);
-    // Left edge (dark)
-    guiGraphics.fill(listX - 1, listY - 1, listX, listY + listHeight + 1, borderDark);
-    // Bottom edge (light)
-    guiGraphics.fill(listX - 1, listY + listHeight, listX + listWidth + 1, listY + listHeight + 1, borderLight);
-    // Right edge (light)
-    guiGraphics.fill(listX + listWidth, listY - 1, listX + listWidth + 1, listY + listHeight + 1, borderLight);
+    ProceduralUI.drawInsetBorder(guiGraphics, listX - 1, listY - 1, listWidth + 2, listHeight + 2);
   }
 
   @Override
@@ -432,7 +414,9 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     // Note: renderLabels is called with an offset to the GUI origin (leftPos, topPos),
     // so positions here are relative to (0, 0) of the GUI, not screen coordinates.
 
-    // Title is baked into the texture; no labels rendered
+    int textColor = GuiTheme.color("text_primary") & 0x00FFFFFF;
+    // Right-panel header label (was previously baked into the texture).
+    guiGraphics.drawString(this.font, this.title, GUI_CENTER + 8, MAIN_TOP - 12, textColor, false);
   }
 
   @Override

@@ -1338,4 +1338,60 @@ public final class MystcraftGameTestRunner {
       }
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Procedural UI / Ink Affinity tests
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Verifies the {@link art.arcane.mystcraft.data.InkBlend} NBT round-trip
+   * contract that ink mixers and booster packs depend on.
+   */
+  public static void runInkBlendNbtRoundTripTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
+      return;
+    }
+    try {
+      MystcraftGameTestAssertions.assertInkBlendRoundTripsThroughNbt();
+    } catch (RuntimeException e) {
+      helper.fail(e.getMessage());
+      return;
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Verifies the cover-NBT round-trip for every configured cover item the
+   * Book Binder accepts. The procedural Book texture factory uses this NBT
+   * to pick a cover palette.
+   */
+  public static void runBookCoverNbtRoundTripTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
+      return;
+    }
+    try {
+      MystcraftGameTestAssertions.assertBookCoverNbtRoundTripsForEachCover();
+    } catch (RuntimeException e) {
+      helper.fail(e.getMessage());
+      return;
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Verifies that affinity-weighted symbol rolls actually shift the
+   * distribution toward favored symbols.
+   */
+  public static void runInkAffinityBiasesSymbolRollTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
+      return;
+    }
+    try {
+      MystcraftGameTestAssertions.assertInkAffinityBiasesSymbolRoll();
+    } catch (RuntimeException e) {
+      helper.fail(e.getMessage());
+      return;
+    }
+    helper.succeed();
+  }
 }

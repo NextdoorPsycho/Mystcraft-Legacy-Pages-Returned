@@ -18,6 +18,23 @@ public final class MystcraftConfig {
   public static Supplier<Boolean> linkPanelInBoosterPacks = () -> true;
   public static Supplier<Boolean> enableBoosterLoot = () -> true;
   public static Supplier<Boolean> enablePageLoot = () -> true;
+
+  // Procedural UI / Book covers
+  /**
+   * Master switch for the procedural UI system. When false, screens still
+   * render through the procedural code path (no PNG fallback ships any more)
+   * but skip optional flourishes (drop shadows, decorative borders) so the
+   * UI stays cheap on potato hardware. Defaults to {@code true}.
+   */
+  public static Supplier<Boolean> proceduralUiEnabled = () -> true;
+  /**
+   * When false, {@link art.arcane.mystcraft.client.gui.procedural.BookTextureFactory}
+   * renders a uniform leather cover regardless of NBT (cheap escape hatch
+   * for resource-pack authors who want every book to look identical, or
+   * for low-VRAM clients). Defaults to {@code true}.
+   */
+  public static Supplier<Boolean> proceduralBookCoversEnabled = () -> true;
+
   public static Supplier<List<String>> bookBinderCoverItems = () -> List.of(
       "minecraft:leather",
       "mystcraft:folder"

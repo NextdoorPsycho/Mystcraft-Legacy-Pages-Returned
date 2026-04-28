@@ -1,0 +1,22 @@
+{
+  "items": ["minecraft:emerald"],
+  "tags": ["forge:gems/emerald"],
+  "amount_per_item": 1.0,
+  "tier_bonus": 0,
+  "symbol_weights": {
+    "mystcraft:biome_jungle": 0.4,
+    "mystcraft:biome_bamboo_jungle": 0.25,
+    "mystcraft:biome_meadow": 0.2
+  },
+  "category_weights": {
+    "biome": 0.25
+  },
+  "poem_token_weights": {
+    "Nature": 0.3,
+    "Verdant": 0.25,
+    "Growth": 0.2
+  },
+  "link_property_weights": {
+    "following": 0.15
+  }
+}

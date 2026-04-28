@@ -3,6 +3,7 @@ package art.arcane.mystcraft.fabric;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.client.FabricAgeBlockColorHandler;
 import art.arcane.mystcraft.client.PocketHeadClientSync;
+import art.arcane.mystcraft.client.gui.procedural.ProceduralUiReload;
 import art.arcane.mystcraft.client.model.WritingDeskModel;
 import art.arcane.mystcraft.client.render.DrawableWordManager;
 import art.arcane.mystcraft.client.render.PageItemRendererBEWLR;
@@ -15,7 +16,9 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
 import net.fabricmc.fabric.api.client.rendering.v1.*;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
 
 /**
@@ -39,6 +42,11 @@ public class MystcraftFabricClient implements ClientModInitializer {
     // Initialize client-side systems
     DrawableWordManager.initialize();
     PageItemRendererBEWLR.prewarmCache();
+
+    // Procedural UI: register reload listener so theme + dynamic textures
+    // are flushed when the player swaps resource packs (or hits F3+T).
+    ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
+        .registerReloadListener(new FabricReloadListeners.ProceduralUiReloadListener());
 
     // Register menu screens
     ScreenRegistry.register(FabricRegistries.INK_MIXER_MENU.get(), InkMixerScreen::new);

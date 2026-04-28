@@ -1,0 +1,7 @@
+{
+  "items": ["minecraft:magma_cream"],
+  "amount_per_item": 1.0,
+  "link_property_weights": {
+    "following": 0.2
+  }
+}

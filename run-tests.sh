@@ -14,8 +14,8 @@ NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REQUESTED_SUITE="${1:-fast}"
 
-ALL_SUITES=(core book_travel book_crafting age_creation world_rules commands)
-FAST_SUITES=(core book_travel book_crafting age_creation)
+ALL_SUITES=(core book_travel book_crafting age_creation world_rules commands procedural_ui)
+FAST_SUITES=(core book_travel book_crafting age_creation procedural_ui)
 SELECTED_SUITES=()
 
 PLATFORM_KEYS=(fabric forge)
@@ -29,10 +29,10 @@ PLATFORM_REPORTED=(0 0)
 PLATFORM_DETAILS=("" "")
 
 usage() {
-  echo "Usage: ./run-tests.sh [fast|full|all|core|book_travel|book_crafting|age_creation|world_rules|commands|suite,suite] [gradle args...]"
+  echo "Usage: ./run-tests.sh [fast|full|all|core|book_travel|book_crafting|age_creation|world_rules|commands|procedural_ui|suite,suite] [gradle args...]"
   echo ""
   echo "Default: fast"
-  echo "fast: core, book_travel, book_crafting, age_creation"
+  echo "fast: core, book_travel, book_crafting, age_creation, procedural_ui"
   echo "full/all: every suite, including commands and world_rules"
   echo ""
   echo "Policy: any GameTest failure, skipped test, ignored test, disabled test, fatal server log marker, or missing pass summary fails the run."
@@ -46,6 +46,7 @@ suite_count() {
     age_creation) echo 5 ;;
     world_rules) echo 2 ;;
     commands) echo 1 ;;
+    procedural_ui) echo 3 ;;
     *) echo 0 ;;
   esac
 }

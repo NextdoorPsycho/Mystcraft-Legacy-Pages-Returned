@@ -79,6 +79,8 @@ public class MystcraftFabric implements ModInitializer {
         .registerReloadListener(new FabricReloadListeners.GrammarReloadListener());
     ResourceManagerHelper.get(PackType.SERVER_DATA)
         .registerReloadListener(new FabricReloadListeners.SymbolReloadListener());
+    ResourceManagerHelper.get(PackType.SERVER_DATA)
+        .registerReloadListener(new FabricReloadListeners.AffinityReloadListener());
 
     // Register all Fabric event callbacks
     FabricEventHelper.registerAll();

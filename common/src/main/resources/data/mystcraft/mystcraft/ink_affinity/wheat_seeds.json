@@ -1,0 +1,19 @@
+{
+  "items": ["minecraft:wheat_seeds"],
+  "tags": ["forge:seeds"],
+  "amount_per_item": 0.4,
+  "tier_bonus": 0,
+  "symbol_weights": {
+    "mystcraft:biome_plains": 0.5,
+    "mystcraft:biome_meadow": 0.4
+  },
+  "category_weights": {
+    "biome": 0.3
+  },
+  "poem_token_weights": {
+    "Nurture": 0.3,
+    "Growth": 0.25,
+    "Plain": 0.3,
+    "Field": 0.3
+  }
+}

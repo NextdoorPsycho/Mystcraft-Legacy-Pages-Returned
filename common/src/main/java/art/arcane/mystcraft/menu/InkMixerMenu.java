@@ -145,6 +145,14 @@ public class InkMixerMenu extends AbstractContainerMenu {
     return blockEntity.getInkProbabilities();
   }
 
+  /**
+   * Read-only handle on the live affinity blend (used by the screen for
+   * tooltip rendering — properties, symbol bias, tier bonus).
+   */
+  public art.arcane.mystcraft.data.InkBlend getBlend() {
+    return blockEntity.getBlend();
+  }
+
   @Override
   @NotNull
   public ItemStack quickMoveStack(@NotNull Player player, int index) {

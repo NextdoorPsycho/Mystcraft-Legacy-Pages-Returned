@@ -1,7 +1,8 @@
 package art.arcane.mystcraft.client.screen;
 
-import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
+import art.arcane.mystcraft.client.gui.procedural.GuiTheme;
+import art.arcane.mystcraft.client.gui.procedural.ProceduralUI;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.menu.BookBinderMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
@@ -12,7 +13,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -24,9 +24,6 @@ import java.util.List;
  * Includes text field for book name and scrollable page list.
  */
 public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
-
-  private static final ResourceLocation TEXTURE =
-      new ResourceLocation(Mystcraft.MOD_ID, "gui/pagebinder.png");
 
   // Page list area
   private static final int PAGE_LIST_X = 7;
@@ -117,10 +114,21 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     RenderSystem.setShader(GameRenderer::getPositionTexShader);
     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
-    // Draw main GUI texture
-    guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+    // Container panel background + raised border
+    ProceduralUI.drawPanel(guiGraphics, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
 
-    // Draw page list
+    // Inset frame around the title field so the EditBox edges have visual context
+    ProceduralUI.drawInsetBorder(guiGraphics,
+        this.leftPos + TEXT_FIELD_X - 2,
+        this.topPos + TEXT_FIELD_Y - 2,
+        TEXT_FIELD_WIDTH + 4,
+        TEXT_FIELD_HEIGHT + 4);
+
+    // Player inventory + hotbar slots
+    ProceduralUI.drawSlotGrid(guiGraphics, this.leftPos + 8, this.topPos + this.imageHeight - 82, 9, 3, 0);
+    ProceduralUI.drawSlotGrid(guiGraphics, this.leftPos + 8, this.topPos + this.imageHeight - 24, 9, 1, 0);
+
+    // Page list (procedural slots + items)
     renderPageList(guiGraphics, mouseX, mouseY);
 
     // Draw missing link panel warning if needed
@@ -133,34 +141,17 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     int listLeft = this.leftPos + PAGE_LIST_X;
     int listTop = this.topPos + PAGE_LIST_Y;
 
-    // Slot rendering colors (standard Minecraft slot style)
-    int slotBgDark = 0xFF373737;   // Dark inner background
-    int slotBorderDark = 0xFF373737;  // Top/left border (shadow)
-    int slotBorderLight = 0xFFFFFFFF; // Bottom/right border (highlight)
-    int slotBg = 0xFF8B8B8B;       // Main slot background
-
     // Calculate max visible slots (2 rows)
     int maxVisibleSlots = PAGES_PER_ROW * 2;
 
-    // First pass: Draw slot backgrounds for ALL visible positions
+    // First pass: Draw slot backgrounds for ALL visible positions via the
+    // shared ProceduralUI helper (PAGE_SLOT_SIZE includes the 1-pixel border).
     for (int i = 0; i < maxVisibleSlots; i++) {
       int col = i % PAGES_PER_ROW;
       int row = i / PAGES_PER_ROW;
-
-      int x = listLeft + col * (PAGE_SIZE + 2); // +2 for spacing
-      int y = listTop + row * (PAGE_SIZE + 2);
-
-      // Draw 3D slot border (Minecraft style)
-      // Top edge (dark)
-      guiGraphics.fill(x, y, x + PAGE_SIZE + 2, y + 1, slotBorderDark);
-      // Left edge (dark)
-      guiGraphics.fill(x, y, x + 1, y + PAGE_SIZE + 2, slotBorderDark);
-      // Bottom edge (light)
-      guiGraphics.fill(x, y + PAGE_SIZE + 1, x + PAGE_SIZE + 2, y + PAGE_SIZE + 2, slotBorderLight);
-      // Right edge (light)
-      guiGraphics.fill(x + PAGE_SIZE + 1, y, x + PAGE_SIZE + 2, y + PAGE_SIZE + 2, slotBorderLight);
-      // Inner background
-      guiGraphics.fill(x + 1, y + 1, x + PAGE_SIZE + 1, y + PAGE_SIZE + 1, slotBg);
+      int x = listLeft + col * PAGE_SLOT_SIZE;
+      int y = listTop + row * PAGE_SLOT_SIZE;
+      ProceduralUI.drawSlot(guiGraphics, x, y, PAGE_SLOT_SIZE, PAGE_SLOT_SIZE);
     }
 
     // Second pass: Draw page items on top of slots
@@ -179,13 +170,13 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
         // Highlight first position if it's not a link panel
         if (i == 0 && !Page.isLinkPanel(page)) {
-          // Draw red border around first slot
+          int warn = GuiTheme.color("text_warning");
           int bx = x - 1;
           int by = y - 1;
-          guiGraphics.fill(bx - 1, by - 1, bx + PAGE_SIZE + 2, by, 0xFFFF0000);
-          guiGraphics.fill(bx - 1, by + PAGE_SIZE + 1, bx + PAGE_SIZE + 2, by + PAGE_SIZE + 2, 0xFFFF0000);
-          guiGraphics.fill(bx - 1, by, bx, by + PAGE_SIZE + 1, 0xFFFF0000);
-          guiGraphics.fill(bx + PAGE_SIZE + 1, by, bx + PAGE_SIZE + 2, by + PAGE_SIZE + 1, 0xFFFF0000);
+          guiGraphics.fill(bx - 1, by - 1, bx + PAGE_SIZE + 2, by, warn);
+          guiGraphics.fill(bx - 1, by + PAGE_SIZE + 1, bx + PAGE_SIZE + 2, by + PAGE_SIZE + 2, warn);
+          guiGraphics.fill(bx - 1, by, bx, by + PAGE_SIZE + 1, warn);
+          guiGraphics.fill(bx + PAGE_SIZE + 1, by, bx + PAGE_SIZE + 2, by + PAGE_SIZE + 1, warn);
         }
       }
     }
@@ -203,10 +194,10 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     int warningX = this.leftPos + MISSING_PANEL_X;
     int warningY = this.topPos + MISSING_PANEL_Y;
 
-    // Draw warning icon from texture at (176, 0)
+    // Procedural warning glyph with the existing pulse modulating alpha.
     RenderSystem.enableBlend();
-    RenderSystem.setShaderColor(1.0f, 0.5f, 0.5f, warningAlpha);
-    guiGraphics.blit(TEXTURE, warningX, warningY, 176, 0, 18, 18);
+    RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, warningAlpha);
+    ProceduralUI.drawWarningGlyph(guiGraphics, warningX, warningY, 18, 18);
     RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
     RenderSystem.disableBlend();
   }
@@ -243,13 +234,13 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
   @Override
   protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-    // Only render inventory label (title is baked into texture)
-    guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
+    int textColor = GuiTheme.color("text_primary") & 0x00FFFFFF;
+    guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, textColor, false);
 
-    // Show page count
+    // Show page count (right-aligned, in the title row)
     int pageCount = menu.getPageCount();
     String pageText = "Pages: " + pageCount;
-    guiGraphics.drawString(this.font, pageText, this.imageWidth - 8 - this.font.width(pageText), 9, 4210752, false);
+    guiGraphics.drawString(this.font, pageText, this.imageWidth - 8 - this.font.width(pageText), 12, textColor, false);
   }
 
   @Override

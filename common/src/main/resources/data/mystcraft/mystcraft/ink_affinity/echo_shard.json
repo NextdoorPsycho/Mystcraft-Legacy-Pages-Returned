@@ -1,0 +1,15 @@
+{
+  "items": ["minecraft:echo_shard"],
+  "amount_per_item": 1.0,
+  "category_weights": {
+    "feature_large": 0.15
+  },
+  "poem_token_weights": {
+    "Echo": 0.4,
+    "Whisper": 0.3
+  },
+  "link_property_weights": {
+    "relative": 0.15,
+    "intra_linking": 0.15
+  }
+}

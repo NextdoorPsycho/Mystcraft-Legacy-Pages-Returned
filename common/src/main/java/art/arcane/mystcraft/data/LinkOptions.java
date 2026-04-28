@@ -252,6 +252,64 @@ public class LinkOptions {
     return false;
   }
 
+  // ---------------------------------------------------------------------------
+  // Cover material (added 2026-04 for content-aware book UI)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Records the resource id of the item used as the book cover at binding time.
+   * Used by the procedural book texture factory to pick a cover palette.
+   */
+  public static CompoundTag setCoverItemId(CompoundTag nbttagcompound, @Nullable ResourceLocation coverId) {
+    if (nbttagcompound == null) {
+      nbttagcompound = new CompoundTag();
+    }
+    if (coverId != null) {
+      nbttagcompound.putString("Cover", coverId.toString());
+    } else {
+      nbttagcompound.remove("Cover");
+    }
+    return nbttagcompound;
+  }
+
+  /**
+   * Returns the cover item id, or null if the book pre-dates the cover field.
+   * Callers should fall back to a sensible default (typically leather).
+   */
+  @Nullable
+  public static ResourceLocation getCoverItemId(@Nullable CompoundTag nbttagcompound) {
+    if (nbttagcompound != null && nbttagcompound.contains("Cover")) {
+      String raw = nbttagcompound.getString("Cover");
+      if (!raw.isEmpty()) {
+        return ResourceLocation.tryParse(raw);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Records the blended ARGB ink tint produced by the Ink Mixer when this link
+   * panel was written. Used to colour page edges and ribbon bookmark.
+   */
+  public static CompoundTag setInkTint(CompoundTag nbttagcompound, int argb) {
+    if (nbttagcompound == null) {
+      nbttagcompound = new CompoundTag();
+    }
+    nbttagcompound.putInt("InkTint", argb);
+    return nbttagcompound;
+  }
+
+  /**
+   * Returns the recorded ARGB ink tint. Returns {@code -1} (i.e. opaque white)
+   * when the tag is missing so callers can detect "unset".
+   */
+  public static int getInkTint(@Nullable CompoundTag nbttagcompound) {
+    if (nbttagcompound != null && nbttagcompound.contains("InkTint")) {
+      return nbttagcompound.getInt("InkTint");
+    }
+    return -1;
+  }
+
   /**
    * Creates LinkOptions from an ItemStack.
    *

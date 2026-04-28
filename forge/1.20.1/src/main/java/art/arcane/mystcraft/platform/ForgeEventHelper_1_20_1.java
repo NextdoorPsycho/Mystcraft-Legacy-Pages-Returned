@@ -155,6 +155,7 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
   private void onAddReloadListeners(AddReloadListenerEvent event) {
     event.addListener(new MystcraftGrammarReloadListener());
     event.addListener(new MystcraftSymbolReloadListener());
+    event.addListener(new art.arcane.mystcraft.datapack.affinity.MystcraftAffinityReloadListener());
   }
 
   // ==================== Client Networking Sync ====================

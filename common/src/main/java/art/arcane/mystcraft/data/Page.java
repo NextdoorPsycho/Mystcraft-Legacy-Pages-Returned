@@ -26,6 +26,8 @@ public abstract class Page {
   private static final String TAG_LINK_PANEL = "linkpanel";
   private static final String TAG_PROPERTIES = "properties";
   private static final String TAG_QUALITY = "Quality";
+  private static final String TAG_INK_TINT = "InkTint";
+  private static final String TAG_AFFINITY = "Affinity";
 
   public static void setQuality(@NotNull ItemStack page, String trait, int quality) {
     getQualityStruct(page).putInt(trait, quality);
@@ -226,6 +228,77 @@ public abstract class Page {
     } else {
       return new ResourceLocation(symbol);
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Ink tint + affinity snapshot (added 2026-04 for procedural book UI / ink
+  // affinity bias). Both are optional and default to "unset" so old pages
+  // continue to read cleanly.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Records the blended ARGB tint of the ink used to write this page.
+   * Used by the procedural book UI to colour ink-edged decorations.
+   * Pass {@code 0} to clear.
+   */
+  public static void setInkTint(@NotNull ItemStack page, int argb) {
+    if (page.isEmpty()) {
+      return;
+    }
+    CompoundTag data = getData(page);
+    if (argb == 0) {
+      data.remove(TAG_INK_TINT);
+    } else {
+      data.putInt(TAG_INK_TINT, argb);
+    }
+  }
+
+  /**
+   * Returns the recorded ink tint, or {@code -1} (white / unset) when the page
+   * pre-dates the field.
+   */
+  public static int getInkTint(@NotNull ItemStack page) {
+    if (page.isEmpty()) {
+      return -1;
+    }
+    CompoundTag data = getData(page);
+    if (data.contains(TAG_INK_TINT)) {
+      return data.getInt(TAG_INK_TINT);
+    }
+    return -1;
+  }
+
+  /**
+   * Stores the ink-affinity snapshot (a {@link CompoundTag} containing the
+   * per-symbol / per-category / per-token weights frozen in at
+   * link-panel write time). Used by the symbol-roll algorithm and by the
+   * procedural cover sigil renderer.
+   */
+  public static void setAffinitySnapshot(@NotNull ItemStack page, @Nullable CompoundTag snapshot) {
+    if (page.isEmpty()) {
+      return;
+    }
+    CompoundTag data = getData(page);
+    if (snapshot == null) {
+      data.remove(TAG_AFFINITY);
+    } else {
+      data.put(TAG_AFFINITY, snapshot.copy());
+    }
+  }
+
+  /**
+   * Returns the affinity snapshot, or null if absent.
+   */
+  @Nullable
+  public static CompoundTag getAffinitySnapshot(@NotNull ItemStack page) {
+    if (page.isEmpty()) {
+      return null;
+    }
+    CompoundTag data = getData(page);
+    if (data.contains(TAG_AFFINITY)) {
+      return data.getCompound(TAG_AFFINITY).copy();
+    }
+    return null;
   }
 
   /**

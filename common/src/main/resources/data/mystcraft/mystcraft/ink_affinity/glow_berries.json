@@ -1,0 +1,17 @@
+{
+  "items": ["minecraft:glow_berries"],
+  "amount_per_item": 0.4,
+  "tier_bonus": 0,
+  "symbol_weights": {
+    "mystcraft:biome_jungle": 0.2
+  },
+  "category_weights": {
+    "lighting": 0.3,
+    "feature_small": 0.2
+  },
+  "poem_token_weights": {
+    "Glow": 0.4,
+    "Bright": 0.3,
+    "Light": 0.25
+  }
+}

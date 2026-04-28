@@ -15,11 +15,12 @@ public final class MystcraftGameTestSuites {
   public static final String AGE_CREATION = "age_creation";
   public static final String WORLD_RULES = "world_rules";
   public static final String COMMANDS = "commands";
+  public static final String PROCEDURAL_UI = "procedural_ui";
 
   private static final String ENV_SELECTION = "MYSTCRAFT_GAMETEST_SUITE";
   private static final String PROPERTY_SELECTION = "mystcraft.gametest.suite";
-  private static final Set<String> FAST_SUITES = Set.of(CORE, BOOK_TRAVEL, BOOK_CRAFTING, AGE_CREATION);
-  private static final Set<String> ALL_SUITES = Set.of(CORE, BOOK_TRAVEL, BOOK_CRAFTING, AGE_CREATION, WORLD_RULES, COMMANDS);
+  private static final Set<String> FAST_SUITES = Set.of(CORE, BOOK_TRAVEL, BOOK_CRAFTING, AGE_CREATION, PROCEDURAL_UI);
+  private static final Set<String> ALL_SUITES = Set.of(CORE, BOOK_TRAVEL, BOOK_CRAFTING, AGE_CREATION, WORLD_RULES, COMMANDS, PROCEDURAL_UI);
 
   private MystcraftGameTestSuites() {
   }

@@ -5,6 +5,7 @@ import art.arcane.mystcraft.api.symbol.GrammarBindingMode;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.IGrammarBinding;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
+import art.arcane.mystcraft.data.InkBlend;
 import art.arcane.mystcraft.grammar.CFGGrammarGenerator;
 import art.arcane.mystcraft.grammar.CFGRule;
 import art.arcane.mystcraft.grammar.GrammarData;
@@ -295,15 +296,62 @@ public final class SymbolRegistry {
    * @return A random symbol
    */
   public static IAgeSymbol getRandomWeighted(RandomSource random) {
-    // Simple weighted selection - lower ranks are more common
+    return getRandomWeightedWithAffinity(random, null);
+  }
+
+  /**
+   * Default ceiling on {@code card_rank} when rolling with affinity.
+   * Without an affinity {@code tierBonus} (e.g. nether star = +2), only
+   * symbols with rank ≤ this value can roll. {@link #getRandomWeighted}
+   * remains uncapped for backwards compatibility.
+   */
+  public static final int DEFAULT_AFFINITY_RANK_CAP = 3;
+
+  /**
+   * Affinity-aware variant of {@link #getRandomWeighted}.
+   * <p>
+   * Each candidate symbol gets a base weight derived from its card rank
+   * (rank 1 → 4, rank 4 → 1) and is then multiplied by
+   * {@code (1 + symbolBoost + categoryBoost + poemBoost)} where each boost
+   * comes from the supplied {@link InkBlend}. Symbols whose rank exceeds
+   * {@link #DEFAULT_AFFINITY_RANK_CAP} {@code + blend.tierBonus()} are skipped.
+   * <p>
+   * If {@code blend} is {@code null} or {@link InkBlend#isEmpty() empty} the
+   * algorithm reduces to the legacy uncapped weighted selection so callers
+   * that don't track affinity get identical behaviour to before.
+   *
+   * @param random the source of randomness
+   * @param blend  the affinity blend, or {@code null} for plain weighted
+   * @return a random symbol respecting both rarity and affinity
+   */
+  public static IAgeSymbol getRandomWeightedWithAffinity(RandomSource random, InkBlend blend) {
+    boolean hasBlend = blend != null && !blend.isEmpty();
+    int rankCap = hasBlend ? DEFAULT_AFFINITY_RANK_CAP + blend.tierBonus() : Integer.MAX_VALUE;
+
     List<IAgeSymbol> weighted = new ArrayList<>();
     for (Map.Entry<Integer, List<IAgeSymbol>> entry : BY_CARD_RANK.entrySet()) {
       int rank = entry.getKey();
-      int weight = Math.max(1, 5 - rank); // Rank 0: weight 5, Rank 4: weight 1
-      for (int i = 0; i < weight; i++) {
-        for (IAgeSymbol symbol : entry.getValue()) {
-          if (!symbol.allowInRandomGeneration()) continue;
-          if (isBlacklisted(symbol.getRegistryName())) continue;
+      if (rank > rankCap) continue;
+      int baseWeight = Math.max(1, 5 - rank);
+      for (IAgeSymbol symbol : entry.getValue()) {
+        if (!symbol.allowInRandomGeneration()) continue;
+        if (isBlacklisted(symbol.getRegistryName())) continue;
+
+        int weight = baseWeight;
+        if (hasBlend) {
+          float boost = 0f;
+          boost += blend.symbolWeight(symbol.getRegistryName());
+          boost += blend.categoryWeight(symbol.getCategory());
+          boost += blend.poemTokenSum(symbol.getPoem());
+          if (boost < 0f) boost = 0f;
+          // Multiplicative bias on the base weight; ceil to keep boosts visible
+          // even when the base weight is already 1 (rarer symbols benefit most).
+          weight = (int) Math.ceil(baseWeight * (1f + boost));
+          // Sanity clamp to keep the weighted pool from exploding under stacked
+          // contributions from many high-WEIGHT_CAP entries.
+          if (weight > baseWeight * 32) weight = baseWeight * 32;
+        }
+        for (int i = 0; i < weight; i++) {
           weighted.add(symbol);
         }
       }

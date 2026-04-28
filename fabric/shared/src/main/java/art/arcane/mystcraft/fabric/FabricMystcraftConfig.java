@@ -35,6 +35,9 @@ public class FabricMystcraftConfig {
   public static final BooleanValue safeStories = new BooleanValue(true);
   public static final BooleanValue droppedBooksBecomeLivingEntities = new BooleanValue(true);
   public static final BooleanValue dropBooksOnRead = new BooleanValue(true);
+  // --- Procedural UI / book-cover toggles ---
+  public static final BooleanValue proceduralUiEnabled = new BooleanValue(true);
+  public static final BooleanValue proceduralBookCoversEnabled = new BooleanValue(true);
   // --- Personal Pocket Dimension ---
   public static final IntValue pocketInnerHalfSizeXZ = new IntValue(24);
   public static final IntValue pocketInnerHalfSizeY = new IntValue(24);
@@ -171,6 +174,14 @@ public class FabricMystcraftConfig {
     setCommentAndDefault(config, "general.disabledSymbols", new ArrayList<>(DEFAULT_DISABLED_SYMBOLS),
         "List of symbol IDs to disable. Disabled symbols are hidden from books and not registered at runtime.");
     disabledSymbols.set(config.getOrElse("general.disabledSymbols", new ArrayList<>(DEFAULT_DISABLED_SYMBOLS)));
+
+    setCommentAndDefault(config, "general.proceduralUiEnabled", proceduralUiEnabled.defaultValue,
+        "Master switch for the procedural GUI theme. When false the optional resource-pack 'assets/mystcraft/gui/theme.json' overrides are ignored and built-in defaults are used.");
+    proceduralUiEnabled.set(config.getOrElse("general.proceduralUiEnabled", proceduralUiEnabled.defaultValue));
+
+    setCommentAndDefault(config, "general.proceduralBookCoversEnabled", proceduralBookCoversEnabled.defaultValue,
+        "When false, the open book renders with a uniform leather cover and neutral ink regardless of NBT (saves VRAM on low-end clients).");
+    proceduralBookCoversEnabled.set(config.getOrElse("general.proceduralBookCoversEnabled", proceduralBookCoversEnabled.defaultValue));
 
     // --- Personal Pocket ---
     setCommentAndDefault(config, "personal_pocket.innerHalfSizeXZ", pocketInnerHalfSizeXZ.defaultValue,

@@ -104,4 +104,19 @@ public class MystcraftGameTests {
   public void commands_player_and_admin_workflows_are_registered(GameTestHelper helper) {
     MystcraftGameTestRunner.runCommandWorkflowTest(helper);
   }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.PROCEDURAL_UI, timeoutTicks = 40)
+  public void procedural_ui_ink_blend_nbt_round_trip(GameTestHelper helper) {
+    MystcraftGameTestRunner.runInkBlendNbtRoundTripTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.PROCEDURAL_UI, timeoutTicks = 40)
+  public void procedural_ui_book_cover_nbt_round_trip(GameTestHelper helper) {
+    MystcraftGameTestRunner.runBookCoverNbtRoundTripTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.PROCEDURAL_UI, timeoutTicks = 80)
+  public void procedural_ui_ink_affinity_biases_symbol_roll(GameTestHelper helper) {
+    MystcraftGameTestRunner.runInkAffinityBiasesSymbolRollTest(helper);
+  }
 }

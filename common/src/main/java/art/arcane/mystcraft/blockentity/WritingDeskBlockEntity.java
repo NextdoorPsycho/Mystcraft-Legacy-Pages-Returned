@@ -1,11 +1,14 @@
 package art.arcane.mystcraft.blockentity;
 
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.data.InkBlend;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.*;
 import art.arcane.mystcraft.menu.WritingDeskMenu;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.registry.ModFluids;
 import art.arcane.mystcraft.registry.ModTags;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -342,6 +345,28 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
   }
 
   /**
+   * Experimental writing — rolls a random symbol from {@link SymbolRegistry}
+   * using the desk ink tank's accumulated {@link InkBlend} affinity. When
+   * the tank carries no affinity this falls back to the plain weighted roll,
+   * so the workflow stays useful on vanilla ink. Returns the symbol that was
+   * written, or {@code null} if the desk could not write (no ink / no slot).
+   */
+  @Nullable
+  public ResourceLocation writeSymbolExperimental(@Nullable Player player) {
+    if (level == null || level.isClientSide) return null;
+    if (!hasEnoughInk()) return null;
+
+    InkBlend blend = inkTank.getBlend();
+    IAgeSymbol symbol = blend != null && !blend.isEmpty()
+        ? SymbolRegistry.getRandomWeightedWithAffinity(level.random, blend)
+        : SymbolRegistry.getRandomWeighted(level.random);
+    if (symbol == null) return null;
+
+    ResourceLocation id = symbol.getRegistryName();
+    return writeSymbol(player, id) ? id : null;
+  }
+
+  /**
    * Processes fluid containers - called from tick.
    */
   public void processFluidContainers() {
@@ -514,10 +539,17 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
 
   /**
    * Simple ink tank that tracks fluid amount without Forge fluid capabilities.
+   * Optionally carries an {@link InkBlend} accumulated from themed ink sources
+   * (e.g. ink mixed at an Ink Mixer with diamond / nether star / etc. items)
+   * so {@link #writeSymbolExperimental} can roll affinity-biased symbols.
    */
   public static class InkTank {
+    private static final String TAG_BLEND = "AffinityBlend";
+
     private final int capacity;
     private int amount;
+    @Nullable
+    private InkBlend blend;
 
     public InkTank(int capacity) {
       this.capacity = capacity;
@@ -545,15 +577,55 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     public int drain(int amount) {
       int drained = Math.min(amount, this.amount);
       this.amount -= drained;
+      // Draining all the ink also clears the affinity — themed ink is gone.
+      if (this.amount <= 0) {
+        this.blend = null;
+      }
       return drained;
+    }
+
+    /**
+     * Read-only handle on the tank's affinity blend, or {@code null} if the
+     * tank holds plain ink. Mutating the returned blend is permitted and will
+     * persist across saves; callers that don't intend to mutate should treat
+     * it as read-only.
+     */
+    @Nullable
+    public InkBlend getBlend() {
+      return blend;
+    }
+
+    /**
+     * Merges {@code other} into the tank's affinity blend (creating it on
+     * first call). Use this when transferring themed ink from an Ink Mixer
+     * or pouring a themed ink container in.
+     */
+    public void applyAffinity(@Nullable InkBlend other) {
+      if (other == null || other.isEmpty()) return;
+      if (blend == null) blend = new InkBlend();
+      blend.merge(other);
+    }
+
+    /** Wipes the tank's affinity (called when the tank is fully drained). */
+    public void clearAffinity() {
+      blend = null;
     }
 
     public void load(CompoundTag tag) {
       this.amount = tag.getInt("InkAmount");
+      if (tag.contains(TAG_BLEND, Tag.TAG_COMPOUND)) {
+        InkBlend loaded = InkBlend.fromTag(tag.getCompound(TAG_BLEND));
+        this.blend = loaded.isEmpty() ? null : loaded;
+      } else {
+        this.blend = null;
+      }
     }
 
     public CompoundTag save(CompoundTag tag) {
       tag.putInt("InkAmount", amount);
+      if (blend != null && !blend.isEmpty()) {
+        tag.put(TAG_BLEND, blend.toNbt());
+      }
       return tag;
     }
   }

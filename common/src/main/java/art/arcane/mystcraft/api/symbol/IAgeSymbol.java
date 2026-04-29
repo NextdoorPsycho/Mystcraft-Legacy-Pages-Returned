@@ -92,4 +92,19 @@ public interface IAgeSymbol {
   default boolean canDuplicate() {
     return false;
   }
+
+  /**
+   * Optional presentation override loaded from datapack JSON. When
+   * non-null, the procedural-symbol page renderer uses the supplied
+   * motif name, palette overlay, and per-word seed pins to compose a
+   * curated "hero" treatment instead of the auto-generated category
+   * default. Returning {@code null} (the default) keeps the symbol on
+   * the auto-generated path.
+   *
+   * @return the per-symbol presentation override, or {@code null} for
+   *         category-default rendering
+   */
+  default art.arcane.mystcraft.datapack.symbol.SymbolDisplay getDisplay() {
+    return null;
+  }
 }

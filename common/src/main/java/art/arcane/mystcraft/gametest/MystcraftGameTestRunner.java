@@ -1394,4 +1394,124 @@ public final class MystcraftGameTestRunner {
     }
     helper.succeed();
   }
+
+  /**
+   * Verifies the procedural-symbol glyph pipeline is deterministic — same
+   * symbol id + poem word always produce identical pixels. Validates
+   * three layers: seed math, curated D'ni vocabulary stability, and
+   * (when blaze3d is available) byte-identical NativeImage content.
+   */
+  public static void runSymbolGlyphIsDeterministicTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
+      return;
+    }
+    try {
+      MystcraftGameTestAssertions.assertSymbolGlyphIsDeterministic();
+    } catch (RuntimeException e) {
+      helper.fail(e.getMessage());
+      return;
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Verifies the per-category motif dispatch is correct (every
+   * {@link art.arcane.mystcraft.api.symbol.SymbolCategory} resolves to
+   * its spec'd motif) and that motif rendering is deterministic +
+   * cross-category distinct. See plan §5.3.2 for the dispatch table.
+   */
+  public static void runMotifDispatchPerCategoryTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
+      return;
+    }
+    try {
+      MystcraftGameTestAssertions.assertMotifDispatchPerCategory();
+    } catch (RuntimeException e) {
+      helper.fail(e.getMessage());
+      return;
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Verifies card rank produces a strictly monotonic visual progression:
+   * each rank 1..5 yields more flourish ornamentation (border + corner
+   * + spine + halo features) and, with GL natives, more non-transparent
+   * pixels than the previous rank. See plan §5.3.3 for the rank table.
+   */
+  public static void runSymbolRankProgressionTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
+      return;
+    }
+    try {
+      MystcraftGameTestAssertions.assertSymbolRankProgression();
+    } catch (RuntimeException e) {
+      helper.fail(e.getMessage());
+      return;
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Verifies datapack {@link art.arcane.mystcraft.datapack.symbol.SymbolDisplay}
+   * overrides survive parser → API → render. Three layers: JSON parsing,
+   * {@link art.arcane.mystcraft.api.symbol.IAgeSymbol#getDisplay()} contract,
+   * and (with GL natives) pixel-distinctness across motif / palette
+   * overrides. See plan §5.4 for the schema.
+   */
+  public static void runSymbolDisplayOverrideAppliedTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
+      return;
+    }
+    try {
+      MystcraftGameTestAssertions.assertSymbolDisplayOverrideApplied();
+    } catch (RuntimeException e) {
+      helper.fail(e.getMessage());
+      return;
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Verifies that reloading the procedural-UI subsystem clears every
+   * symbol-side cache and that re-rendering produces byte-identical
+   * pixels. Two layers: (1) cache-size accounting on
+   * {@link art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory}
+   * (always runs); (2) deterministic FNV-1a hash equality across reload
+   * (skipped without GL natives). See plan §6 Phase 5 / Task 5.4.
+   */
+  public static void runProceduralUiReloadFlushesSymbolCachesTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
+      return;
+    }
+    try {
+      MystcraftGameTestAssertions.assertProceduralUiReloadFlushesSymbolCaches();
+    } catch (RuntimeException e) {
+      helper.fail(e.getMessage());
+      return;
+    }
+    helper.succeed();
+  }
+
+  /**
+   * Verifies that
+   * {@link art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory#warmBlocking()}
+   * pre-warms the symbol glyph cache for every registered symbol and
+   * completes within a soft regression window. Combines plan §6 Phase 5
+   * tasks 5.6 (perf check) + 5.7 (correctness — synchronous warm
+   * completes and populates {@code symbolCount} tiles or saturates the
+   * LRU cap).
+   */
+  public static void runProceduralSymbolWarmCompletesTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
+      return;
+    }
+    try {
+      MystcraftGameTestAssertions.assertProceduralSymbolWarmCompletes();
+    } catch (RuntimeException e) {
+      helper.fail(e.getMessage());
+      return;
+    }
+    helper.succeed();
+  }
 }

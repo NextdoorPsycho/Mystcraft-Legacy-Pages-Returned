@@ -2,6 +2,10 @@ package art.arcane.mystcraft.client.gui.procedural;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.client.GuidebookTexture;
+import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory;
+import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolMotif;
+import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolPageTextureFactory;
+import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolPalette;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -53,6 +57,11 @@ public final class ProceduralUiReload implements ResourceManagerReloadListener {
   public static synchronized void reloadAll() {
     Mystcraft.LOGGER.debug("[ProceduralUiReload] Reloading {} cache(s) + theme + guidebook", CACHES.size());
     GuiTheme.reload();
+    try {
+      SymbolPalette.reload();
+    } catch (Exception e) {
+      Mystcraft.LOGGER.warn("[ProceduralUiReload] SymbolPalette.reload failed: {}", e.toString());
+    }
     for (ProceduralTextureCache cache : CACHES) {
       try {
         cache.clear();
@@ -74,6 +83,25 @@ public final class ProceduralUiReload implements ResourceManagerReloadListener {
       PageTextureFactory.reset();
     } catch (Exception e) {
       Mystcraft.LOGGER.warn("[ProceduralUiReload] PageTextureFactory.reset failed: {}", e.toString());
+    }
+    // Procedural symbol-page caches (added in plan §5 task 5.4). These
+    // hold composed page textures, motif sub-textures, and individual
+    // glyph tiles — all of which must invalidate when the resource pack
+    // changes the symbol palette overrides or fonts.
+    try {
+      SymbolPageTextureFactory.reset();
+    } catch (Exception e) {
+      Mystcraft.LOGGER.warn("[ProceduralUiReload] SymbolPageTextureFactory.reset failed: {}", e.toString());
+    }
+    try {
+      SymbolMotif.invalidateCache();
+    } catch (Exception e) {
+      Mystcraft.LOGGER.warn("[ProceduralUiReload] SymbolMotif.invalidateCache failed: {}", e.toString());
+    }
+    try {
+      SymbolGlyphFactory.reset();
+    } catch (Exception e) {
+      Mystcraft.LOGGER.warn("[ProceduralUiReload] SymbolGlyphFactory.reset failed: {}", e.toString());
     }
   }
 

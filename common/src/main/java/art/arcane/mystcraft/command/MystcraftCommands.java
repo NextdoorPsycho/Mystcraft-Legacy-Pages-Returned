@@ -4,6 +4,7 @@ import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolPageTextureFactory;
 import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.datapack.symbol.PopulatorRegistry;
@@ -197,7 +198,10 @@ public class MystcraftCommands {
                 .requires(source -> source.hasPermission(0))
                 .then(Commands.argument("symbolId", StringArgumentType.string())
                     .suggests(SYMBOL_SUGGESTIONS)
-                    .executes(MystcraftCommands::symbolInfo))))
+                    .executes(MystcraftCommands::symbolInfo)))
+            .then(Commands.literal("dump")
+                .requires(source -> source.hasPermission(2))
+                .executes(MystcraftCommands::dumpSymbolPages)))
         // world
         .then(Commands.literal("world")
             .then(Commands.literal("regen")
@@ -497,6 +501,131 @@ public class MystcraftCommands {
     source.sendSuccess(() -> Component.literal("  Cost: " + symbol.getInstabilityCost()), false);
 
     return 1;
+  }
+
+  /**
+   * Dumps every registered symbol's procedural page texture as a PNG
+   * to {@code <serverDir>/mystcraft_dumps/symbols/<namespace>/<path>.png}.
+   * <p>
+   * Purely a "look at and admire" tool — no gameplay impact, no test
+   * coverage. Intended to be run from a single-player chat console
+   * (which gives access to client-only blaze3d classes via the
+   * integrated server's shared JVM) when you want to skim the entire
+   * symbol gallery as a directory of images.
+   *
+   * <p>If the {@link com.mojang.blaze3d.platform.NativeImage} class
+   * isn't available on the runtime (dedicated server, no LWJGL), the
+   * command reports the limitation and exits 0 rather than crashing —
+   * mirrors the layered "client-only class load" guard used by the
+   * GameTest assertions.
+   */
+  private static int dumpSymbolPages(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    Collection<IAgeSymbol> all = SymbolRegistry.getAll();
+    if (all.isEmpty()) {
+      source.sendFailure(Component.literal("Symbol registry is empty — nothing to dump."));
+      return 0;
+    }
+
+    Path root = source.getServer().getServerDirectory().toPath()
+        .resolve("mystcraft_dumps").resolve("symbols");
+    try {
+      Files.createDirectories(root);
+    } catch (IOException e) {
+      source.sendFailure(Component.literal("Failed to create dump directory: " + e.getMessage()));
+      return 0;
+    }
+
+    source.sendSuccess(
+        () -> Component.literal("Dumping " + all.size() + " symbol pages to " + root + " ..."),
+        false);
+
+    int written = 0;
+    int failed = 0;
+    long start = System.nanoTime();
+
+    for (IAgeSymbol symbol : all) {
+      ResourceLocation id = symbol.getRegistryName();
+      // Sanitise the path component so it's filesystem-safe across OSes.
+      String safePath = id.getPath().replace('/', '_');
+      Path nsDir = root.resolve(id.getNamespace());
+      Path file = nsDir.resolve(safePath + ".png");
+      try {
+        Files.createDirectories(nsDir);
+        if (writeSymbolPng(symbol, file)) {
+          written++;
+        } else {
+          failed++;
+        }
+      } catch (LinkageError | RuntimeException e) {
+        // First failure with a client-only class load aborts the loop —
+        // we're on a runtime without LWJGL/blaze3d, so every call would
+        // fail the same way.
+        if (isClientOnlyClassLoadFailure(e)) {
+          source.sendFailure(Component.literal(
+              "Symbol PNG dump unavailable on this runtime (no GL/blaze3d): " + e.getMessage()));
+          return 0;
+        }
+        failed++;
+        Mystcraft.LOGGER.warn("[SymbolDump] Failed to write {}: {}", file, e.toString());
+      } catch (IOException e) {
+        failed++;
+        Mystcraft.LOGGER.warn("[SymbolDump] I/O error writing {}: {}", file, e.toString());
+      }
+    }
+
+    long durationMs = (System.nanoTime() - start) / 1_000_000L;
+    final int writtenF = written;
+    final int failedF = failed;
+    source.sendSuccess(
+        () -> Component.literal("Wrote " + writtenF + " symbol PNGs (" + failedF
+            + " failed) in " + durationMs + " ms"),
+        true);
+    return written;
+  }
+
+  /**
+   * Renders one symbol via {@link SymbolPageTextureFactory#composeSymbolPageImage}
+   * and writes the {@link com.mojang.blaze3d.platform.NativeImage}
+   * payload to {@code file} as a PNG. The factory call is reached via
+   * a separate method so a {@link LinkageError} from the missing
+   * blaze3d package binds to the call site (lets {@link #dumpSymbolPages}
+   * detect the runtime mismatch and short-circuit cleanly).
+   *
+   * <p>The {@link com.mojang.blaze3d.platform.NativeImage} returned by
+   * the factory owns its native buffer; we close it after writing so
+   * the dump command never leaks GPU memory even when invoked
+   * repeatedly.
+   */
+  private static boolean writeSymbolPng(IAgeSymbol symbol, Path file) throws IOException {
+    com.mojang.blaze3d.platform.NativeImage image = SymbolPageTextureFactory.composeSymbolPageImage(symbol);
+    try {
+      image.writeToFile(file);
+      return true;
+    } finally {
+      image.close();
+    }
+  }
+
+  /**
+   * Mirrors {@code MystcraftGameTestAssertions.isClientOnlyClassLoadFailure}.
+   * Catches the two distinct ways the loaders surface a client-only
+   * class load on a server runtime: Forge wraps in
+   * {@link BootstrapMethodError}; Fabric throws a plain
+   * {@link RuntimeException} from its env guard.
+   */
+  private static boolean isClientOnlyClassLoadFailure(Throwable t) {
+    if (t == null) return false;
+    if (t instanceof LinkageError) return true;
+    String msg = t.getMessage();
+    if (msg != null
+        && (msg.contains("Cannot load class")
+            || msg.contains("in environment type")
+            || msg.contains("Attempted to load class"))) {
+      return true;
+    }
+    Throwable cause = t.getCause();
+    return cause != null && cause != t && isClientOnlyClassLoadFailure(cause);
   }
 
   /**

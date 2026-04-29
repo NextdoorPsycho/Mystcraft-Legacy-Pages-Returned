@@ -61,7 +61,8 @@ public final class SymbolDatapackLoader {
           definition.grammarToken,
           definition.grammarRank,
           definition.logic,
-          definition.displayName
+          definition.displayName,
+          definition.display
       );
       boolean registered = SymbolRegistry.register(symbol, definition.replace);
       if (registered) {

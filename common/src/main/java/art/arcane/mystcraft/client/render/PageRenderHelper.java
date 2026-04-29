@@ -2,20 +2,34 @@ package art.arcane.mystcraft.client.render;
 
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.client.gui.procedural.PageTextureFactory;
+import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolMotif;
+import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolPalette;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix4f;
 
-import java.util.List;
-
 /**
- * Helper class for rendering pages with D'ni symbols.
+ * Helper for drawing page parchment + symbol illustrations onto a GUI.
+ * <p>
+ * <b>Procedural-symbol-pages refactor (post phase 1)</b>: the symbol
+ * illustration is now rendered through
+ * {@link art.arcane.mystcraft.client.gui.procedural.symbol.SymbolMotif#draw}
+ * which composes glyph tiles from
+ * {@link art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory}
+ * onto a cached {@code DynamicTexture}. The previous sprite-atlas path
+ * (which iterated over {@code DrawableWord#components()} and bound
+ * {@code symbolcomponents.png}) has been replaced.
  */
 public class PageRenderHelper {
 
@@ -26,11 +40,6 @@ public class PageRenderHelper {
   private static final int PAGE_TEX_V = PageTextureFactory.SUB_V;
   private static final int PAGE_TEX_WIDTH = PageTextureFactory.SUB_W;
   private static final int PAGE_TEX_HEIGHT = PageTextureFactory.SUB_H;
-
-  // Symbol component constants
-  private static final int ICON_SIZE = 64;
-  private static final int SPRITESHEET_SIZE = 512;
-  private static final float TEX_TRANSFORM = 1.0f / SPRITESHEET_SIZE;
 
   /**
    * Draws a complete page with its symbol or link panel.
@@ -87,122 +96,36 @@ public class PageRenderHelper {
   }
 
   /**
-   * Draws a symbol using its poem words arranged in a diamond pattern.
+   * Draws a symbol's procedural motif at the given screen position.
+   * <p>
+   * The motif is selected via the symbol's
+   * {@link art.arcane.mystcraft.api.symbol.SymbolCategory category} →
+   * {@link SymbolPalette.Entry#defaultMotif() palette default} mapping.
+   * For phase 1 every category resolves to {@link SymbolMotif#DIAMOND DIAMOND};
+   * phase 2 introduces category-specific motifs.
    *
-   * @param guiGraphics The graphics context
-   * @param symbol      The symbol to draw (can be null for unknown/?)
-   * @param scale       The size scale
-   * @param x           X position
-   * @param y           Y position
-   * @param zLevel      Z-level
+   * @param guiGraphics The graphics context.
+   * @param symbol      The symbol to draw. {@code null} renders the
+   *                    fallback (transparent — suppresses the diamond).
+   * @param scale       Render size in GUI pixels (square).
+   * @param x           X position (top-left).
+   * @param y           Y position (top-left).
+   * @param zLevel      Z-level. Currently unused — passed through for
+   *                    API compatibility with the legacy sprite-atlas
+   *                    pipeline; the procedural path uses the GUI z
+   *                    set by the caller's pose stack.
    */
   public static void drawSymbol(GuiGraphics guiGraphics, IAgeSymbol symbol, float scale,
-                                float x, float y, float zLevel) {
+                                float x, float y, @SuppressWarnings("unused") float zLevel) {
+    if (symbol == null || scale <= 0f) {
+      return;
+    }
+    SymbolPalette.Entry palette = SymbolPalette.get(symbol.getCategory());
+    SymbolMotif motif = palette.defaultMotif();
     RenderSystem.enableBlend();
     RenderSystem.defaultBlendFunc();
-
-    if (symbol == null) {
-      // Draw unknown symbol (?)
-      drawWord(guiGraphics, null, scale, x, y, zLevel);
-      return;
-    }
-
-    // Calculate sizes for diamond arrangement
-    scale /= 2;
-    float s = scale / 2.414f; // sqrt(2) + 1
-    float o = s * 1.414f; // sqrt(2)
-
-    String[] words = symbol.getPoem();
-    if (words == null || words.length == 0) {
-      // No poem - draw centered unknown symbol
-      drawWord(guiGraphics, DrawableWordManager.getDrawableWord(null), s * 2, x + o, y + o, zLevel);
-      return;
-    }
-
-    // Draw words in diamond pattern:
-    // Position 0: top
-    // Position 1: right
-    // Position 2: bottom
-    // Position 3: left
-    if (words.length > 0)
-      drawWord(guiGraphics, DrawableWordManager.getDrawableWord(words[0]), 2 * s, x + o, y, zLevel);
-    if (words.length > 1)
-      drawWord(guiGraphics, DrawableWordManager.getDrawableWord(words[1]), 2 * s, x + o * 2, y + o, zLevel);
-    if (words.length > 2)
-      drawWord(guiGraphics, DrawableWordManager.getDrawableWord(words[2]), 2 * s, x + o, y + o * 2, zLevel);
-    if (words.length > 3)
-      drawWord(guiGraphics, DrawableWordManager.getDrawableWord(words[3]), 2 * s, x, y + o, zLevel);
-
+    motif.draw(guiGraphics, symbol, palette, x, y, scale);
     RenderSystem.disableBlend();
-  }
-
-  /**
-   * Draws a single D'ni word.
-   */
-  public static void drawWord(GuiGraphics guiGraphics, DrawableWord word, float scale,
-                              float x, float y, float zLevel) {
-    List<Integer> components;
-    List<Integer> colors;
-    ResourceLocation imageSource;
-
-    if (word != null) {
-      components = word.components();
-      colors = word.colors();
-      imageSource = word.imageSource();
-    } else {
-      // Unknown word - draw ? symbol (component 0)
-      components = List.of(0);
-      colors = List.of();
-      imageSource = DrawableWord.WORD_COMPONENTS;
-    }
-
-    if (components.isEmpty()) {
-      components = List.of(0);
-      colors = List.of();
-    }
-
-    RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-    RenderSystem.setShaderTexture(0, imageSource);
-
-    for (int i = 0; i < components.size(); i++) {
-      int color = 0;
-      if (i < colors.size()) {
-        color = colors.get(i);
-      } else if (!colors.isEmpty()) {
-        color = colors.get(0);
-      }
-
-      drawComponent(guiGraphics.pose(), components.get(i), color, scale, x, y, zLevel);
-    }
-  }
-
-  /**
-   * Draws a single component from the symbol sprite sheet.
-   */
-  private static void drawComponent(PoseStack poseStack, int iconIndex, int color,
-                                    float scale, float x, float y, float zLevel) {
-    int iconX = (iconIndex % 8) * ICON_SIZE;
-    int iconY = (iconIndex / 8) * ICON_SIZE;
-
-    float red = ((color >> 16) & 0xFF) / 255.0f;
-    float green = ((color >> 8) & 0xFF) / 255.0f;
-    float blue = (color & 0xFF) / 255.0f;
-
-    Matrix4f matrix = poseStack.last().pose();
-    BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-    buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-
-    float u0 = iconX * TEX_TRANSFORM;
-    float u1 = (iconX + ICON_SIZE) * TEX_TRANSFORM;
-    float v0 = iconY * TEX_TRANSFORM;
-    float v1 = (iconY + ICON_SIZE) * TEX_TRANSFORM;
-
-    buffer.vertex(matrix, x, y + scale, zLevel).uv(u0, v1).color(red, green, blue, 1.0f).endVertex();
-    buffer.vertex(matrix, x + scale, y + scale, zLevel).uv(u1, v1).color(red, green, blue, 1.0f).endVertex();
-    buffer.vertex(matrix, x + scale, y, zLevel).uv(u1, v0).color(red, green, blue, 1.0f).endVertex();
-    buffer.vertex(matrix, x, y, zLevel).uv(u0, v0).color(red, green, blue, 1.0f).endVertex();
-
-    BufferUploader.drawWithShader(buffer.end());
   }
 
   /**

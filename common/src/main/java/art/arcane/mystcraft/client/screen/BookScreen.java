@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.client.screen;
 
 import art.arcane.mystcraft.client.gui.procedural.BookTextureFactory;
+import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolPageTextureFactory;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.AgebookItem;
@@ -241,9 +242,11 @@ public class BookScreen extends Screen {
       drawPageInterior(guiGraphics, 163, 0, 156, 195);
       drawLinkPanel(guiGraphics, 173, 20, 132, 83);
     } else if (!currentPage.isEmpty()) {
-      // Solid right page for symbol pages
+      // Solid right page for symbol pages — overlay the procedural
+      // symbol-page texture so flipping through an Agebook actually
+      // shows what's written on each page rather than a blank parchment.
       drawPageInterior(guiGraphics, 163, 0, 156, 195);
-      // Could render symbol here if we implement symbol rendering
+      drawSymbolOnPage(guiGraphics, currentPage, 163, 0, 156, 195);
     } else {
       // Empty page - just show solid right page
       drawPageInterior(guiGraphics, 163, 0, 156, 195);
@@ -284,6 +287,28 @@ public class BookScreen extends Screen {
     for (int ly = y + 12; ly < y + h - 8; ly += 12) {
       g.fill(x + 8, ly, x + w - 8, ly + 1, rule);
     }
+  }
+
+  /**
+   * Draws the procedural symbol-page texture (motif + glyphs + flourish
+   * + halos) centred inside the supplied page-interior rectangle.
+   * <p>
+   * The symbol-page texture is square (see
+   * {@link SymbolPageTextureFactory#TEX_SIZE}); we centre it
+   * horizontally and bias slightly upward so the page-number area
+   * ({@link #drawPageNumbers}) at {@code y=185} is left clear. A small
+   * outer margin (8 px) keeps the parchment frame visible around the
+   * symbol so the eye can still tell it's a page.
+   */
+  private void drawSymbolOnPage(GuiGraphics g, ItemStack page, int x, int y, int w, int h) {
+    int margin = 8;
+    int square = Math.min(w, h) - margin * 2;
+    int sx = x + (w - square) / 2;
+    int sy = y + margin;
+
+    ResourceLocation pageTex = SymbolPageTextureFactory.getPageTexture(page);
+    RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+    g.blit(pageTex, sx, sy, 0, 0, square, square, square, square);
   }
 
   /**

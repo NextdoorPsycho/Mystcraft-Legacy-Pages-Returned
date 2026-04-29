@@ -46,7 +46,7 @@ suite_count() {
     age_creation) echo 5 ;;
     world_rules) echo 2 ;;
     commands) echo 1 ;;
-    procedural_ui) echo 3 ;;
+    procedural_ui) echo 9 ;;
     *) echo 0 ;;
   esac
 }

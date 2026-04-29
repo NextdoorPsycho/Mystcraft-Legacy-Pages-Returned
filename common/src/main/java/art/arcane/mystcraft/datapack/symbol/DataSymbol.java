@@ -20,6 +20,7 @@ public class DataSymbol extends SymbolBase implements IGrammarBinding {
   private final ResourceLocation grammarToken;
   private final Integer grammarRank;
   private final List<SymbolLogic> logic;
+  private final SymbolDisplay display;
 
   public DataSymbol(ResourceLocation id,
                     SymbolCategory category,
@@ -32,7 +33,8 @@ public class DataSymbol extends SymbolBase implements IGrammarBinding {
                     ResourceLocation grammarToken,
                     Integer grammarRank,
                     List<SymbolLogic> logic,
-                    String displayName) {
+                    String displayName,
+                    SymbolDisplay display) {
     super(id, category);
     this.allowRandom = allowRandom;
     this.displayName = displayName;
@@ -40,6 +42,7 @@ public class DataSymbol extends SymbolBase implements IGrammarBinding {
     this.grammarToken = grammarToken;
     this.grammarRank = grammarRank;
     this.logic = logic;
+    this.display = display;
     if (cardRank != null) {
       setCardRank(cardRank);
     }
@@ -48,6 +51,28 @@ public class DataSymbol extends SymbolBase implements IGrammarBinding {
       setPoem(poem);
     }
     setDuplicatable(canDuplicate);
+  }
+
+  /**
+   * Backwards-compatible constructor for callers that haven't yet
+   * threaded a {@link SymbolDisplay}. Uses {@code null} (= category
+   * default rendering) so the auto-generated symbol-page path takes
+   * over.
+   */
+  public DataSymbol(ResourceLocation id,
+                    SymbolCategory category,
+                    Integer cardRank,
+                    float instabilityCost,
+                    String[] poem,
+                    boolean allowRandom,
+                    boolean canDuplicate,
+                    GrammarBindingMode grammarMode,
+                    ResourceLocation grammarToken,
+                    Integer grammarRank,
+                    List<SymbolLogic> logic,
+                    String displayName) {
+    this(id, category, cardRank, instabilityCost, poem, allowRandom, canDuplicate,
+        grammarMode, grammarToken, grammarRank, logic, displayName, null);
   }
 
   @Override
@@ -95,5 +120,10 @@ public class DataSymbol extends SymbolBase implements IGrammarBinding {
   @Override
   public Integer getGrammarRank() {
     return grammarRank;
+  }
+
+  @Override
+  public SymbolDisplay getDisplay() {
+    return display;
   }
 }

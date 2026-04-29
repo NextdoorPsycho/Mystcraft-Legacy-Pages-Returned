@@ -29,6 +29,7 @@ public final class SymbolDefinition {
   public final ResourceLocation grammarToken;
   public final Integer grammarRank;
   public final List<SymbolLogic> logic;
+  public final SymbolDisplay display;
 
   private SymbolDefinition(ResourceLocation id,
                            boolean replace,
@@ -42,7 +43,8 @@ public final class SymbolDefinition {
                            GrammarBindingMode grammarMode,
                            ResourceLocation grammarToken,
                            Integer grammarRank,
-                           List<SymbolLogic> logic) {
+                           List<SymbolLogic> logic,
+                           SymbolDisplay display) {
     this.id = id;
     this.replace = replace;
     this.category = category;
@@ -56,6 +58,7 @@ public final class SymbolDefinition {
     this.grammarToken = grammarToken;
     this.grammarRank = grammarRank;
     this.logic = logic;
+    this.display = display;
   }
 
   public static SymbolDefinition fromJson(ResourceLocation id, JsonObject json) {
@@ -137,7 +140,8 @@ public final class SymbolDefinition {
         grammarMode,
         grammarToken,
         grammarRank,
-        logic
+        logic,
+        SymbolDisplay.fromJson(id, json.get("display"))
     );
   }
 }

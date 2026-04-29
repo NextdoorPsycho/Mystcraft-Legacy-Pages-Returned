@@ -1,112 +1,51 @@
 package art.arcane.mystcraft.client.render;
 
-import art.arcane.mystcraft.Mystcraft;
-import net.minecraft.resources.ResourceLocation;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 /**
- * Represents a drawable D'ni word for Narayan Poems.
- * Each word is composed of multiple symbol components with optional colors.
+ * A curated D'ni word — pins a thematic colour and a deterministic seed
+ * for one of the words in a Narayan Poem.
  * <p>
- * The components are indices into the symbolcomponents.png sprite sheet,
- * which is an 8x8 grid of 64x64 pixel symbols.
+ * <b>Seed pin model</b>: the procedural glyph generator in
+ * {@link art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory}
+ * uses {@link #seed()} to lock the visual identity of vocabulary words
+ * (so "Fire" always renders the same primitives), and {@link #pinnedColor()}
+ * to override the per-category palette accent for that one tile.
+ * <p>
+ * Created by {@link DrawableWordManager#registerWord(String, int, int)}.
+ * Curated entries are pinned (non-zero seed and a colour); novel/unknown
+ * words get a name-derived seed and {@code null} colour so the
+ * procedural pipeline can still draw them consistently.
  */
 public class DrawableWord {
 
-  /**
-   * The default sprite sheet containing D'ni word components.
-   * 512x512 texture with 8x8 grid of 64x64 symbols.
-   */
-  public static final ResourceLocation WORD_COMPONENTS =
-      new ResourceLocation(Mystcraft.MOD_ID, "textures/symbolcomponents.png");
+  /** Procedural seed pinned to this word. 0 means "no pin — derive from name". */
+  private final int seed;
 
-  private final List<Integer> components = new ArrayList<>();
-  private final List<Integer> colors = new ArrayList<>();
-  private ResourceLocation imageSource = null;
-
-  public DrawableWord() {
-  }
-
-  public DrawableWord(Integer... components) {
-    this.components.addAll(Arrays.asList(components));
-  }
+  /** Optional thematic colour pin. {@code null} means "use category palette accent". */
+  private final Integer pinnedColor;
 
   /**
-   * Gets the list of component indices.
-   */
-  public List<Integer> components() {
-    return components;
-  }
-
-  /**
-   * Gets the list of colors for each component.
-   */
-  public List<Integer> colors() {
-    return colors;
-  }
-
-  /**
-   * Adds a draw component with a color.
+   * Primary constructor.
    *
-   * @param slot  The component index (0-63 for 8x8 grid)
-   * @param color The RGB color (0x000000 format)
-   * @return This word for chaining
+   * @param seed        a deterministic seed used by
+   *                    {@code SymbolGlyphFactory} for primitive selection.
+   *                    Combined (XOR) with the symbol id mix-in so two
+   *                    different symbols sharing the same poem word never
+   *                    render identically. {@code 0} disables the pin.
+   * @param pinnedColor optional thematic colour (0xRRGGBB).
+   *                    {@code null} disables the colour pin.
    */
-  public DrawableWord addComponent(int slot, int color) {
-    components.add(slot);
-    colors.add(color);
-    return this;
+  public DrawableWord(int seed, Integer pinnedColor) {
+    this.seed = seed;
+    this.pinnedColor = pinnedColor;
   }
 
-  /**
-   * Adds a draw component by grid position.
-   *
-   * @param x     Column (0-7)
-   * @param y     Row (0-7)
-   * @param color The RGB color
-   * @return This word for chaining
-   */
-  public DrawableWord addComponent(int x, int y, int color) {
-    return addComponent(x + y * 8, color);
+  /** The deterministic seed pinned to this word ({@code 0} = unset). */
+  public int seed() {
+    return seed;
   }
 
-  /**
-   * Adds multiple components with the same color.
-   */
-  public DrawableWord addComponents(int[] components, int color) {
-    for (int component : components) {
-      addComponent(component, color);
-    }
-    return this;
-  }
-
-  /**
-   * Adds multiple components with individual colors.
-   */
-  public DrawableWord addComponents(int[] components, int[] colors) {
-    int defaultColor = colors.length > 0 ? colors[0] : 0;
-    for (int i = 0; i < components.length; i++) {
-      addComponent(components[i], i < colors.length ? colors[i] : defaultColor);
-    }
-    return this;
-  }
-
-  /**
-   * Gets the image source for this word's components.
-   * Falls back to the default WORD_COMPONENTS if not set.
-   */
-  public ResourceLocation imageSource() {
-    return imageSource != null ? imageSource : WORD_COMPONENTS;
-  }
-
-  /**
-   * Sets a custom image source for this word.
-   */
-  public DrawableWord setImageSource(ResourceLocation source) {
-    this.imageSource = source;
-    return this;
+  /** The pinned thematic colour, or {@code null} if none. */
+  public Integer pinnedColor() {
+    return pinnedColor;
   }
 }

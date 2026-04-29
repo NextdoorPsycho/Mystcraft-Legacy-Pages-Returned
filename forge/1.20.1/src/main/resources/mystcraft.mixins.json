@@ -6,7 +6,10 @@
   "mixins": [
     "DataFixerSchemaMixin"
   ],
-  "client": [],
+  "client": [
+    "ItemInHandRendererInvoker",
+    "ItemInHandRendererMixin"
+  ],
   "server": [],
   "minVersion": "0.8"
 }

@@ -120,4 +120,34 @@ public class MystcraftFabricGameTests implements FabricGameTest {
   public void procedural_ui_ink_affinity_biases_symbol_roll(GameTestHelper helper) {
     MystcraftGameTestRunner.runInkAffinityBiasesSymbolRollTest(helper);
   }
+
+  @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = MystcraftGameTestSuites.PROCEDURAL_UI, timeoutTicks = 60)
+  public void procedural_ui_symbol_glyph_is_deterministic(GameTestHelper helper) {
+    MystcraftGameTestRunner.runSymbolGlyphIsDeterministicTest(helper);
+  }
+
+  @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = MystcraftGameTestSuites.PROCEDURAL_UI, timeoutTicks = 80)
+  public void procedural_ui_symbol_motif_dispatch(GameTestHelper helper) {
+    MystcraftGameTestRunner.runMotifDispatchPerCategoryTest(helper);
+  }
+
+  @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = MystcraftGameTestSuites.PROCEDURAL_UI, timeoutTicks = 60)
+  public void procedural_ui_symbol_rank_progression(GameTestHelper helper) {
+    MystcraftGameTestRunner.runSymbolRankProgressionTest(helper);
+  }
+
+  @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = MystcraftGameTestSuites.PROCEDURAL_UI, timeoutTicks = 60)
+  public void procedural_ui_symbol_display_override_applied(GameTestHelper helper) {
+    MystcraftGameTestRunner.runSymbolDisplayOverrideAppliedTest(helper);
+  }
+
+  @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = MystcraftGameTestSuites.PROCEDURAL_UI, timeoutTicks = 60)
+  public void procedural_ui_reload_flushes_symbol_caches(GameTestHelper helper) {
+    MystcraftGameTestRunner.runProceduralUiReloadFlushesSymbolCachesTest(helper);
+  }
+
+  @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, batch = MystcraftGameTestSuites.PROCEDURAL_UI, timeoutTicks = 600)
+  public void procedural_ui_symbol_warm_completes(GameTestHelper helper) {
+    MystcraftGameTestRunner.runProceduralSymbolWarmCompletesTest(helper);
+  }
 }

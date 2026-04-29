@@ -34,6 +34,26 @@ public final class MystcraftConfig {
    * for low-VRAM clients). Defaults to {@code true}.
    */
   public static Supplier<Boolean> proceduralBookCoversEnabled = () -> true;
+  /**
+   * Master switch for procedural <em>symbol page</em> rendering (item icon,
+   * in-book illustration, and writing-desk thumbnail). When {@code false},
+   * {@link art.arcane.mystcraft.client.gui.procedural.symbol.SymbolPageTextureFactory}
+   * draws only the parchment background — no glyphs, no motif, no
+   * flourish, no halo. Pages stay readable as items but lose
+   * content-aware art. Defaults to {@code true}.
+   */
+  public static Supplier<Boolean> proceduralSymbolPagesEnabled = () -> true;
+  /**
+   * Glyph-render escape hatch. When {@code false}, the procedural glyph
+   * pipeline (arcs / spirals / rune strokes from
+   * {@link art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory})
+   * is replaced with a letter-based fallback that renders the first two
+   * characters of the symbol's registry path in the centre of each tile
+   * using {@code Minecraft.getInstance().font}. Useful for accessibility
+   * (high-contrast text), low-end clients (cheaper than primitive
+   * composition), and procedural-UI debugging. Defaults to {@code true}.
+   */
+  public static Supplier<Boolean> proceduralSymbolGlyphsEnabled = () -> true;
 
   public static Supplier<List<String>> bookBinderCoverItems = () -> List.of(
       "minecraft:leather",

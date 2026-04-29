@@ -97,6 +97,60 @@ registerCopyTask('copyBuilds', 'build_output_dir')
 registerCopyTask('copyPsychoBuilds', 'build_output_dir_psycho')
 registerCopyTask('copyXCompBuilds', 'build_output_dir_xcomp')
 
+// PrismLauncher deploy task helper
+// Builds the platform jar and copies it into <prismDir>/minecraft/mods.
+// `prismDirProp` should point at the PrismLauncher instance root, e.g.
+//   /Users/<you>/Library/Application Support/PrismLauncher/instances/Fabric-1.20.1
+def registerPrismDeployTask = { String taskName, String platform, String versionDir, String prismDirProp ->
+    tasks.register(taskName, Copy) {
+        group = 'mystcraft'
+        description = "Builds the ${platform.capitalize()} ${versionDir} jar and deploys it to a PrismLauncher instance configured via '${prismDirProp}'"
+        dependsOn ":${platform}:${versionDir}:build"
+
+        def prismDir = project.findProperty(prismDirProp)?.toString()?.trim()
+        if (prismDir == null || prismDir.isEmpty()) {
+            enabled = false
+            return
+        }
+
+        def modsDir = "${prismDir}/minecraft/mods"
+        def jarName = "MystcraftLegacy_${platform.capitalize()}-${versionDir}.jar"
+
+        from(project(":${platform}:${versionDir}").layout.buildDirectory.dir('libs')) {
+            include jarName
+        }
+
+        into(modsDir)
+
+        doFirst {
+            def targetDir = file(modsDir)
+            if (!targetDir.exists()) {
+                throw new GradleException(
+                        "PrismLauncher mods directory does not exist:\n  ${targetDir.absolutePath}\n\n" +
+                        "Make sure the instance exists in PrismLauncher and has been launched at least once " +
+                        "so the 'minecraft/mods' folder is created (or update '${prismDirProp}' in gradle.properties)."
+                )
+            }
+            // Remove old Mystcraft jars from the target so we don't keep stale builds alongside the new one.
+            def deleted = 0
+            targetDir.listFiles()?.each { File f ->
+                if ((f.name.startsWith('MystcraftLegacy_') || f.name.startsWith('mystcraft_legacy')) && f.name.endsWith('.jar')) {
+                    if (f.delete()) {
+                        deleted++
+                    }
+                }
+            }
+            if (deleted > 0) {
+                println "Deleted ${deleted} old Mystcraft jar(s) from: ${targetDir.absolutePath}"
+            }
+            println "Deploying ${jarName} to: ${targetDir.absolutePath}"
+        }
+    }
+}
+
+registerPrismDeployTask('deployToPrismFabric', 'fabric', '1.20.1', 'prism_fabric_dir')
+registerPrismDeployTask('deployToPrismForge',  'forge',  '1.20.1', 'prism_forge_dir')
+
 // Comprehensive build tasks
 tasks.register('buildAll') {
     group = 'build'

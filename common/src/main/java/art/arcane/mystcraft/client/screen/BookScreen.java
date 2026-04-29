@@ -53,6 +53,11 @@ public class BookScreen extends Screen {
   private final BlockPos blockPos;  // Non-null when book is on a vanilla Lectern
   private final boolean isAgebook;
   private final boolean isLinkbook;
+  /**
+   * Decorative book treatment — drives the procedural side-border
+   * palette (gold/green/silver). See {@link BookTextureFactory.BookKind}.
+   */
+  private final BookTextureFactory.BookKind bookKind;
 
   // Pages for Agebooks
   private final List<ItemStack> pages;
@@ -102,6 +107,7 @@ public class BookScreen extends Screen {
     this.blockPos = blockPos;
     this.isAgebook = book.getItem() instanceof AgebookItem;
     this.isLinkbook = book.getItem() instanceof LinkbookItem;
+    this.bookKind = BookTextureFactory.detectKind(book);
 
     // Get pages for Agebooks
     if (isAgebook && book.getItem() instanceof AgebookItem agebookItem) {
@@ -193,19 +199,24 @@ public class BookScreen extends Screen {
 
     // Draw book cover/backing using a procedurally generated texture whose
     // appearance depends on the book's cover material, ink tint, page count,
-    // and link properties. Falls back to neutral leather for old saves.
-    ResourceLocation coverTex = BookTextureFactory.getCoverTexture(book, isAgebook);
+    // link properties, and book kind. Falls back to neutral leather for old
+    // saves.
+    ResourceLocation coverTex = BookTextureFactory.getCoverTexture(book, bookKind);
     RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
     guiGraphics.blit(coverTex, 0, 7, 152, 0, 34, 192, 256, 256);  // Left border
     guiGraphics.blit(coverTex, 34, 7, 49, 0, 103, 192, 256, 256); // Left panel
     guiGraphics.blit(coverTex, 137, 7, 45, 0, 4, 192, 256, 256);  // Left panel edge
     guiGraphics.blit(coverTex, 141, 7, 0, 0, 186, 192, 256, 256); // Spine + right
 
-    // Gold borders for Agebooks (legacy {186,0,34,192} sub-region of the cover
-    // texture is filled with the gold-border art when isAgebook=true).
-    if (isAgebook) {
-      guiGraphics.blit(coverTex, 0, 7, 186, 0, 34, 192, 256, 256);   // Left gold border
-      guiGraphics.blit(coverTex, 293, 7, 186, 0, 34, 192, 256, 256); // Right gold border
+    // Decorative side borders — the {186,0,34,192} sub-region of the cover
+    // texture is filled by BookTextureFactory with kind-specific art:
+    //   AGEBOOK       -> warm gold filigree
+    //   LINKBOOK      -> emerald green vine
+    //   PERSONAL_LINK -> silver/white star
+    // Generic / unwritten books skip this step and just show the bare cover.
+    if (bookKind != BookTextureFactory.BookKind.GENERIC) {
+      guiGraphics.blit(coverTex, 0, 7, 186, 0, 34, 192, 256, 256);   // Left border
+      guiGraphics.blit(coverTex, 293, 7, 186, 0, 34, 192, 256, 256); // Right border
     }
 
     // Draw left page parchment if not on page 0

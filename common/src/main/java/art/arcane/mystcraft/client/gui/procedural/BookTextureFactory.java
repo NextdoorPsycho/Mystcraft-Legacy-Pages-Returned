@@ -5,6 +5,8 @@ import art.arcane.mystcraft.data.InkEffects;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.AgebookItem;
+import art.arcane.mystcraft.item.LinkbookItem;
+import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.util.ItemStackNbt;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.nbt.CompoundTag;
@@ -26,7 +28,8 @@ import java.util.List;
  *   <li>Page count (from {@link AgebookItem#getPageList(ItemStack)})</li>
  *   <li>Blended ink tint (from {@link LinkOptions#getInkTint(CompoundTag)} or the title-page link panel)</li>
  *   <li>Link properties on the first page (sigils overlaid on the cover)</li>
- *   <li>Whether the book is an Agebook (gold borders), Linkbook, or unwritten (neutral)</li>
+ *   <li>{@link BookKind} — Agebook (gold filigree), Linkbook (green vines),
+ *       Personal Link Book (silver stars), or generic (no decorative border)</li>
  *   <li>Authors (decorative crest seed)</li>
  * </ul>
  * Output is one 256x256 ARGB texture matching the legacy {@code bookui_cover.png}
@@ -34,6 +37,24 @@ import java.util.List;
  * blit math is preserved.
  */
 public final class BookTextureFactory {
+
+  /**
+   * Distinguishes the visual treatment given to the decorative side border
+   * stamped into the {186,0}-{220,192} sub-region of the cover texture.
+   * The border is then blitted twice (left + right edges) by
+   * {@link art.arcane.mystcraft.client.screen.BookScreen} for every kind
+   * that is not {@link #GENERIC}.
+   */
+  public enum BookKind {
+    /** Descriptive (Age) book — warm gold filigree border. */
+    AGEBOOK,
+    /** Linkbook — emerald green vine border. */
+    LINKBOOK,
+    /** Personal Link Book — silvery white star border. */
+    PERSONAL_LINK,
+    /** Generic / unwritten — no decorative border drawn. */
+    GENERIC
+  }
 
   /** Texture dimensions match the legacy {@code bookui_cover.png}. */
   public static final int TEX_WIDTH = 256;
@@ -53,19 +74,48 @@ public final class BookTextureFactory {
   /**
    * Returns a {@link ResourceLocation} for the open book texture, generating
    * and caching it if not already present.
+   * <p>
+   * Convenience overload that infers the {@link BookKind} from the item
+   * stack — Agebook detection is forced via {@code isAgebook} for callers
+   * that already computed it (kept for backward compatibility).
    */
   @NotNull
   public static ResourceLocation getCoverTexture(@NotNull ItemStack book, boolean isAgebook) {
-    Inputs collected = collect(book, isAgebook);
+    return getCoverTexture(book, isAgebook ? BookKind.AGEBOOK : detectKind(book));
+  }
+
+  /**
+   * Returns a {@link ResourceLocation} for the open book texture, generating
+   * and caching it if not already present.
+   *
+   * @param kind The decorative border treatment to apply. See {@link BookKind}.
+   */
+  @NotNull
+  public static ResourceLocation getCoverTexture(@NotNull ItemStack book, @NotNull BookKind kind) {
+    Inputs collected = collect(book, kind);
     // When procedural covers are disabled, force a neutral palette so every
     // book renders identically (parchment + neutral ink). Page count and
     // link-panel sigils are still allowed to vary so the book remains
-    // legible — only the *cover* customisation is suppressed.
+    // legible — only the *cover* customisation is suppressed. The decorative
+    // book-kind border is preserved so descriptive / linking / personal
+    // books still read as distinct.
     final Inputs in = MystcraftConfig.proceduralBookCoversEnabled.get()
         ? collected
         : collected.withNeutralCover();
     String key = in.cacheKey();
     return CACHE.getOrCreate(key, TEX_WIDTH, TEX_HEIGHT, image -> render(image, in));
+  }
+
+  /**
+   * Detects the {@link BookKind} from the item type. Personal link books
+   * extend {@link LinkbookItem}, so the {@code instanceof} order matters.
+   */
+  @NotNull
+  public static BookKind detectKind(@NotNull ItemStack book) {
+    if (book.getItem() instanceof AgebookItem) return BookKind.AGEBOOK;
+    if (book.getItem() instanceof PersonalLinkBookItem) return BookKind.PERSONAL_LINK;
+    if (book.getItem() instanceof LinkbookItem) return BookKind.LINKBOOK;
+    return BookKind.GENERIC;
   }
 
   /** Clears the cache. Call from resource pack reload. */
@@ -77,7 +127,7 @@ public final class BookTextureFactory {
   // Inputs
   // -------------------------------------------------------------------------
 
-  private static Inputs collect(ItemStack book, boolean isAgebook) {
+  private static Inputs collect(ItemStack book, BookKind kind) {
     CompoundTag tag = ItemStackNbt.getTag(book);
 
     ResourceLocation coverId = tag != null ? LinkOptions.getCoverItemId(tag) : null;
@@ -113,11 +163,17 @@ public final class BookTextureFactory {
       if (authors != null) {
         for (String a : authors) authorsHash = authorsHash * 31 + (a == null ? 0 : a.hashCode());
       }
+    } else if (book.getItem() instanceof LinkbookItem) {
+      // Linkbooks don't track authors the same way as Agebooks, but their
+      // display name (derived from cover NBT) provides a deterministic seed
+      // so two distinct linkbooks don't collapse onto the same texture.
+      String name = tag != null ? LinkOptions.getDisplayName(tag) : null;
+      if (name != null) authorsHash = name.hashCode();
     }
 
     CoverPalette.Entry palette = CoverPalette.get(coverId);
 
-    return new Inputs(coverId, palette, isAgebook, linked, dead, pageCount,
+    return new Inputs(coverId, palette, kind, linked, dead, pageCount,
         inkTint, List.copyOf(linkProperties), authorsHash);
   }
 
@@ -129,7 +185,7 @@ public final class BookTextureFactory {
   private record Inputs(
       ResourceLocation coverId,
       CoverPalette.Entry palette,
-      boolean isAgebook,
+      BookKind kind,
       boolean linked,
       boolean dead,
       int pageCount,
@@ -141,7 +197,7 @@ public final class BookTextureFactory {
     String cacheKey() {
       StringBuilder sb = new StringBuilder(96);
       sb.append(coverId == null ? "default" : coverId);
-      sb.append('|').append(isAgebook ? 'a' : 'l');
+      sb.append('|').append(kindTag(kind));
       sb.append(linked ? 'L' : 'u');
       if (dead) sb.append('d');
       sb.append('|').append(Math.min(pageCount, 99));
@@ -152,15 +208,26 @@ public final class BookTextureFactory {
       return sb.toString();
     }
 
+    private static char kindTag(BookKind kind) {
+      return switch (kind) {
+        case AGEBOOK -> 'a';
+        case LINKBOOK -> 'l';
+        case PERSONAL_LINK -> 'p';
+        case GENERIC -> 'g';
+      };
+    }
+
     /**
      * Returns an {@code Inputs} with the cover material forced to the
      * default neutral palette and the ink tint cleared. Used when the
      * {@link MystcraftConfig#proceduralBookCoversEnabled} toggle is off so
      * every book renders with the same neutral cover regardless of the
-     * binding material or ink that was used.
+     * binding material or ink that was used. The {@link BookKind} is
+     * preserved so descriptive / linking / personal books still read as
+     * visually distinct via their decorative border.
      */
     Inputs withNeutralCover() {
-      return new Inputs(null, CoverPalette.get(null), isAgebook, linked, dead,
+      return new Inputs(null, CoverPalette.get(null), kind, linked, dead,
           pageCount, -1, linkProperties, 0);
     }
   }
@@ -192,11 +259,13 @@ public final class BookTextureFactory {
     int inkColor = (in.inkTint == -1 || in.inkTint == 0) ? trim : (0xFF000000 | (in.inkTint & 0xFFFFFF));
     drawPageEdges(image, in.pageCount, inkColor);
 
-    // Layer 5: gold border for Agebooks (drawn into the legacy
-    // {186,0}-{220,192} sub-region so existing blit math at line 212-213 of
-    // BookScreen still picks it up).
-    if (in.isAgebook) {
-      drawGoldBorder(image);
+    // Layer 5: decorative side border (drawn into the legacy {186,0}-{220,192}
+    // sub-region so existing blit math in BookScreen still picks it up).
+    // Each book kind gets a distinct palette + ornament style so descriptive
+    // / linking / personal books are immediately distinguishable.
+    BorderPalette borderPalette = borderPaletteFor(in.kind);
+    if (borderPalette != null) {
+      drawDecoBorder(image, borderPalette);
     }
 
     // Layer 6: link-property sigils on the front cover (visible under the
@@ -393,41 +462,176 @@ public final class BookTextureFactory {
     }
   }
 
+  // ---------------- decorative side border ---------------------------------
+
   /**
-   * Draws a gold border into the legacy {186,0}-{220,192} sub-region so
-   * {@code BookScreen.render} lines 212-213 still pick it up via
-   * {@code blit(BOOK_COVER, ..., 186, 0, 34, 192, ...)}.
+   * Decorative motif painted along the centerline of the side border.
    */
-  private static void drawGoldBorder(NativeImage image) {
+  private enum BorderStyle {
+    /** Plus-sign corners + dotted vertical filigree (Agebook). */
+    FILIGREE,
+    /** Triangular leaf corners + sinusoidal vine centerline (Linkbook). */
+    VINES,
+    /** Diamond corners + dotted star pattern centerline (Personal Link Book). */
+    STARS
+  }
+
+  /**
+   * Color triplet + style descriptor for the decorative border. Each
+   * {@link BookKind} maps to a single immutable palette.
+   */
+  private record BorderPalette(int base, int hi, int lo, BorderStyle style) {}
+
+  /** Warm gold filigree — descriptive (Age) books. */
+  private static final BorderPalette GOLD_PALETTE =
+      new BorderPalette(0xFFE6C778, 0xFFFFEFAA, 0xFF8E6418, BorderStyle.FILIGREE);
+
+  /** Emerald green with deep-forest shadows — linkbooks. */
+  private static final BorderPalette GREEN_PALETTE =
+      new BorderPalette(0xFF3FA85A, 0xFF8AE3A2, 0xFF1B5C2B, BorderStyle.VINES);
+
+  /** Pearl-white with cool slate shadows — personal link books. */
+  private static final BorderPalette SILVER_PALETTE =
+      new BorderPalette(0xFFE6E8EE, 0xFFFAFCFF, 0xFF7B8088, BorderStyle.STARS);
+
+  private static BorderPalette borderPaletteFor(BookKind kind) {
+    return switch (kind) {
+      case AGEBOOK -> GOLD_PALETTE;
+      case LINKBOOK -> GREEN_PALETTE;
+      case PERSONAL_LINK -> SILVER_PALETTE;
+      case GENERIC -> null;
+    };
+  }
+
+  /**
+   * Draws a decorative border into the legacy {186,0}-{220,192} sub-region so
+   * {@code BookScreen.render} still picks it up via
+   * {@code blit(BOOK_COVER, ..., 186, 0, 34, 192, ...)}. Common scaffolding
+   * (solid fill, inner rims) is shared across all kinds; the {@code style}
+   * selects the corner ornaments + centerline motif so each book kind is
+   * visually distinct.
+   */
+  private static void drawDecoBorder(NativeImage image, BorderPalette p) {
     int x0 = 186;
     int y0 = 0;
     int w = 34;
     int h = 192;
 
-    int gold = 0xFFE6C778;
-    int goldHi = 0xFFFFEFAA;
-    int goldLo = 0xFF8E6418;
+    int base = p.base();
+    int hi = p.hi();
+    int lo = p.lo();
 
     // Solid background so it stamps cleanly over the underlying cover
-    fill(image, x0, y0, w, h, gold);
+    fill(image, x0, y0, w, h, base);
 
-    // Inner darker rim
-    drawRectOutline(image, x0 + 1, y0 + 1, w - 2, h - 2, goldLo);
-    drawRectOutline(image, x0 + 3, y0 + 3, w - 6, h - 6, goldHi);
+    // Inner darker rim + lighter inset rim — gives the band depth
+    drawRectOutline(image, x0 + 1, y0 + 1, w - 2, h - 2, lo);
+    drawRectOutline(image, x0 + 3, y0 + 3, w - 6, h - 6, hi);
 
-    // Decorative corner flourish (small + signs)
-    drawCorner(image, x0 + 6, y0 + 6, goldLo);
-    drawCorner(image, x0 + w - 11, y0 + 6, goldLo);
-    drawCorner(image, x0 + 6, y0 + h - 11, goldLo);
-    drawCorner(image, x0 + w - 11, y0 + h - 11, goldLo);
+    // Style-specific ornaments + centerline
+    switch (p.style()) {
+      case FILIGREE -> drawFiligreeOrnaments(image, x0, y0, w, h, lo);
+      case VINES -> drawVineOrnaments(image, x0, y0, w, h, lo, hi);
+      case STARS -> drawStarOrnaments(image, x0, y0, w, h, lo, hi);
+    }
+  }
 
-    // Vertical filigree band centered
+  /** Plus-sign corner crosses + dotted vertical filigree (Agebook gold). */
+  private static void drawFiligreeOrnaments(NativeImage image, int x0, int y0, int w, int h, int lo) {
+    drawCorner(image, x0 + 6, y0 + 6, lo);
+    drawCorner(image, x0 + w - 11, y0 + 6, lo);
+    drawCorner(image, x0 + 6, y0 + h - 11, lo);
+    drawCorner(image, x0 + w - 11, y0 + h - 11, lo);
+
+    // Vertical filigree band — small "^" stamps every 8 px
     int cx = x0 + w / 2;
     for (int y = y0 + 12; y < y0 + h - 12; y += 8) {
-      safeSet(image, cx, y, goldLo);
-      safeSet(image, cx - 1, y + 1, goldLo);
-      safeSet(image, cx + 1, y + 1, goldLo);
+      safeSet(image, cx, y, lo);
+      safeSet(image, cx - 1, y + 1, lo);
+      safeSet(image, cx + 1, y + 1, lo);
     }
+  }
+
+  /** Triangular leaf-shaped corners + sinusoidal vine centerline (Linkbook green). */
+  private static void drawVineOrnaments(NativeImage image, int x0, int y0, int w, int h, int lo, int hi) {
+    // Leaf-shaped corner sprigs — three filled triangles per corner
+    drawLeafCorner(image, x0 + 5, y0 + 5, false, false, lo, hi);
+    drawLeafCorner(image, x0 + w - 6, y0 + 5, true, false, lo, hi);
+    drawLeafCorner(image, x0 + 5, y0 + h - 6, false, true, lo, hi);
+    drawLeafCorner(image, x0 + w - 6, y0 + h - 6, true, true, lo, hi);
+
+    // Sinuous vine running down the center with leaf nodes every 16 px
+    int cx = x0 + w / 2;
+    int top = y0 + 14;
+    int bottom = y0 + h - 14;
+    for (int y = top; y < bottom; y++) {
+      double t = (y - top) * 0.18;
+      int xOff = (int) Math.round(Math.sin(t) * 2.2);
+      safeSet(image, cx + xOff, y, lo);
+      // soft outer halo on the inside of the curve
+      safeSet(image, cx + xOff + (int) Math.signum(-Math.cos(t)), y, mix(lo, hi, 0.35f));
+    }
+    // Leaf nodes along the vine
+    for (int y = top + 4; y < bottom - 4; y += 16) {
+      double t = (y - top) * 0.18;
+      int xOff = (int) Math.round(Math.sin(t) * 2.2);
+      drawDiamond(image, cx + xOff, y, 2, hi);
+      safeSet(image, cx + xOff, y, lo);
+    }
+  }
+
+  /** Diamond corner pips + dotted star pattern centerline (Personal Link Book silver). */
+  private static void drawStarOrnaments(NativeImage image, int x0, int y0, int w, int h, int lo, int hi) {
+    // Diamond pips at each corner
+    drawDiamond(image, x0 + 7, y0 + 7, 2, lo);
+    drawDiamond(image, x0 + w - 8, y0 + 7, 2, lo);
+    drawDiamond(image, x0 + 7, y0 + h - 8, 2, lo);
+    drawDiamond(image, x0 + w - 8, y0 + h - 8, 2, lo);
+    // Inner highlight dot
+    safeSet(image, x0 + 7, y0 + 7, hi);
+    safeSet(image, x0 + w - 8, y0 + 7, hi);
+    safeSet(image, x0 + 7, y0 + h - 8, hi);
+    safeSet(image, x0 + w - 8, y0 + h - 8, hi);
+
+    // Centerline pattern — alternating four-point stars and single dots
+    int cx = x0 + w / 2;
+    int top = y0 + 16;
+    int bottom = y0 + h - 16;
+    boolean star = true;
+    for (int y = top; y < bottom; y += 10) {
+      if (star) {
+        // 4-point star: + arms + bright center
+        safeSet(image, cx, y - 1, lo);
+        safeSet(image, cx, y + 1, lo);
+        safeSet(image, cx - 1, y, lo);
+        safeSet(image, cx + 1, y, lo);
+        safeSet(image, cx, y, hi);
+      } else {
+        // single subtle dot
+        safeSet(image, cx, y, lo);
+      }
+      star = !star;
+    }
+  }
+
+  /**
+   * Draws a small leaf shape with its tip pointing inward toward the page.
+   * {@code flipX}/{@code flipY} mirror the shape so it tucks into the right
+   * corner.
+   */
+  private static void drawLeafCorner(NativeImage image, int cx, int cy, boolean flipX, boolean flipY, int lo, int hi) {
+    int sx = flipX ? -1 : 1;
+    int sy = flipY ? -1 : 1;
+    // Triangular leaf body
+    for (int dy = 0; dy <= 4; dy++) {
+      for (int dx = 0; dx <= 4 - dy; dx++) {
+        safeSet(image, cx + dx * sx, cy + dy * sy, lo);
+      }
+    }
+    // Inner highlight
+    safeSet(image, cx + sx, cy + sy, hi);
+    safeSet(image, cx + 2 * sx, cy + sy, hi);
+    safeSet(image, cx + sx, cy + 2 * sy, hi);
   }
 
   private static void drawSigils(NativeImage image, Collection<String> properties) {

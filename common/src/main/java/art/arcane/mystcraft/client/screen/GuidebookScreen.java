@@ -135,13 +135,13 @@ public class GuidebookScreen extends Screen {
     int y = topPos + 10;
 
     // Book title - bold
-    Component title = Component.literal("Rehevkor").withStyle(ChatFormatting.BOLD);
+    Component title = Component.literal("Rehevkor Rehgehstoy").withStyle(ChatFormatting.BOLD);
     int titleWidth = font.width(title);
     graphics.drawString(this.font, title, leftX + (LEFT_PAGE_WIDTH - titleWidth) / 2, y, TITLE_COLOR, false);
     y += LINE_HEIGHT + 2;
 
     // Subtitle - italic
-    Component subtitle = Component.literal("The Art of Writing").withStyle(ChatFormatting.ITALIC);
+    Component subtitle = Component.literal("A Guide to Writing").withStyle(ChatFormatting.ITALIC);
     int subtitleWidth = font.width(subtitle);
     graphics.drawString(this.font, subtitle, leftX + (LEFT_PAGE_WIDTH - subtitleWidth) / 2, y, TEXT_COLOR, false);
     y += LINE_HEIGHT + 6;

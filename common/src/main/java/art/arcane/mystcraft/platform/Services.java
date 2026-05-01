@@ -5,8 +5,9 @@ import art.arcane.mystcraft.platform.services.*;
 import java.util.ServiceLoader;
 
 /**
- * ServiceLoader utility for loading platform implementations.
- * All platform-specific and version-specific services are accessed through this class.
+ * ServiceLoader utility for loading platform implementations. All
+ * platform-specific and version-specific services are accessed through this
+ * class.
  */
 public final class Services {
 

@@ -19,24 +19,28 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Registry for Age symbols.
- * Manages symbol registration, lookup, and categorization.
- * Also registers symbols with the CFG grammar system for age generation.
- *
- * Thread-safety: Uses concurrent collections to allow safe access from
- * multiple threads (render thread, server thread during datapack reload).
+ * Registry for Age symbols. Manages symbol registration, lookup, and
+ * categorization. Also registers symbols with the CFG grammar system for age
+ * generation.
+ * <p>
+ * Thread-safety: Uses concurrent collections to allow safe access from multiple
+ * threads (render thread, server thread during datapack reload).
  */
 public final class SymbolRegistry {
 
+  /**
+   * Default ceiling on {@code card_rank} when rolling with affinity. Without an
+   * affinity {@code tierBonus} (e.g. nether star = +2), only symbols with rank
+   * ≤ this value can roll. {@link #getRandomWeighted} remains uncapped for
+   * backwards compatibility.
+   */
+  public static final int DEFAULT_AFFINITY_RANK_CAP = 3;
   private static final Logger LOGGER = LoggerFactory.getLogger(SymbolRegistry.class);
-
-  // Use concurrent collections to prevent ConcurrentModificationException during datapack reload
   private static final Map<ResourceLocation, IAgeSymbol> SYMBOLS = new ConcurrentHashMap<>();
   private static final Map<SymbolCategory, List<IAgeSymbol>> BY_CATEGORY = new ConcurrentHashMap<>();
   private static final Map<Integer, List<IAgeSymbol>> BY_CARD_RANK = new ConcurrentHashMap<>();
   private static final Set<ResourceLocation> BLACKLIST = ConcurrentHashMap.newKeySet();
   private static final Map<ResourceLocation, IAgeSymbol> STATIC_SYMBOLS = new ConcurrentHashMap<>();
-
   private static volatile boolean frozen = false;
   private static volatile boolean staticRegistrationOpen = true;
 
@@ -92,10 +96,6 @@ public final class SymbolRegistry {
     return true;
   }
 
-  /**
-   * Registers a symbol with the CFG grammar system.
-   * Creates a rule that maps the category's grammar token to this symbol.
-   */
   private static void registerWithGrammar(IAgeSymbol symbol) {
     ResourceLocation grammarToken;
     Integer rank = symbol.getCardRank();
@@ -124,7 +124,6 @@ public final class SymbolRegistry {
       return;
     }
 
-    // Create a rule: GRAMMAR_TOKEN -> symbol_id [rank]
     CFGRule rule = new CFGRule(grammarToken, Collections.singletonList(symbol.getRegistryName()), rank);
 
     try {
@@ -132,15 +131,11 @@ public final class SymbolRegistry {
       LOGGER.debug("Registered grammar rule: {} -> {} [rank {}]",
           grammarToken, symbol.getRegistryName(), rank);
     } catch (IllegalStateException e) {
-      // Grammar already finalized - this is fine, rule registration happens during init
+
       LOGGER.debug("Grammar already finalized, skipping rule for {}", symbol.getRegistryName());
     }
   }
 
-  /**
-   * Maps a SymbolCategory to its corresponding grammar token.
-   * Returns null for categories that don't have grammar tokens.
-   */
   private static ResourceLocation getCategoryGrammarToken(SymbolCategory category) {
     return switch (category) {
       case TERRAIN -> GrammarData.TERRAIN;
@@ -153,9 +148,9 @@ public final class SymbolRegistry {
       case FEATURE_SMALL -> GrammarData.FEATURE_SMALL;
       case STRUCTURE -> GrammarData.FEATURE_MEDIUM;
       case ENVIRONMENT -> GrammarData.EFFECT;
-      case VISUAL_EFFECT -> GrammarData.VISUAL_EFFECT;  // Color targets (sky, fog, grass)
+      case VISUAL_EFFECT -> GrammarData.VISUAL_EFFECT;
       case SEA -> GrammarData.BLOCK_SEA;
-      // Modifiers don't generate via grammar - they're placed by players
+
       case COLOR, ANGLE, PHASE, LENGTH, MODIFIER, SPECIAL -> null;
       default -> null;
     };
@@ -165,7 +160,6 @@ public final class SymbolRegistry {
     ResourceLocation id = symbol.getRegistryName();
     SYMBOLS.put(id, symbol);
 
-    // Use CopyOnWriteArrayList for thread-safe iteration during render
     BY_CATEGORY.computeIfAbsent(symbol.getCategory(), k -> new CopyOnWriteArrayList<>()).add(symbol);
 
     Integer rank = symbol.getCardRank();
@@ -289,8 +283,7 @@ public final class SymbolRegistry {
   }
 
   /**
-   * Gets a random symbol based on weighted card ranks.
-   * Higher ranks are rarer.
+   * Gets a random symbol based on weighted card ranks. Higher ranks are rarer.
    *
    * @param random The random source
    * @return A random symbol
@@ -300,25 +293,18 @@ public final class SymbolRegistry {
   }
 
   /**
-   * Default ceiling on {@code card_rank} when rolling with affinity.
-   * Without an affinity {@code tierBonus} (e.g. nether star = +2), only
-   * symbols with rank ≤ this value can roll. {@link #getRandomWeighted}
-   * remains uncapped for backwards compatibility.
-   */
-  public static final int DEFAULT_AFFINITY_RANK_CAP = 3;
-
-  /**
    * Affinity-aware variant of {@link #getRandomWeighted}.
    * <p>
-   * Each candidate symbol gets a base weight derived from its card rank
-   * (rank 1 → 4, rank 4 → 1) and is then multiplied by
+   * Each candidate symbol gets a base weight derived from its card rank (rank 1
+   * → 4, rank 4 → 1) and is then multiplied by
    * {@code (1 + symbolBoost + categoryBoost + poemBoost)} where each boost
    * comes from the supplied {@link InkBlend}. Symbols whose rank exceeds
-   * {@link #DEFAULT_AFFINITY_RANK_CAP} {@code + blend.tierBonus()} are skipped.
+   * {@link #DEFAULT_AFFINITY_RANK_CAP} {@code + blend.tierBonus()} are
+   * skipped.
    * <p>
    * If {@code blend} is {@code null} or {@link InkBlend#isEmpty() empty} the
-   * algorithm reduces to the legacy uncapped weighted selection so callers
-   * that don't track affinity get identical behaviour to before.
+   * algorithm reduces to the legacy uncapped weighted selection so callers that
+   * don't track affinity get identical behaviour to before.
    *
    * @param random the source of randomness
    * @param blend  the affinity blend, or {@code null} for plain weighted
@@ -344,11 +330,9 @@ public final class SymbolRegistry {
           boost += blend.categoryWeight(symbol.getCategory());
           boost += blend.poemTokenSum(symbol.getPoem());
           if (boost < 0f) boost = 0f;
-          // Multiplicative bias on the base weight; ceil to keep boosts visible
-          // even when the base weight is already 1 (rarer symbols benefit most).
+
           weight = (int) Math.ceil(baseWeight * (1f + boost));
-          // Sanity clamp to keep the weighted pool from exploding under stacked
-          // contributions from many high-WEIGHT_CAP entries.
+
           if (weight > baseWeight * 32) weight = baseWeight * 32;
         }
         for (int i = 0; i < weight; i++) {
@@ -385,8 +369,8 @@ public final class SymbolRegistry {
   }
 
   /**
-   * Freezes the registry, preventing further registrations.
-   * Called after mod loading is complete.
+   * Freezes the registry, preventing further registrations. Called after mod
+   * loading is complete.
    */
   public static void freeze() {
     frozen = true;
@@ -403,7 +387,8 @@ public final class SymbolRegistry {
   }
 
   /**
-   * Checks whether the current symbol entry originates from static (code) registration.
+   * Checks whether the current symbol entry originates from static (code)
+   * registration.
    */
   public static boolean isStaticSymbol(ResourceLocation id) {
     return STATIC_SYMBOLS.containsKey(id);
@@ -419,16 +404,16 @@ public final class SymbolRegistry {
   }
 
   /**
-   * Prevents additional symbols from being marked as static.
-   * Call after all code-based symbol registration completes.
+   * Prevents additional symbols from being marked as static. Call after all
+   * code-based symbol registration completes.
    */
   public static void sealStaticRegistration() {
     staticRegistrationOpen = false;
   }
 
   /**
-   * Resets the registry back to code-registered static symbols.
-   * Used before applying datapack symbols.
+   * Resets the registry back to code-registered static symbols. Used before
+   * applying datapack symbols.
    */
   public static void resetToStatic() {
     SYMBOLS.clear();
@@ -444,8 +429,8 @@ public final class SymbolRegistry {
   }
 
   /**
-   * Registers a symbol without enforcing the frozen guard and without grammar binding.
-   * Intended for client sync only.
+   * Registers a symbol without enforcing the frozen guard and without grammar
+   * binding. Intended for client sync only.
    */
   public static boolean registerSynced(IAgeSymbol symbol, boolean replace) {
     ResourceLocation id = symbol.getRegistryName();

@@ -10,7 +10,8 @@ import net.minecraft.world.level.block.entity.LecternBlockEntity;
 
 /**
  * Packet sent from server to client to open the BookScreen for a lectern.
- * Includes the book data so the client doesn't need to rely on synced BlockEntity state.
+ * Includes the book data so the client doesn't need to rely on synced
+ * BlockEntity state.
  */
 public record OpenLecternBookPacket(BlockPos pos, ItemStack book) {
 
@@ -31,12 +32,10 @@ public record OpenLecternBookPacket(BlockPos pos, ItemStack book) {
       Level level = (Level) ClientAccess.getClientLevel();
       if (level == null) return;
 
-      // Also update the local lectern's book for consistency
       if (level.getBlockEntity(packet.pos) instanceof LecternBlockEntity lectern) {
         LecternBookSyncPacket.setBookOnClient(lectern, packet.book);
       }
 
-      // Open the book screen
       if (MystcraftLecternHelper.isMystcraftBook(packet.book)) {
         MystcraftLecternHelper.openBookScreenForBlock(packet.book, packet.pos);
       }

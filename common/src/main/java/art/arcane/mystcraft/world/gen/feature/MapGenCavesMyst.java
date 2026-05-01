@@ -14,11 +14,10 @@ import net.minecraft.world.level.chunk.ChunkAccess;
  */
 public class MapGenCavesMyst implements ITerrainAlteration {
 
-  // Range in chunks to check for cave origins
   private static final int RANGE = 8;
   private final long seed;
-  private final int rate;        // Frequency of cave starts (lower = more caves)
-  private final int size;        // Maximum cave size/length
+  private final int rate;
+  private final int size;
   private final BlockState fillBlock;
 
   /**
@@ -45,25 +44,23 @@ public class MapGenCavesMyst implements ITerrainAlteration {
 
   @Override
   public void alterTerrain(ServerLevel world, int chunkX, int chunkZ, ChunkAccess chunk, RandomSource random) {
-    // Check surrounding chunks for cave origins
+
     for (int dx = -RANGE; dx <= RANGE; dx++) {
       for (int dz = -RANGE; dz <= RANGE; dz++) {
         int originChunkX = chunkX + dx;
         int originChunkZ = chunkZ + dz;
 
-        // Get deterministic random for this origin chunk
         RandomSource chunkRand = getChunkRandom(originChunkX, originChunkZ);
 
-        // Check if this chunk has a cave start
         if (chunkRand.nextInt(rate) == 0) {
-          // Generate cave system from this chunk
+
           int startX = originChunkX * 16 + chunkRand.nextInt(16);
           int startY = chunkRand.nextInt(chunkRand.nextInt(120) + 8);
           int startZ = originChunkZ * 16 + chunkRand.nextInt(16);
 
           int tunnelCount = 1;
           if (chunkRand.nextInt(4) == 0) {
-            // Room with branching tunnels
+
             generateRoom(chunk, chunkX, chunkZ, chunkRand, startX, startY, startZ);
             tunnelCount += chunkRand.nextInt(4);
           }
@@ -131,7 +128,6 @@ public class MapGenCavesMyst implements ITerrainAlteration {
       double horizRadius = 1.5D + (Mth.sin(length * (float) Math.PI / maxLength) * radius);
       double vertRadius = horizRadius * heightScale;
 
-      // Move in direction
       float cosPitch = Mth.cos(pitch);
       float sinPitch = Mth.sin(pitch);
       x += Mth.cos(yaw) * cosPitch;
@@ -152,7 +148,6 @@ public class MapGenCavesMyst implements ITerrainAlteration {
       pitchChange += (rand.nextFloat() - rand.nextFloat()) * rand.nextFloat() * 2.0F;
       yawChange += (rand.nextFloat() - rand.nextFloat()) * rand.nextFloat() * 4.0F;
 
-      // Split tunnel
       if (splitPoint > 0 && length == splitPoint && radius > 1.0F) {
         generateTunnel(chunk, chunkX, chunkZ, RandomSource.create(rand.nextLong()),
             x, y, z, rand.nextFloat() * 0.5F + 0.5F,
@@ -166,7 +161,7 @@ public class MapGenCavesMyst implements ITerrainAlteration {
       }
 
       if (rand.nextInt(4) != 0) {
-        // Check if this part of the tunnel is within range of target chunk
+
         double distX = x - chunkCenterX;
         double distZ = z - chunkCenterZ;
         double remaining = maxLength - length;
@@ -176,7 +171,6 @@ public class MapGenCavesMyst implements ITerrainAlteration {
           return;
         }
 
-        // Only carve if within chunk bounds
         if (x >= chunkCenterX - 16.0D - horizRadius * 2.0D &&
             z >= chunkCenterZ - 16.0D - horizRadius * 2.0D &&
             x <= chunkCenterX + 16.0D + horizRadius * 2.0D &&
@@ -200,7 +194,6 @@ public class MapGenCavesMyst implements ITerrainAlteration {
     int minZ = Mth.floor(centerZ - horizRadius) - chunkZ * 16 - 1;
     int maxZ = Mth.floor(centerZ + horizRadius) - chunkZ * 16 + 1;
 
-    // Clamp to chunk bounds
     minX = Math.max(0, minX);
     maxX = Math.min(16, maxX);
     minY = Math.max(chunk.getMinBuildHeight() + 1, minY);
@@ -224,7 +217,6 @@ public class MapGenCavesMyst implements ITerrainAlteration {
               pos.set(x, y, z);
               BlockState existing = chunk.getBlockState(pos);
 
-              // Only carve into solid blocks (not bedrock, water, etc.)
               if (canCarve(existing, y)) {
                 chunk.setBlockState(pos, fillBlock, false);
               }
@@ -239,19 +231,19 @@ public class MapGenCavesMyst implements ITerrainAlteration {
    * Checks if a block can be carved out.
    */
   protected boolean canCarve(BlockState state, int y) {
-    // Don't carve bedrock
+
     if (state.is(Blocks.BEDROCK)) {
       return false;
     }
-    // Don't carve water/lava
+
     if (state.is(Blocks.WATER) || state.is(Blocks.LAVA)) {
       return false;
     }
-    // Don't carve at y=0
+
     if (y <= 0) {
       return false;
     }
-    // Carve solid blocks
+
     return !state.isAir();
   }
 
@@ -262,6 +254,6 @@ public class MapGenCavesMyst implements ITerrainAlteration {
 
   @Override
   public int getPriority() {
-    return 50; // Caves run early
+    return 50;
   }
 }

@@ -6,8 +6,8 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Base implementation of IAgeSymbol.
- * Provides common functionality for all symbols.
+ * Base implementation of IAgeSymbol. Provides common functionality for all
+ * symbols.
  */
 public abstract class SymbolBase implements IAgeSymbol {
 

@@ -10,12 +10,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Village populator that generates simplified villages.
- * Villages consist of small clusters (3-6 houses) with simple wood plank and cobblestone construction,
- * wells, and dirt paths connecting structures.
+ * Village populator that generates simplified villages. Villages consist of
+ * small clusters (3-6 houses) with simple wood plank and cobblestone
+ * construction, wells, and dirt paths connecting structures.
  * <p>
  * Uses chunk boundary checking to prevent cascade loading - blocks outside the
- * current chunk are simply skipped rather than triggering neighbor chunk loads.
+ * current chunk are simply skipped rather than triggering neighbor chunk
+ * loads.
  */
 public class VillagesPopulator implements IPopulate {
 
@@ -28,7 +29,7 @@ public class VillagesPopulator implements IPopulate {
   private final int minHouses;
   private final int maxHouses;
   private final int flatnessCheckRadius;
-  // Chunk boundaries for current population
+
   private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
   public VillagesPopulator(long seed) {
@@ -45,7 +46,7 @@ public class VillagesPopulator implements IPopulate {
 
   @Override
   public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
-    // Set chunk boundaries for this population run
+
     int chunkX = chunkPos.getX() >> 4;
     int chunkZ = chunkPos.getZ() >> 4;
     chunkMinX = chunkX << 4;
@@ -57,7 +58,6 @@ public class VillagesPopulator implements IPopulate {
       return;
     }
 
-    // Keep village center within current chunk to avoid cascading
     int x = chunkPos.getX() + 4 + random.nextInt(8);
     int z = chunkPos.getZ() + 4 + random.nextInt(8);
 
@@ -80,13 +80,13 @@ public class VillagesPopulator implements IPopulate {
     int samples = 0;
     int baseHeight = center.getY();
 
-    // Only check within writable area to avoid cascading chunk loads
     for (int x = -flatnessCheckRadius; x <= flatnessCheckRadius; x += 2) {
       for (int z = -flatnessCheckRadius; z <= flatnessCheckRadius; z += 2) {
         int checkX = center.getX() + x;
         int checkZ = center.getZ() + z;
         BlockPos checkPos = new BlockPos(checkX, 0, checkZ);
-        if (!isInWritableArea(checkPos, new BlockPos(chunkMinX, 0, chunkMinZ))) continue;
+        if (!isInWritableArea(checkPos, new BlockPos(chunkMinX, 0, chunkMinZ)))
+          continue;
 
         int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, checkX, checkZ);
         totalHeightDiff += Math.abs(y - baseHeight);
@@ -99,17 +99,10 @@ public class VillagesPopulator implements IPopulate {
     return avgHeightDiff < 2.0;
   }
 
-  /**
-   * Checks if a position is within the writable area for this chunk.
-   * Uses the IPopulate writable area (±16 blocks) rather than strict chunk boundaries.
-   */
   private boolean isInBounds(BlockPos pos) {
     return isInWritableArea(pos, new BlockPos(chunkMinX, 0, chunkMinZ));
   }
 
-  /**
-   * Safe setBlock that only places blocks within writable area.
-   */
   private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
     if (isInBounds(pos)) {
       world.setBlock(pos, state, 2);

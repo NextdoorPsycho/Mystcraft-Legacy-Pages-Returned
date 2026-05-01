@@ -1,0 +1,258 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vscode/main/src/vs/workbench/services/configuration/common/schema/workspace.schema.json",
+  "folders": [
+    {
+      "name": "Mystcraft",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "workbench.colorTheme": "Dark Modern",
+    "workbench.colorCustomizations": {
+      "activityBar.background": "#073A8C",
+      "activityBar.foreground": "#EAF2FF",
+      "activityBarBadge.background": "#70B8FF",
+      "activityBarBadge.foreground": "#001A3D",
+      "sideBar.background": "#061F57",
+      "sideBar.foreground": "#EAF2FF",
+      "sideBarSectionHeader.background": "#092F75",
+      "statusBar.background": "#073A8C",
+      "statusBar.foreground": "#EAF2FF",
+      "statusBar.noFolderBackground": "#073A8C",
+      "statusBar.debuggingBackground": "#0057B8",
+      "titleBar.activeBackground": "#073A8C",
+      "titleBar.activeForeground": "#EAF2FF",
+      "titleBar.inactiveBackground": "#05285F",
+      "titleBar.inactiveForeground": "#C5D8FF",
+      "editorGroupHeader.tabsBackground": "#061F57",
+      "tab.activeBackground": "#0B4FB3",
+      "tab.activeForeground": "#FFFFFF",
+      "tab.inactiveBackground": "#092F75",
+      "tab.inactiveForeground": "#C5D8FF"
+    },
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.import.gradle.enabled": true,
+    "java.import.gradle.wrapper.enabled": true,
+    "java.server.launchMode": "Hybrid",
+    "files.exclude": {
+      "**/.gradle": true,
+      "**/build": true,
+      "**/runs": true,
+      "**/.classpath": true,
+      "**/.project": true,
+      "**/.settings": true
+    },
+    "search.exclude": {
+      "**/.gradle": true,
+      "**/build": true,
+      "**/runs": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "vscjava.vscode-java-pack",
+      "vscjava.vscode-gradle",
+      "redhat.java",
+      "vscjava.vscode-java-debug",
+      "vscjava.vscode-java-test",
+      "vscjava.vscode-java-dependency",
+      "tamasfe.even-better-toml",
+      "pahimar.minecraft-essentials-extension-pack"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "options": {
+      "cwd": "${workspaceFolder:Mystcraft}"
+    },
+    "tasks": [
+      {
+        "label": "Build - All Game Platform Jars",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "buildAllVersions",
+          "--no-daemon"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Build - Fabric 1.20.1 Jar",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "buildFabricJar",
+          "--no-daemon"
+        ],
+        "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "label": "Build - Forge 1.20.1 Jar",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "buildForgeJar",
+          "--no-daemon"
+        ],
+        "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "label": "Build - Psycho Jars",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "buildPsychoJars",
+          "--no-daemon"
+        ],
+        "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "label": "Build - XComp Jars",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "buildXCompJars",
+          "--no-daemon"
+        ],
+        "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "label": "Run - Fabric 1.20.1 Client",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "runFabricClient",
+          "--no-daemon"
+        ],
+        "group": "none",
+        "problemMatcher": []
+      },
+      {
+        "label": "Run - Fabric 1.20.1 Server",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "runFabricServer",
+          "--no-daemon"
+        ],
+        "group": "none",
+        "problemMatcher": []
+      },
+      {
+        "label": "Run - Forge 1.20.1 Client",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "runForgeClient",
+          "--no-daemon"
+        ],
+        "group": "none",
+        "problemMatcher": []
+      },
+      {
+        "label": "Run - Forge 1.20.1 Server",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "runForgeServer",
+          "--no-daemon"
+        ],
+        "group": "none",
+        "problemMatcher": []
+      },
+      {
+        "label": "Test - Fabric 1.20.1 GameTest",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "runFabricGameTest",
+          "--no-daemon"
+        ],
+        "group": "test",
+        "problemMatcher": []
+      },
+      {
+        "label": "Test - Forge 1.20.1 GameTest",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "runForgeGameTest",
+          "--no-daemon"
+        ],
+        "group": "test",
+        "problemMatcher": []
+      },
+      {
+        "label": "Test - Fast GameTests (All Platforms)",
+        "type": "shell",
+        "command": "./run-tests.sh",
+        "windows": {
+          "command": "bash",
+          "args": [
+            "./run-tests.sh",
+            "fast"
+          ]
+        },
+        "args": [
+          "fast"
+        ],
+        "group": {
+          "kind": "test",
+          "isDefault": true
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Verify - Build and Fast GameTests",
+        "dependsOrder": "sequence",
+        "dependsOn": [
+          "Build - All Game Platform Jars",
+          "Test - Fast GameTests (All Platforms)"
+        ],
+        "group": "test",
+        "problemMatcher": []
+      }
+    ]
+  }
+}

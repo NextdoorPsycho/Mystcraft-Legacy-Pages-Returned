@@ -46,7 +46,7 @@ public final class ReflectionCompat {
           return method;
         }
       } catch (NoSuchMethodException ignored) {
-        // Fall through to signature-based lookup.
+
       }
     }
     return findMethodBySignature(owner, returnType, params);
@@ -80,7 +80,7 @@ public final class ReflectionCompat {
           return field;
         }
       } catch (NoSuchFieldException ignored) {
-        // Fall through.
+
       }
       try {
         Field field = owner.getDeclaredField(name);

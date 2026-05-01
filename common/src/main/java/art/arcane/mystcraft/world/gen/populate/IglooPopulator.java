@@ -13,10 +13,10 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 
 /**
- * Igloo populator that generates small snow-brick shelters.
- * Igloos consist of a packed snow dome with a bed, crafting table, furnace,
- * and optionally a hidden basement with a brewing stand and trapped villager.
- * Approximately 1 per 48 chunks.
+ * Igloo populator that generates small snow-brick shelters. Igloos consist of a
+ * packed snow dome with a bed, crafting table, furnace, and optionally a hidden
+ * basement with a brewing stand and trapped villager. Approximately 1 per 48
+ * chunks.
  */
 public class IglooPopulator implements IPopulate {
 
@@ -57,7 +57,6 @@ public class IglooPopulator implements IPopulate {
 
     BlockPos surfacePos = new BlockPos(x, surfaceY, z);
 
-    // Check for snowy ground
     BlockState groundBlock = world.getBlockState(surfacePos.below());
     boolean isSnowy = groundBlock.is(Blocks.SNOW_BLOCK) || groundBlock.is(Blocks.POWDER_SNOW) ||
         groundBlock.is(Blocks.GRASS_BLOCK) || groundBlock.is(Blocks.DIRT);
@@ -84,7 +83,6 @@ public class IglooPopulator implements IPopulate {
     int radius = 3;
     int height = 3;
 
-    // Build dome shape from snow bricks
     for (int dx = -radius; dx <= radius; dx++) {
       for (int dz = -radius; dz <= radius; dz++) {
         for (int dy = 0; dy <= height; dy++) {
@@ -99,7 +97,6 @@ public class IglooPopulator implements IPopulate {
       }
     }
 
-    // Clear interior
     for (int dx = -radius + 1; dx <= radius - 1; dx++) {
       for (int dz = -radius + 1; dz <= radius - 1; dz++) {
         for (int dy = 0; dy < height; dy++) {
@@ -112,7 +109,6 @@ public class IglooPopulator implements IPopulate {
       }
     }
 
-    // Floor
     for (int dx = -radius; dx <= radius; dx++) {
       for (int dz = -radius; dz <= radius; dz++) {
         double dist = Math.sqrt(dx * dx + dz * dz);
@@ -123,36 +119,30 @@ public class IglooPopulator implements IPopulate {
       }
     }
 
-    // Entrance (cut a 2-high doorway)
     safeSetBlock(world, pos.offset(radius, 0, 0), Blocks.AIR.defaultBlockState());
     safeSetBlock(world, pos.offset(radius, 1, 0), Blocks.AIR.defaultBlockState());
 
-    // Interior furnishing
     safeSetBlock(world, pos.offset(-1, 0, -1), Blocks.RED_BED.defaultBlockState());
     safeSetBlock(world, pos.offset(1, 0, -1), Blocks.CRAFTING_TABLE.defaultBlockState());
     safeSetBlock(world, pos.offset(-1, 0, 1), Blocks.FURNACE.defaultBlockState());
 
-    // Carpet
     safeSetBlock(world, pos, Blocks.RED_CARPET.defaultBlockState());
     safeSetBlock(world, pos.offset(1, 0, 0), Blocks.WHITE_CARPET.defaultBlockState());
 
-    // Redstone torch for ambience
     safeSetBlock(world, pos.offset(0, 1, -1), Blocks.REDSTONE_TORCH.defaultBlockState());
 
-    // Hidden basement (50% chance)
     if (random.nextBoolean()) {
       generateBasement(world, random, pos);
     }
   }
 
   private void generateBasement(WorldGenLevel world, RandomSource random, BlockPos pos) {
-    // Ladder going down
+
     BlockPos ladderPos = pos.offset(-2, 0, 0);
     for (int dy = 0; dy >= -8; dy--) {
       safeSetBlock(world, ladderPos.offset(0, dy, 0), Blocks.LADDER.defaultBlockState());
     }
 
-    // Carve basement room
     BlockPos basementCenter = pos.offset(0, -8, 0);
     for (int dx = -2; dx <= 2; dx++) {
       for (int dz = -2; dz <= 2; dz++) {
@@ -175,11 +165,9 @@ public class IglooPopulator implements IPopulate {
       }
     }
 
-    // Brewing stand and cauldron
     safeSetBlock(world, basementCenter.offset(1, 1, 1), Blocks.BREWING_STAND.defaultBlockState());
     safeSetBlock(world, basementCenter.offset(-1, 1, 1), Blocks.CAULDRON.defaultBlockState());
 
-    // Chest
     BlockPos chestPos = basementCenter.offset(1, 1, -1);
     if (isInChunk(chestPos)) {
       world.setBlock(chestPos, Blocks.CHEST.defaultBlockState(), 2);

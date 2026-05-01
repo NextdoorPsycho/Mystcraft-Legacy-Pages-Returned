@@ -3,7 +3,6 @@ package art.arcane.mystcraft.world.gen.populate;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
 import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
@@ -11,10 +10,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Generates inverted terrain bubbles - hollow spheres where the ground
- * curves upward into enclosed chambers with grass growing on the inside
- * surface. Includes internal vegetation, glowstone light clusters, and
- * vine curtains hanging inward. Truly alien geometry.
+ * Generates inverted terrain bubbles - hollow spheres where the ground curves
+ * upward into enclosed chambers with grass growing on the inside surface.
+ * Includes internal vegetation, glowstone light clusters, and vine curtains
+ * hanging inward. Truly alien geometry.
  */
 public class GravityWellsPopulator implements IPopulate {
 
@@ -73,7 +72,6 @@ public class GravityWellsPopulator implements IPopulate {
       int surfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
       int radius = MIN_RADIUS + random.nextInt(MAX_RADIUS - MIN_RADIUS + 1);
 
-      // Center the sphere so the bottom sits slightly below surface
       int centerY = surfaceY + radius - (radius / 4);
 
       if (centerY - radius <= world.getMinBuildHeight() + 2
@@ -86,12 +84,11 @@ public class GravityWellsPopulator implements IPopulate {
   }
 
   private void generateWell(WorldGenLevel world, BlockPos chunkPos,
-                             int cx, int cy, int cz, int radius) {
+                            int cx, int cy, int cz, int radius) {
     int radiusSq = radius * radius;
     int innerRadius = radius - SHELL_THICKNESS;
     int innerRadiusSq = innerRadius * innerRadius;
 
-    // Small pond at bottom interior
     int pondRadius = Math.max(2, innerRadius / 3);
     int pondRadiusSq = pondRadius * pondRadius;
     int pondY = cy - innerRadius + 1;
@@ -111,13 +108,12 @@ public class GravityWellsPopulator implements IPopulate {
           double distSq = (double) dx * dx + (double) dy * dy + (double) dz * dz;
 
           if (distSq > radiusSq) {
-            // Outside sphere
+
             continue;
           }
 
           if (distSq <= innerRadiusSq) {
-            // Interior: air, with occasional features
-            // Small pond at the very bottom
+
             if (by <= pondY && (dx * dx + dz * dz) <= pondRadiusSq) {
               if (by == pondY) {
                 world.setBlock(pos, WATER, 2);
@@ -127,17 +123,15 @@ public class GravityWellsPopulator implements IPopulate {
               continue;
             }
 
-            // Clear interior to air
             BlockState existing = world.getBlockState(pos);
             if (!existing.isAir()) {
               world.setBlock(pos, AIR, 2);
             }
 
-            // Vine curtains hanging from upper interior shell
             if (dy > innerRadius / 2) {
               long vineHash = positionHash(seed ^ 0xB1E5L, bx, by, bz);
               if (hashFloat(vineHash) < 0.02f) {
-                // Hang a vine strand downward
+
                 for (int vy = 0; vy < 3 + (int) (hashFloat(positionHash(vineHash, bx, by, bz)) * 5); vy++) {
                   BlockPos vinePos = new BlockPos(bx, by - vy, bz);
                   if (isInWritableArea(vinePos, chunkPos)) {
@@ -152,32 +146,30 @@ public class GravityWellsPopulator implements IPopulate {
             continue;
           }
 
-          // Shell zone: between innerRadiusSq and radiusSq
           long blockHash = positionHash(seed, bx, by, bz);
           float roll = hashFloat(blockHash);
 
-          // Inner surface (facing interior) gets grass/moss
           if (distSq <= (innerRadius + 1.5) * (innerRadius + 1.5)) {
-            // Glowstone clusters for lighting the interior
+
             if (roll < 0.04f) {
               world.setBlock(pos, GLOWSTONE, 2);
             } else if (roll < 0.12f) {
               world.setBlock(pos, MOSS, 2);
             } else if (dy < 0) {
-              // Lower hemisphere inner surface gets grass (it's the "floor" from inside)
+
               world.setBlock(pos, GRASS, 2);
             } else {
               world.setBlock(pos, DIRT, 2);
             }
           } else if (distSq > (radius - 1.5) * (radius - 1.5)) {
-            // Outer surface: stone with moss patches
+
             if (roll < 0.08f) {
               world.setBlock(pos, MOSS, 2);
             } else {
               world.setBlock(pos, STONE, 2);
             }
           } else {
-            // Mid-shell: stone/dirt layers
+
             if (distSq < (innerRadius + 2.5) * (innerRadius + 2.5)) {
               world.setBlock(pos, DIRT, 2);
             } else {
@@ -188,7 +180,6 @@ public class GravityWellsPopulator implements IPopulate {
       }
     }
 
-    // Entrance tunnel at ground level on one side
     long entranceHash = positionHash(seed ^ 0xE477L, cx, cy, cz);
     double entranceAngle = hashFloat(entranceHash) * Math.PI * 2.0;
     int tunnelDx = (int) Math.round(Math.cos(entranceAngle));
@@ -197,7 +188,7 @@ public class GravityWellsPopulator implements IPopulate {
     for (int step = 0; step <= radius + 2; step++) {
       int tx = cx + tunnelDx * step;
       int tz = cz + tunnelDz * step;
-      int ty = cy - innerRadius + 2; // Near bottom of interior
+      int ty = cy - innerRadius + 2;
       for (int tdx = -1; tdx <= 1; tdx++) {
         for (int tdy = 0; tdy <= 2; tdy++) {
           BlockPos tunnelPos = new BlockPos(tx + (tunnelDz != 0 ? tdx : 0), ty + tdy,

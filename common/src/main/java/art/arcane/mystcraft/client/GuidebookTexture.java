@@ -7,7 +7,13 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Generates a clean black and white book texture at runtime.
+ * Generates the Art-of-Writing Guidebook screen background at runtime.
+ *
+ * <p>The aesthetic mirrors {@code BookTextureFactory.BookKind#GUIDEBOOK}: deep
+ * midnight-navy leather borders, cream parchment pages, gold ruling and corner
+ * filigree, and a quill emblem at the spine top. When a player opens the
+ * Guidebook the screen reads as the same book they were holding moments
+ * before.
  */
 public class GuidebookTexture {
 
@@ -30,19 +36,20 @@ public class GuidebookTexture {
   private static void createTexture() {
     NativeImage image = new NativeImage(TEXTURE_WIDTH, TEXTURE_HEIGHT, true);
 
-    // Fill with transparent
     for (int x = 0; x < TEXTURE_WIDTH; x++) {
       for (int y = 0; y < TEXTURE_HEIGHT; y++) {
         image.setPixelRGBA(x, y, 0);
       }
     }
 
-    // Colors (ABGR format for NativeImage)
-    int pageBg = abgr(255, 245, 240, 230);      // Cream/off-white page
-    int border = abgr(255, 60, 50, 40);          // Dark brown border
-    int spine = abgr(255, 80, 70, 60);           // Darker spine
-    int shadow = abgr(255, 200, 190, 180);       // Light shadow
-    int pageLine = abgr(255, 220, 210, 200);     // Faint line color
+    int leather = abgr(255, 70, 38, 26);
+    int leatherDeep = abgr(255, 50, 25, 18);
+    int leatherHi = abgr(255, 100, 60, 42);
+    int parchment = abgr(255, 230, 240, 245);
+    int parchmentShade = abgr(255, 200, 215, 224);
+    int gold = abgr(255, 60, 175, 220);
+    int goldDim = abgr(255, 40, 130, 170);
+    int ink = abgr(255, 50, 50, 80);
 
     int leftPageX = 4;
     int rightPageX = 138;
@@ -50,63 +57,135 @@ public class GuidebookTexture {
     int pageY = 4;
     int pageHeight = 172;
 
-    // Draw book cover/border
-    fillRect(image, 0, 0, BOOK_WIDTH, BOOK_HEIGHT, border);
+    fillRect(image, 0, 0, BOOK_WIDTH, BOOK_HEIGHT, leather);
 
-    // Draw spine (center vertical strip)
-    fillRect(image, 134, 0, 8, BOOK_HEIGHT, spine);
+    int grainAlpha = abgr(40, 100, 60, 42);
+    for (int y = 0; y < BOOK_HEIGHT; y += 3) {
+      for (int x = 0; x < BOOK_WIDTH; x++) {
+        if ((x + y) % 5 == 0) {
+          safeBlend(image, x, y, grainAlpha);
+        }
+      }
+    }
 
-    // Draw left page background
-    fillRect(image, leftPageX, pageY, pageWidth, pageHeight, pageBg);
+    for (int i = 0; i < 2; i++) {
 
-    // Draw right page background
-    fillRect(image, rightPageX, pageY, pageWidth, pageHeight, pageBg);
+      fillRect(image, i, i, BOOK_WIDTH - 2 * i, 1, leatherHi);
 
-    // Draw page shadows (inner edges near spine)
-    for (int i = 0; i < 4; i++) {
-      int alpha = 255 - (i * 40);
-      int shadowColor = abgr(alpha, 180 + i * 15, 170 + i * 15, 160 + i * 15);
-      // Left page right edge shadow
-      fillRect(image, leftPageX + pageWidth - 4 + i, pageY, 1, pageHeight, shadowColor);
-      // Right page left edge shadow
+      fillRect(image, i, i, 1, BOOK_HEIGHT - 2 * i, leatherHi);
+
+      fillRect(image, i, BOOK_HEIGHT - 1 - i, BOOK_WIDTH - 2 * i, 1, leatherDeep);
+
+      fillRect(image, BOOK_WIDTH - 1 - i, i, 1, BOOK_HEIGHT - 2 * i, leatherDeep);
+    }
+
+    fillRect(image, 134, 0, 8, BOOK_HEIGHT, leatherDeep);
+
+    fillRect(image, 134, 0, 1, BOOK_HEIGHT, leatherHi);
+    fillRect(image, 141, 0, 1, BOOK_HEIGHT, leatherHi);
+
+    fillRect(image, 135, 12, 6, 1, gold);
+    fillRect(image, 135, 14, 6, 1, gold);
+
+    fillRect(image, 135, BOOK_HEIGHT - 14, 6, 1, gold);
+    fillRect(image, 135, BOOK_HEIGHT - 16, 6, 1, gold);
+
+    drawSpineQuill(image, 138, BOOK_HEIGHT / 2, gold, ink);
+
+    fillRect(image, leftPageX, pageY, pageWidth, pageHeight, parchment);
+    fillRect(image, rightPageX, pageY, pageWidth, pageHeight, parchment);
+
+    int parchmentDark = abgr(255, 180, 195, 205);
+    for (int i = 0; i < 2; i++) {
+
+      fillRect(image, leftPageX + i, pageY + i, pageWidth - 2 * i, 1, parchment);
+      fillRect(image, leftPageX + i, pageY + i, 1, pageHeight - 2 * i, parchment);
+
+      fillRect(image, leftPageX + i, pageY + pageHeight - 1 - i, pageWidth - 2 * i, 1, parchmentDark);
+      fillRect(image, leftPageX + pageWidth - 1 - i, pageY + i, 1, pageHeight - 2 * i, parchmentDark);
+
+      fillRect(image, rightPageX + i, pageY + i, pageWidth - 2 * i, 1, parchment);
+      fillRect(image, rightPageX + i, pageY + i, 1, pageHeight - 2 * i, parchment);
+      fillRect(image, rightPageX + i, pageY + pageHeight - 1 - i, pageWidth - 2 * i, 1, parchmentDark);
+      fillRect(image, rightPageX + pageWidth - 1 - i, pageY + i, 1, pageHeight - 2 * i, parchmentDark);
+    }
+
+    for (int i = 0; i < 6; i++) {
+      int alpha = 200 - (i * 32);
+      if (alpha < 0) alpha = 0;
+      int shadowColor = abgr(alpha,
+          200 - i * 4, 215 - i * 4, 224 - i * 4);
+
+      fillRect(image, leftPageX + pageWidth - 6 + i, pageY, 1, pageHeight, shadowColor);
+
       fillRect(image, rightPageX + i, pageY, 1, pageHeight, shadowColor);
     }
 
-    // Draw subtle horizontal lines on pages (like ruled paper)
-    for (int lineY = pageY + 20; lineY < pageY + pageHeight - 10; lineY += 12) {
-      // Left page lines
-      for (int x = leftPageX + 10; x < leftPageX + pageWidth - 10; x++) {
-        if ((x + lineY) % 3 != 0) { // Dotted effect
-          image.setPixelRGBA(x, lineY, pageLine);
+    for (int lineY = pageY + 20; lineY < pageY + pageHeight - 14; lineY += 12) {
+
+      for (int x = leftPageX + 12; x < leftPageX + pageWidth - 12; x++) {
+        if ((x + lineY) % 4 != 0) {
+          safeBlend(image, x, lineY, abgr(80, 40, 130, 170));
         }
       }
-      // Right page lines
-      for (int x = rightPageX + 10; x < rightPageX + pageWidth - 10; x++) {
-        if ((x + lineY) % 3 != 0) {
-          image.setPixelRGBA(x, lineY, pageLine);
+
+      for (int x = rightPageX + 12; x < rightPageX + pageWidth - 12; x++) {
+        if ((x + lineY) % 4 != 0) {
+          safeBlend(image, x, lineY, abgr(80, 40, 130, 170));
         }
       }
     }
 
-    // Draw corner decorations - each corner points outward
-    // Left page corners
-    drawCornerTopLeft(image, leftPageX + 2, pageY + 2, border);
-    drawCornerTopRight(image, leftPageX + pageWidth - 7, pageY + 2, border);
-    drawCornerBottomLeft(image, leftPageX + 2, pageY + pageHeight - 7, border);
-    drawCornerBottomRight(image, leftPageX + pageWidth - 7, pageY + pageHeight - 7, border);
+    drawCorner(image, leftPageX + 4, pageY + 4, gold, 0);
+    drawCorner(image, leftPageX + pageWidth - 5, pageY + 4, gold, 1);
+    drawCorner(image, leftPageX + 4, pageY + pageHeight - 5, gold, 2);
+    drawCorner(image, leftPageX + pageWidth - 5, pageY + pageHeight - 5, gold, 3);
 
-    // Right page corners
-    drawCornerTopLeft(image, rightPageX + 2, pageY + 2, border);
-    drawCornerTopRight(image, rightPageX + pageWidth - 7, pageY + 2, border);
-    drawCornerBottomLeft(image, rightPageX + 2, pageY + pageHeight - 7, border);
-    drawCornerBottomRight(image, rightPageX + pageWidth - 7, pageY + pageHeight - 7, border);
+    drawCorner(image, rightPageX + 4, pageY + 4, gold, 0);
+    drawCorner(image, rightPageX + pageWidth - 5, pageY + 4, gold, 1);
+    drawCorner(image, rightPageX + 4, pageY + pageHeight - 5, gold, 2);
+    drawCorner(image, rightPageX + pageWidth - 5, pageY + pageHeight - 5, gold, 3);
 
-    // Create dynamic texture and register it
+    safeSetPixel(image, leftPageX + 1, pageY + pageHeight / 2, gold);
+    safeSetPixel(image, leftPageX + 2, pageY + pageHeight / 2, goldDim);
+    safeSetPixel(image, rightPageX + pageWidth - 2, pageY + pageHeight / 2, gold);
+    safeSetPixel(image, rightPageX + pageWidth - 3, pageY + pageHeight / 2, goldDim);
+
     DynamicTexture dynamicTexture = new DynamicTexture(image);
     textureLocation = Minecraft.getInstance().getTextureManager()
         .register("mystcraft_guidebook", dynamicTexture);
 
     Mystcraft.LOGGER.debug("Created guidebook texture: {}", textureLocation);
+  }
+
+  private static void drawSpineQuill(NativeImage image, int cx, int cy, int gold, int ink) {
+
+    for (int i = -10; i <= 10; i++) {
+      safeSetPixel(image, cx + i / 2, cy - i, gold);
+    }
+
+    for (int i = 0; i < 3; i++) {
+      int by = cy - 6 + i * 2;
+      safeSetPixel(image, cx - 2, by, gold);
+      safeSetPixel(image, cx - 3, by + 1, gold);
+    }
+
+    safeSetPixel(image, cx + 5, cy + 10, ink);
+    safeSetPixel(image, cx + 6, cy + 10, ink);
+    safeSetPixel(image, cx + 5, cy + 11, ink);
+  }
+
+  private static void drawCorner(NativeImage image, int x, int y, int color, int orient) {
+    int dx = (orient == 1 || orient == 3) ? -1 : 1;
+    int dy = (orient == 2 || orient == 3) ? -1 : 1;
+
+    for (int i = 0; i < 5; i++) {
+      safeSetPixel(image, x + dx * i, y, color);
+      safeSetPixel(image, x, y + dy * i, color);
+    }
+
+    safeSetPixel(image, x + dx * 2, y + dy * 2, color);
+    safeSetPixel(image, x + dx * 3, y + dy * 3, color);
   }
 
   private static void fillRect(NativeImage image, int x, int y, int width, int height, int color) {
@@ -119,42 +198,37 @@ public class GuidebookTexture {
     }
   }
 
-  private static void drawCornerTopLeft(NativeImage image, int x, int y, int color) {
-    // L shape pointing top-left: horizontal goes right, vertical goes down
-    for (int i = 0; i < 5; i++) {
-      safeSetPixel(image, x + i, y, color);      // horizontal right
-      safeSetPixel(image, x, y + i, color);      // vertical down
-    }
-  }
-
-  private static void drawCornerTopRight(NativeImage image, int x, int y, int color) {
-    // L shape pointing top-right: horizontal goes left, vertical goes down
-    for (int i = 0; i < 5; i++) {
-      safeSetPixel(image, x + 4 - i, y, color);  // horizontal left
-      safeSetPixel(image, x + 4, y + i, color);  // vertical down
-    }
-  }
-
-  private static void drawCornerBottomLeft(NativeImage image, int x, int y, int color) {
-    // L shape pointing bottom-left: horizontal goes right, vertical goes up
-    for (int i = 0; i < 5; i++) {
-      safeSetPixel(image, x + i, y + 4, color);  // horizontal right
-      safeSetPixel(image, x, y + 4 - i, color);  // vertical up
-    }
-  }
-
-  private static void drawCornerBottomRight(NativeImage image, int x, int y, int color) {
-    // L shape pointing bottom-right: horizontal goes left, vertical goes up
-    for (int i = 0; i < 5; i++) {
-      safeSetPixel(image, x + 4 - i, y + 4, color);  // horizontal left
-      safeSetPixel(image, x + 4, y + 4 - i, color);  // vertical up
-    }
-  }
-
   private static void safeSetPixel(NativeImage image, int x, int y, int color) {
     if (x >= 0 && x < image.getWidth() && y >= 0 && y < image.getHeight()) {
       image.setPixelRGBA(x, y, color);
     }
+  }
+
+  private static void safeBlend(NativeImage image, int x, int y, int abgr) {
+    if (x < 0 || x >= image.getWidth() || y < 0 || y >= image.getHeight()) {
+      return;
+    }
+    int dst = image.getPixelRGBA(x, y);
+    int sa = (abgr >>> 24) & 0xFF;
+    if (sa == 0) {
+      return;
+    }
+    if (sa == 255 || ((dst >>> 24) & 0xFF) == 0) {
+      image.setPixelRGBA(x, y, abgr);
+      return;
+    }
+    int sb = (abgr >>> 16) & 0xFF;
+    int sg = (abgr >>> 8) & 0xFF;
+    int sr = abgr & 0xFF;
+    int da = (dst >>> 24) & 0xFF;
+    int db = (dst >>> 16) & 0xFF;
+    int dg = (dst >>> 8) & 0xFF;
+    int dr = dst & 0xFF;
+    int outA = sa + (da * (255 - sa)) / 255;
+    int outR = (sr * sa + dr * (255 - sa)) / 255;
+    int outG = (sg * sa + dg * (255 - sa)) / 255;
+    int outB = (sb * sa + db * (255 - sa)) / 255;
+    image.setPixelRGBA(x, y, abgr(outA, outB, outG, outR));
   }
 
   private static int abgr(int a, int b, int g, int r) {

@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Client-side helper to send head palette data to the server.
- * Retries until the player's skin texture is available.
+ * Client-side helper to send head palette data to the server. Retries until the
+ * player's skin texture is available.
  */
 public final class PocketHeadClientSync {
 

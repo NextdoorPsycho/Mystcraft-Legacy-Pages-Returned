@@ -8,8 +8,8 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 
 /**
- * Environmental effect that accelerates random ticks in loaded chunks.
- * Causes crops to grow faster, fire to spread, and other tick-driven changes.
+ * Environmental effect that accelerates random ticks in loaded chunks. Causes
+ * crops to grow faster, fire to spread, and other tick-driven changes.
  */
 public class EffectExtraTicks implements IEnvironmentalEffect {
 

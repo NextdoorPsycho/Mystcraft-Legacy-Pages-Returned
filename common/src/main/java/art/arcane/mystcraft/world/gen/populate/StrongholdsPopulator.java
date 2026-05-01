@@ -11,13 +11,13 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Stronghold populator that generates underground stone brick structures.
- * Strongholds consist of libraries with bookshelves, prison cells with iron bars,
- * corridors, and very rarely an end portal room.
+ * Strongholds consist of libraries with bookshelves, prison cells with iron
+ * bars, corridors, and very rarely an end portal room.
  * <p>
  * Uses chunk boundary checking to prevent cascade loading - blocks outside the
  * current chunk are simply skipped rather than triggering neighbor chunk loads.
- * This is critical because strongholds can extend 12 rooms with 8-16 blocks each,
- * potentially 192+ blocks beyond the chunk!
+ * This is critical because strongholds can extend 12 rooms with 8-16 blocks
+ * each, potentially 192+ blocks beyond the chunk!
  */
 public class StrongholdsPopulator implements IPopulate {
 
@@ -27,7 +27,7 @@ public class StrongholdsPopulator implements IPopulate {
   private static final int MAX_ROOMS = 12;
   private final long seed;
   private final int rarity;
-  // Chunk boundaries for current population
+
   private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
   public StrongholdsPopulator(long seed) {
@@ -41,7 +41,7 @@ public class StrongholdsPopulator implements IPopulate {
 
   @Override
   public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
-    // Set chunk boundaries for this population run
+
     int chunkX = chunkPos.getX() >> 4;
     int chunkZ = chunkPos.getZ() >> 4;
     chunkMinX = chunkX << 4;
@@ -66,18 +66,11 @@ public class StrongholdsPopulator implements IPopulate {
     generateStronghold(world, random, startPos);
   }
 
-  /**
-   * Checks if a position is within the current chunk boundaries.
-   * This prevents cascade chunk loading when structures extend beyond chunk edges.
-   */
   private boolean isInChunk(BlockPos pos) {
     return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
         pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
   }
 
-  /**
-   * Safe setBlock that only places blocks within current chunk boundaries.
-   */
   private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
     if (isInChunk(pos)) {
       world.setBlock(pos, state, 2);
@@ -304,7 +297,7 @@ public class StrongholdsPopulator implements IPopulate {
     int solidBlocksAbove = 0;
     for (int y = pos.getY() + 1; y < pos.getY() + 30; y++) {
       BlockPos checkPos = new BlockPos(pos.getX(), y, pos.getZ());
-      // Only check blocks within chunk boundaries to prevent cascade loading
+
       if (isInChunk(checkPos) && world.getBlockState(checkPos).isSolid()) {
         solidBlocksAbove++;
       }

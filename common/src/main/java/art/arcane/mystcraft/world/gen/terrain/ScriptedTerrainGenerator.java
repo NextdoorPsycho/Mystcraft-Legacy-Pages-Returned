@@ -95,7 +95,7 @@ public class ScriptedTerrainGenerator extends TerrainGeneratorBase {
   @Override
   public void generateTerrain(int chunkX, int chunkZ, net.minecraft.world.level.chunk.ChunkAccess chunk,
                               RandomSource random) {
-    // Sync blocks from director each generation (symbols may override)
+
     BlockState terrain = controller.getTerrainBlock();
     BlockState sea = controller.getSeaBlock();
     if (terrain != null) {

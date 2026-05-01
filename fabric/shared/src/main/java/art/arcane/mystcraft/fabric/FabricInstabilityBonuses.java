@@ -9,15 +9,14 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Consolidated Fabric instability bonuses for Mystcraft 1.20.1.
- * Combines FabricPlayerKilledBonus and FabricPlayerSurvivalBonus.
+ * Consolidated Fabric instability bonuses for Mystcraft 1.20.1. Combines
+ * FabricPlayerKilledBonus and FabricPlayerSurvivalBonus.
  */
 public final class FabricInstabilityBonuses {
 
   private FabricInstabilityBonuses() {
   }
 
-  // ========== PLAYER KILLED BONUS ==========
   public static class PlayerKilledBonus implements InstabilityBonusProvider {
     private final Map<UUID, Integer> killCounts = new ConcurrentHashMap<>();
 
@@ -41,7 +40,6 @@ public final class FabricInstabilityBonuses {
     }
   }
 
-  // ========== PLAYER SURVIVAL BONUS ==========
   public static class PlayerSurvivalBonus implements InstabilityBonusProvider {
     private final Map<UUID, Long> survivalStartTimes = new ConcurrentHashMap<>();
 

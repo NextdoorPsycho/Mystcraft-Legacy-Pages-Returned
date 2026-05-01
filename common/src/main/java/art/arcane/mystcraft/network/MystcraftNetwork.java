@@ -8,8 +8,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * Common network abstraction for Mystcraft packets.
- * Platform modules set the delegate functions during initialization.
+ * Common network abstraction for Mystcraft packets. Platform modules set the
+ * delegate functions during initialization.
  */
 public final class MystcraftNetwork {
 
@@ -47,14 +47,16 @@ public final class MystcraftNetwork {
   }
 
   /**
-   * Sends a packet to all players tracking the given player (server -> client).
+   * Sends a packet to all players tracking the given player (server ->
+   * client).
    */
   public static void sendToTracking(Object packet, ServerPlayer player) {
     sendToTrackingHandler.accept(packet, player);
   }
 
   /**
-   * Sends a packet to all players tracking a block position (server -> client).
+   * Sends a packet to all players tracking a block position (server ->
+   * client).
    */
   public static void sendToTrackingBlock(Object packet, ServerLevel level, BlockPos pos) {
     if (sendToTrackingBlockHandler != null) {
@@ -63,8 +65,8 @@ public final class MystcraftNetwork {
   }
 
   /**
-   * Platform-specific handler for sending packets to players tracking a block position.
-   * BiConsumer takes (packet, level, pos).
+   * Platform-specific handler for sending packets to players tracking a block
+   * position. BiConsumer takes (packet, level, pos).
    */
   @FunctionalInterface
   public interface TrackingBlockSender {

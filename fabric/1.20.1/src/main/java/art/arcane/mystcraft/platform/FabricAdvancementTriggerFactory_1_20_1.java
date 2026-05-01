@@ -9,8 +9,8 @@ import net.minecraft.resources.ResourceLocation;
 import java.lang.reflect.Method;
 
 /**
- * Fabric 1.20.1 implementation of advancement trigger factory.
- * Uses the legacy API with ContextAwarePredicate and getId().
+ * Fabric 1.20.1 implementation of advancement trigger factory. Uses the legacy
+ * API with ContextAwarePredicate and getId().
  */
 public class FabricAdvancementTriggerFactory_1_20_1 implements IAdvancementTriggerFactory {
 

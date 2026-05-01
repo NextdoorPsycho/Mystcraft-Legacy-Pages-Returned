@@ -20,15 +20,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Menu for the Link Modifier block.
- * Provides access to book slot and modifier page slots.
+ * Menu for the Link Modifier block. Provides access to book slot and modifier
+ * page slots.
  */
 public class LinkModifierMenu extends AbstractContainerMenu {
 
-  // Slot indices - only book slot is exposed in GUI
   public static final int SLOT_BOOK = 0;
   public static final int BLOCK_ENTITY_SLOTS = 1;
-  // Player inventory slot ranges
+
   private static final int PLAYER_INVENTORY_START = BLOCK_ENTITY_SLOTS;
   private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
   private static final int PLAYER_HOTBAR_END = PLAYER_INVENTORY_END + 9;
@@ -38,7 +37,7 @@ public class LinkModifierMenu extends AbstractContainerMenu {
   private final DataSlot hasItemSeedData;
   private final DataSlot isLinkDeadData;
   private final Map<String, Boolean> cachedLinkFlags = new HashMap<>();
-  // Cached data for client
+
   private String cachedTitle = "";
   private String cachedSeed = "";
   private String cachedDimensionUID = "";
@@ -60,27 +59,22 @@ public class LinkModifierMenu extends AbstractContainerMenu {
 
     Container container = blockEntity.getInventory();
 
-    // Book slot (center)
     addSlot(new Slot(container, LinkModifierBlockEntity.SLOT_BOOK, 80, 35));
 
-    // Player inventory (3 rows of 9)
     for (int row = 0; row < 3; row++) {
       for (int col = 0; col < 9; col++) {
         addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
       }
     }
 
-    // Player hotbar
     for (int col = 0; col < 9; col++) {
       addSlot(new Slot(playerInventory, col, 8 + col * 18, 142));
     }
 
-    // Data slots
     canModifyData = addDataSlot(DataSlot.standalone());
     hasItemSeedData = addDataSlot(DataSlot.standalone());
     isLinkDeadData = addDataSlot(DataSlot.standalone());
 
-    // Initialize link flags cache
     for (String prop : InkEffects.getProperties()) {
       cachedLinkFlags.put(prop, false);
     }
@@ -228,17 +222,14 @@ public class LinkModifierMenu extends AbstractContainerMenu {
       ItemStack stackInSlot = slot.getItem();
       result = stackInSlot.copy();
 
-      // Moving from block entity slots to player inventory
       if (index < BLOCK_ENTITY_SLOTS) {
         if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true)) {
           return ItemStack.EMPTY;
         }
-      }
-      // Moving from player inventory to block entity slots
-      else {
-        // Try book slot first
+      } else {
+
         if (!moveItemStackTo(stackInSlot, SLOT_BOOK, SLOT_BOOK + 1, false)) {
-          // Move between inventory and hotbar
+
           if (index < PLAYER_INVENTORY_END) {
             if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
               return ItemStack.EMPTY;

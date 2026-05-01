@@ -4,8 +4,8 @@ import art.arcane.mystcraft.api.world.logic.IWeatherController;
 import net.minecraft.server.level.ServerLevel;
 
 /**
- * Weather controller that maintains constant rain.
- * No thunder, just perpetual precipitation.
+ * Weather controller that maintains constant rain. No thunder, just perpetual
+ * precipitation.
  */
 public class WeatherControllerAlwaysRain implements IWeatherController {
 
@@ -15,10 +15,9 @@ public class WeatherControllerAlwaysRain implements IWeatherController {
 
   @Override
   public void updateWeather(ServerLevel level) {
-    // Gradually increase rain level to max
+
     rainLevel = Math.min(1.0f, rainLevel + 0.02f);
 
-    // Force rain in vanilla weather system
     if (!level.isRaining()) {
       level.setWeatherParameters(0, 6000, true, false);
     }

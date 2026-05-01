@@ -10,9 +10,9 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * The Mystcraft Guidebook - an in-game manual explaining the Art of Writing.
- * This item opens a custom GUI that displays tutorial content about how to
- * use Mystcraft's various systems: ink creation, writing pages, crafting
- * linking books and descriptive books, and understanding the grammar of Age creation.
+ * This item opens a custom GUI that displays tutorial content about how to use
+ * Mystcraft's various systems: ink creation, writing pages, crafting linking
+ * books and descriptive books, and understanding the grammar of Age creation.
  */
 public class GuidebookItem extends Item {
 
@@ -29,19 +29,15 @@ public class GuidebookItem extends Item {
       openGuidebookClient();
     }
 
-    return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+    return InteractionResultHolder.consume(stack);
   }
 
-  /**
-   * Opens the guidebook screen. This method uses reflection to avoid
-   * loading client classes on the dedicated server.
-   */
   private void openGuidebookClient() {
     try {
       Class<?> clientHelperClass = Class.forName("art.arcane.mystcraft.client.GuidebookClientHelper");
       clientHelperClass.getMethod("openGuidebook").invoke(null);
     } catch (Exception e) {
-      // Silently fail - client helper not available
+
     }
   }
 }

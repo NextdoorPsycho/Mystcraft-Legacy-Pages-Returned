@@ -8,10 +8,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Biome controller that uses Voronoi cell regions for clean, organic biome distribution.
- * Each cell center is derived from a grid with jittered positions, and the closest center
- * determines the biome. This produces smooth, non-dithered region boundaries with
- * natural-looking shapes at every scale.
+ * Biome controller that uses Voronoi cell regions for clean, organic biome
+ * distribution. Each cell center is derived from a grid with jittered
+ * positions, and the closest center determines the biome. This produces smooth,
+ * non-dithered region boundaries with natural-looking shapes at every scale.
  */
 public class BiomeControllerNoise extends BiomeControllerBase {
 
@@ -71,10 +71,6 @@ public class BiomeControllerNoise extends BiomeControllerBase {
     return biome;
   }
 
-  /**
-   * Finds the closest Voronoi cell center and returns its biome.
-   * Checks the 3x3 grid of cells surrounding the query point.
-   */
   private Holder<Biome> findNearestVoronoiCell(int x, int z) {
     int cellX = Math.floorDiv(x, cellSize);
     int cellZ = Math.floorDiv(z, cellSize);
@@ -87,7 +83,6 @@ public class BiomeControllerNoise extends BiomeControllerBase {
         int cx = cellX + dx;
         int cz = cellZ + dz;
 
-        // Jittered center position for this cell
         long cellHash = hashCell(cx, cz);
         double jitterX = (cellHash & 0xFFFFL) / (double) 0xFFFF;
         double jitterZ = ((cellHash >>> 16) & 0xFFFFL) / (double) 0xFFFF;
@@ -99,7 +94,7 @@ public class BiomeControllerNoise extends BiomeControllerBase {
 
         if (distSq < closestDist) {
           closestDist = distSq;
-          // Biome index from cell hash
+
           closestIndex = (int) ((cellHash >>> 32) & 0x7FFFFFFFL) % biomes.size();
         }
       }

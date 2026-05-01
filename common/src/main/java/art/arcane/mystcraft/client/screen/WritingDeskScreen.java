@@ -29,33 +29,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Screen for the Writing Desk block. Multi-panel layout:
- * left panel (228px, tabs + page surface), right panel (176x166, inventory),
- * button bar (18px), total 409x185.
+ * Screen for the Writing Desk block. Multi-panel layout: left panel (228px,
+ * tabs + page surface), right panel (176x166, inventory), button bar (18px),
+ * total 409x185.
  */
 public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> {
 
-  // Layout constants
   private static final int LEFT_SIZE = 228;
   private static final int WINDOW_SIZE_X = 176;
   private static final int WINDOW_SIZE_Y = 166;
   private static final int BUTTONS_SIZE_Y = 18;
   private static final int TAB_WIDTH = 58;
-  private static final int GUI_CENTER = LEFT_SIZE + 5; // 233
-  private static final int MAIN_TOP = BUTTONS_SIZE_Y + 2; // 20
+  private static final int GUI_CENTER = LEFT_SIZE + 5;
+  private static final int MAIN_TOP = BUTTONS_SIZE_Y + 2;
 
-  // Component sizes
-  private static final int TOTAL_WIDTH = LEFT_SIZE + WINDOW_SIZE_X + 5; // 409
-  private static final int TOTAL_HEIGHT = WINDOW_SIZE_Y + BUTTONS_SIZE_Y + 1; // 185
-  // Symbol cost display
-  private static final int INK_COST_PER_SYMBOL = 100; // Base ink cost
+  private static final int TOTAL_WIDTH = LEFT_SIZE + WINDOW_SIZE_X + 5;
+  private static final int TOTAL_HEIGHT = WINDOW_SIZE_Y + BUTTONS_SIZE_Y + 1;
+
+  private static final int INK_COST_PER_SYMBOL = 100;
   private final IAgeSymbol hoveredSymbol = null;
-  // Panel positions
+
   private int surfaceLeft;
   private int surfaceTop;
   private int rightPanelLeft;
   private int rightPanelTop;
-  // GUI elements
+
   private MystGuiPanel rootElement;
   private MystGuiSurfaceTabs surfaceTabs;
   private MystGuiPageSurface pageSurface;
@@ -65,7 +63,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
   private MystGuiToggleButton showAllButton;
   private MystGuiFluidTank inkTank;
   private MystGuiScrollablePages bookPageList;
-  // State
+
   private int activeTabSlot = 0;
   private int topTabSlot = 0;
   private boolean sortAlphabetically = false;
@@ -80,30 +78,25 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
 
   @Override
   protected void init() {
-    // Center the combined GUI
+
     this.leftPos = (this.width / 2) - (LEFT_SIZE / 2) - (WINDOW_SIZE_X / 2);
     this.topPos = (this.height - TOTAL_HEIGHT) / 2;
 
-    // Calculate panel positions
     surfaceLeft = this.leftPos;
     surfaceTop = this.topPos + MAIN_TOP;
     rightPanelLeft = this.leftPos + GUI_CENTER;
     rightPanelTop = this.topPos + MAIN_TOP;
 
-    // Create root element
     rootElement = new MystGuiPanel(0, 0, TOTAL_WIDTH, TOTAL_HEIGHT);
 
-    // Surface tabs (left side)
     surfaceTabs = new MystGuiSurfaceTabs(new TabHandler(), 0, MAIN_TOP, TAB_WIDTH, TOTAL_HEIGHT);
     rootElement.addElement(surfaceTabs);
 
-    // Page surface (center)
     int surfaceX = 58;
-    int surfaceWidth = LEFT_SIZE - 53; // 175
+    int surfaceWidth = LEFT_SIZE - 53;
     pageSurface = new MystGuiPageSurface(new PagesProvider(), surfaceX, MAIN_TOP, surfaceWidth, WINDOW_SIZE_Y);
     rootElement.addElement(pageSurface);
 
-    // Sort buttons
     sortAzButton = new MystGuiToggleButton("AZ", () -> sortAlphabetically, btn -> {
       sortAlphabetically = !sortAlphabetically;
     }, 58, 0, BUTTONS_SIZE_Y, BUTTONS_SIZE_Y);
@@ -111,7 +104,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     sortAzButton.setTooltip(List.of(Component.literal("Sort Alphabetically")));
     rootElement.addElement(sortAzButton);
 
-    // Show-all toggle at (76, 0, 18, 18)
     showAllButton = new MystGuiToggleButton("ALL", () -> showAll, btn -> {
       showAll = !showAll;
     }, 58 + BUTTONS_SIZE_Y, 0, BUTTONS_SIZE_Y, BUTTONS_SIZE_Y);
@@ -119,7 +111,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     showAllButton.setTooltip(List.of(Component.literal("Show all Symbols")));
     rootElement.addElement(showAllButton);
 
-    // Search field at (98, 0, 135, 18)
     int searchX = 58 + (BUTTONS_SIZE_Y + 2) * 2;
     int searchWidth = LEFT_SIZE - 53 - (BUTTONS_SIZE_Y + 2) * 2;
     searchField = new MystGuiTextField("SearchBox", () -> searchText, text -> {
@@ -128,7 +119,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     }, searchX, 0, searchWidth, BUTTONS_SIZE_Y);
     rootElement.addElement(searchField);
 
-    // Ink tank display at (365, 27, 16, 70)
     int tankX = GUI_CENTER + WINDOW_SIZE_X - 44;
     int tankY = MAIN_TOP + 7;
     inkTank = new MystGuiFluidTank(
@@ -140,7 +130,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     );
     rootElement.addElement(inkTank);
 
-    // Name field at (261, 81, 99, 14)
     int nameX = GUI_CENTER + 28;
     int nameY = MAIN_TOP + 61;
     int nameWidth = WINDOW_SIZE_X - 48 - 9 - 20;
@@ -151,7 +140,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     nameField.setMaxLength(21);
     rootElement.addElement(nameField);
 
-    // Book page list at (260, 26, 101, 50)
     int listX = GUI_CENTER + 27;
     int listY = MAIN_TOP + 6;
     int listWidth = WINDOW_SIZE_X - 47 - 9 - 19;
@@ -188,8 +176,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     RenderSystem.setShader(GameRenderer::getPositionTexShader);
     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
-    // Optional decorative panel behind the left workspace (tabs + page surface).
-    // Drawn so the parchment-colored backdrop frames the active tab content.
     int leftPanelHeight = WINDOW_SIZE_Y;
     ProceduralUI.drawPanel(guiGraphics,
         this.leftPos + TAB_WIDTH,
@@ -197,16 +183,12 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         LEFT_SIZE - TAB_WIDTH,
         leftPanelHeight);
 
-    // Right panel background (procedural panel; replaces writingdesk.png blit)
     ProceduralUI.drawPanel(guiGraphics, rightPanelLeft, rightPanelTop, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
-    // Slot backgrounds (writing/paper/container in/out + player inventory + hotbar)
     renderSlotBackgrounds(guiGraphics);
 
-    // Border around the book page list area
     renderBookPageListBorder(guiGraphics);
 
-    // Render GUI elements
     if (rootElement != null) {
       rootElement.setLeft(this.leftPos);
       rootElement.setTop(this.topPos);
@@ -214,39 +196,29 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     }
   }
 
-  /**
-   * Draws 3D slot backgrounds for the main inventory slots and player inventory.
-   */
   private void renderSlotBackgrounds(GuiGraphics guiGraphics) {
-    // Main slots — coordinates match WritingDeskMenu.java X_SHIFT/Y_SHIFT (233/20).
-    // ProceduralUI.drawSlot positions the inset border at (x,y) with size 18; the
-    // item icon will be rendered at (slot.x + leftPos, slot.y + topPos) above.
+
     ProceduralUI.drawSlot(guiGraphics, this.leftPos + 8 + GUI_CENTER - 1, this.topPos + 60 + MAIN_TOP - 1);
     ProceduralUI.drawSlot(guiGraphics, this.leftPos + 8 + GUI_CENTER - 1, this.topPos + 8 + MAIN_TOP - 1);
     ProceduralUI.drawSlot(guiGraphics, this.leftPos + 152 + GUI_CENTER - 1, this.topPos + 8 + MAIN_TOP - 1);
     ProceduralUI.drawSlot(guiGraphics, this.leftPos + 152 + GUI_CENTER - 1, this.topPos + 60 + MAIN_TOP - 1);
 
-    // Player inventory (3x9 at (8 + col*18 + X_SHIFT, 84 + row*18 + Y_SHIFT))
     ProceduralUI.drawSlotGrid(guiGraphics,
         this.leftPos + 8 + GUI_CENTER - 1,
         this.topPos + 84 + MAIN_TOP - 1,
         9, 3, 0);
 
-    // Hotbar (1x9 at (8 + col*18 + X_SHIFT, 142 + Y_SHIFT))
     ProceduralUI.drawSlotGrid(guiGraphics,
         this.leftPos + 8 + GUI_CENTER - 1,
         this.topPos + 142 + MAIN_TOP - 1,
         9, 1, 0);
   }
 
-  /**
-   * Draws a border around the book page list area for better visibility.
-   */
   private void renderBookPageListBorder(GuiGraphics guiGraphics) {
-    // Book page list is at (guiCenter + 27, mainTop + 6) with size (101, 50)
+
     int listX = this.leftPos + GUI_CENTER + 27;
     int listY = this.topPos + MAIN_TOP + 6;
-    int listWidth = WINDOW_SIZE_X - 47 - 9 - 19; // 101
+    int listWidth = WINDOW_SIZE_X - 47 - 9 - 19;
     int listHeight = 50;
 
     ProceduralUI.drawInsetBorder(guiGraphics, listX - 1, listY - 1, listWidth + 2, listHeight + 2);
@@ -257,12 +229,10 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     super.render(guiGraphics, mouseX, mouseY, partialTick);
     this.renderTooltip(guiGraphics, mouseX, mouseY);
 
-    // Render foreground elements
     if (rootElement != null) {
       rootElement.renderForeground(guiGraphics, mouseX, mouseY);
     }
 
-    // Render element tooltips
     if (rootElement != null) {
       List<Component> tooltip = rootElement.getTooltipInfo(mouseX, mouseY);
       if (tooltip != null && !tooltip.isEmpty()) {
@@ -271,12 +241,8 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     }
   }
 
-  /**
-   * Gets the symbol being hovered over from the PagesProvider.
-   * Note: This uses the internal provider from our local PagesProvider implementation.
-   */
   private IAgeSymbol getHoveredSymbolFromProvider(int mouseX, int mouseY) {
-    // Check if mouse is over page surface area
+
     int surfaceX = this.leftPos + 58;
     int surfaceY = this.topPos + MAIN_TOP;
     int surfaceWidth = LEFT_SIZE - 53;
@@ -287,7 +253,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
       return null;
     }
 
-    // Use our own provider to get pages
     PagesProvider provider = new PagesProvider();
     List<MystGuiPageSurface.PositionableItem> pages = provider.getPositionedPages();
     if (pages == null) {
@@ -295,7 +260,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     }
 
     for (MystGuiPageSurface.PositionableItem item : pages) {
-      // Calculate item bounds
+
       float itemX = surfaceX + item.x;
       float itemY = surfaceY + item.y;
       float itemWidth = MystGuiPageSurface.PAGE_WIDTH;
@@ -315,17 +280,12 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     return null;
   }
 
-  /**
-   * Renders the symbol cost indicator showing ink cost and instability.
-   */
   private void renderSymbolCostIndicator(GuiGraphics guiGraphics, int mouseX, int mouseY) {
     List<Component> costTooltip = new ArrayList<>();
 
-    // Symbol name
     costTooltip.add(Component.literal(hoveredSymbol.getLocalizedName())
         .withStyle(ChatFormatting.AQUA));
 
-    // Category
     SymbolCategory category = hoveredSymbol.getCategory();
     if (category != null) {
       costTooltip.add(Component.literal("Category: " + category.name())
@@ -334,7 +294,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
 
     costTooltip.add(Component.empty());
 
-    // Ink cost
     int inkCost = calculateInkCost(hoveredSymbol);
     int currentInk = menu.getInkAmount();
     ChatFormatting inkColor = currentInk >= inkCost ? ChatFormatting.GREEN : ChatFormatting.RED;
@@ -343,7 +302,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         .append(Component.literal(inkCost + " mB")
             .withStyle(inkColor)));
 
-    // Instability cost
     float instability = hoveredSymbol.getInstabilityCost();
     ChatFormatting instabilityColor;
     if (instability < 0) {
@@ -360,10 +318,9 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         .append(Component.literal(String.format("%+.1f", instability))
             .withStyle(instabilityColor)));
 
-    // Card rank
     Integer rank = hoveredSymbol.getCardRank();
     if (rank != null && rank > 0) {
-      String rankStars = "\u2605".repeat(rank); // Star character
+      String rankStars = "\u2605".repeat(rank);
       ChatFormatting rankColor = switch (rank) {
         case 1 -> ChatFormatting.WHITE;
         case 2 -> ChatFormatting.GREEN;
@@ -377,30 +334,23 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
               .withStyle(rankColor)));
     }
 
-    // Warning if not enough ink
     if (currentInk < inkCost) {
       costTooltip.add(Component.empty());
       costTooltip.add(Component.literal("Not enough ink!")
           .withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
     }
 
-    // Render offset from cursor to not obscure the page
     guiGraphics.renderTooltip(this.font, costTooltip, java.util.Optional.empty(), mouseX + 16, mouseY);
   }
 
-  /**
-   * Calculates the ink cost for writing a symbol.
-   */
   private int calculateInkCost(IAgeSymbol symbol) {
     int baseCost = INK_COST_PER_SYMBOL;
 
-    // Higher rank symbols cost more
     Integer rank = symbol.getCardRank();
     if (rank != null && rank > 0) {
       baseCost *= rank;
     }
 
-    // High instability symbols cost more
     float instability = symbol.getInstabilityCost();
     if (instability > 10) {
       baseCost = (int) (baseCost * 1.5);
@@ -411,11 +361,9 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
 
   @Override
   protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-    // Note: renderLabels is called with an offset to the GUI origin (leftPos, topPos),
-    // so positions here are relative to (0, 0) of the GUI, not screen coordinates.
 
     int textColor = GuiTheme.color("text_primary") & 0x00FFFFFF;
-    // Right-panel header label (was previously baked into the texture).
+
     guiGraphics.drawString(this.font, this.title, GUI_CENTER + 8, MAIN_TOP - 12, textColor, false);
   }
 
@@ -443,12 +391,10 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
   }
 
-  // 1.20.1 signature (3 params)
   public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
     return handleMouseScroll(mouseX, mouseY, delta);
   }
 
-  // Newer screen API compatibility overload.
   public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
     return handleMouseScroll(mouseX, mouseY, scrollY);
   }
@@ -465,8 +411,8 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     if (rootElement != null && rootElement.keyPressed(keyCode, scanCode, modifiers)) {
       return true;
     }
-    // Allow closing with inventory key even when text field focused
-    if (keyCode == 256) { // Escape
+
+    if (keyCode == 256) {
       this.onClose();
       return true;
     }
@@ -480,8 +426,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     }
     return super.charTyped(codePoint, modifiers);
   }
-
-  // Handler implementations
 
   private class TabHandler implements MystGuiSurfaceTabs.TabHandler {
     @Override
@@ -499,14 +443,13 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
 
     @Override
     public void onTabClick(int button, int slot) {
-      // If holding item, try to place in tab slot
+
       ItemStack carried = menu.getCarried();
       if (!carried.isEmpty()) {
-        // TODO: Send packet to add to tab
+
         return;
       }
 
-      // Otherwise, set as active tab
       if (activeTabSlot != slot) {
         activeTabSlot = slot;
         MystcraftNetwork.sendToServer(new ContainerActionPacket(
@@ -538,7 +481,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
     public List<MystGuiPageSurface.PositionableItem> getPositionedPages() {
       List<MystGuiPageSurface.PositionableItem> result = new ArrayList<>();
 
-      // Get pages from active tab
       ItemStack tabItem = menu.getBlockEntity().getTabInventory().getItem(activeTabSlot);
       if (tabItem.isEmpty()) {
         return result;
@@ -555,7 +497,6 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         return result;
       }
 
-      // Sort if needed
       if (sortAlphabetically) {
         pages = new ArrayList<>(pages);
         pages.sort((a, b) -> {
@@ -565,12 +506,10 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
         });
       }
 
-      // Position pages in a grid
-      // Surface width is LEFT_SIZE - 53 = 175
       float x = 6;
       float y = 6;
       int slotId = 0;
-      int surfaceWidth = LEFT_SIZE - 53 - 16; // Account for scrollbar
+      int surfaceWidth = LEFT_SIZE - 53 - 16;
       for (ItemStack page : pages) {
         result.add(new MystGuiPageSurface.PositionableItem(slotId++, page, x, y, 1));
         x += MystGuiPageSurface.PAGE_WIDTH + 4;
@@ -632,16 +571,16 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
   private class BookPageListHandler implements MystGuiScrollablePages.PageListHandler {
     @Override
     public List<ItemStack> getPageList() {
-      // Get pages from writing slot using synchronized menu slot (includes NBT data)
+
       ItemStack writing = menu.slots.get(WritingDeskMenu.SLOT_WRITING).getItem();
       if (writing.isEmpty()) {
         return List.of();
       }
-      // Get pages from agebook
+
       if (writing.getItem() instanceof art.arcane.mystcraft.item.AgebookItem agebook) {
         return agebook.getPageList(writing);
       }
-      // Get pages from linkbook (requires player)
+
       if (writing.getItem() instanceof art.arcane.mystcraft.item.LinkbookItem linkbook) {
         return linkbook.getPageList(Minecraft.getInstance().player, writing);
       }
@@ -650,7 +589,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
 
     @Override
     public void onItemPlace(int index, boolean single) {
-      // Insert page into book
+
       MystcraftNetwork.sendToServer(new ContainerActionPacket(
           ContainerActionPacket.Action.WRITING_DESK_ADD_TO_BOOK,
           menu.containerId,
@@ -662,7 +601,7 @@ public class WritingDeskScreen extends AbstractContainerScreen<WritingDeskMenu> 
 
     @Override
     public void onItemRemove(int index) {
-      // Remove page from book
+
       MystcraftNetwork.sendToServer(new ContainerActionPacket(
           ContainerActionPacket.Action.WRITING_DESK_REMOVE_FROM_BOOK,
           menu.containerId,

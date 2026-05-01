@@ -1,9 +1,9 @@
 package art.arcane.mystcraft.entity;
 
 import art.arcane.mystcraft.registry.ModEntities;
+import art.arcane.mystcraft.util.NbtCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import art.arcane.mystcraft.util.NbtCompat;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -17,8 +17,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * A custom falling block entity for Mystcraft.
- * Used for special falling block effects in Ages.
+ * A custom falling block entity for Mystcraft. Used for special falling block
+ * effects in Ages.
  */
 public class MystcraftFallingBlockEntity extends Entity {
 
@@ -44,7 +44,7 @@ public class MystcraftFallingBlockEntity extends Entity {
 
   @Override
   protected void defineSynchedData() {
-    // No synched data needed
+
   }
 
   @Override
@@ -61,7 +61,6 @@ public class MystcraftFallingBlockEntity extends Entity {
 
     move(MoverType.SELF, getDeltaMovement());
 
-    // Handle landing
     if (onGround()) {
       if (!level().isClientSide) {
         land();
@@ -69,7 +68,6 @@ public class MystcraftFallingBlockEntity extends Entity {
       return;
     }
 
-    // Apply drag
     setDeltaMovement(getDeltaMovement().scale(0.98));
 
     if (time > 600) {
@@ -77,22 +75,18 @@ public class MystcraftFallingBlockEntity extends Entity {
     }
   }
 
-  /**
-   * Called when the falling block lands on the ground.
-   */
   private void land() {
     BlockPos landingPos = blockPosition();
     BlockState atPos = level().getBlockState(landingPos);
 
-    // Check if we can place the block here
     if (atPos.canBeReplaced() || atPos.isAir()) {
-      // Place the block
+
       if (level().setBlock(landingPos, blockState, Block.UPDATE_ALL)) {
-        // Handle falling block landing callback
+
         if (blockState.getBlock() instanceof FallingBlock fallingBlock) {
           fallingBlock.onLand(level(), landingPos, blockState, atPos, null);
         }
-        // Handle waterlogging if landing in water
+
         if (atPos.getFluidState().isSource() &&
             blockState.hasProperty(BlockStateProperties.WATERLOGGED)) {
           level().setBlock(landingPos,
@@ -101,7 +95,7 @@ public class MystcraftFallingBlockEntity extends Entity {
         }
       }
     } else {
-      // Can't place - drop as item
+
       Block.dropResources(blockState, level(), landingPos);
     }
 

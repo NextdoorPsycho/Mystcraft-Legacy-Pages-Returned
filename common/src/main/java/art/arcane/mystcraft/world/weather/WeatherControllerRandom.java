@@ -6,13 +6,13 @@ import net.minecraft.server.level.ServerLevel;
 import java.util.Random;
 
 /**
- * Rapidly changing weather controller.
- * Randomizes rain/thunder in short cycles for chaotic environments.
+ * Rapidly changing weather controller. Randomizes rain/thunder in short cycles
+ * for chaotic environments.
  */
 public class WeatherControllerRandom implements IWeatherController {
 
   public static final String TYPE = "random";
-  // Short cycles in ticks.
+
   private static final int CYCLE_BASE = 200;
   private static final int CYCLE_VARIANCE = 1000;
   private final Random random = new Random();
@@ -41,7 +41,6 @@ public class WeatherControllerRandom implements IWeatherController {
       }
     }
 
-    // Fast transitions for an unstable feel.
     if (raining) {
       rainLevel = Math.min(1.0f, rainLevel + 0.04f);
     } else {

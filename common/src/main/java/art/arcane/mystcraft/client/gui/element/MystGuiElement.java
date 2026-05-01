@@ -115,8 +115,6 @@ public abstract class MystGuiElement {
     return mouseX >= l && mouseX < l + width && mouseY >= t && mouseY < t + height;
   }
 
-  // Lifecycle methods
-
   public void tick() {
     onTick();
     for (MystGuiElement child : children) {
@@ -152,7 +150,7 @@ public abstract class MystGuiElement {
   @Nullable
   public List<Component> getTooltipInfo(int mouseX, int mouseY) {
     if (!visible) return null;
-    // Check children first (reverse order for z-order)
+
     for (int i = children.size() - 1; i >= 0; i--) {
       List<Component> childTooltip = children.get(i).getTooltipInfo(mouseX, mouseY);
       if (childTooltip != null) {
@@ -170,11 +168,9 @@ public abstract class MystGuiElement {
     return tooltip;
   }
 
-  // Input handling
-
   public boolean mouseClicked(double mouseX, double mouseY, int button) {
     if (!visible || !enabled) return false;
-    // Check children first (reverse order for z-order)
+
     for (int i = children.size() - 1; i >= 0; i--) {
       if (children.get(i).mouseClicked(mouseX, mouseY, button)) {
         return true;

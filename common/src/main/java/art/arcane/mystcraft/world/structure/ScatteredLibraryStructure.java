@@ -16,8 +16,8 @@ import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import java.util.Optional;
 
 /**
- * Scattered Library structure - small standalone library buildings in the overworld.
- * More common and smaller than the Abandoned Library.
+ * Scattered Library structure - small standalone library buildings in the
+ * overworld. More common and smaller than the Abandoned Library.
  */
 public class ScatteredLibraryStructure extends Structure {
 
@@ -76,10 +76,6 @@ public class ScatteredLibraryStructure extends Structure {
     );
   }
 
-  /**
-   * Checks if the location is suitable for a scattered library.
-   * Less restrictive than the abandoned library - allows more terrain variation.
-   */
   private boolean checkLocation(GenerationContext context) {
     ChunkPos chunkPos = context.chunkPos();
     int centerX = chunkPos.getMiddleBlockX();
@@ -92,12 +88,10 @@ public class ScatteredLibraryStructure extends Structure {
         context.randomState()
     );
 
-    // Don't generate underwater or too high
     if (surfaceY < 55 || surfaceY > 120) {
       return false;
     }
 
-    // Check for roughly flat terrain (more permissive than abandoned library)
     int corner1 = context.chunkGenerator().getFirstOccupiedHeight(
         centerX - 4, centerZ - 4,
         Heightmap.Types.WORLD_SURFACE_WG,

@@ -5,15 +5,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 /**
- * Interface for terrain generators that create the base terrain shape for an Age.
- * Implementations fill chunks with solid terrain blocks based on noise algorithms.
+ * Interface for terrain generators that create the base terrain shape for an
+ * Age. Implementations fill chunks with solid terrain blocks based on noise
+ * algorithms.
  */
 public interface ITerrainGenerator {
 
   /**
-   * Generates the base terrain for a chunk.
-   * This fills the chunk with terrain blocks, sea blocks, and air based on the
-   * generator's algorithm (noise-based, flat, void, etc.)
+   * Generates the base terrain for a chunk. This fills the chunk with terrain
+   * blocks, sea blocks, and air based on the generator's algorithm
+   * (noise-based, flat, void, etc.)
    *
    * @param chunkX The chunk X coordinate
    * @param chunkZ The chunk Z coordinate

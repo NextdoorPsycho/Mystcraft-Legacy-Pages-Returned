@@ -12,10 +12,10 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
  * Crystal formation populator that generates clusters of angled crystalline
- * shards growing from the ground at tilted angles. Each formation consists
- * of 3-7 shards radiating from a central point, leaning outward with
- * amethyst and prismarine materials.
- * Single-chunk populator using isInWritableArea for boundary safety.
+ * shards growing from the ground at tilted angles. Each formation consists of
+ * 3-7 shards radiating from a central point, leaning outward with amethyst and
+ * prismarine materials. Single-chunk populator using isInWritableArea for
+ * boundary safety.
  */
 public class CrystalFormationPopulator implements IPopulate {
 
@@ -41,10 +41,6 @@ public class CrystalFormationPopulator implements IPopulate {
     this.count = PopulatorConfig.getInt(params, "count", DEFAULT_COUNT);
   }
 
-  /**
-   * Position-deterministic hash. Same position always produces the same value
-   * regardless of which chunk is being populated.
-   */
   private static long positionHash(long seed, int x, int y, int z) {
     long h = seed;
     h ^= (long) x * 73856093L;
@@ -85,7 +81,6 @@ public class CrystalFormationPopulator implements IPopulate {
     int shardCount = MIN_SHARDS + (int) ((formationSeed & 0xFL) % (MAX_SHARDS - MIN_SHARDS + 1));
     long shardSeed = formationSeed;
 
-    // Place base cluster: small_amethyst_bud blocks at ground level around center
     placeBase(world, chunkPos, centerX, surfaceY, centerZ, formationSeed);
 
     for (int i = 0; i < shardCount; i++) {
@@ -99,7 +94,6 @@ public class CrystalFormationPopulator implements IPopulate {
     BlockState baseBud = Blocks.SMALL_AMETHYST_BUD.defaultBlockState();
     BlockState darkPrismarine = Blocks.DARK_PRISMARINE.defaultBlockState();
 
-    // Dark prismarine foundation pad
     for (int dx = -1; dx <= 1; dx++) {
       for (int dz = -1; dz <= 1; dz++) {
         BlockPos basePos = new BlockPos(centerX + dx, surfaceY, centerZ + dz);
@@ -109,7 +103,6 @@ public class CrystalFormationPopulator implements IPopulate {
       }
     }
 
-    // Small amethyst buds scattered around base
     for (int dx = -2; dx <= 2; dx++) {
       for (int dz = -2; dz <= 2; dz++) {
         if (dx == 0 && dz == 0) {
@@ -131,20 +124,16 @@ public class CrystalFormationPopulator implements IPopulate {
                              int shardIndex, int totalShards) {
     int shardHeight = MIN_SHARD_HEIGHT + (int) ((shardSeed & 0xFFL) % (MAX_SHARD_HEIGHT - MIN_SHARD_HEIGHT + 1));
 
-    // Distribute shards evenly around center, with hash-based jitter
     double baseAngle = (2.0 * Math.PI * shardIndex) / totalShards;
     double angleJitter = ((shardSeed >>> 8) & 0xFFL) / 255.0 * 0.6 - 0.3;
     double angle = baseAngle + angleJitter;
 
-    // Lean rate: how many blocks to offset laterally per lean interval
     int leanInterval = 3 + (int) ((shardSeed >>> 16) & 0x3);
     double leanDx = Math.cos(angle) * (0.8 + ((shardSeed >>> 20) & 0x3) * 0.3);
     double leanDz = Math.sin(angle) * (0.8 + ((shardSeed >>> 24) & 0x3) * 0.3);
 
-    // Shard width: 1 or 2 blocks
     int shardWidth = 1 + (int) ((shardSeed >>> 28) & 0x1);
 
-    // Start buried into terrain
     int startY = surfaceY - (2 + (int) ((shardSeed >>> 30) & 0x1));
 
     double currentDx = 0.0;
@@ -156,7 +145,6 @@ public class CrystalFormationPopulator implements IPopulate {
         break;
       }
 
-      // Apply lean offset at intervals
       if (dy > 0 && dy % leanInterval == 0) {
         currentDx += leanDx;
         currentDz += leanDz;
@@ -165,22 +153,19 @@ public class CrystalFormationPopulator implements IPopulate {
       int blockX = centerX + (int) Math.round(currentDx);
       int blockZ = centerZ + (int) Math.round(currentDz);
 
-      // Pick material based on position hash
       BlockState material = getShardMaterial(shardSeed, blockX, blockY, blockZ);
 
-      // Place the shard column (1 or 2 wide)
       if (shardWidth == 1) {
         placeSingleBlock(world, chunkPos, blockX, blockY, blockZ, material);
       } else {
-        // 2-wide: place a small cross pattern for thickness
+
         placeSingleBlock(world, chunkPos, blockX, blockY, blockZ, material);
-        // Extend in the lean direction for natural width
+
         int extX = blockX + (Math.abs(leanDx) > Math.abs(leanDz) ? 0 : (leanDx > 0 ? 1 : -1));
         int extZ = blockZ + (Math.abs(leanDz) > Math.abs(leanDx) ? 0 : (leanDz > 0 ? 1 : -1));
         placeSingleBlock(world, chunkPos, extX, blockY, extZ, material);
       }
 
-      // Place amethyst_cluster at the very top
       if (dy == shardHeight - 1) {
         BlockPos tipPos = new BlockPos(blockX, blockY + 1, blockZ);
         if (isInWritableArea(tipPos, chunkPos) && canPlaceCrystal(world, tipPos)) {
@@ -202,15 +187,14 @@ public class CrystalFormationPopulator implements IPopulate {
     long hash = positionHash(shardSeed, x, y, z);
     int roll = (int) ((hash >>> 8) & 0xFF);
 
-    // ~5% tinted glass
     if (roll < 13) {
       return Blocks.TINTED_GLASS.defaultBlockState();
     }
-    // ~10% budding amethyst
+
     if (roll < 39) {
       return Blocks.BUDDING_AMETHYST.defaultBlockState();
     }
-    // ~85% amethyst block
+
     return Blocks.AMETHYST_BLOCK.defaultBlockState();
   }
 
@@ -220,7 +204,7 @@ public class CrystalFormationPopulator implements IPopulate {
         || existing.is(BlockTags.LEAVES) || existing.is(Blocks.VINE)) {
       return true;
     }
-    // Allow replacing natural terrain so shards embed into the ground
+
     return existing.is(Blocks.STONE) ||
         existing.is(Blocks.DEEPSLATE) ||
         existing.is(Blocks.DIRT) ||

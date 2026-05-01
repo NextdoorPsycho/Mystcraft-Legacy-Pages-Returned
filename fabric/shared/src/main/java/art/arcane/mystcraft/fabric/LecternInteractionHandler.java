@@ -10,7 +10,8 @@ import net.minecraft.world.level.block.entity.LecternBlockEntity;
 import java.lang.reflect.Field;
 
 /**
- * Handles Mystcraft book interactions with vanilla lecterns using Fabric events.
+ * Handles Mystcraft book interactions with vanilla lecterns using Fabric
+ * events.
  */
 public class LecternInteractionHandler {
 
@@ -33,7 +34,6 @@ public class LecternInteractionHandler {
       var pos = hitResult.getBlockPos();
       var state = world.getBlockState(pos);
 
-      // Only handle vanilla lecterns
       if (!(state.getBlock() instanceof LecternBlock)) {
         return InteractionResult.PASS;
       }

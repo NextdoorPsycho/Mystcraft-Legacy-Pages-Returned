@@ -4,6 +4,9 @@ import art.arcane.mystcraft.platform.services.INetworkHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
+/**
+ * Fabric service implementation for common network dispatch requests.
+ */
 public class FabricNetworkHelper implements INetworkHelper {
   @Override
   public void register() {

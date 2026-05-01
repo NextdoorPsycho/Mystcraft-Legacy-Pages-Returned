@@ -14,16 +14,14 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Provider that creates player-based instability bonuses for Ages.
- * Tracks player deaths and survival time to modify Age instability.
+ * Provider that creates player-based instability bonuses for Ages. Tracks
+ * player deaths and survival time to modify Age instability.
  */
 public class PlayerBonusProvider implements IInstabilityBonusProvider {
 
-  // Default values for bonus calculations
   private static final int DEFAULT_SURVIVAL_BONUS = 25;
   private static final float DEFAULT_SURVIVAL_GROWTH = 0.005f;
 
-  // Track active bonuses per dimension per player
   private static final Map<Integer, Map<UUID, PlayerSurvivalBonus>> survivalBonuses = new HashMap<>();
 
   /**
@@ -40,7 +38,6 @@ public class PlayerBonusProvider implements IInstabilityBonusProvider {
     UUID playerId = player.getUUID();
     String playerName = player.getName().getString();
 
-    // Create and register survival bonus if not exists
     Map<UUID, PlayerSurvivalBonus> dimSurvivalBonuses = survivalBonuses.computeIfAbsent(dimId, k -> new HashMap<>());
     if (!dimSurvivalBonuses.containsKey(playerId)) {
       PlayerSurvivalBonus survivalBonus = new PlayerSurvivalBonus(
@@ -79,7 +76,7 @@ public class PlayerBonusProvider implements IInstabilityBonusProvider {
 
   @Override
   public void register(InstabilityBonusManager manager, int dimId) {
-    // Get the server level for this dimension
+
     MinecraftServer server = Mystcraft.getCurrentServer();
     if (server == null) {
       return;
@@ -91,20 +88,15 @@ public class PlayerBonusProvider implements IInstabilityBonusProvider {
       return;
     }
 
-    // Get Age data for author information
     AgeData ageData = AgeData.getIfPresent(level);
 
-    // Register bonuses for each player currently in the level
     for (ServerPlayer player : level.players()) {
       registerPlayerBonuses(manager, dimId, player);
     }
 
-    // Also register for any known authors (they get tracked even when not present)
     if (ageData != null) {
       for (String authorName : ageData.getAuthors()) {
-        // Authors get tracked for death penalty
-        // We can't easily get UUID from name, so authors are tracked by name
-        // This is a simplified implementation
+
       }
     }
   }

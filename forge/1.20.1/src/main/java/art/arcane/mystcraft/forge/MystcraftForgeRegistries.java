@@ -36,18 +36,16 @@ import net.minecraftforge.common.loot.IGlobalLootModifier;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.List;
 
 /**
  * Central holder for all Mystcraft DeferredRegister instances (1.20.1 version).
- * Consolidates all registry definitions including loot modifiers, villagers, and world gen.
+ * Consolidates all registry definitions including loot modifiers, villagers,
+ * and world gen.
  */
 public final class MystcraftForgeRegistries {
-
-  // ==================== Core Registries ====================
 
   public static final DeferredRegister<Block> BLOCKS =
       DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.BLOCKS, Mystcraft.MOD_ID);
@@ -85,8 +83,6 @@ public final class MystcraftForgeRegistries {
   public static final DeferredRegister<VillagerProfession> VILLAGER_PROFESSIONS =
       DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.VILLAGER_PROFESSIONS, Mystcraft.MOD_ID);
 
-  // ==================== World Generation Registries ====================
-
   public static final DeferredRegister<Codec<? extends ChunkGenerator>> CHUNK_GENERATORS =
       DeferredRegister.create(Registries.CHUNK_GENERATOR, Mystcraft.MOD_ID);
 
@@ -95,8 +91,6 @@ public final class MystcraftForgeRegistries {
 
   public static final DeferredRegister<StructureType<?>> STRUCTURE_TYPES =
       DeferredRegister.create(Registries.STRUCTURE_TYPE, Mystcraft.MOD_ID);
-
-  // ==================== Loot Modifier Registrations ====================
 
   public static final RegistryObject<Codec<ForgeLootModifiers.SymbolPageLootModifier>> SYMBOL_PAGE_LOOT =
       LOOT_MODIFIERS.register("symbol_page", ForgeLootModifiers.SymbolPageLootModifier.CODEC);
@@ -107,15 +101,11 @@ public final class MystcraftForgeRegistries {
   public static final RegistryObject<Codec<ForgeLootModifiers.BoosterPackLootModifier>> BOOSTER_PACK_LOOT =
       LOOT_MODIFIERS.register("booster_pack", ForgeLootModifiers.BoosterPackLootModifier.CODEC);
 
-  // ==================== World Gen Registrations ====================
-
   public static final RegistryObject<Codec<? extends ChunkGenerator>> AGE_CHUNK_GENERATOR =
       CHUNK_GENERATORS.register("age_chunk_generator", () -> AgeChunkGenerator.CODEC);
 
   public static final RegistryObject<Codec<? extends BiomeSource>> AGE_BIOME_SOURCE =
       BIOME_SOURCES.register("age_biome_source", () -> AgeBiomeSource.CODEC);
-
-  // ==================== Structure Registrations ====================
 
   public static final RegistryObject<StructureType<AbandonedLibraryStructure>> ABANDONED_LIBRARY =
       STRUCTURE_TYPES.register("abandoned_library",
@@ -128,8 +118,6 @@ public final class MystcraftForgeRegistries {
   public static final RegistryObject<StructureType<ScatteredLibraryStructure>> SCATTERED_LIBRARY =
       STRUCTURE_TYPES.register("scattered_library",
           () -> () -> ScatteredLibraryStructure.CODEC);
-
-  // ==================== Villager Registrations ====================
 
   /**
    * POI type for the Archivist workstation (Book Binder).
@@ -156,8 +144,6 @@ public final class MystcraftForgeRegistries {
           SoundEvents.VILLAGER_WORK_LIBRARIAN
       )
   );
-
-  // ==================== Creative Tab Registrations ====================
 
   /**
    * Main Mystcraft tab - blocks, items, tools
@@ -226,8 +212,8 @@ public final class MystcraftForgeRegistries {
   }
 
   /**
-   * Registers all DeferredRegister instances to the mod event bus.
-   * Call this from the main mod constructor.
+   * Registers all DeferredRegister instances to the mod event bus. Call this
+   * from the main mod constructor.
    */
   public static void register(IEventBus modEventBus) {
     BLOCKS.register(modEventBus);
@@ -246,7 +232,6 @@ public final class MystcraftForgeRegistries {
     BIOME_SOURCES.register(modEventBus);
     STRUCTURE_TYPES.register(modEventBus);
 
-    // Populate common ModStructures suppliers
     art.arcane.mystcraft.world.structure.ModStructures.ABANDONED_LIBRARY = ABANDONED_LIBRARY;
     art.arcane.mystcraft.world.structure.ModStructures.UNDERGROUND_ARCHIVE = UNDERGROUND_ARCHIVE;
     art.arcane.mystcraft.world.structure.ModStructures.SCATTERED_LIBRARY = SCATTERED_LIBRARY;

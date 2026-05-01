@@ -3,13 +3,14 @@ package art.arcane.mystcraft.api.world.logic;
 import net.minecraft.server.level.ServerLevel;
 
 /**
- * Interface for weather controllers that manage precipitation and weather events.
+ * Interface for weather controllers that manage precipitation and weather
+ * events.
  */
 public interface IWeatherController {
 
   /**
-   * Updates the weather for this Age.
-   * Called each tick to potentially change weather state.
+   * Updates the weather for this Age. Called each tick to potentially change
+   * weather state.
    *
    * @param level The server level
    */

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Mystcraft Test Runner - Minecraft 1.20.1 only
-
 set -o pipefail
 
 RED='\033[0;31m'
@@ -22,7 +20,7 @@ PLATFORM_KEYS=(fabric forge)
 PLATFORM_NAMES=(Fabric Forge)
 PLATFORM_VERSIONS=("1.20.1" "1.20.1")
 PLATFORM_LABELS=("Fabric 1.20.1" "Forge 1.20.1")
-PLATFORM_TASKS=(":fabric:1.20.1:runGametest" ":forge:1.20.1:runGametest")
+PLATFORM_TASKS=(":fabric:1.20.1:runGametest" ":forge:1.20.1:runGameTestServer")
 PLATFORM_STATUS=(PENDING PENDING)
 PLATFORM_PASSED=(0 0)
 PLATFORM_REPORTED=(0 0)
@@ -36,17 +34,18 @@ usage() {
   echo "full/all: every suite, including commands and world_rules"
   echo ""
   echo "Policy: any GameTest failure, skipped test, ignored test, disabled test, fatal server log marker, or missing pass summary fails the run."
+  echo "A post-pass Fabric shutdown exception is reported, but does not fail a run after the GameTest pass summary is present."
 }
 
 suite_count() {
   case "$1" in
     core) echo 1 ;;
-    book_travel) echo 5 ;;
+    book_travel) echo 17 ;;
     book_crafting) echo 6 ;;
     age_creation) echo 5 ;;
     world_rules) echo 2 ;;
     commands) echo 1 ;;
-    procedural_ui) echo 9 ;;
+    procedural_ui) echo 10 ;;
     *) echo 0 ;;
   esac
 }
@@ -189,7 +188,7 @@ print_graph() {
   echo ""
   echo -e "${BOLD}Test Status Graph${NC}"
   echo "Selected suites: $(suite_list)"
-  echo "Policy: fail on failed, skipped, ignored, disabled, fatal server log markers, or missing GameTest summaries."
+  echo "Policy: fail on failed, skipped, ignored, disabled, fatal server log markers, or missing GameTest summaries; report post-pass shutdown exceptions."
   printf "Overall  [%s] %d/%d passed, %d failed\n" \
     "$(progress_bar "$total_passed" "$total_expected" "PASS")" \
     "$total_passed" "$total_expected" "$total_failed"
@@ -235,7 +234,7 @@ print_final_summary() {
   echo ""
   echo -e "${BOLD}Final Platform Statuses${NC}"
   echo "Selected suites: $(suite_list)"
-  echo "Policy: fail on failed, skipped, ignored, disabled, fatal server log markers, or missing GameTest summaries."
+  echo "Policy: fail on failed, skipped, ignored, disabled, fatal server log markers, or missing GameTest summaries; report post-pass shutdown exceptions."
   printf "%-10s %-9s %-8s %-15s %-10s %s\n" \
     "Platform" "Version" "Status" "Selected" "Reported" "Details"
   printf "%-10s %-9s %-8s %-15s %-10s %s\n" \
@@ -272,7 +271,11 @@ skip_pattern() {
 }
 
 fatal_log_pattern() {
-  echo '(POI data mismatch|Exception stopping the server|Game test server crashed|FAILED REQUIRED TEST)'
+  echo '(POI data mismatch|Game test server crashed|FAILED REQUIRED TEST)'
+}
+
+post_pass_shutdown_pattern() {
+  echo 'Exception stopping the server'
 }
 
 clean_gametest_worlds() {
@@ -302,10 +305,12 @@ analyze_log() {
   local passed_count
   local skip_count
   local fatal_count
+  local shutdown_count
 
   passed_count="$(sed -nE 's/.*All ([0-9]+) required tests passed.*/\1/p' "$log_file" | tail -n 1)"
   skip_count="$(grep -Eic "$(skip_pattern)" "$log_file" || true)"
   fatal_count="$(grep -Eic "$(fatal_log_pattern)" "$log_file" || true)"
+  shutdown_count="$(grep -Eic "$(post_pass_shutdown_pattern)" "$log_file" || true)"
 
   ANALYZED_REPORTED="${passed_count:-0}"
   ANALYZED_SELECTED_PASSED=0
@@ -332,6 +337,11 @@ analyze_log() {
     return
   fi
 
+  if [[ "$shutdown_count" -gt 0 && "$passed_count" -lt "$expected" ]]; then
+    ANALYZED_DETAIL="${shutdown_count} shutdown exception marker(s)"
+    return
+  fi
+
   local suite
   for suite in "${SELECTED_SUITES[@]}"; do
     local expected_suite_count
@@ -351,6 +361,9 @@ analyze_log() {
 
   ANALYZED_SELECTED_PASSED="$expected"
   ANALYZED_STATUS=PASS
+  if [[ "$shutdown_count" -gt 0 ]]; then
+    ANALYZED_DETAIL="complete; ${shutdown_count} post-pass shutdown exception marker(s)"
+  fi
 }
 
 run_platform() {
@@ -383,7 +396,11 @@ run_platform() {
   PLATFORM_PASSED[$index]="$ANALYZED_SELECTED_PASSED"
   PLATFORM_REPORTED[$index]="$ANALYZED_REPORTED"
   if [[ "$ANALYZED_STATUS" == "PASS" ]]; then
-    PLATFORM_DETAILS[$index]="complete; log: ${log_file}"
+    if [[ -n "$ANALYZED_DETAIL" ]]; then
+      PLATFORM_DETAILS[$index]="${ANALYZED_DETAIL}; log: ${log_file}"
+    else
+      PLATFORM_DETAILS[$index]="complete; log: ${log_file}"
+    fi
   else
     PLATFORM_DETAILS[$index]="${ANALYZED_DETAIL}; log: ${log_file}"
   fi

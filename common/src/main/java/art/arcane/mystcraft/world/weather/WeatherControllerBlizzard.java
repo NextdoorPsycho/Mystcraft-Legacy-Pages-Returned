@@ -4,9 +4,9 @@ import art.arcane.mystcraft.api.world.logic.IWeatherController;
 import net.minecraft.server.level.ServerLevel;
 
 /**
- * Weather controller for intense blizzard conditions.
- * Constant heavy snow with strong winds (high precipitation level).
- * Biomes are treated as cold for snow particles.
+ * Weather controller for intense blizzard conditions. Constant heavy snow with
+ * strong winds (high precipitation level). Biomes are treated as cold for snow
+ * particles.
  */
 public class WeatherControllerBlizzard implements IWeatherController {
 
@@ -16,10 +16,9 @@ public class WeatherControllerBlizzard implements IWeatherController {
 
   @Override
   public void updateWeather(ServerLevel level) {
-    // Rapidly increase precipitation to max (blizzard intensity)
+
     rainLevel = Math.min(1.0f, rainLevel + 0.05f);
 
-    // Force heavy precipitation
     if (!level.isRaining()) {
       level.setWeatherParameters(0, 12000, true, false);
     }
@@ -27,17 +26,17 @@ public class WeatherControllerBlizzard implements IWeatherController {
 
   @Override
   public boolean isRaining() {
-    return true; // Precipitation active (renders as snow in cold)
+    return true;
   }
 
   @Override
   public boolean isThundering() {
-    return false; // Blizzards don't have thunder
+    return false;
   }
 
   @Override
   public float getRainLevel() {
-    return rainLevel; // High intensity precipitation
+    return rainLevel;
   }
 
   @Override

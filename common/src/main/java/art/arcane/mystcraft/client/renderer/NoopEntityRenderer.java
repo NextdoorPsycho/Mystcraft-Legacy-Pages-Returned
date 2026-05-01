@@ -8,8 +8,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 
 /**
- * A no-op entity renderer that doesn't render anything.
- * Used for entities like DummyEntity that should never be visible.
+ * A no-op entity renderer that doesn't render anything. Used for entities like
+ * DummyEntity that should never be visible.
  */
 public class NoopEntityRenderer<T extends Entity> extends EntityRenderer<T> {
 
@@ -21,7 +21,7 @@ public class NoopEntityRenderer<T extends Entity> extends EntityRenderer<T> {
   @Override
   public void render(T entity, float entityYaw, float partialTicks,
                      PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-    // No-op - render nothing
+
   }
 
   @Override

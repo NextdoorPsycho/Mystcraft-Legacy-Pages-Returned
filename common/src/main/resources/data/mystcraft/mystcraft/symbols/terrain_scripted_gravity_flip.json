@@ -19,19 +19,41 @@
           "op": "max",
           "a": {
             "op": "add",
-            "a": { "op": "sub", "a": 50, "b": { "var": "y" } },
+            "a": {
+              "op": "sub",
+              "a": 50,
+              "b": {
+                "var": "y"
+              }
+            },
             "b": {
               "op": "mul",
-              "a": { "op": "noise2", "scale": 0.01, "octaves": 4, "seed": 3344 },
+              "a": {
+                "op": "noise2",
+                "scale": 0.01,
+                "octaves": 4,
+                "seed": 3344
+              },
               "b": 30
             }
           },
           "b": {
             "op": "add",
-            "a": { "op": "sub", "a": { "var": "y" }, "b": 190 },
+            "a": {
+              "op": "sub",
+              "a": {
+                "var": "y"
+              },
+              "b": 190
+            },
             "b": {
               "op": "mul",
-              "a": { "op": "noise2", "scale": 0.01, "octaves": 4, "seed": 7788 },
+              "a": {
+                "op": "noise2",
+                "scale": 0.01,
+                "octaves": 4,
+                "seed": 7788
+              },
               "b": 30
             }
           }

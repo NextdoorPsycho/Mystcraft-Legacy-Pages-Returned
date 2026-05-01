@@ -65,7 +65,8 @@ public class DimensionSyncPacket {
   /**
    * Represents a registered Mystcraft dimension.
    */
-  public record DimensionEntry(int ageUID, ResourceLocation dimensionId, String ageName, boolean isUnstable) {
+  public record DimensionEntry(int ageUID, ResourceLocation dimensionId,
+                               String ageName, boolean isUnstable) {
   }
 
   /**

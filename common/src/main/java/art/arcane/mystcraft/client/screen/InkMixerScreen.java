@@ -9,13 +9,13 @@ import art.arcane.mystcraft.menu.InkMixerMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -29,19 +29,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Screen for the Ink Mixer block.
- * Click on the basin area while holding an item to add it to the ink.
+ * Screen for the Ink Mixer block. Click on the basin area while holding an item
+ * to add it to the ink.
  */
 public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
 
-  // Basin area - center of the GUI where ink is displayed
-  // Radius check: x*x + y*y < 900 (radius 30) around center (88, 49)
   private static final int BASIN_CENTER_X = 88;
   private static final int BASIN_CENTER_Y = 49;
   private static final int BASIN_RADIUS = 30;
   private static final int BASIN_RADIUS_SQ = BASIN_RADIUS * BASIN_RADIUS;
 
-  // Animation frame counter
   private int frame = 0;
 
   public InkMixerScreen(InkMixerMenu menu, Inventory playerInventory, Component title) {
@@ -50,214 +47,6 @@ public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
     this.imageHeight = 181;
   }
 
-  @Override
-  protected void init() {
-    super.init();
-    this.inventoryLabelY = this.imageHeight - 94;
-  }
-
-  @Override
-  public void containerTick() {
-    super.containerTick();
-    frame++;
-  }
-
-  @Override
-  protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-    RenderSystem.setShader(GameRenderer::getPositionTexShader);
-    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-
-    int x = this.leftPos;
-    int y = this.topPos;
-
-    // Container panel + raised border
-    ProceduralUI.drawPanel(guiGraphics, x, y, this.imageWidth, this.imageHeight);
-
-    // I/O slots: ink in (8,27), paper (8,48), ink out (152,27), craft result (152,48)
-    ProceduralUI.drawSlot(guiGraphics, x + 7, y + 26);
-    ProceduralUI.drawSlot(guiGraphics, x + 7, y + 47);
-    ProceduralUI.drawSlot(guiGraphics, x + 151, y + 26);
-    ProceduralUI.drawSlot(guiGraphics, x + 151, y + 47);
-
-    // Player inventory + hotbar (3x9 at 8,99 / hotbar at 8,157)
-    ProceduralUI.drawSlotGrid(guiGraphics, x + 7, y + 98, 9, 3, 0);
-    ProceduralUI.drawSlotGrid(guiGraphics, x + 7, y + 156, 9, 1, 0);
-
-    // Circular basin (rim + dark interior)
-    ProceduralUI.drawBasin(guiGraphics, x + BASIN_CENTER_X, y + BASIN_CENTER_Y, BASIN_RADIUS);
-
-    // Draw ink fill if mixer has ink (overlays the basin interior)
-    if (menu.hasInk()) {
-      renderInkTank(guiGraphics, x + BASIN_CENTER_X, y + BASIN_CENTER_Y, BASIN_RADIUS - 2);
-    }
-  }
-
-  /**
-   * Renders the ink tank as a colored disc with animated pulse + color ball.
-   */
-  private void renderInkTank(GuiGraphics guiGraphics, int centerX, int centerY, int radius) {
-    int baseColor = GuiTheme.color("ink_base");
-    ProceduralUI.drawDisc(guiGraphics, centerX, centerY, radius, baseColor);
-
-    // Get ink probabilities for color overlay
-    Map<String, Float> probabilities = menu.getInkProbabilities();
-    if (probabilities != null && !probabilities.isEmpty()) {
-      // Calculate blended color from property probabilities
-      float totalR = 0, totalG = 0, totalB = 0;
-      float totalWeight = 0;
-
-      List<Map.Entry<String, Float>> entries = new ArrayList<>(probabilities.entrySet());
-      for (Map.Entry<String, Float> entry : entries) {
-        InkEffects.PropertyColor color = InkEffects.getPropertyColor(entry.getKey());
-        if (color != null) {
-          float weight = entry.getValue();
-          totalR += color.r() * weight;
-          totalG += color.g() * weight;
-          totalB += color.b() * weight;
-          totalWeight += weight;
-        }
-      }
-
-      if (totalWeight > 0) {
-        // Normalize colors
-        totalR /= totalWeight;
-        totalG /= totalWeight;
-        totalB /= totalWeight;
-
-        // Animate with pulsing effect
-        float pulse = (float) (0.5 + 0.5 * Math.sin(frame / 20.0));
-        float intensity = 0.3f + 0.4f * pulse;
-
-        int r = (int) (totalR * 255 * intensity) & 0xFF;
-        int g = (int) (totalG * 255 * intensity) & 0xFF;
-        int b = (int) (totalB * 255 * intensity) & 0xFF;
-
-        // Tint disc with translucent overlay (gradient approximated by two passes)
-        int topColor = (0x40 << 24) | (r << 16) | (g << 8) | b;
-        int bottomColor = (0xB0 << 24) | (r << 16) | (g << 8) | b;
-        int midY = centerY;
-        for (int dy = -radius; dy <= radius; dy++) {
-          int span = (int) Math.floor(Math.sqrt(Math.max(0, radius * radius - dy * dy)));
-          int color = dy < 0 ? topColor : bottomColor;
-          guiGraphics.fill(centerX - span, midY + dy, centerX + span + 1, midY + dy + 1, color);
-        }
-
-        // Draw animated color ball in center
-        renderColorBall(guiGraphics, centerX, centerY, 20, totalR, totalG, totalB, pulse);
-      }
-    }
-  }
-
-  /**
-   * Renders an animated color "ball" effect in the center of the ink.
-   * Animated D'ni color renderer effect.
-   */
-  private void renderColorBall(GuiGraphics guiGraphics, int centerX, int centerY, float radius,
-                               float r, float g, float b, float pulse) {
-    // Animated radius
-    float animRadius = radius * (0.7f + 0.3f * pulse);
-
-    RenderSystem.enableBlend();
-    RenderSystem.defaultBlendFunc();
-    RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-    Matrix4f matrix = guiGraphics.pose().last().pose();
-    Tesselator tesselator = Tesselator.getInstance();
-    BufferBuilder buffer = tesselator.getBuilder();
-    buffer.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
-
-    // Center vertex (brightest)
-    float centerAlpha = pulse * 0.8f;
-    buffer.vertex(matrix, centerX, centerY, 0)
-        .color(r, g, b, centerAlpha)
-        .endVertex();
-
-    // Outer vertices (transparent)
-    int segments = 16;
-    for (int i = 0; i <= segments; i++) {
-      double angle = (2 * Math.PI * i) / segments;
-      float px = centerX + (float) Math.cos(angle) * animRadius;
-      float py = centerY + (float) Math.sin(angle) * animRadius;
-      buffer.vertex(matrix, px, py, 0)
-          .color(r, g, b, 0f)
-          .endVertex();
-    }
-
-    tesselator.end();
-    RenderSystem.disableBlend();
-  }
-
-  @Override
-  public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-    super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-    // Render property tooltips when hovering over basin
-    if (menu.hasInk()) {
-      int relX = mouseX - this.leftPos;
-      int relY = mouseY - this.topPos;
-      if (isInBasin(relX, relY)) {
-        renderInkTooltip(guiGraphics, mouseX, mouseY);
-      }
-    }
-  }
-
-  /**
-   * Renders a tooltip showing current ink properties, symbol affinities,
-   * and any tier bonus the blend has accumulated.
-   */
-  private void renderInkTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-    InkBlend blend = menu.getBlend();
-    Map<String, Float> probabilities = menu.getInkProbabilities();
-    boolean hasProperties = probabilities != null && !probabilities.isEmpty();
-    boolean hasAffinity = blend != null && !blend.isEmpty();
-    if (!hasProperties && !hasAffinity) {
-      return;
-    }
-
-    List<Component> tooltip = new ArrayList<>();
-
-    // ---- Section 1: Link properties --------------------------------------
-    if (hasProperties) {
-      tooltip.add(Component.literal("Link Properties").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
-      List<Map.Entry<String, Float>> sortedProps = new ArrayList<>(probabilities.entrySet());
-      sortedProps.sort(Comparator.<Map.Entry<String, Float>, Float>comparing(Map.Entry::getValue).reversed());
-      for (Map.Entry<String, Float> entry : sortedProps) {
-        String name = InkEffects.getLocalizedName(entry.getKey());
-        int percent = Math.round(entry.getValue() * 100f);
-        int color = InkEffects.getPropertyColorRGB(entry.getKey());
-        tooltip.add(Component.literal("  " + name + ": " + percent + "%")
-            .withStyle(style -> style.withColor(color)));
-      }
-    }
-
-    // ---- Section 2: Symbol affinities (top 3) ----------------------------
-    if (hasAffinity) {
-      List<Component> affinityLines = new ArrayList<>();
-      addAffinitySection(affinityLines, blend);
-      if (!affinityLines.isEmpty()) {
-        if (!tooltip.isEmpty()) tooltip.add(Component.empty());
-        tooltip.add(Component.literal("Symbol Affinity").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
-        tooltip.addAll(affinityLines);
-      }
-
-      // ---- Section 3: Tier bonus -----------------------------------------
-      int tier = blend.tierBonus();
-      if (tier > 0) {
-        if (!tooltip.isEmpty()) tooltip.add(Component.empty());
-        tooltip.add(Component.literal("Rarity Boost: +" + tier)
-            .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
-      }
-    }
-
-    if (!tooltip.isEmpty()) {
-      guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
-    }
-  }
-
-  /**
-   * Picks the top three (by weight, across symbol/category/poem-token maps)
-   * affinity entries and pushes formatted lines into {@code out}.
-   */
   private static void addAffinitySection(List<Component> out, InkBlend blend) {
     record Row(String label, float weight, ChatFormatting color) {
     }
@@ -314,12 +103,189 @@ public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
   }
 
   @Override
+  protected void init() {
+    super.init();
+    this.inventoryLabelY = this.imageHeight - 94;
+  }
+
+  @Override
+  public void containerTick() {
+    super.containerTick();
+    frame++;
+  }
+
+  @Override
+  protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    RenderSystem.setShader(GameRenderer::getPositionTexShader);
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+
+    int x = this.leftPos;
+    int y = this.topPos;
+
+    ProceduralUI.drawPanel(guiGraphics, x, y, this.imageWidth, this.imageHeight);
+
+    ProceduralUI.drawSlot(guiGraphics, x + 7, y + 26);
+    ProceduralUI.drawSlot(guiGraphics, x + 7, y + 47);
+    ProceduralUI.drawSlot(guiGraphics, x + 151, y + 26);
+    ProceduralUI.drawSlot(guiGraphics, x + 151, y + 47);
+
+    ProceduralUI.drawSlotGrid(guiGraphics, x + 7, y + 98, 9, 3, 0);
+    ProceduralUI.drawSlotGrid(guiGraphics, x + 7, y + 156, 9, 1, 0);
+
+    ProceduralUI.drawBasin(guiGraphics, x + BASIN_CENTER_X, y + BASIN_CENTER_Y, BASIN_RADIUS);
+
+    if (menu.hasInk()) {
+      renderInkTank(guiGraphics, x + BASIN_CENTER_X, y + BASIN_CENTER_Y, BASIN_RADIUS - 2);
+    }
+  }
+
+  private void renderInkTank(GuiGraphics guiGraphics, int centerX, int centerY, int radius) {
+    int baseColor = GuiTheme.color("ink_base");
+    ProceduralUI.drawDisc(guiGraphics, centerX, centerY, radius, baseColor);
+
+    Map<String, Float> probabilities = menu.getInkProbabilities();
+    if (probabilities != null && !probabilities.isEmpty()) {
+
+      float totalR = 0, totalG = 0, totalB = 0;
+      float totalWeight = 0;
+
+      List<Map.Entry<String, Float>> entries = new ArrayList<>(probabilities.entrySet());
+      for (Map.Entry<String, Float> entry : entries) {
+        InkEffects.PropertyColor color = InkEffects.getPropertyColor(entry.getKey());
+        if (color != null) {
+          float weight = entry.getValue();
+          totalR += color.r() * weight;
+          totalG += color.g() * weight;
+          totalB += color.b() * weight;
+          totalWeight += weight;
+        }
+      }
+
+      if (totalWeight > 0) {
+
+        totalR /= totalWeight;
+        totalG /= totalWeight;
+        totalB /= totalWeight;
+
+        float pulse = (float) (0.5 + 0.5 * Math.sin(frame / 20.0));
+        float intensity = 0.3f + 0.4f * pulse;
+
+        int r = (int) (totalR * 255 * intensity) & 0xFF;
+        int g = (int) (totalG * 255 * intensity) & 0xFF;
+        int b = (int) (totalB * 255 * intensity) & 0xFF;
+
+        int topColor = (0x40 << 24) | (r << 16) | (g << 8) | b;
+        int bottomColor = (0xB0 << 24) | (r << 16) | (g << 8) | b;
+        int midY = centerY;
+        for (int dy = -radius; dy <= radius; dy++) {
+          int span = (int) Math.floor(Math.sqrt(Math.max(0, radius * radius - dy * dy)));
+          int color = dy < 0 ? topColor : bottomColor;
+          guiGraphics.fill(centerX - span, midY + dy, centerX + span + 1, midY + dy + 1, color);
+        }
+
+        renderColorBall(guiGraphics, centerX, centerY, 20, totalR, totalG, totalB, pulse);
+      }
+    }
+  }
+
+  private void renderColorBall(GuiGraphics guiGraphics, int centerX, int centerY, float radius,
+                               float r, float g, float b, float pulse) {
+
+    float animRadius = radius * (0.7f + 0.3f * pulse);
+
+    RenderSystem.enableBlend();
+    RenderSystem.defaultBlendFunc();
+    RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+    Matrix4f matrix = guiGraphics.pose().last().pose();
+    Tesselator tesselator = Tesselator.getInstance();
+    BufferBuilder buffer = tesselator.getBuilder();
+    buffer.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
+
+    float centerAlpha = pulse * 0.8f;
+    buffer.vertex(matrix, centerX, centerY, 0)
+        .color(r, g, b, centerAlpha)
+        .endVertex();
+
+    int segments = 16;
+    for (int i = 0; i <= segments; i++) {
+      double angle = (2 * Math.PI * i) / segments;
+      float px = centerX + (float) Math.cos(angle) * animRadius;
+      float py = centerY + (float) Math.sin(angle) * animRadius;
+      buffer.vertex(matrix, px, py, 0)
+          .color(r, g, b, 0f)
+          .endVertex();
+    }
+
+    tesselator.end();
+    RenderSystem.disableBlend();
+  }
+
+  @Override
+  public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    super.render(guiGraphics, mouseX, mouseY, partialTick);
+
+    if (menu.hasInk()) {
+      int relX = mouseX - this.leftPos;
+      int relY = mouseY - this.topPos;
+      if (isInBasin(relX, relY)) {
+        renderInkTooltip(guiGraphics, mouseX, mouseY);
+      }
+    }
+  }
+
+  private void renderInkTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    InkBlend blend = menu.getBlend();
+    Map<String, Float> probabilities = menu.getInkProbabilities();
+    boolean hasProperties = probabilities != null && !probabilities.isEmpty();
+    boolean hasAffinity = blend != null && !blend.isEmpty();
+    if (!hasProperties && !hasAffinity) {
+      return;
+    }
+
+    List<Component> tooltip = new ArrayList<>();
+
+    if (hasProperties) {
+      tooltip.add(Component.literal("Link Properties").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+      List<Map.Entry<String, Float>> sortedProps = new ArrayList<>(probabilities.entrySet());
+      sortedProps.sort(Comparator.<Map.Entry<String, Float>, Float>comparing(Map.Entry::getValue).reversed());
+      for (Map.Entry<String, Float> entry : sortedProps) {
+        String name = InkEffects.getLocalizedName(entry.getKey());
+        int percent = Math.round(entry.getValue() * 100f);
+        int color = InkEffects.getPropertyColorRGB(entry.getKey());
+        tooltip.add(Component.literal("  " + name + ": " + percent + "%")
+            .withStyle(style -> style.withColor(color)));
+      }
+    }
+
+    if (hasAffinity) {
+      List<Component> affinityLines = new ArrayList<>();
+      addAffinitySection(affinityLines, blend);
+      if (!affinityLines.isEmpty()) {
+        if (!tooltip.isEmpty()) tooltip.add(Component.empty());
+        tooltip.add(Component.literal("Symbol Affinity").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
+        tooltip.addAll(affinityLines);
+      }
+
+      int tier = blend.tierBonus();
+      if (tier > 0) {
+        if (!tooltip.isEmpty()) tooltip.add(Component.empty());
+        tooltip.add(Component.literal("Rarity Boost: +" + tier)
+            .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
+      }
+    }
+
+    if (!tooltip.isEmpty()) {
+      guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+    }
+  }
+
+  @Override
   protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
     int textColor = GuiTheme.color("text_primary") & 0x00FFFFFF;
     guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, textColor, false);
     guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, textColor, false);
 
-    // Show "Click to add" hint when hovering over basin with item
     if (menu.hasInk() && !menu.getCarried().isEmpty()) {
       int relX = mouseX - this.leftPos;
       int relY = mouseY - this.topPos;
@@ -335,14 +301,14 @@ public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
 
   @Override
   public boolean mouseClicked(double mouseX, double mouseY, int button) {
-    // Check if clicking on basin area
+
     int relX = (int) mouseX - this.leftPos;
     int relY = (int) mouseY - this.topPos;
 
     if (isInBasin(relX, relY)) {
-      // Only process if player is holding an item and ink is present
+
       if (!menu.getCarried().isEmpty() && menu.hasInk()) {
-        // Send packet to server to consume item
+
         boolean rightClick = (button == 1);
         MystcraftNetwork.sendToServer(new ContainerActionPacket(
             ContainerActionPacket.Action.INK_MIXER_ADD_ITEM,
@@ -356,9 +322,6 @@ public class InkMixerScreen extends AbstractContainerScreen<InkMixerMenu> {
     return super.mouseClicked(mouseX, mouseY, button);
   }
 
-  /**
-   * Checks if the given position (relative to GUI) is within the basin area.
-   */
   private boolean isInBasin(int relX, int relY) {
     int dx = relX - BASIN_CENTER_X;
     int dy = relY - BASIN_CENTER_Y;

@@ -3,9 +3,9 @@ package art.arcane.mystcraft.world.lighting;
 import art.arcane.mystcraft.api.world.logic.ILightingController;
 
 /**
- * Dark lighting controller - halves all light levels.
- * Creates a perpetually dim atmosphere even during the day.
- * Makes torches less effective and exploration more dangerous.
+ * Dark lighting controller - halves all light levels. Creates a perpetually dim
+ * atmosphere even during the day. Makes torches less effective and exploration
+ * more dangerous.
  */
 public class LightingControllerDark implements ILightingController {
 
@@ -13,12 +13,12 @@ public class LightingControllerDark implements ILightingController {
 
   @Override
   public int getSkyLightLevel() {
-    return 8; // Reduced sky light
+    return 8;
   }
 
   @Override
   public int getMinLightLevel() {
-    return -1; // No minimum override
+    return -1;
   }
 
   @Override
@@ -33,13 +33,13 @@ public class LightingControllerDark implements ILightingController {
 
   @Override
   public int scaleLighting(int blockLightValue) {
-    // Halve all light values
+
     return blockLightValue / 2;
   }
 
   @Override
   public void generateLightBrightnessTable(float[] lightBrightnessTable) {
-    // Darker curve - halves all brightness values
+
     float f = 0.0F;
     for (int i = 0; i < lightBrightnessTable.length; ++i) {
       float f1 = 1.0F - i / 15F;
@@ -49,11 +49,11 @@ public class LightingControllerDark implements ILightingController {
 
   @Override
   public float getAmbientLightMultiplier() {
-    return 0.5f; // 50% darker ambient
+    return 0.5f;
   }
 
   @Override
   public float getDarknessFactor() {
-    return 0.3f; // 30% perpetual darkness
+    return 0.3f;
   }
 }

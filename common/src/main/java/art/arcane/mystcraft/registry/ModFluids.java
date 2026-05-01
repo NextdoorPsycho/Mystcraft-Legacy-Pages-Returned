@@ -6,8 +6,8 @@ import net.minecraft.world.level.material.FlowingFluid;
 import java.util.function.Supplier;
 
 /**
- * Common accessor for registered fluids.
- * Platform modules populate these suppliers during initialization.
+ * Common accessor for registered fluids. Platform modules populate these
+ * suppliers during initialization.
  */
 public final class ModFluids {
 

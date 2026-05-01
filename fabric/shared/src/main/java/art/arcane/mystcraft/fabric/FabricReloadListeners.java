@@ -17,7 +17,6 @@ public final class FabricReloadListeners {
   private FabricReloadListeners() {
   }
 
-  // ========== GRAMMAR RELOAD LISTENER ==========
   public static class GrammarReloadListener extends MystcraftGrammarReloadListener implements IdentifiableResourceReloadListener {
 
     private static final ResourceLocation ID = new ResourceLocation(Mystcraft.MOD_ID, "datapack_grammar");
@@ -28,7 +27,6 @@ public final class FabricReloadListeners {
     }
   }
 
-  // ========== SYMBOL RELOAD LISTENER ==========
   public static class SymbolReloadListener extends MystcraftSymbolReloadListener implements IdentifiableResourceReloadListener {
 
     private static final ResourceLocation ID = new ResourceLocation(Mystcraft.MOD_ID, "datapack_symbols");
@@ -39,7 +37,6 @@ public final class FabricReloadListeners {
     }
   }
 
-  // ========== INK AFFINITY RELOAD LISTENER ==========
   public static class AffinityReloadListener extends MystcraftAffinityReloadListener implements IdentifiableResourceReloadListener {
 
     private static final ResourceLocation ID = new ResourceLocation(Mystcraft.MOD_ID, "datapack_ink_affinity");
@@ -50,7 +47,6 @@ public final class FabricReloadListeners {
     }
   }
 
-  // ========== PROCEDURAL UI RELOAD LISTENER (CLIENT) ==========
   public static class ProceduralUiReloadListener implements IdentifiableResourceReloadListener,
       net.minecraft.server.packs.resources.ResourceManagerReloadListener {
 

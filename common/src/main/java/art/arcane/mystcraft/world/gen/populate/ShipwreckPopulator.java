@@ -16,8 +16,8 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 
 /**
  * Shipwreck populator that generates sunken or beached ship structures.
- * Shipwrecks consist of oak/spruce planks and logs in a boat hull shape,
- * with up to 3 loot chests. Approximately 1 per 24 chunks.
+ * Shipwrecks consist of oak/spruce planks and logs in a boat hull shape, with
+ * up to 3 loot chests. Approximately 1 per 24 chunks.
  */
 public class ShipwreckPopulator implements IPopulate {
 
@@ -54,9 +54,8 @@ public class ShipwreckPopulator implements IPopulate {
     int surfaceY = world.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, x, z);
     int waterSurfaceY = world.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z);
 
-    // Must be underwater or at the beach water line
     if (surfaceY >= waterSurfaceY - 1) {
-      // Check for beached variant (surface must be sand/gravel near water)
+
       BlockState ground = world.getBlockState(new BlockPos(x, surfaceY - 1, z));
       boolean isBeach = ground.is(Blocks.SAND) || ground.is(Blocks.GRAVEL);
       if (!isBeach) {
@@ -66,9 +65,8 @@ public class ShipwreckPopulator implements IPopulate {
 
     BlockPos pos = new BlockPos(x, surfaceY, z);
 
-    // Random rotation
     boolean rotated = random.nextBoolean();
-    // Random tilt (partially buried)
+
     int tilt = random.nextInt(3) - 1;
 
     generateShipwreck(world, random, pos, rotated, tilt);
@@ -99,7 +97,6 @@ public class ShipwreckPopulator implements IPopulate {
         Blocks.OAK_LOG.defaultBlockState() :
         Blocks.SPRUCE_LOG.defaultBlockState();
 
-    // Build hull
     for (int l = 0; l < length; l++) {
       int tiltOffset = (l * tilt) / length;
 
@@ -108,16 +105,13 @@ public class ShipwreckPopulator implements IPopulate {
         int dz = rotated ? w : l;
         int dy = tiltOffset;
 
-        // Damage: random holes in the structure
         if (damaged && random.nextFloat() < 0.25f) {
           continue;
         }
 
-        // Hull bottom
         BlockPos hullPos = pos.offset(dx, dy, dz);
         safeSetBlock(world, hullPos, hull);
 
-        // Sides (walls)
         boolean isSide = w == -width / 2 || w == width / 2;
         if (isSide) {
           for (int h = 1; h < height; h++) {
@@ -129,7 +123,6 @@ public class ShipwreckPopulator implements IPopulate {
           }
         }
 
-        // Bow and stern walls
         boolean isBow = l == 0;
         boolean isStern = l == length - 1;
         if (isBow || isStern) {
@@ -143,7 +136,6 @@ public class ShipwreckPopulator implements IPopulate {
         }
       }
 
-      // Mast at center-ish
       if (l == length / 2 && !damaged) {
         int dx = rotated ? l : 0;
         int dz = rotated ? 0 : l;
@@ -154,7 +146,6 @@ public class ShipwreckPopulator implements IPopulate {
       }
     }
 
-    // Place up to 3 chests
     int chestsPlaced = 0;
     for (int attempt = 0; attempt < 10 && chestsPlaced < 3; attempt++) {
       int l = random.nextInt(length);
@@ -173,11 +164,14 @@ public class ShipwreckPopulator implements IPopulate {
           ChestBlock.FACING, rotated ? Direction.NORTH : Direction.EAST), 2);
       BlockEntity be = world.getBlockEntity(chestPos);
       if (be instanceof ChestBlockEntity chest) {
-        // Alternate between shipwreck loot tables
+
         switch (chestsPlaced) {
-          case 0 -> chest.setLootTable(BuiltInLootTables.SHIPWRECK_MAP, random.nextLong());
-          case 1 -> chest.setLootTable(BuiltInLootTables.SHIPWRECK_SUPPLY, random.nextLong());
-          default -> chest.setLootTable(BuiltInLootTables.SHIPWRECK_TREASURE, random.nextLong());
+          case 0 ->
+              chest.setLootTable(BuiltInLootTables.SHIPWRECK_MAP, random.nextLong());
+          case 1 ->
+              chest.setLootTable(BuiltInLootTables.SHIPWRECK_SUPPLY, random.nextLong());
+          default ->
+              chest.setLootTable(BuiltInLootTables.SHIPWRECK_TREASURE, random.nextLong());
         }
         chestsPlaced++;
       }

@@ -6,6 +6,9 @@ import net.minecraft.world.effect.MobEffectInstance;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
+/**
+ * Bridges mob-effect constructors and accessors used by instability effects.
+ */
 public final class MobEffectCompat {
 
   private static final Constructor<MobEffectInstance> CTOR_EFFECT =

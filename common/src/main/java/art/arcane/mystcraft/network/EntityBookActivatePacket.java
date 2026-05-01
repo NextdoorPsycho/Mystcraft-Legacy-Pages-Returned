@@ -7,8 +7,8 @@ import net.minecraft.world.entity.Entity;
 
 /**
  * Packet sent from client to server to activate a book in a LinkbookEntity.
- * This is sent when the player clicks the "Link" button in the book GUI
- * that was opened from a LinkbookEntity on the ground.
+ * This is sent when the player clicks the "Link" button in the book GUI that
+ * was opened from a LinkbookEntity on the ground.
  */
 public class EntityBookActivatePacket {
 
@@ -37,18 +37,15 @@ public class EntityBookActivatePacket {
         return;
       }
 
-      // Find the entity by ID
       Entity entity = player.level().getEntity(packet.entityId);
       if (!(entity instanceof LinkbookEntity bookEntity)) {
         return;
       }
 
-      // Validate distance - player must be close enough to interact
       if (player.distanceToSqr(bookEntity) > MAX_INTERACTION_DISTANCE_SQ) {
         return;
       }
 
-      // Activate the book
       bookEntity.activateBook(player);
     });
   }

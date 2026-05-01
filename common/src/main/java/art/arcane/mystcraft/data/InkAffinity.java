@@ -42,88 +42,50 @@ import java.util.Map;
 public final class InkAffinity {
 
   /**
-   * Immutable per-item / per-tag affinity contribution. All maps are
-   * unmodifiable; callers do not mutate them after construction.
+   * Canonical empty entry — returned for items with no registered affinity.
    */
-  public record Entry(
-      float amountPerItem,
-      int tierBonus,
-      Map<ResourceLocation, Float> symbolWeights,
-      Map<SymbolCategory, Float> categoryWeights,
-      Map<String, Float> poemTokenWeights,
-      Map<String, Float> linkPropertyWeights
-  ) {
-
-    public Entry {
-      symbolWeights = symbolWeights == null ? Map.of() : Map.copyOf(symbolWeights);
-      categoryWeights = categoryWeights == null ? Map.of() : Map.copyOf(categoryWeights);
-      poemTokenWeights = poemTokenWeights == null ? Map.of() : normalizeKeys(poemTokenWeights);
-      linkPropertyWeights = linkPropertyWeights == null ? Map.of() : Map.copyOf(linkPropertyWeights);
-      amountPerItem = Math.max(0f, amountPerItem);
-    }
-
-    /**
-     * Returns true iff every contribution is empty / zero (so the entry
-     * has no effect when added to a blend).
-     */
-    public boolean isEmpty() {
-      return symbolWeights.isEmpty() && categoryWeights.isEmpty()
-          && poemTokenWeights.isEmpty() && linkPropertyWeights.isEmpty()
-          && tierBonus == 0;
-    }
-
-    private static Map<String, Float> normalizeKeys(Map<String, Float> in) {
-      Map<String, Float> out = new LinkedHashMap<>(in.size());
-      for (Map.Entry<String, Float> e : in.entrySet()) {
-        if (e.getKey() == null) continue;
-        out.put(e.getKey().trim(), e.getValue());
-      }
-      return Collections.unmodifiableMap(out);
-    }
-  }
-
-  /** Canonical empty entry — returned for items with no registered affinity. */
   public static final Entry EMPTY = new Entry(0f, 0, Map.of(), Map.of(), Map.of(), Map.of());
-
   private static final Map<Item, Entry> ITEM_ENTRIES = new HashMap<>();
   private static final Map<TagKey<Item>, Entry> TAG_ENTRIES = new HashMap<>();
-
   private InkAffinity() {
   }
 
-  // -------------------------------------------------------------------------
-  // Registration
-  // -------------------------------------------------------------------------
-
-  /** Registers an affinity entry for a specific item. Replaces any prior entry. */
+  /**
+   * Registers an affinity entry for a specific item. Replaces any prior entry.
+   */
   public static synchronized void register(@NotNull Item item, @NotNull Entry entry) {
     ITEM_ENTRIES.put(item, entry);
   }
 
-  /** Registers an affinity entry for an item tag. Replaces any prior entry. */
+  /**
+   * Registers an affinity entry for an item tag. Replaces any prior entry.
+   */
   public static synchronized void register(@NotNull TagKey<Item> tag, @NotNull Entry entry) {
     TAG_ENTRIES.put(tag, entry);
   }
 
-  /** Removes an item-level entry. */
+  /**
+   * Removes an item-level entry.
+   */
   public static synchronized void unregister(@NotNull Item item) {
     ITEM_ENTRIES.remove(item);
   }
 
-  /** Removes a tag-level entry. */
+  /**
+   * Removes a tag-level entry.
+   */
   public static synchronized void unregister(@NotNull TagKey<Item> tag) {
     TAG_ENTRIES.remove(tag);
   }
 
-  /** Drops every registered entry. Called by the JSON loader before re-applying. */
+  /**
+   * Drops every registered entry. Called by the JSON loader before
+   * re-applying.
+   */
   public static synchronized void clear() {
     ITEM_ENTRIES.clear();
     TAG_ENTRIES.clear();
   }
-
-  // -------------------------------------------------------------------------
-  // Lookup
-  // -------------------------------------------------------------------------
 
   /**
    * Resolves the affinity entry for an item stack.
@@ -148,24 +110,73 @@ public final class InkAffinity {
     return EMPTY;
   }
 
-  /** Whether the stack carries any non-empty affinity. */
+  /**
+   * Whether the stack carries any non-empty affinity.
+   */
   public static boolean hasAffinity(@Nullable ItemStack stack) {
     Entry e = getAffinity(stack);
     return !e.isEmpty();
   }
 
-  /** Number of registered item-level entries (testing aid). */
+  /**
+   * Number of registered item-level entries (testing aid).
+   */
   public static synchronized int size() {
     return ITEM_ENTRIES.size() + TAG_ENTRIES.size();
   }
 
-  /** Read-only view of all registered item entries (testing aid). */
+  /**
+   * Read-only view of all registered item entries (testing aid).
+   */
   public static synchronized Map<Item, Entry> itemEntries() {
     return Map.copyOf(ITEM_ENTRIES);
   }
 
-  /** Read-only view of all registered tag entries (testing aid). */
+  /**
+   * Read-only view of all registered tag entries (testing aid).
+   */
   public static synchronized Map<TagKey<Item>, Entry> tagEntries() {
     return Map.copyOf(TAG_ENTRIES);
+  }
+
+  /**
+   * Immutable per-item / per-tag affinity contribution. All maps are
+   * unmodifiable; callers do not mutate them after construction.
+   */
+  public record Entry(
+      float amountPerItem,
+      int tierBonus,
+      Map<ResourceLocation, Float> symbolWeights,
+      Map<SymbolCategory, Float> categoryWeights,
+      Map<String, Float> poemTokenWeights,
+      Map<String, Float> linkPropertyWeights
+  ) {
+
+    public Entry {
+      symbolWeights = symbolWeights == null ? Map.of() : Map.copyOf(symbolWeights);
+      categoryWeights = categoryWeights == null ? Map.of() : Map.copyOf(categoryWeights);
+      poemTokenWeights = poemTokenWeights == null ? Map.of() : normalizeKeys(poemTokenWeights);
+      linkPropertyWeights = linkPropertyWeights == null ? Map.of() : Map.copyOf(linkPropertyWeights);
+      amountPerItem = Math.max(0f, amountPerItem);
+    }
+
+    private static Map<String, Float> normalizeKeys(Map<String, Float> in) {
+      Map<String, Float> out = new LinkedHashMap<>(in.size());
+      for (Map.Entry<String, Float> e : in.entrySet()) {
+        if (e.getKey() == null) continue;
+        out.put(e.getKey().trim(), e.getValue());
+      }
+      return Collections.unmodifiableMap(out);
+    }
+
+    /**
+     * Returns true iff every contribution is empty / zero (so the entry has no
+     * effect when added to a blend).
+     */
+    public boolean isEmpty() {
+      return symbolWeights.isEmpty() && categoryWeights.isEmpty()
+          && poemTokenWeights.isEmpty() && linkPropertyWeights.isEmpty()
+          && tierBonus == 0;
+    }
   }
 }

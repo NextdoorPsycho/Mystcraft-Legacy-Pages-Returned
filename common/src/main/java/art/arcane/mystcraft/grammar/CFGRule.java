@@ -8,16 +8,18 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Represents a Context-Free Grammar rule for Age generation.
- * A rule defines how a parent token expands into a list of child tokens.
+ * Represents a Context-Free Grammar rule for Age generation. A rule defines how
+ * a parent token expands into a list of child tokens.
  */
-public record CFGRule(ResourceLocation parent, List<ResourceLocation> values, Integer rank) implements WeightedItemSelector.IWeightedItem {
+public record CFGRule(ResourceLocation parent, List<ResourceLocation> values,
+                      Integer rank) implements WeightedItemSelector.IWeightedItem {
 
   /**
    * Creates a new CFG rule.
    *
    * @param parent The token that this rule expands
-   * @param values The tokens this rule produces (can be empty for epsilon rules)
+   * @param values The tokens this rule produces (can be empty for epsilon
+   *               rules)
    * @param rank   The rarity rank (null for extension rules, higher = rarer)
    */
   public CFGRule(ResourceLocation parent, List<ResourceLocation> values, Integer rank) {
@@ -41,9 +43,7 @@ public record CFGRule(ResourceLocation parent, List<ResourceLocation> values, In
     if (rank == null) {
       return 0;
     }
-    // Look up the dynamically computed weight from the grammar generator's rank data.
-    // Each rule's weight depends on the rank distribution of all rules
-    // sharing the same parent token.
+
     CFGGrammarGenerator.RankData rankData = CFGGrammarGenerator.getRankData(parent);
     if (rankData != null && rankData.rankWeights != null) {
       Integer weight = rankData.rankWeights.get(rank);
@@ -51,7 +51,7 @@ public record CFGRule(ResourceLocation parent, List<ResourceLocation> values, In
         return weight;
       }
     }
-    // Fallback if grammar hasn't been built yet
+
     return 1;
   }
 

@@ -12,8 +12,8 @@ import net.minecraft.util.RandomSource;
 import org.joml.Matrix4f;
 
 /**
- * Renderer for ColoredLightningEntity.
- * Based on vanilla LightningBoltRenderer but uses the entity's color.
+ * Renderer for ColoredLightningEntity. Based on vanilla LightningBoltRenderer
+ * but uses the entity's color.
  */
 public class ColoredLightningRenderer extends EntityRenderer<ColoredLightningEntity> {
 
@@ -65,7 +65,6 @@ public class ColoredLightningRenderer extends EntityRenderer<ColoredLightningEnt
       baseBrightness += (random.nextFloat() - random.nextFloat());
     }
 
-    // Get custom color from entity
     float red = entity.getRed();
     float green = entity.getGreen();
     float blue = entity.getBlue();
@@ -112,7 +111,6 @@ public class ColoredLightningRenderer extends EntityRenderer<ColoredLightningEnt
             alpha *= 0.5F;
           }
 
-          // Draw with custom color
           quad(matrix4f, vertexConsumer, currentX, currentY, segment, nextX, nextY, red, green, blue, alpha, false, false, true, false);
           quad(matrix4f, vertexConsumer, currentX, currentY, segment, nextX, nextY, red, green, blue, alpha, true, false, true, true);
           quad(matrix4f, vertexConsumer, currentX, currentY, segment, nextX, nextY, red, green, blue, alpha, true, true, false, true);
@@ -124,6 +122,6 @@ public class ColoredLightningRenderer extends EntityRenderer<ColoredLightningEnt
 
   @Override
   public ResourceLocation getTextureLocation(ColoredLightningEntity entity) {
-    return null; // Lightning doesn't use textures
+    return null;
   }
 }

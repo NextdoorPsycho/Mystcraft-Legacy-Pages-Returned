@@ -26,7 +26,13 @@
                 "op": "abs",
                 "input": {
                   "op": "sin",
-                  "input": { "op": "mul", "a": { "var": "x" }, "b": 0.04 }
+                  "input": {
+                    "op": "mul",
+                    "a": {
+                      "var": "x"
+                    },
+                    "b": 0.04
+                  }
                 }
               },
               "b": {
@@ -35,14 +41,22 @@
                   "op": "abs",
                   "input": {
                     "op": "sin",
-                    "input": { "op": "mul", "a": { "var": "z" }, "b": 0.05 }
+                    "input": {
+                      "op": "mul",
+                      "a": {
+                        "var": "z"
+                      },
+                      "b": 0.05
+                    }
                   }
                 },
                 "b": 50
               }
             }
           },
-          "b": { "var": "y" }
+          "b": {
+            "var": "y"
+          }
         }
       }
     },

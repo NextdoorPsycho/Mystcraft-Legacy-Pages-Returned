@@ -57,20 +57,19 @@ public class AgeDataSyncHandler {
     int ageUID = ageData.getAgeUID();
     if (ageUID <= 0) return;
 
-    // Create a compound tag with all the data we need on the client
     CompoundTag syncData = new CompoundTag();
     syncData.putString("AgeName", ageData.getAgeName());
     syncData.putFloat("Instability", ageData.getInstability());
 
-    // Include the Age configuration for rendering
     CompoundTag config = new CompoundTag();
     config.putString("WeatherType", ageData.getWeatherType());
     config.putString("LightingType", ageData.getLightingType());
     config.putString("BiomeController", ageData.getBiomeController());
 
-    // Colors (-1 means not set, so only include if set)
-    if (ageData.getSkyColor() != -1) config.putInt("SkyColor", ageData.getSkyColor());
-    if (ageData.getFogColor() != -1) config.putInt("FogColor", ageData.getFogColor());
+    if (ageData.getSkyColor() != -1)
+      config.putInt("SkyColor", ageData.getSkyColor());
+    if (ageData.getFogColor() != -1)
+      config.putInt("FogColor", ageData.getFogColor());
     java.util.List<Integer> grassColors = ageData.getGrassColors();
     if (!grassColors.isEmpty()) {
       int[] arr = new int[grassColors.size()];
@@ -79,27 +78,29 @@ public class AgeDataSyncHandler {
       }
       config.putIntArray("GrassColors", arr);
     }
-    if (ageData.getFoliageColor() != -1) config.putInt("FoliageColor", ageData.getFoliageColor());
-    if (ageData.getWaterColor() != -1) config.putInt("WaterColor", ageData.getWaterColor());
-    if (ageData.getCloudColor() != -1) config.putInt("CloudColor", ageData.getCloudColor());
-    if (ageData.getNightSkyColor() != -1) config.putInt("NightSkyColor", ageData.getNightSkyColor());
-    if (ageData.getHorizonColor() != -1) config.putInt("HorizonColor", ageData.getHorizonColor());
-    if (ageData.getSunsetColor() != -1) config.putInt("SunsetColor", ageData.getSunsetColor());
+    if (ageData.getFoliageColor() != -1)
+      config.putInt("FoliageColor", ageData.getFoliageColor());
+    if (ageData.getWaterColor() != -1)
+      config.putInt("WaterColor", ageData.getWaterColor());
+    if (ageData.getCloudColor() != -1)
+      config.putInt("CloudColor", ageData.getCloudColor());
+    if (ageData.getNightSkyColor() != -1)
+      config.putInt("NightSkyColor", ageData.getNightSkyColor());
+    if (ageData.getHorizonColor() != -1)
+      config.putInt("HorizonColor", ageData.getHorizonColor());
+    if (ageData.getSunsetColor() != -1)
+      config.putInt("SunsetColor", ageData.getSunsetColor());
 
-    // Special
     config.putBoolean("HorizonHidden", ageData.isHorizonHidden());
 
-    // World heights
     config.putFloat("CloudHeight", ageData.getCloudHeight());
     config.putFloat("HorizonHeight", ageData.getHorizonHeight());
 
     syncData.put("AgeConfig", config);
 
-    // Send the packet
     SyncAgeDataPacket packet = new SyncAgeDataPacket(ageUID, syncData);
     MystcraftNetwork.sendToPlayer(packet, player);
 
-    // Log color pipeline trace for debugging
     Mystcraft.LOGGER.info("[AgeSync] Age {} -> player {}: sky=0x{}, fog=0x{}, grass=0x{}, foliage=0x{}, water=0x{}, cloud=0x{}, nightSky=0x{}, sunset=0x{}",
         ageUID, player.getName().getString(),
         ageData.getSkyColor() != -1 ? Integer.toHexString(ageData.getSkyColor()) : "none",

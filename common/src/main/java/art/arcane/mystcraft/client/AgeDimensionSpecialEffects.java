@@ -3,6 +3,7 @@ package art.arcane.mystcraft.client;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.util.ColorUtils;
+import art.arcane.mystcraft.util.RenderCompat;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
@@ -11,7 +12,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
-import art.arcane.mystcraft.util.RenderCompat;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -20,41 +20,28 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 /**
- * Custom dimension special effects for Mystcraft Ages.
- * Provides control over sky rendering colors and fog.
+ * Custom dimension special effects for Mystcraft Ages. Provides control over
+ * sky rendering colors and fog.
  * <p>
- * This class is responsible for rendering the custom sky, including:
- * - Custom sky colors
- * - Void rendering
- * - Horizon hiding
+ * This class is responsible for rendering the custom sky, including: - Custom
+ * sky colors - Void rendering - Horizon hiding
  */
 public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
 
   private static final ResourceLocation SUN_LOCATION = new ResourceLocation("textures/environment/sun.png");
   private static final ResourceLocation MOON_PHASES_LOCATION = new ResourceLocation("textures/environment/moon_phases.png");
 
-  /**
-   * Tracks which age UIDs have already been logged to avoid per-frame spam.
-   */
   private static final java.util.Set<Integer> LOGGED_SKY_AGES = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
 
   public AgeDimensionSpecialEffects() {
-    // Use overworld-like settings as base
-    // float cloudLevel, boolean hasGround, SkyType skyType, boolean forceBrightLightmap, boolean constantAmbientLight
+
     super(192.0F, true, SkyType.NORMAL, false, false);
   }
 
-  /**
-   * Dynamically resolves the age UID from the current client level.
-   * Returns -1 if not in a Mystcraft age.
-   */
   private static int getCurrentAgeUID() {
     return AgeColorUtils.getCurrentAgeUID();
   }
 
-  /**
-   * Maps a 0-1 temperature value to an RGB star color for the fallback renderer.
-   */
   private static int[] starColorFromTemperature(float t) {
     if (t < 0.15f) return new int[]{180, 200, 255};
     if (t < 0.4f) return new int[]{255, 255, 255};
@@ -65,7 +52,7 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
 
   @Override
   public Vec3 getBrightnessDependentFogColor(Vec3 fogColor, float dayTime) {
-    // Get custom fog color from age data
+
     int ageUID = getCurrentAgeUID();
     int customFogColor = ageUID >= 0 ? ClientAgeDataCache.getFogColor(ageUID) : -1;
     if (customFogColor != -1) {
@@ -73,12 +60,10 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
       float g = ColorUtils.getGreen(customFogColor) / 255.0f;
       float b = ColorUtils.getBlue(customFogColor) / 255.0f;
 
-      // Apply time-of-day darkening
       float dayFactor = ColorUtils.calculateDayFactor(dayTime);
       return new Vec3(r * dayFactor, g * dayFactor, b * dayFactor);
     }
 
-    // Default: darken fog at night like overworld
     return fogColor.multiply(dayTime * 0.94F + 0.06F, dayTime * 0.94F + 0.06F, dayTime * 0.91F + 0.09F);
   }
 
@@ -88,21 +73,20 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
   }
 
   /**
-   * Called to render the sky for this dimension.
-   * Returns true if we fully handle sky rendering (hide vanilla sky).
+   * Called to render the sky for this dimension. Returns true if we fully
+   * handle sky rendering (hide vanilla sky).
    */
   public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack,
                            Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
-    // Check if we should use custom sky rendering
+
     int ageUID = getCurrentAgeUID();
-    if (ageUID < 0) return false; // Not in an age, let vanilla handle
+    if (ageUID < 0) return false;
     int skyColor = ClientAgeDataCache.getSkyColor(ageUID);
     boolean horizonHidden = ClientAgeDataCache.isHorizonHidden(ageUID);
 
     int fogColor = ClientAgeDataCache.getFogColor(ageUID);
     int nightSkyColor = ClientAgeDataCache.getNightSkyColor(ageUID);
 
-    // Log once per age for render pipeline tracing
     if (LOGGED_SKY_AGES.add(ageUID)) {
       Mystcraft.LOGGER.info("[SkyRender] Age {}: skyColor=0x{}, fogColor=0x{}, nightSky=0x{}, horizonHidden={}, customRenderer={}",
           ageUID,
@@ -113,20 +97,16 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
           skyColor != -1 || fogColor != -1 || nightSkyColor != -1 || horizonHidden);
     }
 
-    // If all defaults and no custom colors, let vanilla handle it.
     if (skyColor == -1 && fogColor == -1 && nightSkyColor == -1 && !horizonHidden) {
       return false;
     }
 
-    // We're handling sky rendering
     setupFog.run();
 
     float dayTime = level.getTimeOfDay(partialTick);
 
-    // Render sky dome
     renderSkyDome(poseStack, level, partialTick, skyColor, dayTime);
 
-    // Render vanilla-style stars if it's dark enough.
     float starBrightness = getStarBrightness(level, partialTick);
     if (starBrightness > 0) {
       renderStars(poseStack, level, partialTick, starBrightness);
@@ -135,15 +115,11 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     renderDefaultSun(poseStack, level, partialTick, dayTime);
     renderDefaultMoon(poseStack, level, partialTick, dayTime);
 
-    // Render void if player is below horizon
     renderVoid(poseStack, camera, horizonHidden);
 
-    return true; // We handled sky rendering
+    return true;
   }
 
-  /**
-   * Renders the sky dome with the appropriate color.
-   */
   private void renderSkyDome(PoseStack poseStack, ClientLevel level, float partialTick, int customColor, float dayTime) {
     float r, g, b;
 
@@ -152,13 +128,12 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
       g = ColorUtils.getGreen(customColor) / 255.0f;
       b = ColorUtils.getBlue(customColor) / 255.0f;
 
-      // Apply time-of-day dimming
       float dayFactor = ColorUtils.calculateDayFactor(dayTime);
       r *= dayFactor;
       g *= dayFactor;
       b *= dayFactor;
     } else {
-      // Use vanilla sky color calculation
+
       Vec3 skyColor = level.getSkyColor(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition(), partialTick);
       r = (float) skyColor.x;
       g = (float) skyColor.y;
@@ -174,7 +149,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     BufferBuilder builder = Tesselator.getInstance().getBuilder();
     Matrix4f matrix = poseStack.last().pose();
 
-    // Render sky dome
     builder.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION);
     builder.vertex(matrix, 0.0F, 16.0F, 0.0F).endVertex();
 
@@ -192,9 +166,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     RenderSystem.depthMask(true);
   }
 
-  /**
-   * Renders fallback stars with multi-layer parallax and color temperature variation.
-   */
   private void renderStars(PoseStack poseStack, ClientLevel level, float partialTick, float starBrightness) {
     int ageUID = getCurrentAgeUID();
     long timeMs = System.currentTimeMillis();
@@ -207,7 +178,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     RenderSystem.depthMask(false);
     RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-    // Three layers at different rotation speeds for depth parallax
     renderStarLayer(poseStack, dayTime, starBrightness * 0.5f, false, timeMs,
         nightSkyColor, 10842L, 500, 0.7f, 0.08f, 0.13f, 0.0f);
     renderStarLayer(poseStack, dayTime, starBrightness * 0.8f, false, timeMs,
@@ -301,9 +271,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     poseStack.popPose();
   }
 
-  /**
-   * Renders the default sun.
-   */
   private void renderDefaultSun(PoseStack poseStack, ClientLevel level, float partialTick, float dayTime) {
     RenderSystem.enableBlend();
     RenderSystem.blendFuncSeparate(
@@ -335,9 +302,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     RenderSystem.disableBlend();
   }
 
-  /**
-   * Renders the default moon.
-   */
   private void renderDefaultMoon(PoseStack poseStack, ClientLevel level, float partialTick, float dayTime) {
     RenderSystem.enableBlend();
     RenderSystem.blendFuncSeparate(
@@ -377,9 +341,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     RenderSystem.disableBlend();
   }
 
-  /**
-   * Renders the void below the horizon.
-   */
   private void renderVoid(PoseStack poseStack, Camera camera, boolean horizonHidden) {
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null) return;
@@ -396,7 +357,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
       BufferBuilder builder = Tesselator.getInstance().getBuilder();
       Matrix4f matrix = poseStack.last().pose();
 
-      // Render black band at horizon
       builder.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
 
       for (int i = 0; i <= 64; i++) {
@@ -416,9 +376,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     }
   }
 
-  /**
-   * Gets star brightness based on time and rain.
-   */
   private float getStarBrightness(ClientLevel level, float partialTick) {
     float dayTime = level.getTimeOfDay(partialTick);
     float brightness = 1.0F - (Mth.cos(dayTime * ((float) Math.PI * 2F)) * 2.0F + 0.25F);
@@ -431,7 +388,7 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
   @Nullable
   @Override
   public float[] getSunriseColor(float dayTime, float partialTick) {
-    // Custom sunset colors based on age configuration
+
     int ageUID = getCurrentAgeUID();
     if (ageUID < 0) return super.getSunriseColor(dayTime, partialTick);
     int sunsetColor = ClientAgeDataCache.getSunsetColor(ageUID);
@@ -450,13 +407,12 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
       }
     }
 
-    // Use default vanilla sunset colors
     return super.getSunriseColor(dayTime, partialTick);
   }
 
   /**
-   * Renders custom clouds for the Age.
-   * Returns true if we handled cloud rendering, false to let vanilla handle it.
+   * Renders custom clouds for the Age. Returns true if we handled cloud
+   * rendering, false to let vanilla handle it.
    */
   public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack,
                               double camX, double camY, double camZ, Matrix4f projectionMatrix) {
@@ -464,26 +420,21 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     if (ageUID < 0) return false;
     int cloudColor = ClientAgeDataCache.getCloudColor(ageUID);
 
-    // If no custom cloud color, let vanilla handle it
     if (cloudColor == -1) {
       return false;
     }
 
-    // Custom cloud rendering with Age-defined color
     renderCustomClouds(level, ticks, partialTick, poseStack, camX, camY, camZ, cloudColor);
     return true;
   }
 
-  /**
-   * Renders clouds with a custom color.
-   */
   private void renderCustomClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack,
                                   double camX, double camY, double camZ, int cloudColor) {
     Minecraft mc = Minecraft.getInstance();
 
     int ageUID = getCurrentAgeUID();
     float cloudHeight = ageUID >= 0 ? ClientAgeDataCache.getCloudHeight(ageUID) : 192.0f;
-    float cloudSpeed = 0.03F;   // Cloud movement speed
+    float cloudSpeed = 0.03F;
 
     RenderSystem.disableCull();
     RenderSystem.enableBlend();
@@ -497,7 +448,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     float f = (float) (cloudHeight - camY + 0.33F);
     float cloudOffset = (ticks + partialTick) * cloudSpeed;
 
-    // Calculate cloud position
     double d0 = (camX + cloudOffset) / 12.0D;
     double d1 = camZ / 12.0D + 0.33D;
 
@@ -507,12 +457,10 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
     float texU = (float) (d0 - (double) Mth.floor(d0));
     float texV = (float) (d1 - (double) Mth.floor(d1));
 
-    // Extract custom cloud color
     float r = ColorUtils.getRed(cloudColor) / 255.0f;
     float g = ColorUtils.getGreen(cloudColor) / 255.0f;
     float b = ColorUtils.getBlue(cloudColor) / 255.0f;
 
-    // Apply weather darkening
     Vec3 weatherColor = level.getCloudColor(partialTick);
     float weatherFactor = (float) ((weatherColor.x + weatherColor.y + weatherColor.z) / 3.0D);
     r *= weatherFactor;
@@ -527,7 +475,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
 
     builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL);
 
-    // Render cloud layer
     for (int i = -3; i <= 4; i++) {
       for (int j = -3; j <= 4; j++) {
         float x0 = (float) i * 8;
@@ -535,7 +482,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
         float x1 = x0 - texU;
         float z1 = z0 - texV;
 
-        // Top face
         if (f > -5.0F) {
           builder.vertex(matrix, x1 + 0, f + 4, z1 + 8)
               .uv((x0 + 0) * 0.00390625F + texU * 0.00390625F, (z0 + 8) * 0.00390625F + texV * 0.00390625F)
@@ -559,7 +505,6 @@ public class AgeDimensionSpecialEffects extends DimensionSpecialEffects {
               .endVertex();
         }
 
-        // Bottom face
         if (f < 5.0F) {
           float darkR = r * 0.7F;
           float darkG = g * 0.7F;

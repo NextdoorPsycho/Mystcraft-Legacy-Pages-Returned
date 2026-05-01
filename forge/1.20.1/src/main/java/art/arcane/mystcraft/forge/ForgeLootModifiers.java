@@ -26,7 +26,6 @@ public final class ForgeLootModifiers {
   private ForgeLootModifiers() {
   }
 
-  // ========== GUIDEBOOK LOOT MODIFIER ==========
   public static class GuidebookLootModifier extends LootModifier {
 
     public static final Supplier<Codec<GuidebookLootModifier>> CODEC = Suppliers.memoize(() ->
@@ -47,7 +46,6 @@ public final class ForgeLootModifiers {
         return generatedLoot;
       }
 
-      // Add a guidebook to the loot
       generatedLoot.add(new ItemStack(ModItems.GUIDEBOOK.get()));
 
       return generatedLoot;
@@ -59,7 +57,6 @@ public final class ForgeLootModifiers {
     }
   }
 
-  // ========== BOOSTER PACK LOOT MODIFIER ==========
   public static class BoosterPackLootModifier extends LootModifier {
 
     public static final Supplier<Codec<BoosterPackLootModifier>> CODEC = Suppliers.memoize(() ->
@@ -82,7 +79,7 @@ public final class ForgeLootModifiers {
 
     @Override
     protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-      // Check if booster loot is enabled
+
       if (!MystcraftConfig.enableBoosterLoot.get()) {
         return generatedLoot;
       }
@@ -104,7 +101,6 @@ public final class ForgeLootModifiers {
     }
   }
 
-  // ========== SYMBOL PAGE LOOT MODIFIER ==========
   public static class SymbolPageLootModifier extends LootModifier {
 
     public static final Supplier<Codec<SymbolPageLootModifier>> CODEC = Suppliers.memoize(() ->
@@ -127,7 +123,7 @@ public final class ForgeLootModifiers {
 
     @Override
     protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-      // Check if page loot is enabled
+
       if (!MystcraftConfig.enablePageLoot.get()) {
         return generatedLoot;
       }
@@ -136,7 +132,6 @@ public final class ForgeLootModifiers {
         return generatedLoot;
       }
 
-      // Determine how many pages to add
       int pageCount = minPages + context.getRandom().nextInt(maxPages - minPages + 1);
 
       for (int i = 0; i < pageCount; i++) {

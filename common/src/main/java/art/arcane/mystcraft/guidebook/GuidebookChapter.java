@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a chapter in the Mystcraft Guidebook.
- * Each chapter has a title and contains multiple pages.
+ * Represents a chapter in the Mystcraft Guidebook. Each chapter has a title and
+ * contains multiple pages.
  */
 public class GuidebookChapter {
 

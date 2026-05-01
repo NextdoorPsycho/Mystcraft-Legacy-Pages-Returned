@@ -9,9 +9,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Base class for all Mystcraft linking events.
- * These events are created during the linking process to allow inspection
- * and cancellation of linking operations.
+ * Base class for all Mystcraft linking events. These events are created during
+ * the linking process to allow inspection and cancellation of linking
+ * operations.
  */
 public abstract class LinkEvent {
 
@@ -55,12 +55,9 @@ public abstract class LinkEvent {
     return sourcePos;
   }
 
-  // --- Event Subtypes ---
-
   /**
-   * Fired before any link processing begins.
-   * Cancel this event to prevent the link entirely.
-   * This is the first event in the link chain.
+   * Fired before any link processing begins. Cancel this event to prevent the
+   * link entirely. This is the first event in the link chain.
    */
   public static class Allow extends LinkEvent {
     private String cancelReason = "";
@@ -100,9 +97,8 @@ public abstract class LinkEvent {
   }
 
   /**
-   * Fired after Allow but before teleportation.
-   * Allows modification of the destination position and rotation.
-   * Cannot cancel the link at this stage.
+   * Fired after Allow but before teleportation. Allows modification of the
+   * destination position and rotation. Cannot cancel the link at this stage.
    */
   public static class Alter extends LinkEvent {
     private Vec3 targetPosition;
@@ -161,9 +157,9 @@ public abstract class LinkEvent {
   }
 
   /**
-   * Fired immediately before the teleportation occurs.
-   * Last chance to read state before the entity moves.
-   * Canceling this event will abort the teleport.
+   * Fired immediately before the teleportation occurs. Last chance to read
+   * state before the entity moves. Canceling this event will abort the
+   * teleport.
    */
   public static class Start extends LinkEvent {
     private final ServerLevel targetLevel;
@@ -216,9 +212,8 @@ public abstract class LinkEvent {
   }
 
   /**
-   * Fired after the entity has been successfully teleported.
-   * The entity is now in the target dimension at the target position.
-   * Cannot be canceled.
+   * Fired after the entity has been successfully teleported. The entity is now
+   * in the target dimension at the target position. Cannot be canceled.
    */
   public static class End extends LinkEvent {
     private final ServerLevel targetLevel;
@@ -247,8 +242,8 @@ public abstract class LinkEvent {
   }
 
   /**
-   * Fired if the link fails for any reason.
-   * Contains information about why the link failed.
+   * Fired if the link fails for any reason. Contains information about why the
+   * link failed.
    */
   public static class Failed extends LinkEvent {
     private final FailureReason reason;
@@ -276,13 +271,13 @@ public abstract class LinkEvent {
     }
 
     public enum FailureReason {
-      CANCELLED,           // Cancelled by Allow event
-      INVALID_DESTINATION, // No valid destination in link data
-      DIMENSION_NOT_FOUND, // Target dimension doesn't exist
-      PERMISSION_DENIED,   // Player lacks permission
-      START_CANCELLED,     // Cancelled by Start event
-      TELEPORT_FAILED,     // Minecraft teleportation failed
-      UNKNOWN              // Unknown error
+      CANCELLED,
+      INVALID_DESTINATION,
+      DIMENSION_NOT_FOUND,
+      PERMISSION_DENIED,
+      START_CANCELLED,
+      TELEPORT_FAILED,
+      UNKNOWN
     }
   }
 }

@@ -11,10 +11,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Generates clean cylindrical shafts punched straight through terrain down
- * to bedrock level. Perfectly circular with smooth stone/crying obsidian
- * rim at the surface. Something drilled these out. The walls are unnervingly
- * smooth and the bottom is just... void darkness.
+ * Generates clean cylindrical shafts punched straight through terrain down to
+ * bedrock level. Perfectly circular with smooth stone/crying obsidian rim at
+ * the surface. Something drilled these out. The walls are unnervingly smooth
+ * and the bottom is just... void darkness.
  */
 public class VoidHolesPopulator implements IPopulate {
 
@@ -83,19 +83,17 @@ public class VoidHolesPopulator implements IPopulate {
   }
 
   private void generateVoidHole(WorldGenLevel world, BlockPos chunkPos,
-                                 int cx, int surfaceY, int cz, int radius) {
+                                int cx, int surfaceY, int cz, int radius) {
     int radiusSq = radius * radius;
     int rimRadiusSq = (radius + 1) * (radius + 1);
     int bottomY = world.getMinBuildHeight() + 1;
 
-    // Surface rim: raised ring of obsidian/crying obsidian
     for (int dx = -(radius + 2); dx <= radius + 2; dx++) {
       for (int dz = -(radius + 2); dz <= radius + 2; dz++) {
         int distSq = dx * dx + dz * dz;
         int bx = cx + dx;
         int bz = cz + dz;
 
-        // Rim blocks (just outside the hole)
         if (distSq > radiusSq && distSq <= rimRadiusSq + 4) {
           for (int dy = 0; dy <= 1; dy++) {
             BlockPos rimPos = new BlockPos(bx, surfaceY + dy, bz);
@@ -117,7 +115,6 @@ public class VoidHolesPopulator implements IPopulate {
             world.setBlock(rimPos, rimBlock, 2);
           }
 
-          // Tinted glass cap on some rim blocks (viewing windows into the abyss)
           if (distSq <= rimRadiusSq) {
             long glassHash = positionHash(seed ^ 0x6A55L, bx, surfaceY, bz);
             if (hashFloat(glassHash) < 0.15f) {
@@ -131,7 +128,6 @@ public class VoidHolesPopulator implements IPopulate {
       }
     }
 
-    // Drill the shaft: clear everything inside the cylinder from surface to bottom
     for (int dx = -radius; dx <= radius; dx++) {
       for (int dz = -radius; dz <= radius; dz++) {
         int distSq = dx * dx + dz * dz;
@@ -148,7 +144,6 @@ public class VoidHolesPopulator implements IPopulate {
             continue;
           }
 
-          // Wall lining: smooth stone/deepslate on the exact edge
           boolean isEdge = (dx * dx + dz * dz) >= (radius - 1) * (radius - 1);
           if (isEdge) {
             long wallHash = positionHash(seed, bx, y, bz);
@@ -165,7 +160,6 @@ public class VoidHolesPopulator implements IPopulate {
       }
     }
 
-    // Eerie glow at the bottom: scattered shroomlight/soul lanterns
     for (int dx = -(radius - 2); dx <= radius - 2; dx++) {
       for (int dz = -(radius - 2); dz <= radius - 2; dz++) {
         int distSq = dx * dx + dz * dz;

@@ -21,11 +21,10 @@ public class TerrainGeneratorVoid extends TerrainGeneratorBase {
 
     for (int x = 0; x < 16; x++) {
       for (int z = 0; z < 16; z++) {
-        // Place bedrock at minimum build height
+
         pos.set(x, chunk.getMinBuildHeight(), z);
         chunk.setBlockState(pos, Blocks.BEDROCK.defaultBlockState(), false);
 
-        // Fill rest with air
         for (int y = chunk.getMinBuildHeight() + 1; y < chunk.getMaxBuildHeight(); y++) {
           pos.set(x, y, z);
           chunk.setBlockState(pos, Blocks.AIR.defaultBlockState(), false);
@@ -37,7 +36,7 @@ public class TerrainGeneratorVoid extends TerrainGeneratorBase {
   @Override
   protected double[] initializeNoiseField(double[] field, int x, int y, int z,
                                           int xSize, int ySize, int zSize) {
-    // Void terrain doesn't use noise
+
     return new double[xSize * ySize * zSize];
   }
 

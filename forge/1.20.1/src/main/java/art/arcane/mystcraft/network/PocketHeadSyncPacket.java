@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Client -> Server packet that syncs a player's head-based wall palette.
- * Used in dev/offline environments where the server cannot resolve skins.
+ * Client -> Server packet that syncs a player's head-based wall palette. Used
+ * in dev/offline environments where the server cannot resolve skins.
  */
 public class PocketHeadSyncPacket {
 
@@ -82,10 +82,8 @@ public class PocketHeadSyncPacket {
         return;
       }
 
-      // Cache for future pocket creation.
       PersonalPocketData.get(server).setHeadBlocks(player.getUUID(), packet.headBlocks);
 
-      // If the pocket is already loaded, apply immediately.
       int uid = PersonalPocketDimension.getPersonalAgeUid(player.getUUID());
       ServerLevel level = AgeManager.get(server).getAgeLevel(server, uid);
       if (level == null) {

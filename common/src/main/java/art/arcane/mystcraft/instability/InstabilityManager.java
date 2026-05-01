@@ -7,6 +7,7 @@ import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.util.MobEffectCompat;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import net.minecraft.core.BlockPos;
@@ -14,7 +15,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
-import art.arcane.mystcraft.util.MobEffectCompat;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
@@ -25,39 +25,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Manages instability effects in Mystcraft Ages.
- * Higher instability leads to more frequent and severe negative effects.
+ * Manages instability effects in Mystcraft Ages. Higher instability leads to
+ * more frequent and severe negative effects.
  * <p>
- * This system mirrors the original Mystcraft approach:
- * - Instability accumulates from missing/conflicting symbols
- * - Effects only trigger once instability exceeds configurable thresholds
- * - Effect frequency scales with how far instability exceeds the threshold
- * - A global multiplier allows server admins to tune difficulty
+ * This system mirrors the original Mystcraft approach: - Instability
+ * accumulates from missing/conflicting symbols - Effects only trigger once
+ * instability exceeds configurable thresholds - Effect frequency scales with
+ * how far instability exceeds the threshold - A global multiplier allows server
+ * admins to tune difficulty
  */
 public final class InstabilityManager {
 
-  // Positive effects pool: effect, duration ticks, amplifier
   private static final Object[][] POSITIVE_EFFECTS = {
-      {MobEffects.MOVEMENT_SPEED, 600, 0},        // Speed 30s
-      {MobEffects.DIG_SPEED, 600, 0},              // Haste 30s
-      {MobEffects.DAMAGE_BOOST, 400, 0},            // Strength 20s
-      {MobEffects.JUMP, 600, 0},                    // Jump Boost 30s
-      {MobEffects.REGENERATION, 200, 0},             // Regeneration 10s
-      {MobEffects.DAMAGE_RESISTANCE, 300, 0},        // Resistance 15s
-      {MobEffects.NIGHT_VISION, 1200, 0},            // Night Vision 60s
+      {MobEffects.MOVEMENT_SPEED, 600, 0},
+      {MobEffects.DIG_SPEED, 600, 0},
+      {MobEffects.DAMAGE_BOOST, 400, 0},
+      {MobEffects.JUMP, 600, 0},
+      {MobEffects.REGENERATION, 200, 0},
+      {MobEffects.DAMAGE_RESISTANCE, 300, 0},
+      {MobEffects.NIGHT_VISION, 1200, 0},
   };
 
-  // --- Config Accessors ---
-  // Negative effects pool: effect, duration ticks, amplifier
   private static final Object[][] NEGATIVE_EFFECTS = {
-      {MobEffects.WITHER, 100, 0},                  // Wither 5s
-      {MobEffects.POISON, 100, 0},                   // Poison 5s
-      {MobEffects.HUNGER, 200, 1},                   // Hunger 10s amp 2
-      {MobEffects.MOVEMENT_SLOWDOWN, 160, 0},        // Slowness 8s
-      {MobEffects.WEAKNESS, 160, 0},                 // Weakness 8s
-      {MobEffects.BLINDNESS, 100, 0},                // Blindness 5s
-      {MobEffects.CONFUSION, 120, 0},                // Nausea 6s
-      {MobEffects.DIG_SLOWDOWN, 160, 0},             // Mining Fatigue 8s
+      {MobEffects.WITHER, 100, 0},
+      {MobEffects.POISON, 100, 0},
+      {MobEffects.HUNGER, 200, 1},
+      {MobEffects.MOVEMENT_SLOWDOWN, 160, 0},
+      {MobEffects.WEAKNESS, 160, 0},
+      {MobEffects.BLINDNESS, 100, 0},
+      {MobEffects.CONFUSION, 120, 0},
+      {MobEffects.DIG_SLOWDOWN, 160, 0},
   };
 
   private InstabilityManager() {
@@ -116,16 +113,15 @@ public final class InstabilityManager {
   }
 
   /**
-   * Handles a level tick for instability effects.
-   * Called from platform-specific event handlers.
+   * Handles a level tick for instability effects. Called from platform-specific
+   * event handlers.
    */
   public static void onLevelTick(ServerLevel level) {
-    // Check if instability system is enabled
+
     if (!isInstabilityEnabled()) {
       return;
     }
 
-    // Only process Mystcraft Ages
     if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
       return;
     }
@@ -134,7 +130,6 @@ public final class InstabilityManager {
       return;
     }
 
-    // Get age instability
     AgeData ageData = AgeData.getIfPresent(level);
     if (ageData == null) {
       return;
@@ -145,77 +140,54 @@ public final class InstabilityManager {
       return;
     }
 
-    // Process instability effects
     processInstabilityEffects(level, instability);
   }
 
-  /**
-   * Processes all instability effects for a level.
-   * Uses configurable thresholds, chances, and global multiplier.
-   */
   private static void processInstabilityEffects(ServerLevel level, float instability) {
     RandomSource random = level.random;
     List<ServerPlayer> players = level.players();
 
     if (players.isEmpty()) {
-      return; // No players, no effects
+      return;
     }
 
-    // Get the global effect multiplier from config
     float multiplier = getEffectMultiplier();
     if (multiplier <= 0) {
-      return; // Effects disabled via multiplier
+      return;
     }
 
-    // Decay spreading
     float thresholdDecay = getThresholdDecay();
     if (instability >= thresholdDecay && random.nextFloat() < calculateChance(instability, thresholdDecay, getChanceDecay(), multiplier)) {
       spawnDecay(level, players, random);
     }
 
-    // Block transmutation
     float thresholdTransmute = getThresholdTransmute();
     if (instability >= thresholdTransmute && random.nextFloat() < calculateChance(instability, thresholdTransmute, getChanceTransmute(), multiplier)) {
       transmuteBlock(level, players, random);
     }
 
-    // Lightning strikes
     float thresholdLightning = getThresholdLightning();
     if (instability >= thresholdLightning && random.nextFloat() < calculateChance(instability, thresholdLightning, getChanceLightning(), multiplier)) {
       spawnLightning(level, players, random);
     }
 
-    // Meteor falls
     float thresholdMeteor = getThresholdMeteor();
     if (instability >= thresholdMeteor && random.nextFloat() < calculateChance(instability, thresholdMeteor, getChanceMeteor(), multiplier)) {
       spawnMeteor(level, players, random);
     }
 
-    // Player effects (poison, hunger, wither)
     float thresholdPoison = getThresholdPoison();
     if (instability >= thresholdPoison && random.nextFloat() < calculateChance(instability, thresholdPoison, getChancePlayerEffect(), multiplier)) {
       applyPlayerEffects(level, players, instability, random);
     }
   }
 
-  /**
-   * Calculates the actual chance based on instability level above threshold.
-   *
-   * @param instability Current instability level
-   * @param threshold   Threshold for this effect type
-   * @param baseChance  Base probability per tick
-   * @param multiplier  Global effect multiplier from config
-   * @return Final chance to roll against
-   */
   private static float calculateChance(float instability, float threshold, float baseChance, float multiplier) {
     float excess = instability - threshold;
-    float factor = Math.min(excess / 30.0f, 5.0f); // Scale up to 6x base (1 + 5)
+    float factor = Math.min(excess / 30.0f, 5.0f);
     return baseChance * (1.0f + factor) * multiplier;
   }
 
-  /**
-   * Spawns decay blocks near players.
-   */
   private static void spawnDecay(ServerLevel level, List<ServerPlayer> players, RandomSource random) {
     ServerPlayer target = players.get(random.nextInt(players.size()));
     int range = 32;
@@ -227,22 +199,16 @@ public final class InstabilityManager {
     BlockPos pos = new BlockPos(x, y, z);
     BlockState targetState = level.getBlockState(pos);
 
-    // Only replace solid blocks (not air, water, bedrock)
     if (targetState.isAir() || targetState.is(Blocks.BEDROCK) || targetState.is(Blocks.WATER)) {
       return;
     }
 
-    // Spawn a random decay type
     BlockState decayState = ModBlocks.DECAY.get().defaultBlockState();
     level.setBlock(pos, decayState, 3);
 
     Mystcraft.LOGGER.debug("Spawned decay at {}", pos);
   }
 
-  /**
-   * Transmutes a random block near a player into another block type.
-   * Creates unexpected terrain changes in unstable ages.
-   */
   private static void transmuteBlock(ServerLevel level, List<ServerPlayer> players, RandomSource random) {
     ServerPlayer target = players.get(random.nextInt(players.size()));
     int range = 24;
@@ -251,19 +217,16 @@ public final class InstabilityManager {
     int z = target.getBlockZ() + random.nextIntBetweenInclusive(-range, range);
     int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z) - 1;
 
-    // Try a few times to find a valid block
     for (int attempt = 0; attempt < 5; attempt++) {
       BlockPos pos = new BlockPos(x, y - attempt, z);
       BlockState currentState = level.getBlockState(pos);
 
-      // Skip air, bedrock, and other special blocks
       if (currentState.isAir() || currentState.is(Blocks.BEDROCK) ||
           currentState.is(Blocks.WATER) || currentState.is(Blocks.LAVA) ||
           currentState.getBlock() instanceof net.minecraft.world.level.block.BaseEntityBlock) {
         continue;
       }
 
-      // Choose a transmutation result
       BlockState newState = chooseTransmutation(currentState, random);
       if (newState != null && !newState.equals(currentState)) {
         level.setBlock(pos, newState, 3);
@@ -273,11 +236,8 @@ public final class InstabilityManager {
     }
   }
 
-  /**
-   * Chooses what to transmute a block into.
-   */
   private static BlockState chooseTransmutation(BlockState original, RandomSource random) {
-    // Stone -> Cobblestone, Gravel, Sand, or Obsidian
+
     if (original.is(Blocks.STONE)) {
       return switch (random.nextInt(4)) {
         case 0 -> Blocks.COBBLESTONE.defaultBlockState();
@@ -286,7 +246,7 @@ public final class InstabilityManager {
         default -> Blocks.OBSIDIAN.defaultBlockState();
       };
     }
-    // Dirt -> Sand, Clay, Soul Sand, or Gravel
+
     if (original.is(Blocks.DIRT) || original.is(Blocks.GRASS_BLOCK)) {
       return switch (random.nextInt(4)) {
         case 0 -> Blocks.SAND.defaultBlockState();
@@ -295,7 +255,7 @@ public final class InstabilityManager {
         default -> Blocks.GRAVEL.defaultBlockState();
       };
     }
-    // Sand -> Glass, Sandstone, or Soul Sand
+
     if (original.is(Blocks.SAND)) {
       return switch (random.nextInt(3)) {
         case 0 -> Blocks.GLASS.defaultBlockState();
@@ -303,37 +263,34 @@ public final class InstabilityManager {
         default -> Blocks.SOUL_SAND.defaultBlockState();
       };
     }
-    // Wood -> Coal block or Air (burned)
+
     if (original.getBlock() instanceof net.minecraft.world.level.block.RotatedPillarBlock &&
         original.is(net.minecraft.tags.BlockTags.LOGS)) {
       return random.nextBoolean()
           ? Blocks.COAL_BLOCK.defaultBlockState()
           : Blocks.AIR.defaultBlockState();
     }
-    // Leaves -> Air (decay)
+
     if (original.is(net.minecraft.tags.BlockTags.LEAVES)) {
       return Blocks.AIR.defaultBlockState();
     }
-    // Ores -> Stone (loss of ore) or different ore
+
     if (original.is(Blocks.IRON_ORE) || original.is(Blocks.COPPER_ORE) ||
         original.is(Blocks.COAL_ORE) || original.is(Blocks.GOLD_ORE)) {
       return random.nextBoolean() ? Blocks.STONE.defaultBlockState() : Blocks.GRAVEL.defaultBlockState();
     }
-    // Cobblestone -> Mossy Cobblestone or Stone
+
     if (original.is(Blocks.COBBLESTONE)) {
       return random.nextBoolean() ? Blocks.MOSSY_COBBLESTONE.defaultBlockState() : Blocks.STONE.defaultBlockState();
     }
-    // Water -> Ice or nothing
+
     if (original.is(Blocks.WATER)) {
       return Blocks.ICE.defaultBlockState();
     }
-    // Default: no transmutation
+
     return null;
   }
 
-  /**
-   * Spawns lightning near players.
-   */
   private static void spawnLightning(ServerLevel level, List<ServerPlayer> players, RandomSource random) {
     ServerPlayer target = players.get(random.nextInt(players.size()));
     int range = 64;
@@ -352,9 +309,6 @@ public final class InstabilityManager {
     }
   }
 
-  /**
-   * Spawns a meteor above players.
-   */
   private static void spawnMeteor(ServerLevel level, List<ServerPlayer> players, RandomSource random) {
     ServerPlayer target = players.get(random.nextInt(players.size()));
     int range = 48;
@@ -363,7 +317,7 @@ public final class InstabilityManager {
     double z = target.getZ() + random.nextIntBetweenInclusive(-range, range);
     double y = Math.min(target.getY() + 100 + random.nextInt(50), level.getMaxBuildHeight() - 1);
 
-    int size = 1 + random.nextInt(3); // Size 1-3
+    int size = 1 + random.nextInt(3);
 
     MeteorEntity meteor = new MeteorEntity(level, x, y, z, size);
     level.addFreshEntity(meteor);
@@ -371,10 +325,6 @@ public final class InstabilityManager {
     Mystcraft.LOGGER.debug("Spawned meteor at {}, {}, {} with size {}", x, y, z, size);
   }
 
-  /**
-   * Applies a random potion effect to a player.
-   * Unstable ages are chaotic: ~30% chance positive, ~70% chance negative.
-   */
   private static void applyPlayerEffects(ServerLevel level, List<ServerPlayer> players, float instability, RandomSource random) {
     ServerPlayer target = players.get(random.nextInt(players.size()));
 
@@ -398,18 +348,17 @@ public final class InstabilityManager {
   }
 
   /**
-   * Calculates instability for a set of symbol identifiers.
-   * Uses the grammar system for proper symbol cost calculation.
+   * Calculates instability for a set of symbol identifiers. Uses the grammar
+   * system for proper symbol cost calculation.
    *
    * @param symbolIds List of symbol identifiers (ResourceLocation strings)
    * @return Total instability value
    */
   public static float calculateInstability(List<String> symbolIds) {
     if (symbolIds == null || symbolIds.isEmpty()) {
-      return 100.0f; // Blank age is very unstable
+      return 100.0f;
     }
 
-    // Convert symbol IDs to actual symbols
     List<IAgeSymbol> symbols = new ArrayList<>();
     for (String symbolId : symbolIds) {
       IAgeSymbol symbol = SymbolRegistry.get(new ResourceLocation(symbolId));
@@ -418,7 +367,6 @@ public final class InstabilityManager {
       }
     }
 
-    // Use CFG-based AgeBuilder for instability calculation
     long seed = System.currentTimeMillis();
     AgeBuilder builder = new AgeBuilder(symbols, seed);
     return builder.getInstability();
@@ -433,7 +381,7 @@ public final class InstabilityManager {
    */
   public static float calculateInstability(List<IAgeSymbol> symbols, long seed) {
     if (symbols == null || symbols.isEmpty()) {
-      return 100.0f; // Blank age is very unstable
+      return 100.0f;
     }
 
     AgeBuilder builder = new AgeBuilder(symbols, seed);
@@ -455,7 +403,8 @@ public final class InstabilityManager {
   }
 
   /**
-   * Checks if an Age with the given instability level is allowed to be created/linked.
+   * Checks if an Age with the given instability level is allowed to be
+   * created/linked.
    *
    * @param instability The instability level of the Age
    * @return true if the Age is allowed, false if it should be blocked

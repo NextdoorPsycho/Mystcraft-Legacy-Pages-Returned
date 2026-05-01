@@ -10,16 +10,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Context-Free Grammar generator for Age creation.
- * Handles rule registration, shortest path calculations, and symbol expansion.
- *
- * Thread-safety: Uses concurrent collections to allow safe access from
- * multiple threads (render thread, server thread during datapack reload).
+ * Context-Free Grammar generator for Age creation. Handles rule registration,
+ * shortest path calculations, and symbol expansion.
+ * <p>
+ * Thread-safety: Uses concurrent collections to allow safe access from multiple
+ * threads (render thread, server thread during datapack reload).
  */
 public final class CFGGrammarGenerator {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CFGGrammarGenerator.class);
-  // Rule storage - use concurrent collections for thread safety during datapack reload
+
   private static final Map<ResourceLocation, RankData> ranks = new ConcurrentHashMap<>();
   private static final Map<ResourceLocation, List<CFGRule>> mappings = new ConcurrentHashMap<>();
   private static final Map<ResourceLocation, List<CFGRule>> reverseLookup = new ConcurrentHashMap<>();
@@ -42,8 +42,8 @@ public final class CFGGrammarGenerator {
   }
 
   /**
-   * Removes all rules for a specific parent token.
-   * Intended for datapack-driven overrides before grammar finalization.
+   * Removes all rules for a specific parent token. Intended for datapack-driven
+   * overrides before grammar finalization.
    */
   public static void removeRulesForParent(ResourceLocation parent) {
     List<CFGRule> rules = mappings.remove(parent);
@@ -76,15 +76,12 @@ public final class CFGGrammarGenerator {
           "Register rules before Mystcraft's post-init.");
     }
 
-    // Add to forward mappings - use thread-safe list
     mappings.computeIfAbsent(rule.parent(), k -> new CopyOnWriteArrayList<>()).add(rule);
 
-    // Add to reverse lookup - use thread-safe list
     for (ResourceLocation value : rule.values()) {
       reverseLookup.computeIfAbsent(value, k -> new CopyOnWriteArrayList<>()).add(rule);
     }
 
-    // Track rank data for weighted selection
     if (rule.rank() != null) {
       RankData rankData = ranks.computeIfAbsent(rule.parent(), k -> new RankData());
       synchronized (rankData) {
@@ -141,17 +138,16 @@ public final class CFGGrammarGenerator {
     CFGRule rule = getRandomRule(token, rand);
 
     if (rule == null) {
-      // No rules - token is terminal
+
       result.add(token);
       return result;
     }
 
     if (rule.size() == 0) {
-      // Epsilon rule - produces nothing
+
       return result;
     }
 
-    // Recursively expand each produced token
     for (ResourceLocation produced : rule.values()) {
       result.addAll(explore(produced, rand));
     }
@@ -164,13 +160,14 @@ public final class CFGGrammarGenerator {
    *
    * @param subtreeToken The starting token (child/leaf)
    * @param nodeToken    The target token (parent/root)
-   * @return List of paths (each path is a list of rules), or null if no path exists
+   * @return List of paths (each path is a list of rules), or null if no path
+   * exists
    */
   public static List<List<CFGRule>> getShortestPaths(ResourceLocation subtreeToken, ResourceLocation nodeToken) {
-    // Local reference for thread safety (volatile read once)
+
     Map<ResourceLocation, Map<ResourceLocation, List<List<CFGRule>>>> localPaths = shortestPaths;
     if (localPaths == null) {
-      // Grammar not yet finalized - return empty rather than throwing during reload
+
       LOGGER.debug("Grammar not yet finalized, returning null for shortest paths");
       return null;
     }
@@ -196,8 +193,8 @@ public final class CFGGrammarGenerator {
   }
 
   /**
-   * Builds and finalizes the grammar system.
-   * Must be called after all rules are registered.
+   * Builds and finalizes the grammar system. Must be called after all rules are
+   * registered.
    */
   public static void buildGrammar() {
     if (isFinalized) {
@@ -216,14 +213,10 @@ public final class CFGGrammarGenerator {
     LOGGER.info("Grammar finalized successfully");
   }
 
-  /**
-   * Builds shortest path lookup tables using BFS.
-   */
   private static void buildShortestPaths() {
     long startTime = System.currentTimeMillis();
     LOGGER.info("Starting buildShortestPaths for {} tokens", reverseLookup.size());
 
-    // Build paths into a temporary map, then atomically assign
     Map<ResourceLocation, Map<ResourceLocation, List<List<CFGRule>>>> tempPaths = new ConcurrentHashMap<>();
 
     int count = 0;
@@ -238,16 +231,12 @@ public final class CFGGrammarGenerator {
       }
     }
 
-    // Atomic assignment ensures threads see complete data or null
     shortestPaths = tempPaths;
 
     long endTime = System.currentTimeMillis();
     LOGGER.info("buildShortestPaths completed in {}ms for {} tokens", endTime - startTime, total);
   }
 
-  /**
-   * Calculates shortest paths from a token to all reachable parent tokens.
-   */
   private static Map<ResourceLocation, List<List<CFGRule>>> getOrCalculatePaths(
       Map<ResourceLocation, Map<ResourceLocation, List<List<CFGRule>>>> pathsMap,
       ResourceLocation token) {
@@ -259,11 +248,8 @@ public final class CFGGrammarGenerator {
 
     allPaths = new ConcurrentHashMap<>();
 
-    // Track which nodes we've already queued producers for (at their shortest distance)
-    // This prevents exponential re-exploration of the same nodes
     Set<ResourceLocation> exploredFromNode = new HashSet<>();
 
-    // Get all rules that produce this token
     List<CFGRule> producers = reverseLookup.get(token);
     Queue<VisitPair> toVisit = new LinkedList<>();
 
@@ -273,12 +259,10 @@ public final class CFGGrammarGenerator {
       }
     }
 
-    // BFS to find all paths
     while (!toVisit.isEmpty()) {
       VisitPair elem = toVisit.poll();
       ResourceLocation target = elem.target;
 
-      // Skip if target is the same as starting token (loop)
       if (target.equals(token)) {
         continue;
       }
@@ -286,23 +270,18 @@ public final class CFGGrammarGenerator {
       List<CFGRule> path = elem.path;
       List<List<CFGRule>> pathsToTarget = allPaths.computeIfAbsent(target, k -> new CopyOnWriteArrayList<>());
 
-      // Check if we already have a shorter path to this target
       if (!pathsToTarget.isEmpty() && pathsToTarget.get(0).size() < path.size()) {
-        // This path is longer than existing - skip entirely
+
         continue;
       }
 
-      // If this is a shorter path, clear existing paths
       if (!pathsToTarget.isEmpty() && pathsToTarget.get(0).size() > path.size()) {
         pathsToTarget.clear();
-        exploredFromNode.remove(target); // Allow re-exploration with shorter path
+        exploredFromNode.remove(target);
       }
 
-      // Add this path (either first path, or equal-length alternative)
       pathsToTarget.add(path);
 
-      // Only continue BFS from this node if we haven't explored from it yet
-      // This prevents exponential blowup from multiple equal-length paths
       if (exploredFromNode.add(target)) {
         List<CFGRule> targetProducers = reverseLookup.get(target);
         if (targetProducers != null) {
@@ -319,10 +298,6 @@ public final class CFGGrammarGenerator {
     return allPaths;
   }
 
-  /**
-   * Builds weighted selection data based on ranks.
-   * Lower ranks are more common, higher ranks are rarer.
-   */
   private static void buildRankWeights() {
     final int step = 1;
 
@@ -331,7 +306,6 @@ public final class CFGGrammarGenerator {
       int weight = 1;
       int lastTotal = 0;
 
-      // Process from highest rank (rarest) to lowest (common)
       for (int i = rankData.rankSizes.size() - 1; i >= 0; --i) {
         int count = rankData.rankSizes.get(i);
         if (weight != 1 && count > 0) {
@@ -344,11 +318,6 @@ public final class CFGGrammarGenerator {
     }
   }
 
-  /**
-   * Checks that terminal grammar tokens (TERRAIN, WEATHER, etc.) have at least
-   * one non-epsilon rule registered, meaning at least one symbol maps to them.
-   * Logs warnings for any tokens that will always produce epsilon (nothing).
-   */
   private static void validateTokenPopulation() {
     ResourceLocation[] terminalTokens = {
         GrammarData.TERRAIN,
@@ -373,7 +342,6 @@ public final class CFGGrammarGenerator {
         continue;
       }
 
-      // Count non-epsilon rules (rules with at least one child)
       long symbolRules = rules.stream()
           .filter(rule -> !rule.values().isEmpty())
           .count();
@@ -440,9 +408,6 @@ public final class CFGGrammarGenerator {
     public volatile Map<Integer, Integer> rankWeights = null;
   }
 
-  /**
-   * Helper class for BFS traversal.
-   */
   private record VisitPair(ResourceLocation target, List<CFGRule> path) {
   }
 

@@ -1,10 +1,10 @@
 package art.arcane.mystcraft.instability.effects;
 
 import art.arcane.mystcraft.api.instability.IEnvironmentalEffect;
+import art.arcane.mystcraft.util.MobEffectCompat;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
-import art.arcane.mystcraft.util.MobEffectCompat;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.level.chunk.LevelChunk;
 
@@ -25,7 +25,8 @@ public class EffectPotion implements IEnvironmentalEffect {
    * Creates a potion effect.
    *
    * @param level    The effect level (affects frequency)
-   * @param global   If true, affects all players; if false, only nearby players
+   * @param global   If true, affects all players; if false, only nearby
+   *                 players
    * @param effect   The mob effect to apply
    * @param duration The duration in ticks
    */
@@ -38,7 +39,7 @@ public class EffectPotion implements IEnvironmentalEffect {
 
   @Override
   public void tick(ServerLevel level, LevelChunk chunk, float instability) {
-    // Potions only activate at instability 50+ (eating deck gate). Scale from there.
+
     float intensity = Math.max(0.0f, Math.min((instability - 50.0f) / 50.0f, 1.0f));
     if (intensity <= 0.0f) return;
     float chance = BASE_CHANCE * this.level * intensity;
@@ -50,7 +51,7 @@ public class EffectPotion implements IEnvironmentalEffect {
     if (global) {
       players = level.players();
     } else {
-      // Only affect players in or near this chunk
+
       players = level.players().stream()
           .filter(p -> isNearChunk(p, chunk))
           .toList();
@@ -60,7 +61,6 @@ public class EffectPotion implements IEnvironmentalEffect {
       return;
     }
 
-    // Apply effect to a random player
     ServerPlayer target = players.get(level.random.nextInt(players.size()));
     MobEffectInstance instance = MobEffectCompat.createInstance(effect, duration, 0);
     if (instance != null) {

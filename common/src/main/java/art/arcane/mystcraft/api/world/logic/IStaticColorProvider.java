@@ -5,10 +5,11 @@ import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;
 
 /**
- * Interface for providing static colors that don't change dynamically.
- * Multiple color providers can be registered and their colors will be averaged.
+ * Interface for providing static colors that don't change dynamically. Multiple
+ * color providers can be registered and their colors will be averaged.
  * <p>
- * Used for grass color, foliage color, water color, and other block-based colors.
+ * Used for grass color, foliage color, water color, and other block-based
+ * colors.
  */
 public interface IStaticColorProvider {
 
@@ -24,14 +25,14 @@ public interface IStaticColorProvider {
    *
    * @param pos   The block position
    * @param biome The biome at this position (can be null)
-   * @return The RGB color value (0xRRGGBB format), or -1 to use default/skip this provider
+   * @return The RGB color value (0xRRGGBB format), or -1 to use default/skip
+   * this provider
    */
   int getColor(BlockPos pos, Holder<Biome> biome);
 
   /**
-   * Gets the priority of this color provider.
-   * Higher priority providers have more weight in the averaging calculation.
-   * Default is 1.0.
+   * Gets the priority of this color provider. Higher priority providers have
+   * more weight in the averaging calculation. Default is 1.0.
    *
    * @return The priority weight (positive value)
    */
@@ -40,8 +41,8 @@ public interface IStaticColorProvider {
   }
 
   /**
-   * Returns whether this color should vary based on biome.
-   * If true and biome is available, the color may be tinted based on biome climate.
+   * Returns whether this color should vary based on biome. If true and biome is
+   * available, the color may be tinted based on biome climate.
    *
    * @return True to enable biome-based variation
    */

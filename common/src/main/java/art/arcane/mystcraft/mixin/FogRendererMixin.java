@@ -17,8 +17,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Hooks fog color and density for Mystcraft Ages (1.20.1).
- * Equivalent of Forge's ViewportEvent.ComputeFogColor and ViewportEvent.RenderFog.
+ * Hooks fog color and density for Mystcraft Ages (1.20.1). Equivalent of
+ * Forge's ViewportEvent.ComputeFogColor and ViewportEvent.RenderFog.
  */
 @Mixin(FogRenderer.class)
 public class FogRendererMixin {

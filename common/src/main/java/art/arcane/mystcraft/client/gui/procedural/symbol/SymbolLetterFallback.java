@@ -10,32 +10,29 @@ import java.util.Map;
 
 /**
  * Letter-based fallback for {@link SymbolGlyphFactory}, used when
- * {@link art.arcane.mystcraft.config.MystcraftConfig#proceduralSymbolGlyphsEnabled}
- * is {@code false}. Draws the first two characters of the symbol's
- * registry path centred in the tile using a hand-rolled 5&times;7
- * bitmap font.
+ * {@link
+ * art.arcane.mystcraft.config.MystcraftConfig#proceduralSymbolGlyphsEnabled} is
+ * {@code false}. Draws the first two characters of the symbol's registry path
+ * centred in the tile using a hand-rolled 5&times;7 bitmap font.
  *
  * <p>Why a hand-rolled font instead of {@code Minecraft.getInstance().font}?
- * The pre-warm path runs on a daemon worker thread without a GL context,
- * so {@code Font.draw(...)} cannot rasterise into a {@link NativeImage}
- * directly. A bitmap font keeps the fallback context-independent and
- * deterministic so the same fallback texture round-trips through warm
- * (off-thread) and on-demand (main thread) calls.
+ * The pre-warm path runs on a daemon worker thread without a GL context, so
+ * {@code Font.draw(...)} cannot rasterise into a {@link NativeImage} directly.
+ * A bitmap font keeps the fallback context-independent and deterministic so the
+ * same fallback texture round-trips through warm (off-thread) and on-demand
+ * (main thread) calls.
  *
  * <p>Coverage: digits, lowercase a-z, uppercase A-Z, underscore. These
- * are the only characters that appear in Mystcraft symbol registry
- * paths (see {@code SymbolRegistry.mystcraftId} for the namespace
- * convention). Characters outside the supported set render as a
- * centred {@code .} dot so missing glyphs stay visible without crashing.
+ * are the only characters that appear in Mystcraft symbol registry paths (see
+ * {@code SymbolRegistry.mystcraftId} for the namespace convention). Characters
+ * outside the supported set render as a centred {@code .} dot so missing glyphs
+ * stay visible without crashing.
  */
 public final class SymbolLetterFallback {
 
-  /** Glyph cell width in the bitmap font. */
   private static final int GLYPH_W = 5;
-  /** Glyph cell height in the bitmap font. */
   private static final int GLYPH_H = 7;
-  /** Pixel scale applied when drawing into the 64&times;64 tile. */
-  private static final int SCALE = 4;
+  private static final int SCALE = 8;
 
   private static final Map<Character, int[]> FONT = buildFont();
 
@@ -44,16 +41,16 @@ public final class SymbolLetterFallback {
 
   /**
    * Renders the first two characters of {@code source} into {@code image}
-   * centred horizontally and vertically. The image is assumed to be a
-   * fresh {@link SymbolGlyphFactory#GLYPH_SIZE 64&times;64} tile cleared
-   * to transparent. Letters use {@code accent}; an inset shadow uses
-   * {@code ink} so the fallback stays legible against any parchment
-   * variant from {@link SymbolPalette}.
+   * centred horizontally and vertically. The image is assumed to be a fresh
+   * {@link SymbolGlyphFactory#GLYPH_SIZE 128&times;128} tile cleared to
+   * transparent. Letters use {@code accent}; an inset shadow uses {@code ink}
+   * so the fallback stays legible against any parchment variant from
+   * {@link SymbolPalette}.
    */
   public static void renderInto(@NotNull NativeImage image, @Nullable String source,
                                 int accent, int ink) {
     String text = pickFirstTwoChars(source);
-    int totalW = (GLYPH_W * SCALE) * 2 + SCALE * 2;     // two glyphs + 2px gap
+    int totalW = (GLYPH_W * SCALE) * 2 + SCALE * 2;
     int totalH = GLYPH_H * SCALE;
     int originX = (image.getWidth() - totalW) / 2;
     int originY = (image.getHeight() - totalH) / 2;
@@ -64,17 +61,12 @@ public final class SymbolLetterFallback {
     for (int i = 0; i < text.length(); i++) {
       int gx = originX + i * (GLYPH_W * SCALE + SCALE * 2);
       int[] mask = glyphFor(text.charAt(i));
-      // Shadow: 1-scaled-pixel offset down/right in ink colour.
+
       drawMask(image, mask, gx + SCALE, originY + SCALE, inkArgb);
       drawMask(image, mask, gx, originY, accentArgb);
     }
   }
 
-  /**
-   * Lower-cases {@code source}, strips namespace prefixes, and returns
-   * the first two characters. Falls back to {@code "??"} when the
-   * source produces fewer than two usable characters.
-   */
   @NotNull
   private static String pickFirstTwoChars(@Nullable String source) {
     if (source == null || source.isBlank()) return "??";
@@ -90,11 +82,6 @@ public final class SymbolLetterFallback {
     return "??";
   }
 
-  /**
-   * Returns the 5x7 bitmask for {@code c}, falling back to the dot
-   * glyph when the character is unsupported so missing entries stay
-   * visible without crashing the render pipeline.
-   */
   @NotNull
   private static int[] glyphFor(char c) {
     int[] mask = FONT.get(Character.toUpperCase(c));
@@ -103,11 +90,6 @@ public final class SymbolLetterFallback {
     return dot != null ? dot : new int[GLYPH_H];
   }
 
-  /**
-   * Blits a 5x7 bitmask into {@code image}, scaling each source pixel
-   * to {@link #SCALE}&times;{@link #SCALE} destination pixels in
-   * {@code argb}.
-   */
   private static void drawMask(@NotNull NativeImage image, @NotNull int[] mask,
                                int x0, int y0, int argb) {
     int w = image.getWidth();
@@ -128,14 +110,6 @@ public final class SymbolLetterFallback {
     }
   }
 
-  // ---------------------------------------------------------------------
-  // 5x7 bitmap font
-  // ---------------------------------------------------------------------
-  //
-  // Each row is encoded as a 5-bit value with the leftmost pixel in the
-  // most-significant bit. Glyphs covered: 0-9, A-Z, _, ., /. Lowercase
-  // routes through Character.toUpperCase before lookup so 'a' renders
-  // as 'A'.
   private static Map<Character, int[]> buildFont() {
     Map<Character, int[]> m = new HashMap<>();
     m.put('0', new int[]{0b01110, 0b10001, 0b10011, 0b10101, 0b11001, 0b10001, 0b01110});

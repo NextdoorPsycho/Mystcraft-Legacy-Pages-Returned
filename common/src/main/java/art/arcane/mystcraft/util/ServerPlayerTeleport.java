@@ -19,8 +19,6 @@ public final class ServerPlayerTeleport {
       return;
     }
 
-    // GameTest mock players have no network connection. Move their server-side
-    // state directly so production travel handlers can still be tested.
     player.setServerLevel(level);
     player.gameMode.setLevel(level);
     player.moveTo(x, y, z, yaw, pitch);

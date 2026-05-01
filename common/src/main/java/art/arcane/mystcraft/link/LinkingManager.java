@@ -28,10 +28,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -44,9 +44,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Manages linking (teleportation) operations for Mystcraft.
- * Handles cross-dimension teleportation, spawn platform generation,
- * link events, permissions, and sound/particle effects.
+ * Manages linking (teleportation) operations for Mystcraft. Handles
+ * cross-dimension teleportation, spawn platform generation, link events,
+ * permissions, and sound/particle effects.
  */
 public final class LinkingManager {
 
@@ -54,8 +54,8 @@ public final class LinkingManager {
   }
 
   /**
-   * Performs a link for the given entity using the provided link data.
-   * Fires events and checks permissions throughout the process.
+   * Performs a link for the given entity using the provided link data. Fires
+   * events and checks permissions throughout the process.
    *
    * @param entity   The entity to teleport
    * @param linkData The NBT data containing link information
@@ -74,7 +74,6 @@ public final class LinkingManager {
     ResourceKey<Level> sourceDimension = sourceLevel.dimension();
     BlockPos sourcePos = entity.blockPosition();
 
-    // Get destination information
     BlockPos targetPos = LinkOptions.getSpawn(linkData);
     Integer dimId = LinkOptions.getDimensionUID(linkData);
     float targetYaw = LinkOptions.getSpawnYaw(linkData);
@@ -85,7 +84,6 @@ public final class LinkingManager {
       return LinkResult.INVALID_DESTINATION;
     }
 
-    // Find the target dimension
     ServerLevel targetLevel = findDimensionByUID(server, dimId);
     if (targetLevel == null) {
       fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
@@ -93,11 +91,10 @@ public final class LinkingManager {
       return LinkResult.DIMENSION_NOT_FOUND;
     }
 
-    // === LOG SYMBOLS & CHECK INSTABILITY (for Mystcraft Ages) ===
     if (AgeDimensionFactory.isMystcraftAge(targetLevel.dimension())) {
       AgeData ageData = AgeData.getIfPresent(targetLevel);
       if (ageData != null) {
-        // Log all symbols in this Age (console + player chat)
+
         logAgeSymbols(ageData, dimId);
         float instability = ageData.getInstability();
         if (!InstabilityManager.isAgeAllowed(instability)) {
@@ -111,9 +108,7 @@ public final class LinkingManager {
       }
     }
 
-    // === FIRE ALLOW EVENT ===
     LinkEvent.Allow allowEvent = new LinkEvent.Allow(entity, linkData, sourceDimension, sourcePos);
-    // Event bus posting removed - platform-specific event firing can be added later
 
     if (allowEvent.isCancelled()) {
       String reason = allowEvent.getCancelReason();
@@ -126,11 +121,9 @@ public final class LinkingManager {
       return LinkResult.CANCELLED;
     }
 
-    // === CHECK PERMISSIONS ===
     if (entity instanceof ServerPlayer player) {
       LinkPermissions permissions = LinkPermissions.get(server);
 
-      // Check departure permission from source Age
       int sourceUID = getAgeUID(sourceLevel);
       if (sourceUID > 0 && !permissions.canDepart(player, sourceUID)) {
         fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
@@ -139,7 +132,6 @@ public final class LinkingManager {
         return LinkResult.PERMISSION_DENIED;
       }
 
-      // Check entry permission to target Age
       int targetUID = dimId;
       if (targetUID > 0 && !permissions.canEnter(player, targetUID)) {
         fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
@@ -149,7 +141,6 @@ public final class LinkingManager {
       }
     }
 
-    // Check for intra-linking (same dimension teleportation)
     boolean isIntraLink = sourceLevel.dimension().equals(targetLevel.dimension());
     boolean allowIntra = LinkOptions.getFlag(linkData, LinkFlags.INTRA_LINKING);
 
@@ -157,10 +148,6 @@ public final class LinkingManager {
       Mystcraft.LOGGER.debug("Intra-dimensional link attempted without modifier");
     }
 
-    // Pre-load the destination chunk BEFORE calculating target position.
-    // findSafeY() needs the chunk loaded to read the heightmap and check block states.
-    // Without this, unloaded chunks cause the player to spawn at the raw estimated Y,
-    // which is often inside the ground.
     MystcraftChunkLeases.leaseReturnWindow(sourceLevel, sourcePos);
 
     int destChunkX = targetPos.getX() >> 4;
@@ -171,30 +158,23 @@ public final class LinkingManager {
         destChunkPos, 1, entity.getId()
     );
     MystcraftChunkLeases.leaseReturnWindow(targetLevel, destChunkPos);
-    // Force the chunk to load synchronously so findSafeY() can read terrain.
-    // This is safe - vanilla does the same during teleportation (ServerPlayer.teleportTo).
+
     targetLevel.getChunk(destChunkX, destChunkZ);
     Mystcraft.LOGGER.info("[LinkingManager] Pre-loaded destination chunk [{}, {}] in {}",
         destChunkX, destChunkZ, targetLevel.dimension().location());
 
-    // Calculate target position (now findSafeY can read the loaded chunk)
     Vec3 targetVec = calculateTargetPosition(targetPos, linkData, entity.position(), sourcePos, targetLevel);
 
-    // Generate spawn platform if needed (chunk is loaded, safe to place blocks)
-    // Skip platform generation for personal pockets - they have their own spawn platform
     BlockPos destBlock = BlockPos.containing(targetVec);
     boolean isPersonalPocket = PersonalPocketDimension.isPersonalPocket(targetLevel);
 
     if (!isPersonalPocket && LinkOptions.getFlag(linkData, LinkFlags.GENERATE_PLATFORM)) {
       generateSpawnPlatform(targetLevel, destBlock);
-      // Re-calculate after platform generation since blocks changed
+
       targetVec = calculateTargetPosition(targetPos, linkData, entity.position(), sourcePos, targetLevel);
       destBlock = BlockPos.containing(targetVec);
     }
 
-    // If the destination has no solid ground (e.g. ocean Ages), build a platform
-    // at the fluid surface so the player doesn't spawn underwater
-    // Skip for personal pockets - they have their own spawn platform
     if (!isPersonalPocket && !hasSolidGround(targetLevel, destBlock)) {
       BlockPos platformSpawn = buildFluidSurfacePlatform(targetLevel, destBlock);
       if (platformSpawn != null) {
@@ -204,20 +184,15 @@ public final class LinkingManager {
       }
     }
 
-    // === FIRE ALTER EVENT ===
     LinkEvent.Alter alterEvent = new LinkEvent.Alter(entity, linkData, sourceDimension, sourcePos,
         targetLevel, targetVec, targetYaw);
-    // Event bus posting removed - platform-specific event firing can be added later
 
-    // Apply alterations
     targetLevel = alterEvent.getTargetLevel();
     targetVec = alterEvent.getTargetPosition();
     targetYaw = alterEvent.getTargetYaw();
 
-    // === FIRE START EVENT ===
     LinkEvent.Start startEvent = new LinkEvent.Start(entity, linkData, sourceDimension, sourcePos,
         targetLevel, targetVec, targetYaw);
-    // Event bus posting removed - platform-specific event firing can be added later
 
     if (startEvent.isCancelled()) {
       fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
@@ -225,28 +200,22 @@ public final class LinkingManager {
       return LinkResult.START_CANCELLED;
     }
 
-    // Play departure sound and effects
     playLinkSound(sourceLevel, sourcePos, linkData, true);
     sendLinkEffect(sourceLevel, sourcePos, LinkEffectPacket.LinkEffectType.DEPARTURE);
 
-    // Handle following link (brings nearby entities)
     List<Entity> followers = null;
     if (LinkOptions.getFlag(linkData, LinkFlags.FOLLOWING)) {
       followers = getFollowingEntities(entity);
     }
 
-    // Collect passengers before teleport
     List<PassengerData> passengers = collectPassengers(entity);
 
-    // Handle disarm (remove items) - only for players
     if (LinkOptions.getFlag(linkData, LinkFlags.DISARM) && entity instanceof ServerPlayer player) {
       disarmEntity(player);
     }
 
-    // Store momentum if maintaining
     Vec3 momentum = entity.getDeltaMovement();
 
-    // Record return link for Mystcraft Ages (entry point)
     if (entity instanceof ServerPlayer player) {
       int targetAgeUID = AgeDimensionFactory.getAgeUID(targetLevel.dimension());
       if (targetAgeUID > 0) {
@@ -258,33 +227,32 @@ public final class LinkingManager {
       }
     }
 
-    // Perform the teleport
     teleportEntity(entity, targetLevel, targetVec, targetYaw);
 
-    // Restore momentum if flag is set
     if (LinkOptions.getFlag(linkData, LinkFlags.MAINTAIN_MOMENTUM)) {
       entity.setDeltaMovement(momentum);
+      if (entity instanceof ServerPlayer maintainPlayer && maintainPlayer.connection != null) {
+        maintainPlayer.connection.send(
+            new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(
+                maintainPlayer.getId(), momentum));
+      } else {
+        entity.hurtMarked = true;
+      }
     }
 
-    // Restore passengers
     restorePassengers(entity, targetLevel, passengers, targetVec);
 
-    // Teleport followers
     if (followers != null && !followers.isEmpty()) {
       teleportFollowers(entity, followers, targetLevel, targetVec, linkData);
     }
 
-    // Play arrival sound and effects
     BlockPos arrivalPos = BlockPos.containing(targetVec);
     playLinkSound(targetLevel, arrivalPos, linkData, false);
     sendLinkEffect(targetLevel, arrivalPos, LinkEffectPacket.LinkEffectType.ARRIVAL);
 
-    // === FIRE END EVENT ===
     LinkEvent.End endEvent = new LinkEvent.End(entity, linkData, sourceDimension, sourcePos,
         targetLevel, targetVec);
-    // Event bus posting removed - platform-specific event firing can be added later
 
-    // === ADVANCEMENT TRIGGERS ===
     if (AgeDimensionFactory.isMystcraftAge(targetLevel.dimension()) && entity instanceof ServerPlayer serverPlayer) {
       checkMystDimensionAdvancements(serverPlayer);
     }
@@ -292,9 +260,6 @@ public final class LinkingManager {
     return LinkResult.SUCCESS;
   }
 
-  /**
-   * Logs all symbols present in an Age when entering.
-   */
   private static void logAgeSymbols(AgeData ageData, int ageUID) {
     List<ItemStack> pages = ageData.getPages();
     if (pages.isEmpty()) {
@@ -331,25 +296,16 @@ public final class LinkingManager {
     Mystcraft.LOGGER.debug("========================================");
   }
 
-  /**
-   * Gets the Age UID from a level, or -1 if not a Mystcraft Age.
-   */
   private static int getAgeUID(ServerLevel level) {
     return AgeDimensionFactory.getAgeUID(level.dimension());
   }
 
-  /**
-   * Fires a Failed event.
-   */
   private static void fireFailedEvent(Entity entity, CompoundTag linkData, ResourceKey<Level> sourceDimension,
                                       BlockPos sourcePos, LinkEvent.Failed.FailureReason reason, String message) {
     LinkEvent.Failed failedEvent = new LinkEvent.Failed(entity, linkData, sourceDimension, sourcePos, reason, message);
-    // Event bus posting removed - platform-specific event firing can be added later
+
   }
 
-  /**
-   * Collects all passengers recursively.
-   */
   private static List<PassengerData> collectPassengers(Entity root) {
     List<PassengerData> passengers = new ArrayList<>();
     collectPassengersRecursive(root, root.position(), passengers);
@@ -364,57 +320,47 @@ public final class LinkingManager {
     }
   }
 
-  /**
-   * Restores passengers after teleportation.
-   */
   private static void restorePassengers(Entity root, ServerLevel level, List<PassengerData> passengers, Vec3 rootPos) {
-    // First, dismount all passengers
+
     root.ejectPassengers();
 
-    // Teleport each passenger
     for (PassengerData data : passengers) {
       Entity passenger = data.passenger;
       Vec3 passengerPos = rootPos.add(data.offset);
 
-      // Teleport the passenger
       teleportEntity(passenger, level, passengerPos, passenger.getYRot());
     }
 
-    // Re-mount passengers (with a small delay via scheduled tick)
-    // This is handled by the entities themselves after teleport
   }
 
-  /**
-   * Teleports followers through the link.
-   */
   private static void teleportFollowers(Entity source, List<Entity> followers, ServerLevel targetLevel,
                                         Vec3 targetVec, CompoundTag linkData) {
     for (Entity follower : followers) {
       if (follower == source) continue;
 
-      // Calculate offset from source entity
       Vec3 offset = follower.position().subtract(source.position());
       Vec3 followerTarget = targetVec.add(offset);
 
-      // Store follower momentum
       Vec3 followerMomentum = follower.getDeltaMovement();
 
-      // Collect follower's passengers
       List<PassengerData> followerPassengers = collectPassengers(follower);
 
-      // Teleport follower
       teleportEntity(follower, targetLevel, followerTarget, follower.getYRot());
 
-      // Restore momentum if flag is set
       if (LinkOptions.getFlag(linkData, LinkFlags.MAINTAIN_MOMENTUM)) {
         follower.setDeltaMovement(followerMomentum);
+        if (follower instanceof ServerPlayer followerPlayer && followerPlayer.connection != null) {
+          followerPlayer.connection.send(
+              new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(
+                  followerPlayer.getId(), followerMomentum));
+        } else {
+          follower.hurtMarked = true;
+        }
       }
 
-      // Restore follower's passengers
       restorePassengers(follower, targetLevel, followerPassengers, followerTarget);
     }
 
-    // Play following sound and effect
     BlockPos targetPos = BlockPos.containing(targetVec);
     playSound(targetLevel, targetPos, ModSounds.LINKING_FOLLOWING.get(), 1.0f, 1.0f);
     sendLinkEffect(targetLevel, targetPos, LinkEffectPacket.LinkEffectType.FOLLOWING);
@@ -430,8 +376,6 @@ public final class LinkingManager {
       return loaded;
     }
 
-    // Registered Mystcraft Ages are the only dimensions this method should load.
-    // This keeps lookup-heavy cleanup paths from materializing unrelated levels.
     if (uid > 0) {
       AgeManager ageManager = AgeManager.get(server);
       ResourceLocation ageDimension = ageManager.getDimension(uid);
@@ -452,14 +396,13 @@ public final class LinkingManager {
    */
   @Nullable
   public static ServerLevel findLoadedDimensionByUID(MinecraftServer server, int uid) {
-    // Check vanilla dimensions with negative or zero UIDs first
+
     if (uid == 0) {
       return server.getLevel(Level.OVERWORLD);
     } else if (uid == -1) {
       return server.getLevel(Level.NETHER);
     }
 
-    // For positive UIDs, check registered Mystcraft Ages BEFORE The End.
     if (uid > 0) {
       AgeManager ageManager = AgeManager.get(server);
       ResourceLocation ageDimension = ageManager.getDimension(uid);
@@ -468,12 +411,10 @@ public final class LinkingManager {
       }
     }
 
-    // Only now check for The End (uid == 1 but not a registered Age)
     if (uid == 1) {
       return server.getLevel(Level.END);
     }
 
-    // Search loaded custom dimensions by hash as a last-resort compatibility path.
     for (ServerLevel level : server.getAllLevels()) {
       if (getDimensionUID(level) == uid) {
         return level;
@@ -496,7 +437,6 @@ public final class LinkingManager {
       return 1;
     }
 
-    // Check if this is a Mystcraft Age
     if (level instanceof ServerLevel serverLevel) {
       AgeManager ageManager = AgeManager.get(serverLevel);
       int ageUID = ageManager.getAgeUID(dimension);
@@ -505,7 +445,6 @@ public final class LinkingManager {
       }
     }
 
-    // For other custom dimensions, use a hash-based ID
     return dimension.location().hashCode();
   }
 
@@ -524,9 +463,6 @@ public final class LinkingManager {
     return null;
   }
 
-  /**
-   * Teleports an entity to the target position in the target level.
-   */
   private static void teleportEntity(Entity entity, ServerLevel targetLevel, Vec3 targetPos, float yaw) {
     if (entity instanceof ServerPlayer player) {
       ServerPlayerTeleport.teleport(player, targetLevel, targetPos.x, targetPos.y, targetPos.z, yaw, player.getXRot());
@@ -535,23 +471,17 @@ public final class LinkingManager {
     }
   }
 
-  /**
-   * Gets entities that should follow through the link.
-   * Enhanced to include mounts, vehicles, and nearby tamed animals.
-   */
   private static List<Entity> getFollowingEntities(Entity source) {
     List<Entity> followers = new ArrayList<>();
     double radius = 3.0;
 
-    // Get the root vehicle if source is riding something
     Entity rootVehicle = source.getRootVehicle();
     if (rootVehicle != source) {
       followers.add(rootVehicle);
-      // Add all passengers of the vehicle
+
       addAllPassengers(rootVehicle, followers);
     }
 
-    // Get nearby living entities
     AABB area = new AABB(
         source.getX() - radius, source.getY() - radius, source.getZ() - radius,
         source.getX() + radius, source.getY() + radius, source.getZ() + radius
@@ -560,11 +490,10 @@ public final class LinkingManager {
     List<Entity> nearbyEntities = source.level().getEntities(source, area, e -> {
       if (e == source || followers.contains(e)) return false;
 
-      // Include living entities
       if (e instanceof LivingEntity) {
-        // Include tamed mobs owned by the source player
+
         if (source instanceof Player player && e instanceof Mob mob) {
-          // Check if mob is leashed to the player
+
           if (mob.getLeashHolder() == player) {
             return true;
           }
@@ -578,9 +507,6 @@ public final class LinkingManager {
     return followers;
   }
 
-  /**
-   * Recursively adds all passengers of an entity.
-   */
   private static void addAllPassengers(Entity entity, List<Entity> list) {
     for (Entity passenger : entity.getPassengers()) {
       if (!list.contains(passenger)) {
@@ -590,24 +516,18 @@ public final class LinkingManager {
     }
   }
 
-  /**
-   * Removes items from a player (disarm effect).
-   */
   private static void disarmEntity(ServerPlayer player) {
-    // Drop main hand item
+
     if (!player.getMainHandItem().isEmpty()) {
       player.drop(player.getMainHandItem().copy(), false);
       player.getMainHandItem().setCount(0);
     }
-    // Play disarm sound
+
     playSound(player.serverLevel(), player.blockPosition(), ModSounds.LINKING_DISARM.get(), 1.0f, 1.0f);
   }
 
-  /**
-   * Generates a spawn platform at the target location.
-   */
   private static void generateSpawnPlatform(ServerLevel level, BlockPos pos) {
-    // Don't attempt block operations if chunk isn't loaded - would deadlock server thread
+
     if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
       Mystcraft.LOGGER.warn("[LinkingManager] Spawn chunk not loaded at {}, skipping platform generation", pos);
       return;
@@ -615,7 +535,6 @@ public final class LinkingManager {
 
     BlockState platformBlock = Blocks.STONE.defaultBlockState();
 
-    // Create a 3x3 platform
     for (int x = -1; x <= 1; x++) {
       for (int z = -1; z <= 1; z++) {
         BlockPos platformPos = pos.offset(x, -1, z);
@@ -625,7 +544,6 @@ public final class LinkingManager {
       }
     }
 
-    // Clear the 3x3x2 area above the platform for the player
     for (int x = -1; x <= 1; x++) {
       for (int y = 0; y <= 1; y++) {
         for (int z = -1; z <= 1; z++) {
@@ -639,22 +557,15 @@ public final class LinkingManager {
     }
   }
 
-  /**
-   * Checks whether a position has solid ground below it.
-   */
   private static boolean hasSolidGround(ServerLevel level, BlockPos pos) {
     if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
-      return true; // Assume safe if chunk not loaded
+      return true;
     }
     BlockPos below = pos.below();
     BlockState ground = level.getBlockState(below);
     return ground.isSolidRender(level, below);
   }
 
-  /**
-   * Finds a fluid surface near the given position and builds a 3x3 oak plank platform on top.
-   * Returns the spawn position one block above the platform center, or null if no fluid found.
-   */
   @Nullable
   private static BlockPos buildFluidSurfacePlatform(ServerLevel level, BlockPos center) {
     if (!level.hasChunk(center.getX() >> 4, center.getZ() >> 4)) {
@@ -666,7 +577,6 @@ public final class LinkingManager {
     int cx = center.getX();
     int cz = center.getZ();
 
-    // Search downward for the top of a fluid column
     for (int y = startY; y > minY; y--) {
       BlockPos pos = new BlockPos(cx, y, cz);
       BlockState state = level.getBlockState(pos);
@@ -676,7 +586,7 @@ public final class LinkingManager {
       boolean aboveIsClear = aboveState.isAir();
 
       if (isFluid && aboveIsClear) {
-        // Build a 3x3 oak plank platform one block above the fluid surface
+
         int platY = y + 1;
         BlockState plank = Blocks.OAK_PLANKS.defaultBlockState();
         for (int dx = -1; dx <= 1; dx++) {
@@ -685,7 +595,7 @@ public final class LinkingManager {
             level.setBlock(platPos, plank, 2);
           }
         }
-        // Clear space above the platform for the player
+
         for (int dx = -1; dx <= 1; dx++) {
           for (int dy = 1; dy <= 2; dy++) {
             for (int dz = -1; dz <= 1; dz++) {
@@ -704,18 +614,13 @@ public final class LinkingManager {
     return null;
   }
 
-  /**
-   * Calculates the final target position, applying any modifiers.
-   */
   private static Vec3 calculateTargetPosition(BlockPos targetPos, CompoundTag linkData, Vec3 entityPos,
                                               BlockPos sourcePos, ServerLevel targetLevel) {
     double x = targetPos.getX() + 0.5;
     double z = targetPos.getZ() + 0.5;
 
-    // Find safe Y position
     int safeY = findSafeY(targetLevel, targetPos.getX(), targetPos.getY(), targetPos.getZ());
 
-    // Apply relative positioning if that flag is set
     if (LinkOptions.getFlag(linkData, LinkFlags.RELATIVE)) {
       double offsetX = entityPos.x - (sourcePos.getX() + 0.5);
       double offsetY = entityPos.y - sourcePos.getY();
@@ -731,11 +636,6 @@ public final class LinkingManager {
     return new Vec3(x, safeY, z);
   }
 
-  /**
-   * Finds a safe Y position for spawning.
-   * The chunk at (x,z) MUST be loaded before calling this method
-   * (performLink pre-loads it via getChunk before calling calculateTargetPosition).
-   */
   private static int findSafeY(ServerLevel level, int x, int startY, int z) {
     AgeData ageData = AgeData.getIfPresent(level);
     if (ageData != null && ageData.isPersonalPocket()) {
@@ -752,18 +652,14 @@ public final class LinkingManager {
       chunk = level.getChunk(x >> 4, z >> 4);
     }
 
-    // Detect if this is a ceiling terrain type (nether, cave) where the heightmap
-    // points to the roof and we need to search inside the cave instead.
     boolean hasCeiling = hasCeilingTerrain(level);
 
     BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
     if (hasCeiling) {
-      // For nether/cave terrain: search bottom-up to find a safe spot INSIDE the cave.
-      // The heightmap would return the top of the bedrock ceiling which is wrong.
+
       Mystcraft.LOGGER.debug("Ceiling terrain detected, searching bottom-up for safe spawn");
 
-      // Start from just above minY and scan upward
       for (int y = minY + 1; y < maxY - 1; y++) {
         if (isSafeSpawn(level, pos, x, y, z)) {
           Mystcraft.LOGGER.debug("Found safe spawn inside ceiling terrain at Y={}", y);
@@ -771,33 +667,27 @@ public final class LinkingManager {
         }
       }
 
-      // If nothing found bottom-up, try the requested startY
       if (isSafeSpawn(level, pos, x, startY, z)) {
         return startY;
       }
 
-      // Absolute fallback for ceiling terrain
       Mystcraft.LOGGER.warn("No safe spawn in ceiling terrain at ({}, {}), using startY={}", x, z, startY);
       return startY;
     }
 
-    // Open-sky terrain: use the heightmap
     int hmY = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15);
     int heightmapY = (hmY > minY) ? hmY + 1 : startY;
 
-    // Check heightmap position first (most likely correct)
     if (isSafeSpawn(level, pos, x, heightmapY, z)) {
       Mystcraft.LOGGER.debug("Safe spawn from heightmap at Y={}", heightmapY);
       return heightmapY;
     }
 
-    // Check the originally requested position
     if (startY != heightmapY && isSafeSpawn(level, pos, x, startY, z)) {
       Mystcraft.LOGGER.debug("Safe spawn from requested Y={}", startY);
       return startY;
     }
 
-    // Search outward from heightmap Y, preferring upward
     int searchFrom = heightmapY;
     for (int offset = 1; offset < 256; offset++) {
       int upY = searchFrom + offset;
@@ -813,7 +703,6 @@ public final class LinkingManager {
       }
     }
 
-    // Last resort: scan the entire column top-down
     Mystcraft.LOGGER.warn("Exhaustive search for safe spawn at ({}, {})", x, z);
     for (int y = maxY - 2; y > minY; y--) {
       if (isSafeSpawn(level, pos, x, y, z)) {
@@ -826,25 +715,16 @@ public final class LinkingManager {
     return heightmapY;
   }
 
-  /**
-   * Checks if the level uses a terrain type with a ceiling (nether, cave).
-   * These terrain types have a bedrock roof so the heightmap points to
-   * the top of the ceiling rather than inside the habitable cave.
-   */
   private static boolean hasCeilingTerrain(ServerLevel level) {
     ChunkGenerator generator = level.getChunkSource().getGenerator();
     if (generator instanceof art.arcane.mystcraft.world.gen.AgeChunkGenerator ageGen) {
       String type = ageGen.getTerrainType();
       return "nether".equals(type) || "cave".equals(type);
     }
-    // Also check the dimension type's natural flag - nether dimensions have hasCeiling=true
+
     return level.dimensionType().hasCeiling();
   }
 
-  /**
-   * Checks if a position is safe to spawn: solid ground below, 2 passable blocks at feet and head,
-   * no lava/fire, ground is not bedrock (could indicate void beneath).
-   */
   private static boolean isSafeSpawn(ServerLevel level, BlockPos.MutableBlockPos pos, int x, int y, int z) {
     int minY = level.getMinBuildHeight();
     if (y <= minY || y >= level.getMaxBuildHeight() - 1) {
@@ -855,19 +735,17 @@ public final class LinkingManager {
       return false;
     }
 
-    // Ground must be solid and not a hazard
     pos.set(x, y - 1, z);
     BlockState ground = level.getBlockState(pos);
     if (!ground.isSolidRender(level, pos)) {
       return false;
     }
-    // Don't spawn on lava, fire, or bedrock (bedrock indicates a roof or void boundary)
+
     if (ground.is(Blocks.LAVA) || ground.is(Blocks.FIRE) || ground.is(Blocks.SOUL_FIRE)
         || ground.is(Blocks.MAGMA_BLOCK) || ground.is(Blocks.BEDROCK)) {
       return false;
     }
 
-    // Feet must be passable, not liquid, and not fire
     pos.set(x, y, z);
     BlockState feet = level.getBlockState(pos);
     if (feet.blocksMotion()) {
@@ -880,7 +758,6 @@ public final class LinkingManager {
       return false;
     }
 
-    // Head must be passable and not liquid
     pos.set(x, y + 1, z);
     BlockState head = level.getBlockState(pos);
     if (head.blocksMotion()) {
@@ -889,9 +766,6 @@ public final class LinkingManager {
     return head.getFluidState().isEmpty();
   }
 
-  /**
-   * Plays the appropriate link sound based on flags.
-   */
   private static void playLinkSound(ServerLevel level, BlockPos pos, CompoundTag linkData, boolean isDeparture) {
     if (isDeparture) {
       playSound(level, pos, ModSounds.LINKING_POP.get(), 1.0f, 1.0f);
@@ -905,17 +779,11 @@ public final class LinkingManager {
     }
   }
 
-  /**
-   * Helper method to play sounds.
-   */
   private static void playSound(ServerLevel level, BlockPos pos, net.minecraft.sounds.SoundEvent sound,
                                 float volume, float pitch) {
     level.playSound(null, pos, sound, SoundSource.PLAYERS, volume, pitch);
   }
 
-  /**
-   * Sends a link effect packet to all nearby players.
-   */
   private static void sendLinkEffect(ServerLevel level, BlockPos pos, LinkEffectPacket.LinkEffectType type) {
     LinkEffectPacket packet = new LinkEffectPacket(pos, type);
     for (ServerPlayer player : level.players()) {
@@ -945,10 +813,6 @@ public final class LinkingManager {
     return data;
   }
 
-  /**
-   * Checks whether the player entered a Myst dimension with or without a linkbook
-   * and fires the appropriate advancement trigger.
-   */
   private static void checkMystDimensionAdvancements(ServerPlayer player) {
     for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
       ItemStack itemStack = player.getInventory().getItem(i);
@@ -986,9 +850,6 @@ public final class LinkingManager {
     public static final String MAINTAIN_MOMENTUM = "maintainmomentum";
   }
 
-  /**
-   * Data class for storing passenger information during teleport.
-   */
   private record PassengerData(Entity passenger, Vec3 offset) {
   }
 }

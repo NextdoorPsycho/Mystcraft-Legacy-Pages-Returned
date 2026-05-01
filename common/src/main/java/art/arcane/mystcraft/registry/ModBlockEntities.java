@@ -6,8 +6,8 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import java.util.function.Supplier;
 
 /**
- * Common accessor for registered block entity types.
- * Platform modules populate these suppliers during initialization.
+ * Common accessor for registered block entity types. Platform modules populate
+ * these suppliers during initialization.
  */
 public final class ModBlockEntities {
 
@@ -17,6 +17,7 @@ public final class ModBlockEntities {
   public static Supplier<BlockEntityType<WritingDeskBlockEntity>> WRITING_DESK;
   public static Supplier<BlockEntityType<StarFissureBlockEntity>> STAR_FISSURE;
   public static Supplier<BlockEntityType<LinkModifierBlockEntity>> LINK_MODIFIER;
+  public static Supplier<BlockEntityType<LinkPortalBlockEntity>> LINK_PORTAL;
 
   private ModBlockEntities() {
   }

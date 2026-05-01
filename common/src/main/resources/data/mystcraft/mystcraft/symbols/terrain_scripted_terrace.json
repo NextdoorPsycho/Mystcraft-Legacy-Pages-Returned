@@ -26,14 +26,21 @@
                 "a": {
                   "op": "add",
                   "a": 0.5,
-                  "b": { "op": "noise2", "scale": 0.008, "octaves": 4, "seed": 4949 }
+                  "b": {
+                    "op": "noise2",
+                    "scale": 0.008,
+                    "octaves": 4,
+                    "seed": 4949
+                  }
                 },
                 "b": 8
               }
             },
             "b": 10
           },
-          "b": { "var": "y" }
+          "b": {
+            "var": "y"
+          }
         }
       }
     },

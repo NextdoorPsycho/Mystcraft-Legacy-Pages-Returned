@@ -10,7 +10,8 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.Optional;
 
 /**
- * Triggers when a player enters a Mystcraft dimension without carrying a linkbook.
+ * Triggers when a player enters a Mystcraft dimension without carrying a
+ * linkbook.
  */
 public class EnterMystDimensionQuinnTrigger extends SimpleCriterionTrigger<EnterMystDimensionQuinnTrigger.TriggerInstance> {
 

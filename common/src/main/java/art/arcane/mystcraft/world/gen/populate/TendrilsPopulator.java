@@ -13,19 +13,19 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import java.util.Random;
 
 /**
- * Tendrils populator that generates vine-like terrain formations.
- * Tendrils twist, curve, and creep across multiple chunks.
- * Uses the neighbor-seed pattern: each chunk deterministically replays
- * nearby tendril paths and only places blocks within its own 16x16 area.
+ * Tendrils populator that generates vine-like terrain formations. Tendrils
+ * twist, curve, and creep across multiple chunks. Uses the neighbor-seed
+ * pattern: each chunk deterministically replays nearby tendril paths and only
+ * places blocks within its own 16x16 area.
  */
 public class TendrilsPopulator implements IPopulate {
 
   private static final int DEFAULT_TENDRILS_PER_CHUNK = 1;
   private static final int DEFAULT_MIN_LENGTH = 35;
   private static final int DEFAULT_MAX_LENGTH = 90;
-  // ~12% of chunks spawn a surface root
+
   private static final float DEFAULT_SPAWN_CHANCE = 0.12f;
-  // Max lateral drift: curvature ±2.0 per segment * 50 segments = 100 blocks = 7 chunks
+
   private static final int DEFAULT_NEIGHBOR_RANGE = 8;
   private static final int DEFAULT_MIN_THICKNESS = 2;
   private static final int DEFAULT_MAX_THICKNESS = 5;
@@ -53,10 +53,6 @@ public class TendrilsPopulator implements IPopulate {
     this.maxThickness = Math.max(this.minThickness, PopulatorConfig.getInt(params, "max_thickness", DEFAULT_MAX_THICKNESS));
   }
 
-  /**
-   * Position-deterministic hash. Same position always produces the same value
-   * regardless of which chunk is being populated.
-   */
   private static long positionHash(long seed, int x, int y, int z) {
     long h = seed;
     h ^= (long) x * 73856093L;
@@ -76,7 +72,6 @@ public class TendrilsPopulator implements IPopulate {
     int chunkMinZ = thisChunkZ << 4;
     int chunkMaxZ = chunkMinZ + 15;
 
-    // Check this chunk and neighbors for tendrils that might reach us
     for (int ncx = thisChunkX - neighborRange; ncx <= thisChunkX + neighborRange; ncx++) {
       for (int ncz = thisChunkZ - neighborRange; ncz <= thisChunkZ + neighborRange; ncz++) {
         long chunkSeed = getChunkSeed(ncx, ncz);
@@ -86,32 +81,25 @@ public class TendrilsPopulator implements IPopulate {
         int neighborMinZ = ncz << 4;
 
         for (int i = 0; i < tendrilsPerChunk; i++) {
-          // Deterministic spawn chance - skip most chunks
+
           if (chunkRand.nextFloat() >= spawnChance) {
             continue;
           }
 
-          // Deterministically compute tendril origin
           int startX = neighborMinX + chunkRand.nextInt(16);
           int startZ = neighborMinZ + chunkRand.nextInt(16);
-          // Consume all random state for this tendril deterministically
-          // (material, decoration, length, curvature params, etc.)
+
           BlockState tendrilBlock = getTendrilMaterial(chunkRand);
           BlockState decorationBlock = getDecorationBlock(tendrilBlock, chunkRand);
           int length = minLength + chunkRand.nextInt(maxLength - minLength + 1);
 
-          // Initial curvature - surface crawling bias
           double curvature = (chunkRand.nextDouble() - 0.5) * 0.6;
-          // Base thickness: 2-5 blocks
+
           int baseThickness = minThickness + chunkRand.nextInt(maxThickness - minThickness + 1);
 
-          // Pre-consume all random calls for the tendril path so that
-          // the path is fully deterministic regardless of which chunk visits it.
-          // We store the path positions and then filter to our chunk.
           long pathSeed = chunkRand.nextLong();
           long decorSeed = chunkRand.nextLong();
 
-          // Now replay the tendril path and place only blocks in our chunk
           generateTendril(world, pathSeed, decorSeed, startX, startZ,
               tendrilBlock, decorationBlock, length, curvature,
               baseThickness, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
@@ -155,7 +143,6 @@ public class TendrilsPopulator implements IPopulate {
       int centerBx = (int) Math.floor(currentX);
       int centerBz = (int) Math.floor(currentZ);
 
-      // Skip if center is outside our chunk bounds to avoid accessing unloaded chunks
       if (centerBx < chunkMinX - 1 || centerBx > chunkMaxX + 1 || centerBz < chunkMinZ - 1 || centerBz > chunkMaxZ + 1) {
         continue;
       }
@@ -164,7 +151,7 @@ public class TendrilsPopulator implements IPopulate {
       if (surfaceY <= world.getMinBuildHeight() + 1 || surfaceY >= world.getMaxBuildHeight() - 2) {
         continue;
       }
-      // Verify the block at surfaceY is solid; scan down up to 4 blocks if not
+
       for (int scan = 0; scan < 4; scan++) {
         if (world.getBlockState(new BlockPos(centerBx, surfaceY, centerBz)).isSolid()) {
           break;
@@ -181,7 +168,6 @@ public class TendrilsPopulator implements IPopulate {
       placeRootDisk(world, centerBx, surfaceY, centerBz, thickness,
           tendrilBlock, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
 
-      // occasional upward reach
       if (reachTimer <= 0) {
         long reachHash = positionHash(pathSeed ^ 0xABCD42L, centerBx, surfaceY, centerBz);
         if ((reachHash & 0x1F) == 0) {
@@ -195,7 +181,6 @@ public class TendrilsPopulator implements IPopulate {
         reachTimer--;
       }
 
-      // occasional knots - rare 3x3 cluster
       long knotHash = positionHash(pathSeed ^ 0xDEAD42L, centerBx, surfaceY, centerBz);
       if ((knotHash & 0x3F) == 0) {
         for (int kdx = -1; kdx <= 1; kdx++) {
@@ -214,7 +199,6 @@ public class TendrilsPopulator implements IPopulate {
         }
       }
 
-      // occasional branching
       if (segment > 6 && segment < length - 8) {
         long branchHash = positionHash(pathSeed ^ 0xC0FFEE1L, centerBx, surfaceY, centerBz);
         if ((branchHash & 0x1F) == 0) {
@@ -226,7 +210,6 @@ public class TendrilsPopulator implements IPopulate {
         }
       }
 
-      // surface decorations
       long decorHash = positionHash(decorSeed, centerBx, surfaceY, centerBz);
       if ((decorHash & 0x7) == 0) {
         int dir = (int) ((decorHash >> 3) & 0x3);
@@ -261,14 +244,14 @@ public class TendrilsPopulator implements IPopulate {
         if (shouldPlaceTendrilBlock(world, rootPos)) {
           world.setBlock(rootPos, tendrilBlock, 2);
         }
-        // Embed 3 layers deep for solid grounding
+
         for (int embedDepth = 1; embedDepth <= 3; embedDepth++) {
           BlockPos embedPos = new BlockPos(bx, centerBy - embedDepth, bz);
           if (shouldPlaceTendrilBlock(world, embedPos)) {
             world.setBlock(embedPos, tendrilBlock, 2);
           }
         }
-        // Visible hump: place above surface only if the block above is air
+
         BlockPos abovePos = new BlockPos(bx, centerBy + 1, bz);
         if (world.getBlockState(abovePos).isAir()) {
           world.setBlock(abovePos, tendrilBlock, 2);
@@ -309,7 +292,6 @@ public class TendrilsPopulator implements IPopulate {
       int bx = (int) Math.floor(currentX);
       int bz = (int) Math.floor(currentZ);
 
-      // Skip if outside chunk bounds to avoid accessing unloaded chunks
       if (bx < chunkMinX - 1 || bx > chunkMaxX + 1 || bz < chunkMinZ - 1 || bz > chunkMaxZ + 1) {
         continue;
       }
@@ -318,7 +300,7 @@ public class TendrilsPopulator implements IPopulate {
       if (surfaceY <= world.getMinBuildHeight() + 1 || surfaceY >= world.getMaxBuildHeight() - 2) {
         continue;
       }
-      // Verify solid ground for branch placement
+
       for (int scan = 0; scan < 4; scan++) {
         if (world.getBlockState(new BlockPos(bx, surfaceY, bz)).isSolid()) {
           break;
@@ -342,7 +324,7 @@ public class TendrilsPopulator implements IPopulate {
         existing.is(Blocks.WATER)) {
       return true;
     }
-    // Allow replacing natural terrain so tendrils root into the ground
+
     return existing.is(Blocks.STONE) ||
         existing.is(Blocks.DEEPSLATE) ||
         existing.is(Blocks.DIRT) ||

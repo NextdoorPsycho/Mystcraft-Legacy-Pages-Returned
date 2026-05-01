@@ -27,25 +27,25 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Personal pocket dimension: a hollow rectangular structure.
- * Inner space is configurable separately for XZ (horizontal) and Y (vertical).
- * XZ can be up to 8192 blocks (half-size 4096).
- * Y is limited by Minecraft's dimension height limits.
- * Surrounded by configurable inner shell then outer shell.
- * Spawn point is at the bottom of the hollow interior.
+ * Personal pocket dimension: a hollow rectangular structure. Inner space is
+ * configurable separately for XZ (horizontal) and Y (vertical). XZ can be up to
+ * 8192 blocks (half-size 4096). Y is limited by Minecraft's dimension height
+ * limits. Surrounded by configurable inner shell then outer shell. Spawn point
+ * is at the bottom of the hollow interior.
  * <p>
- * Size validation automatically caps to the configured 1.20.1 dimension limits.
+ * Size validation automatically caps to the configured 1.20.1 dimension
+ * limits.
  */
 public final class PersonalPocketDimension {
 
   /**
-   * Minecraft dimension limits for personal pockets.
-   * These represent the configured personal-pocket dimension type range.
-   * For personal pockets, we use a dimension type configured to these limits.
+   * Minecraft dimension limits for personal pockets. These represent the
+   * configured personal-pocket dimension type range. For personal pockets, we
+   * use a dimension type configured to these limits.
    */
   public static final int MIN_BUILD_Y = -2032;
   public static final int MAX_BUILD_Y = 2032;
-  public static final int DIMENSION_HEIGHT = MAX_BUILD_Y - MIN_BUILD_Y; // 4064
+  public static final int DIMENSION_HEIGHT = MAX_BUILD_Y - MIN_BUILD_Y;
   /**
    * Absolute minimum inner half-size (4 block diameter minimum).
    */
@@ -56,15 +56,8 @@ public final class PersonalPocketDimension {
   public static final int MAX_HALF_SIZE = 4096;
   private static final int PERSONAL_UID_OFFSET = 1_000_000_000;
   private static final int PERSONAL_UID_RANGE = 1_000_000_000;
-  /**
-   * Pre-generation cache for head blocks. Stores blocks by ageUID before dimension creation
-   * so the chunk generator can access them during initial terrain generation.
-   */
   private static final java.util.Map<Integer, java.util.Map<AgeData.PocketHeadFace, java.util.List<String>>> preGenHeadBlocksCache =
       new java.util.concurrent.ConcurrentHashMap<>();
-  /**
-   * Track if we've logged version-based capping warnings.
-   */
   private static boolean loggedYCap = false;
   private static boolean loggedXZCap = false;
 
@@ -85,12 +78,10 @@ public final class PersonalPocketDimension {
     preGenHeadBlocksCache.remove(ageUID);
   }
 
-  // --- Dimension limit detection ---
-
   /**
-   * Returns the maximum supported Y half-size based on Minecraft's dimension limits.
-   * Accounts for shell thickness to ensure the complete pocket fits within limits.
-   * This automatically adapts to the version's capabilities.
+   * Returns the maximum supported Y half-size based on Minecraft's dimension
+   * limits. Accounts for shell thickness to ensure the complete pocket fits
+   * within limits. This automatically adapts to the version's capabilities.
    */
   public static int getMaxSupportedHalfSizeY() {
     int shellThickness = getInnerThickness() + getOuterThickness();
@@ -98,10 +89,9 @@ public final class PersonalPocketDimension {
     return Math.max(MIN_HALF_SIZE, availableHeight / 2);
   }
 
-  // --- Configurable dimensions with validation and fallback ---
-
   /**
-   * Half the inner void space horizontally (X/Z axes). Range: 2-4096 (4 to 8192 blocks).
+   * Half the inner void space horizontally (X/Z axes). Range: 2-4096 (4 to 8192
+   * blocks).
    */
   public static int getInnerHalfSizeXZ() {
     int requested = MystcraftConfig.pocketInnerHalfSizeXZ.get();
@@ -117,8 +107,8 @@ public final class PersonalPocketDimension {
   }
 
   /**
-   * Half the inner void space vertically (Y axis).
-   * Capped to config limit (4096) and then further to Minecraft's dimension height if needed.
+   * Half the inner void space vertically (Y axis). Capped to config limit
+   * (4096) and then further to Minecraft's dimension height if needed.
    */
   public static int getInnerHalfSizeY() {
     int requested = MystcraftConfig.pocketInnerHalfSizeY.get();
@@ -157,18 +147,18 @@ public final class PersonalPocketDimension {
   }
 
   /**
-   * Center Y coordinate (from config, adjusted if needed to fit within build limits).
+   * Center Y coordinate (from config, adjusted if needed to fit within build
+   * limits).
    */
   public static int getCenterY() {
     int requestedCenterY = MystcraftConfig.pocketCenterY.get();
     int totalHalfSizeY = getTotalHalfSizeY();
 
-    // Ensure pocket fits within dimension build limits
     int minCenterY = MIN_BUILD_Y + totalHalfSizeY;
     int maxCenterY = MAX_BUILD_Y - totalHalfSizeY;
 
     if (maxCenterY < minCenterY) {
-      // Pocket too large to fit - use midpoint and log warning
+
       Mystcraft.LOGGER.warn("[PersonalPocket] Pocket Y size ({} blocks) too large for dimension, centering at Y=0", totalHalfSizeY * 2);
       return 0;
     }
@@ -247,7 +237,8 @@ public final class PersonalPocketDimension {
   }
 
   /**
-   * Gets the configured inner block palette, falling back to oak_planks if all invalid.
+   * Gets the configured inner block palette, falling back to oak_planks if all
+   * invalid.
    */
   public static java.util.List<BlockState> getInnerBlockPalette() {
     java.util.List<String> blockIds = MystcraftConfig.pocketInnerBlockPalette.get();
@@ -301,7 +292,8 @@ public final class PersonalPocketDimension {
   }
 
   /**
-   * Returns the player spawn position above the generated personal-pocket floor.
+   * Returns the player spawn position above the generated personal-pocket
+   * floor.
    */
   public static BlockPos getPocketSpawn() {
     return new BlockPos(1, getInnerMinY() + 1, 0);
@@ -313,8 +305,8 @@ public final class PersonalPocketDimension {
   }
 
   /**
-   * Checks if a position is outside the entire pocket structure (beyond outer shell).
-   * This is a failsafe - players should never reach here normally.
+   * Checks if a position is outside the entire pocket structure (beyond outer
+   * shell). This is a failsafe - players should never reach here normally.
    * Teleports them back if they somehow clip through the outer walls.
    */
   public static boolean isOutsideBoundary(double x, double z) {
@@ -324,8 +316,8 @@ public final class PersonalPocketDimension {
   }
 
   /**
-   * Checks if Y coordinate is outside the entire pocket structure (beyond bedrock).
-   * This is a failsafe - players should never reach here normally.
+   * Checks if Y coordinate is outside the entire pocket structure (beyond
+   * bedrock). This is a failsafe - players should never reach here normally.
    */
   public static boolean isOutsideVerticalBoundary(double y) {
     return y < getBoundaryMinY() || y > getBoundaryMaxY();
@@ -359,7 +351,6 @@ public final class PersonalPocketDimension {
     AgeDirectorImpl director = buildPersonalDirector(server);
     UUID ageUUID = owner;
 
-    // Build head blocks BEFORE dimension creation so chunk generator can access them
     java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> headBlocks =
         PocketHeadUtils.buildPocketHeadBlocks(server, owner);
     if (headBlocks == null) {
@@ -404,15 +395,11 @@ public final class PersonalPocketDimension {
     int innerHalfY = getInnerHalfSizeY();
     int centerY = getCenterY();
 
-    // Shell layer 1 boundaries (matching chunk generator):
-    // - Void spans from -innerHalf to innerHalf-1 (exactly 2*innerHalf blocks)
-    // - Shell layer 1 is at: positive side = innerHalf, negative side = -innerHalf-1
     int positiveBoundaryXZ = innerHalfXZ;
     int negativeBoundaryXZ = -innerHalfXZ - 1;
     int positiveBoundaryY = centerY + innerHalfY;
     int negativeBoundaryY = centerY - innerHalfY - 1;
 
-    // Inner void coordinates for UV mapping
     int minX = -innerHalfXZ;
     int maxX = innerHalfXZ - 1;
     int minZ = -innerHalfXZ;
@@ -424,30 +411,27 @@ public final class PersonalPocketDimension {
     int spanY = 2 * innerHalfY;
 
     int placed = 0;
-    // FRONT (south, +Z) - shell at z = innerHalfXZ
+
     placed += reskinFaceZ(level, ageData, AgeData.PocketHeadFace.FRONT, minX, maxX, minY, maxY,
         positiveBoundaryXZ, spanXZ, spanY, false);
-    // BACK (north, -Z) - shell at z = -innerHalfXZ - 1
+
     placed += reskinFaceZ(level, ageData, AgeData.PocketHeadFace.BACK, minX, maxX, minY, maxY,
         negativeBoundaryXZ, spanXZ, spanY, true);
-    // RIGHT (east, +X) - shell at x = innerHalfXZ
+
     placed += reskinFaceX(level, ageData, AgeData.PocketHeadFace.RIGHT, minZ, maxZ, minY, maxY,
         positiveBoundaryXZ, spanXZ, spanY, true);
-    // LEFT (west, -X) - shell at x = -innerHalfXZ - 1
+
     placed += reskinFaceX(level, ageData, AgeData.PocketHeadFace.LEFT, minZ, maxZ, minY, maxY,
         negativeBoundaryXZ, spanXZ, spanY, false);
-    // TOP - shell at y = centerY + innerHalfY
+
     placed += reskinTopBottom(level, ageData, AgeData.PocketHeadFace.TOP, minX, maxX, minZ, maxZ,
         positiveBoundaryY, spanXZ, false);
-    // BOTTOM - shell at y = centerY - innerHalfY - 1
+
     placed += reskinTopBottom(level, ageData, AgeData.PocketHeadFace.BOTTOM, minX, maxX, minZ, maxZ,
         negativeBoundaryY, spanXZ, true);
     return placed;
   }
 
-  /**
-   * Reskin a Z-facing wall (FRONT=south or BACK=north).
-   */
   private static int reskinFaceZ(ServerLevel level, AgeData ageData, AgeData.PocketHeadFace face,
                                  int minX, int maxX, int minY, int maxY,
                                  int fixedZ, int spanXZ, int spanY, boolean mirrorU) {
@@ -463,7 +447,7 @@ public final class PersonalPocketDimension {
     BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
     for (int x = minX; x <= maxX; x++) {
       for (int y = minY; y <= maxY; y++) {
-        // UV calculation matching chunk generator
+
         int u = mirrorU ? ((innerHalfXZ - 1 - x) * 8) / spanXZ
             : ((x + innerHalfXZ) * 8) / spanXZ;
         int v = ((centerY + innerHalfY - 1 - y) * 8) / spanY;
@@ -478,9 +462,6 @@ public final class PersonalPocketDimension {
     return placed;
   }
 
-  /**
-   * Reskin an X-facing wall (RIGHT=east or LEFT=west).
-   */
   private static int reskinFaceX(ServerLevel level, AgeData ageData, AgeData.PocketHeadFace face,
                                  int minZ, int maxZ, int minY, int maxY,
                                  int fixedX, int spanXZ, int spanY, boolean mirrorU) {
@@ -496,7 +477,7 @@ public final class PersonalPocketDimension {
     BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
     for (int z = minZ; z <= maxZ; z++) {
       for (int y = minY; y <= maxY; y++) {
-        // UV calculation matching chunk generator
+
         int u = mirrorU ? ((innerHalfXZ - 1 - z) * 8) / spanXZ
             : ((z + innerHalfXZ) * 8) / spanXZ;
         int v = ((centerY + innerHalfY - 1 - y) * 8) / spanY;
@@ -524,7 +505,7 @@ public final class PersonalPocketDimension {
     BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
     for (int x = minX; x <= maxX; x++) {
       for (int z = minZ; z <= maxZ; z++) {
-        // UV calculation matching chunk generator
+
         int u = ((x + innerHalfXZ) * 8) / spanXZ;
         int v = flipV ? ((z + innerHalfXZ) * 8) / spanXZ
             : ((innerHalfXZ - 1 - z) * 8) / spanXZ;
@@ -561,12 +542,11 @@ public final class PersonalPocketDimension {
 
     boolean needsRebuild = !ageData.hasPocketHeadBlocks() || hasNonWoolHeadBlocks(ageData);
     if (!needsRebuild) {
-      // Clear pre-gen cache if we don't need to rebuild
+
       clearPreGenHeadBlocks(ageUID);
       return;
     }
 
-    // Check pre-gen cache first (populated before dimension creation)
     java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> headBlocks = preGenHeadBlocksCache.get(ageUID);
     if (headBlocks == null) {
       headBlocks = PersonalPocketData.get(level.getServer()).getHeadBlocks(owner);
@@ -587,7 +567,6 @@ public final class PersonalPocketDimension {
     }
     PersonalPocketData.get(level.getServer()).setHeadBlocks(owner, headBlocks);
 
-    // Clear pre-gen cache now that blocks are stored in AgeData
     clearPreGenHeadBlocks(ageUID);
 
     Mystcraft.LOGGER.info("[PersonalPocket] Applied head-based wall palette for {}", owner);
@@ -640,7 +619,6 @@ public final class PersonalPocketDimension {
     director.setLightingType("bright");
     director.setTimescale(0.0f);
 
-    // Disable all world generation features
     director.setCavesEnabled(false);
     director.setRavinesEnabled(false);
     director.setFloatingIslandsEnabled(false);
@@ -692,7 +670,6 @@ public final class PersonalPocketDimension {
     director.setOresDisabled(true);
     director.setHasSea(false);
 
-    // Use The Void biome for empty sky appearance
     Registry<Biome> biomeRegistry = server.registryAccess().registryOrThrow(Registries.BIOME);
     Holder<Biome> voidBiome = biomeRegistry.getHolderOrThrow(Biomes.THE_VOID);
     director.setBiomeController("single");
@@ -711,9 +688,9 @@ public final class PersonalPocketDimension {
   }
 
   /**
-   * Enforces the world border for the personal pocket.
-   * The border matches the inner void space (48x48) centered at origin.
-   * Acts as both visual indicator and physical barrier.
+   * Enforces the world border for the personal pocket. The border matches the
+   * inner void space (48x48) centered at origin. Acts as both visual indicator
+   * and physical barrier.
    */
   public static void enforceBorder(ServerLevel level) {
     WorldBorder border = level.getWorldBorder();
@@ -723,18 +700,18 @@ public final class PersonalPocketDimension {
       border.setCenter(0.0, 0.0);
       changed = true;
     }
-    int borderSize = getInnerSizeXZ() + 2; // +1 on each side
+    int borderSize = getInnerSizeXZ() + 2;
     if (border.getSize() != borderSize) {
       Mystcraft.LOGGER.info("[PersonalPocket] Setting world border size from {} to {}", border.getSize(), borderSize);
       border.setSize(borderSize);
       changed = true;
     }
-    // Warning distance: visual indicator when approaching edge
+
     if (border.getWarningBlocks() != 20) {
       border.setWarningBlocks(20);
       changed = true;
     }
-    // Enable damage as additional enforcement
+
     if (border.getDamagePerBlock() != 0.5) {
       border.setDamagePerBlock(0.5);
       changed = true;
@@ -748,15 +725,13 @@ public final class PersonalPocketDimension {
       Mystcraft.LOGGER.info("[PersonalPocket] Border enforced: center=({},{}), size={}, warning={}, damage={}/block",
           border.getCenterX(), border.getCenterZ(), border.getSize(), border.getWarningBlocks(), border.getDamagePerBlock());
 
-      // Explicitly sync border to all players in this dimension
-      // Forge custom dimensions may not auto-sync world border changes
       syncBorderToPlayers(level, border);
     }
   }
 
   /**
-   * Sends the world border state to all players in the dimension.
-   * Required for Forge custom dimensions where border changes may not auto-sync.
+   * Sends the world border state to all players in the dimension. Required for
+   * Forge custom dimensions where border changes may not auto-sync.
    */
   public static void syncBorderToPlayers(ServerLevel level, WorldBorder border) {
     ClientboundInitializeBorderPacket packet = new ClientboundInitializeBorderPacket(border);

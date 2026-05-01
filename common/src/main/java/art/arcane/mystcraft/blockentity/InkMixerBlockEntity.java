@@ -30,13 +30,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 /**
- * Block entity for the Ink Mixer.
- * Handles mixing of inks and dyes to create link panels with properties.
+ * Block entity for the Ink Mixer. Handles mixing of inks and dyes to create
+ * link panels with properties.
  * <p>
- * Slots:
- * 0 - Ink input (fluid containers)
- * 1 - Paper input
- * 2 - Empty container output
+ * Slots: 0 - Ink input (fluid containers) 1 - Paper input 2 - Empty container
+ * output
  */
 public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuProvider {
 
@@ -76,6 +74,29 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
     this.nextSeed = new Random().nextLong();
   }
 
+  private static int computeBlendedInkTint(Map<String, Float> probabilities) {
+    if (probabilities == null || probabilities.isEmpty()) {
+      return 0;
+    }
+    float r = 0f, g = 0f, b = 0f, total = 0f;
+    for (Map.Entry<String, Float> entry : probabilities.entrySet()) {
+      InkEffects.PropertyColor color = InkEffects.getPropertyColor(entry.getKey());
+      if (color == null) continue;
+      float weight = Math.max(0f, entry.getValue());
+      r += color.r() * weight;
+      g += color.g() * weight;
+      b += color.b() * weight;
+      total += weight;
+    }
+    if (total <= 0f) {
+      return 0;
+    }
+    int ri = Math.min(255, Math.round((r / total) * 255f)) & 0xFF;
+    int gi = Math.min(255, Math.round((g / total) * 255f)) & 0xFF;
+    int bi = Math.min(255, Math.round((b / total) * 255f)) & 0xFF;
+    return (ri << 16) | (gi << 8) | bi;
+  }
+
   /**
    * Gets the inventory container for external access.
    */
@@ -100,13 +121,10 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
     tag.putBoolean(TAG_HAS_INK, hasInk);
     tag.putLong(TAG_SEED, nextSeed);
 
-    // Persist the full affinity blend (covers link properties + symbol bias).
     if (!blend.isEmpty()) {
       tag.put(TAG_BLEND, blend.toNbt());
     }
 
-    // Save legacy probability map for backwards compatibility with old saves
-    // and any third-party tools that read the raw map directly.
     Map<String, Float> linkProps = blend.linkPropertyWeights();
     if (!linkProps.isEmpty()) {
       CompoundTag probs = new CompoundTag();
@@ -133,9 +151,6 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
     hasInk = tag.getBoolean(TAG_HAS_INK);
     nextSeed = tag.getLong(TAG_SEED);
 
-    // Prefer the new blend tag; fall back to the legacy probabilities map for
-    // pre-affinity saves so existing worlds still load with the same link-
-    // property mix in the basin.
     blend.clear();
     if (tag.contains(TAG_BLEND, Tag.TAG_COMPOUND)) {
       blend.fromNbt(tag.getCompound(TAG_BLEND));
@@ -166,22 +181,16 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
     }
   }
 
-  /**
-   * Tries to fill the basin from the ink container.
-   */
   private void tryFillFromContainer() {
     ItemStack container = inventory.getItem(SLOT_INK_IN);
     if (container.isEmpty()) {
       return;
     }
 
-    // Check if the container holds valid ink by checking its crafting remainder
-    // and if it's a known ink container (e.g., ink bucket)
     if (!isValidInkContainer(container)) {
       return;
     }
 
-    // Get the empty container (crafting remainder)
     ItemStack emptyContainer;
     if (container.getItem().hasCraftingRemainingItem()) {
       emptyContainer = new ItemStack(container.getItem().getCraftingRemainingItem());
@@ -189,7 +198,6 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
       emptyContainer = new ItemStack(Items.BUCKET);
     }
 
-    // Check if we can put the empty container in the output
     ItemStack currentOutput = inventory.getItem(SLOT_INK_OUT);
     if (!currentOutput.isEmpty()) {
       if (!ItemStackNbt.isSameItemSameTags(currentOutput, emptyContainer)) {
@@ -200,14 +208,12 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
       }
     }
 
-    // Fill the basin
     hasInk = true;
     container.shrink(1);
     if (container.isEmpty()) {
       inventory.setItem(SLOT_INK_IN, ItemStack.EMPTY);
     }
 
-    // Add empty container to output
     if (currentOutput.isEmpty()) {
       inventory.setItem(SLOT_INK_OUT, emptyContainer);
     } else {
@@ -218,26 +224,16 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
     markForUpdate();
   }
 
-  /**
-   * Checks if a fluid is valid ink by fluid reference.
-   */
   private boolean isValidInkFluid(Fluid fluid) {
     return fluid == ModFluids.BLACK_INK_SOURCE.get() ||
         fluid == ModFluids.BLACK_INK_FLOWING.get();
   }
 
-  /**
-   * Checks if a stack is a valid ink container.
-   * Accepts items that have a crafting remainder and are associated with ink fluid.
-   */
   private boolean isValidInkContainer(ItemStack stack) {
     if (stack.isEmpty()) {
       return false;
     }
-    // Check if the item is a bucket of ink (the item itself represents the filled container)
-    // In vanilla-compatible code, we check the item's registry name or tag
-    // For now, accept any item that has a crafting remainder (like buckets)
-    // and is registered as an ink bucket in ModFluids
+
     return stack.is(ModTags.Items.INK_BUCKETS);
   }
 
@@ -272,7 +268,6 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
       return;
     }
 
-    // Apply ink probabilities to the link panel
     Random rand = new Random(nextSeed);
     Map<String, Float> linkProps = blend.linkPropertyWeights();
     for (Map.Entry<String, Float> entry : linkProps.entrySet()) {
@@ -283,27 +278,19 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
       }
     }
 
-    // Persist the blended ink tint so the procedural Book UI can render
-    // the link panel and book cover with colors derived from the actual
-    // ink mixture (the "water" portion of the dependency chain).
     int blendedTint = computeBlendedInkTint(linkProps);
     if (blendedTint != 0) {
       Page.setInkTint(output, blendedTint);
     }
 
-    // Snapshot the affinity blend onto the link panel page so any downstream
-    // consumer (booster pack crafted from this ink, themed page roll) can
-    // re-hydrate the same biases.
     if (!blend.isEmpty()) {
       Page.setAffinitySnapshot(output, blend.toNbt());
     }
 
-    // Reset state
     nextSeed = rand.nextLong();
     hasInk = false;
     blend.clear();
 
-    // Consume paper
     inventory.getItem(SLOT_PAPER).shrink(1);
 
     setChanged();
@@ -311,37 +298,8 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
   }
 
   /**
-   * Blends property colors weighted by their probabilities to produce a single
-   * representative tint for the resulting link panel. Properties with higher
-   * probabilities pull the blend toward their color; an unmodified ink with
-   * no extras returns 0 (neutral / black-ink default).
-   */
-  private static int computeBlendedInkTint(Map<String, Float> probabilities) {
-    if (probabilities == null || probabilities.isEmpty()) {
-      return 0;
-    }
-    float r = 0f, g = 0f, b = 0f, total = 0f;
-    for (Map.Entry<String, Float> entry : probabilities.entrySet()) {
-      InkEffects.PropertyColor color = InkEffects.getPropertyColor(entry.getKey());
-      if (color == null) continue;
-      float weight = Math.max(0f, entry.getValue());
-      r += color.r() * weight;
-      g += color.g() * weight;
-      b += color.b() * weight;
-      total += weight;
-    }
-    if (total <= 0f) {
-      return 0;
-    }
-    int ri = Math.min(255, Math.round((r / total) * 255f)) & 0xFF;
-    int gi = Math.min(255, Math.round((g / total) * 255f)) & 0xFF;
-    int bi = Math.min(255, Math.round((b / total) * 255f)) & 0xFF;
-    return (ri << 16) | (gi << 8) | bi;
-  }
-
-  /**
-   * Adds items to modify ink properties.
-   * Items with registered ink effects will modify the probabilities of properties.
+   * Adds items to modify ink properties. Items with registered ink effects will
+   * modify the probabilities of properties.
    *
    * @param stack  The item stack to add
    * @param amount The number of items to consume
@@ -355,10 +313,7 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
 
     InkAffinity.Entry affinity = InkAffinity.getAffinity(stack);
     if (affinity == null || affinity.isEmpty()) {
-      // Fall back to the legacy InkEffects map for items registered through
-      // the old (pre-affinity) API. InkEffects.getItemEffects already
-      // delegates to InkAffinity, but custom callers may still register
-      // entries via InkEffects.addPropertyToItem.
+
       Map<String, Float> legacy = InkEffects.getItemEffects(stack);
       if (legacy == null || legacy.isEmpty()) {
         return stack;
@@ -408,8 +363,8 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
   }
 
   /**
-   * Gets the current ink probabilities (link-property weights only).
-   * Backed by the affinity blend; mutating the returned map has no effect.
+   * Gets the current ink probabilities (link-property weights only). Backed by
+   * the affinity blend; mutating the returned map has no effect.
    */
   public Map<String, Float> getInkProbabilities() {
     return new HashMap<>(blend.linkPropertyWeights());
@@ -436,8 +391,6 @@ public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuPro
     }
     return drops;
   }
-
-  // MenuProvider implementation
 
   @Override
   @NotNull

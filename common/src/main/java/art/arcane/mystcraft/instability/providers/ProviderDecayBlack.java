@@ -6,8 +6,8 @@ import art.arcane.mystcraft.block.DecayBlock;
 import art.arcane.mystcraft.instability.effects.EffectDecay;
 
 /**
- * Provider for black decay effects.
- * Black decay is the most destructive - it spreads, damages, and has special falling behavior.
+ * Provider for black decay effects. Black decay is the most destructive - it
+ * spreads, damages, and has special falling behavior.
  */
 public class ProviderDecayBlack implements IInstabilityProvider {
 

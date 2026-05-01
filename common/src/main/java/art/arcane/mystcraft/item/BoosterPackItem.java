@@ -23,21 +23,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The Booster Pack (Sealed Notebook) item.
- * Contains random symbol pages when opened.
- * Used to give players new symbols to discover.
+ * The Booster Pack (Sealed Notebook) item. Contains random symbol pages when
+ * opened. Used to give players new symbols to discover.
  * <p>
  * Booster packs may optionally carry an {@link InkBlend} affinity snapshot
  * under the {@code "BoosterAffinity"} NBT key. When present, generated symbol
  * pages are rolled via
  * {@link SymbolRegistry#getRandomWeightedWithAffinity(RandomSource, InkBlend)}
- * so the pack's contents reflect the themed ink it was crafted with
- * (e.g. a diamond-themed pack favours dense_ores / dripstone / deep_dark).
- * Packs without the tag fall back to plain weighted selection.
+ * so the pack's contents reflect the themed ink it was crafted with (e.g. a
+ * diamond-themed pack favours dense_ores / dripstone / deep_dark). Packs
+ * without the tag fall back to plain weighted selection.
  */
 public class BoosterPackItem extends Item {
 
-  /** NBT key holding an {@link InkBlend} snapshot for themed packs. */
+  /**
+   * NBT key holding an {@link InkBlend} snapshot for themed packs.
+   */
   public static final String TAG_AFFINITY = "BoosterAffinity";
 
   private static final int PAGES_PER_PACK = 3;
@@ -54,7 +55,8 @@ public class BoosterPackItem extends Item {
   public static InkBlend getAffinity(@NotNull ItemStack stack) {
     if (stack.isEmpty()) return null;
     CompoundTag tag = ItemStackNbt.getTag(stack);
-    if (tag == null || !tag.contains(TAG_AFFINITY, Tag.TAG_COMPOUND)) return null;
+    if (tag == null || !tag.contains(TAG_AFFINITY, Tag.TAG_COMPOUND))
+      return null;
     InkBlend blend = InkBlend.fromTag(tag.getCompound(TAG_AFFINITY));
     return blend.isEmpty() ? null : blend;
   }
@@ -79,17 +81,15 @@ public class BoosterPackItem extends Item {
     ItemStack stack = player.getItemInHand(hand);
 
     if (!level.isClientSide) {
-      // Generate random pages
+
       List<ItemStack> pages = generatePages(level, player, stack);
 
-      // Give pages to player
       for (ItemStack page : pages) {
         if (!player.getInventory().add(page)) {
           player.drop(page, false);
         }
       }
 
-      // Consume the booster pack
       stack.shrink(1);
 
       if (!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) || serverPlayer.connection != null) {
@@ -102,12 +102,6 @@ public class BoosterPackItem extends Item {
     return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
   }
 
-  /**
-   * Generates random pages for this booster pack. If {@code packStack} carries
-   * an {@link InkBlend} affinity snapshot the symbol roll is biased through
-   * {@link SymbolRegistry#getRandomWeightedWithAffinity}; otherwise the
-   * legacy uncapped weighted roll is used.
-   */
   private List<ItemStack> generatePages(Level level, Player player, ItemStack packStack) {
     List<ItemStack> pages = new ArrayList<>();
     RandomSource random = level.random;
@@ -118,17 +112,17 @@ public class BoosterPackItem extends Item {
     for (int i = 0; i < PAGES_PER_PACK; i++) {
       float roll = random.nextFloat();
       if (allowLinkPanels && roll < 0.2f) {
-        // 20% chance of link panel (if enabled)
+
         pages.add(Page.createLinkPage());
       } else {
-        // Symbol page (or 100% if link panels disabled)
+
         IAgeSymbol symbol = affinity != null
             ? SymbolRegistry.getRandomWeightedWithAffinity(random, affinity)
             : SymbolRegistry.getRandomWeighted(random);
         if (symbol != null) {
           pages.add(Page.createSymbolPage(symbol.getRegistryName()));
         } else {
-          // Fallback to blank page if no symbols registered
+
           pages.add(Page.createPage());
         }
       }

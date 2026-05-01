@@ -16,9 +16,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 
 /**
- * Desert temple populator that generates pyramid structures.
- * Desert temples consist of a sandstone pyramid with a hidden treasure chamber
- * below with TNT traps and chests containing loot.
+ * Desert temple populator that generates pyramid structures. Desert temples
+ * consist of a sandstone pyramid with a hidden treasure chamber below with TNT
+ * traps and chests containing loot.
  */
 public class DesertTemplesPopulator implements IPopulate {
 

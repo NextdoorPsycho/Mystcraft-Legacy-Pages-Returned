@@ -4,8 +4,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
 /**
- * Interface for providing dynamic colors that can change based on time, weather, and position.
- * Multiple color providers can be registered and their colors will be averaged.
+ * Interface for providing dynamic colors that can change based on time,
+ * weather, and position. Multiple color providers can be registered and their
+ * colors will be averaged.
  * <p>
  * Used for sky color, fog color, cloud color, and other atmosphere effects.
  */
@@ -24,14 +25,14 @@ public interface IDynamicColorProvider {
    * @param level       The level/world
    * @param entity      The viewing entity (player), can be null
    * @param partialTick Partial tick for interpolation
-   * @return The RGB color value (0xRRGGBB format), or -1 to use default/skip this provider
+   * @return The RGB color value (0xRRGGBB format), or -1 to use default/skip
+   * this provider
    */
   int getColor(Level level, Entity entity, float partialTick);
 
   /**
-   * Gets the priority of this color provider.
-   * Higher priority providers have more weight in the averaging calculation.
-   * Default is 1.0.
+   * Gets the priority of this color provider. Higher priority providers have
+   * more weight in the averaging calculation. Default is 1.0.
    *
    * @return The priority weight (positive value)
    */
@@ -40,8 +41,8 @@ public interface IDynamicColorProvider {
   }
 
   /**
-   * Returns whether this color should be blended based on time of day.
-   * If true, the color will be dimmed at night and brighter during day.
+   * Returns whether this color should be blended based on time of day. If true,
+   * the color will be dimmed at night and brighter during day.
    *
    * @return True to enable time-based blending
    */
@@ -50,8 +51,8 @@ public interface IDynamicColorProvider {
   }
 
   /**
-   * Returns whether this color should be affected by weather.
-   * If true, the color will be darkened during rain/thunder.
+   * Returns whether this color should be affected by weather. If true, the
+   * color will be darkened during rain/thunder.
    *
    * @return True to enable weather-based blending
    */

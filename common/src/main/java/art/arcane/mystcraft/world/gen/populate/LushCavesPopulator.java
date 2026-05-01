@@ -11,11 +11,12 @@ import net.minecraft.world.level.block.CaveVinesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Populates caves with lush cave vegetation features.
- * Generates moss, glow berries, azalea bushes, spore blossoms, and dripleaf plants.
+ * Populates caves with lush cave vegetation features. Generates moss, glow
+ * berries, azalea bushes, spore blossoms, and dripleaf plants.
  * <p>
  * Uses chunk boundary checking to prevent cascade loading - blocks outside the
- * current chunk are simply skipped rather than triggering neighbor chunk loads.
+ * current chunk are simply skipped rather than triggering neighbor chunk
+ * loads.
  */
 public class LushCavesPopulator implements IPopulate {
 
@@ -25,7 +26,7 @@ public class LushCavesPopulator implements IPopulate {
   private final int attemptsPerChunk;
   private final int maxY;
   private final float spawnChance;
-  // Chunk boundaries for current population
+
   private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
   public LushCavesPopulator(long seed) {
@@ -44,7 +45,6 @@ public class LushCavesPopulator implements IPopulate {
     int chunkX = chunkPos.getX() >> 4;
     int chunkZ = chunkPos.getZ() >> 4;
 
-    // Set chunk boundaries for this population run
     chunkMinX = chunkX << 4;
     chunkMaxX = chunkMinX + 15;
     chunkMinZ = chunkZ << 4;
@@ -64,7 +64,6 @@ public class LushCavesPopulator implements IPopulate {
         continue;
       }
 
-      // Check if we're in a cave
       if (!isInCave(world, pos)) {
         continue;
       }
@@ -85,28 +84,17 @@ public class LushCavesPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Checks if a position is within the current chunk boundaries.
-   * This prevents cascade chunk loading when structures extend beyond chunk edges.
-   */
   private boolean isInChunk(BlockPos pos) {
     return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
         pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
   }
 
-  /**
-   * Safe setBlock that only places blocks within current chunk boundaries.
-   */
   private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
     if (isInChunk(pos)) {
       world.setBlock(pos, state, 2);
     }
   }
 
-  /**
-   * Safe getBlockState that returns air if position is outside chunk boundaries.
-   * This prevents cascade chunk loading when checking blocks near chunk edges.
-   */
   private BlockState safeGetBlockState(WorldGenLevel world, BlockPos pos) {
     if (!isInChunk(pos)) {
       return Blocks.AIR.defaultBlockState();
@@ -114,16 +102,12 @@ public class LushCavesPopulator implements IPopulate {
     return world.getBlockState(pos);
   }
 
-  /**
-   * Attempts to place moss blocks on surfaces.
-   */
   private void tryPlaceMoss(WorldGenLevel world, RandomSource random, BlockPos center) {
-    // Try placing moss on floor
+
     BlockPos below = center.below();
     if (isInChunk(below) && canReplaceMoss(world.getBlockState(below))) {
       safeSetBlock(world, below, Blocks.MOSS_BLOCK.defaultBlockState());
 
-      // Spread moss to nearby blocks
       int spread = 2 + random.nextInt(3);
       for (int i = 0; i < spread; i++) {
         int offsetX = random.nextInt(3) - 1;
@@ -135,7 +119,6 @@ public class LushCavesPopulator implements IPopulate {
             canReplaceMoss(safeGetBlockState(world, mossPos))) {
           safeSetBlock(world, mossPos, Blocks.MOSS_BLOCK.defaultBlockState());
 
-          // Occasionally add moss carpet on top
           if (random.nextFloat() < 0.4f) {
             safeSetBlock(world, mossPos.above(), Blocks.MOSS_CARPET.defaultBlockState());
           }
@@ -143,16 +126,12 @@ public class LushCavesPopulator implements IPopulate {
       }
     }
 
-    // Try placing moss on ceiling
     BlockPos above = center.above();
     if (isInChunk(above) && canReplaceMoss(world.getBlockState(above))) {
       safeSetBlock(world, above, Blocks.MOSS_BLOCK.defaultBlockState());
     }
   }
 
-  /**
-   * Attempts to place glow berry vines hanging from the ceiling.
-   */
   private void tryPlaceGlowBerries(WorldGenLevel world, RandomSource random, BlockPos pos) {
     BlockPos above = pos.above();
     if (!isInChunk(above)) {
@@ -185,9 +164,6 @@ public class LushCavesPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Attempts to place azalea bushes.
-   */
   private void tryPlaceAzalea(WorldGenLevel world, RandomSource random, BlockPos pos) {
     BlockPos below = pos.below();
     if (!isInChunk(below)) {
@@ -206,9 +182,6 @@ public class LushCavesPopulator implements IPopulate {
     safeSetBlock(world, pos, azaleaState);
   }
 
-  /**
-   * Attempts to place spore blossoms on the ceiling.
-   */
   private void tryPlaceSporeBlossoms(WorldGenLevel world, RandomSource random, BlockPos pos) {
     BlockPos above = pos.above();
     if (!isInChunk(above)) {
@@ -223,9 +196,6 @@ public class LushCavesPopulator implements IPopulate {
     safeSetBlock(world, pos, Blocks.SPORE_BLOSSOM.defaultBlockState());
   }
 
-  /**
-   * Attempts to place dripleaf plants in water.
-   */
   private void tryPlaceDripleaf(WorldGenLevel world, RandomSource random, BlockPos pos) {
     BlockPos below = pos.below();
     if (!isInChunk(below)) {
@@ -233,21 +203,18 @@ public class LushCavesPopulator implements IPopulate {
     }
     BlockState belowState = world.getBlockState(below);
 
-    // Check for clay or moss in water
     if (!(belowState.is(Blocks.CLAY) || belowState.is(Blocks.MOSS_BLOCK))) {
       return;
     }
 
-    // Check if there's water above the base block
     if (!isInChunk(pos) || !world.getBlockState(pos).is(Blocks.WATER)) {
       return;
     }
 
-    // Place small dripleaf
     if (random.nextBoolean()) {
       safeSetBlock(world, pos, Blocks.SMALL_DRIPLEAF.defaultBlockState());
     } else {
-      // Place big dripleaf (2-3 blocks tall)
+
       int height = 2 + random.nextInt(2);
       for (int i = 0; i < height; i++) {
         BlockPos leafPos = pos.above(i);
@@ -262,17 +229,13 @@ public class LushCavesPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Checks if the position is in a cave (air with stone nearby).
-   * Uses chunk boundary checking to prevent cascade loading.
-   */
   private boolean isInCave(WorldGenLevel world, BlockPos pos) {
     int stoneCount = 0;
     int airCount = 0;
 
     for (Direction direction : Direction.values()) {
       BlockPos neighborPos = pos.relative(direction);
-      // Skip neighbors outside chunk to prevent cascade loading
+
       if (!isInChunk(neighborPos)) {
         continue;
       }
@@ -287,9 +250,6 @@ public class LushCavesPopulator implements IPopulate {
     return airCount >= 2 && stoneCount >= 2;
   }
 
-  /**
-   * Checks if moss can replace this block.
-   */
   private boolean canReplaceMoss(BlockState state) {
     return state.is(Blocks.STONE) ||
         state.is(Blocks.DEEPSLATE) ||
@@ -300,9 +260,6 @@ public class LushCavesPopulator implements IPopulate {
         state.is(Blocks.GRAVEL);
   }
 
-  /**
-   * Checks if plants can grow on this block.
-   */
   private boolean canPlantOnMoss(BlockState state) {
     return state.is(Blocks.MOSS_BLOCK) ||
         state.is(Blocks.DIRT) ||

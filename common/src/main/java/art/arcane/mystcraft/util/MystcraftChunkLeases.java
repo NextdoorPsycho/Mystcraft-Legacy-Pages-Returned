@@ -8,8 +8,8 @@ import net.minecraft.world.level.ChunkPos;
 import java.util.Comparator;
 
 /**
- * Short-lived chunk leases used around linking so immediate returns do not force
- * the server to unload and reload the same origin/destination chunks.
+ * Short-lived chunk leases used around linking so immediate returns do not
+ * force the server to unload and reload the same origin/destination chunks.
  */
 public final class MystcraftChunkLeases {
 

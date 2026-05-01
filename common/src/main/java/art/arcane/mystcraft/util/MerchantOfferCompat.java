@@ -5,6 +5,9 @@ import net.minecraft.world.item.trading.MerchantOffer;
 
 import java.lang.reflect.Constructor;
 
+/**
+ * Creates merchant offers through the constructor shape available in the active 1.20.1 runtime.
+ */
 public final class MerchantOfferCompat {
 
   private static final Constructor<MerchantOffer> CTOR_STACK =

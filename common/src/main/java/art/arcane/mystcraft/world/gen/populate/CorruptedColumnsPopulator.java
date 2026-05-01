@@ -11,11 +11,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Corrupted columns populator that generates ruined architectural columns of mixed
- * stone types, resembling a collapsed ancient structure. Clusters of 2-4 pillars
- * with 3x3 base and capital plates, breakage with scattered rubble, and optional
- * iron bar railings between intact columns.
- * Single-chunk populator (max cluster radius ~8 blocks, fits within chunk).
+ * Corrupted columns populator that generates ruined architectural columns of
+ * mixed stone types, resembling a collapsed ancient structure. Clusters of 2-4
+ * pillars with 3x3 base and capital plates, breakage with scattered rubble, and
+ * optional iron bar railings between intact columns. Single-chunk populator
+ * (max cluster radius ~8 blocks, fits within chunk).
  */
 public class CorruptedColumnsPopulator implements IPopulate {
 
@@ -78,7 +78,6 @@ public class CorruptedColumnsPopulator implements IPopulate {
         continue;
       }
 
-      // Verify ground is solid
       BlockState ground = world.getBlockState(new BlockPos(centerX, surfaceY, centerZ));
       if (!ground.isSolid() || ground.is(BlockTags.LEAVES)) {
         continue;
@@ -90,8 +89,8 @@ public class CorruptedColumnsPopulator implements IPopulate {
   }
 
   private void generateColumnCluster(WorldGenLevel world, RandomSource random, BlockPos chunkPos,
-                                      int clusterCenterX, int clusterSurfaceY, int clusterCenterZ,
-                                      int columnCount) {
+                                     int clusterCenterX, int clusterSurfaceY, int clusterCenterZ,
+                                     int columnCount) {
     int[] columnX = new int[columnCount];
     int[] columnZ = new int[columnCount];
     int[] columnSurfaceY = new int[columnCount];
@@ -100,7 +99,6 @@ public class CorruptedColumnsPopulator implements IPopulate {
     int[] columnActualHeight = new int[columnCount];
     BlockState[] columnMaterial = new BlockState[columnCount];
 
-    // Compute all column parameters
     for (int c = 0; c < columnCount; c++) {
       int offsetX = random.nextInt(clusterRadius * 2 + 1) - clusterRadius;
       int offsetZ = random.nextInt(clusterRadius * 2 + 1) - clusterRadius;
@@ -117,18 +115,16 @@ public class CorruptedColumnsPopulator implements IPopulate {
       columnBroken[c] = broken;
 
       if (broken) {
-        // Break at 30-70% of full height
+
         float breakFraction = 0.3f + random.nextFloat() * 0.4f;
         columnActualHeight[c] = Math.max(2, (int) (fullHeight * breakFraction));
       } else {
         columnActualHeight[c] = fullHeight;
       }
 
-      // Material per column
       columnMaterial[c] = getColumnMaterial(random);
     }
 
-    // Place each column
     for (int c = 0; c < columnCount; c++) {
       BlockState ground = world.getBlockState(new BlockPos(columnX[c], columnSurfaceY[c], columnZ[c]));
       if (!ground.isSolid() || ground.is(BlockTags.LEAVES)) {
@@ -142,10 +138,8 @@ public class CorruptedColumnsPopulator implements IPopulate {
       BlockState material = columnMaterial[c];
       int actualHeight = columnActualHeight[c];
 
-      // 3x3 base plate at ground level
       placeBasePlate(world, chunkPos, columnX[c], baseY, columnZ[c], material);
 
-      // Main pillar (1-wide)
       for (int dy = 1; dy < actualHeight; dy++) {
         BlockPos pillarPos = new BlockPos(columnX[c], baseY + dy, columnZ[c]);
         if (isInWritableArea(pillarPos, chunkPos)) {
@@ -154,16 +148,15 @@ public class CorruptedColumnsPopulator implements IPopulate {
       }
 
       if (columnBroken[c]) {
-        // Scattered rubble around base
+
         placeRubble(world, chunkPos, columnX[c], columnSurfaceY[c], columnZ[c], material, random);
       } else {
-        // Capital plate at top
+
         int topY = baseY + actualHeight;
         placeCapitalPlate(world, chunkPos, columnX[c], topY, columnZ[c], material);
       }
     }
 
-    // Iron bar railings between adjacent intact columns
     for (int a = 0; a < columnCount; a++) {
       if (columnBroken[a]) {
         continue;
@@ -174,7 +167,7 @@ public class CorruptedColumnsPopulator implements IPopulate {
         }
         double dist = Math.sqrt(
             (double) (columnX[a] - columnX[b]) * (columnX[a] - columnX[b]) +
-            (double) (columnZ[a] - columnZ[b]) * (columnZ[a] - columnZ[b])
+                (double) (columnZ[a] - columnZ[b]) * (columnZ[a] - columnZ[b])
         );
         if (dist <= DEFAULT_RAILING_DISTANCE && dist >= 2.0) {
           placeRailing(world, chunkPos, columnX[a], columnZ[a], columnSurfaceY[a],
@@ -186,7 +179,7 @@ public class CorruptedColumnsPopulator implements IPopulate {
   }
 
   private void placeBasePlate(WorldGenLevel world, BlockPos chunkPos,
-                               int centerX, int y, int centerZ, BlockState material) {
+                              int centerX, int y, int centerZ, BlockState material) {
     for (int dx = -1; dx <= 1; dx++) {
       for (int dz = -1; dz <= 1; dz++) {
         BlockPos pos = new BlockPos(centerX + dx, y, centerZ + dz);
@@ -198,7 +191,7 @@ public class CorruptedColumnsPopulator implements IPopulate {
   }
 
   private void placeCapitalPlate(WorldGenLevel world, BlockPos chunkPos,
-                                  int centerX, int y, int centerZ, BlockState material) {
+                                 int centerX, int y, int centerZ, BlockState material) {
     for (int dx = -1; dx <= 1; dx++) {
       for (int dz = -1; dz <= 1; dz++) {
         BlockPos pos = new BlockPos(centerX + dx, y, centerZ + dz);
@@ -210,10 +203,10 @@ public class CorruptedColumnsPopulator implements IPopulate {
   }
 
   private void placeRubble(WorldGenLevel world, BlockPos chunkPos,
-                            int centerX, int surfaceY, int centerZ,
-                            BlockState columnMaterial, RandomSource random) {
-    int rubbleRadius = 3 + random.nextInt(3); // 3-5 block radius
-    int rubbleCount = 4 + random.nextInt(5);  // 4-8 rubble piles
+                           int centerX, int surfaceY, int centerZ,
+                           BlockState columnMaterial, RandomSource random) {
+    int rubbleRadius = 3 + random.nextInt(3);
+    int rubbleCount = 4 + random.nextInt(5);
 
     for (int r = 0; r < rubbleCount; r++) {
       int dx = random.nextInt(rubbleRadius * 2 + 1) - rubbleRadius;
@@ -227,7 +220,7 @@ public class CorruptedColumnsPopulator implements IPopulate {
       }
 
       BlockState rubbleMaterial = getRubbleMaterial(columnMaterial, random);
-      int rubbleHeight = 1 + random.nextInt(3); // 1-3 blocks high
+      int rubbleHeight = 1 + random.nextInt(3);
 
       for (int dy = 1; dy <= rubbleHeight; dy++) {
         BlockPos rubblePos = new BlockPos(rx, rSurfaceY + dy, rz);
@@ -239,14 +232,13 @@ public class CorruptedColumnsPopulator implements IPopulate {
   }
 
   private void placeRailing(WorldGenLevel world, BlockPos chunkPos,
-                             int x1, int z1, int surfaceY1,
-                             int x2, int z2, int surfaceY2,
-                             int minColumnHeight) {
-    // Place iron bars at ~60% height of the shorter column, between the two columns
+                            int x1, int z1, int surfaceY1,
+                            int x2, int z2, int surfaceY2,
+                            int minColumnHeight) {
+
     int railY = Math.min(surfaceY1, surfaceY2) + (int) (minColumnHeight * 0.6);
     BlockState ironBars = Blocks.IRON_BARS.defaultBlockState();
 
-    // Bresenham-style line between two column positions at rail height
     int dx = Math.abs(x2 - x1);
     int dz = Math.abs(z2 - z1);
     int sx = x1 < x2 ? 1 : -1;
@@ -257,7 +249,7 @@ public class CorruptedColumnsPopulator implements IPopulate {
     int cz = z1;
 
     while (true) {
-      // Skip the column positions themselves (first and last)
+
       if (!(cx == x1 && cz == z1) && !(cx == x2 && cz == z2)) {
         BlockPos railPos = new BlockPos(cx, railY, cz);
         if (isInWritableArea(railPos, chunkPos) && world.getBlockState(railPos).isAir()) {

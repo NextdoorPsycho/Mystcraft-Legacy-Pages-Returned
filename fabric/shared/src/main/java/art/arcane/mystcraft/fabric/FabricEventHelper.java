@@ -31,30 +31,27 @@ import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import java.lang.reflect.Field;
 
 /**
- * Consolidated Fabric event helper for Mystcraft 1.20.1.
- * Combines: FabricEventRegistration, FabricVillageStructureHandler, FabricArchivistTrades,
- * and the IEventHelper interface implementation.
+ * Consolidated Fabric event helper for Mystcraft 1.20.1. Combines:
+ * FabricEventRegistration, FabricVillageStructureHandler,
+ * FabricArchivistTrades, and the IEventHelper interface implementation.
  */
 public final class FabricEventHelper implements IEventHelper {
 
   public FabricEventHelper() {
   }
 
-  // ========== EVENT REGISTRATION ==========
   public static void registerAll() {
-    // World tick: instability and age effects processing
+
     ServerTickEvents.END_WORLD_TICK.register(level -> {
       InstabilityManager.onLevelTick(level);
       AgeEffectsHandler.onLevelTick(level);
       PersonalPocketEscapeHandler.tickProxyCleanup(level);
     });
 
-    // Command registration
     CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
       MystcraftCommands.registerCommands(dispatcher);
     });
 
-    // Living entity death: age death effects
     ServerLivingEntityEvents.ALLOW_DEATH.register((entity, damageSource, damageAmount) -> {
       if (entity instanceof ServerPlayer player) {
         if (player.level() instanceof ServerLevel serverLevel) {
@@ -77,7 +74,6 @@ public final class FabricEventHelper implements IEventHelper {
       }
     });
 
-    // Player login: guidebook delivery and age data sync
     ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
       ServerPlayer player = handler.getPlayer();
       AgeDataSyncHandler.onPlayerLoggedIn(player);
@@ -85,7 +81,6 @@ public final class FabricEventHelper implements IEventHelper {
       PersonalPocketEscapeHandler.syncProxyForPlayer(player);
     });
 
-    // Player respawn: death handler and data re-sync
     ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
       if (newPlayer.level() instanceof ServerLevel serverLevel) {
         AgeDeathHandler.onPlayerRespawn(newPlayer, serverLevel);
@@ -93,26 +88,21 @@ public final class FabricEventHelper implements IEventHelper {
       AgeDataSyncHandler.onPlayerRespawn(newPlayer);
     });
 
-    // Player dimension change: age data sync
     ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {
       AgeDataSyncHandler.onPlayerChangeDimension(player);
       PersonalPocketEscapeHandler.syncProxyForPlayer(player);
     });
 
-    // Network events (symbol sync on join)
     FabricNetworkEvents.register();
 
-    // Register Archivist trades
     registerArchivistTrades();
 
     Mystcraft.LOGGER.info("[FabricEventHelper] Registered all event callbacks");
   }
 
-  // ========== ARCHIVIST TRADES ==========
   private static void registerArchivistTrades() {
     Mystcraft.LOGGER.debug("[Mystcraft] Registering Archivist trades");
 
-    // Level 1 (Novice)
     TradeOfferHelper.registerVillagerOffers(FabricRegistries.ARCHIVIST.get(), 1, factories -> {
       factories.add((entity, random) -> new MerchantOffer(
           new ItemStack(Items.EMERALD, 2), new ItemStack(FabricRegistries.INK_VIAL.get(), 1), 12, 1, 0.05f));
@@ -123,7 +113,6 @@ public final class FabricEventHelper implements IEventHelper {
       factories.add(new ArchivistTradeListings.RankedSymbolTrade(1, 2, 5));
     });
 
-    // Level 2 (Apprentice)
     TradeOfferHelper.registerVillagerOffers(FabricRegistries.ARCHIVIST.get(), 2, factories -> {
       factories.add((entity, random) -> new MerchantOffer(
           new ItemStack(Items.EMERALD, 5), new ItemStack(FabricRegistries.FOLDER.get(), 1), 8, 5, 0.05f));
@@ -133,7 +122,6 @@ public final class FabricEventHelper implements IEventHelper {
       factories.add(new ArchivistTradeListings.RankedSymbolTrade(2, 1, 10));
     });
 
-    // Level 3 (Journeyman)
     TradeOfferHelper.registerVillagerOffers(FabricRegistries.ARCHIVIST.get(), 3, factories -> {
       factories.add((entity, random) -> new MerchantOffer(
           new ItemStack(Items.EMERALD, 12), new ItemStack(FabricRegistries.PORTFOLIO.get(), 1), 4, 10, 0.05f));
@@ -143,7 +131,6 @@ public final class FabricEventHelper implements IEventHelper {
       factories.add(new ArchivistTradeListings.RankedSymbolTrade(3, 1, 15));
     });
 
-    // Level 4 (Expert)
     TradeOfferHelper.registerVillagerOffers(FabricRegistries.ARCHIVIST.get(), 4, factories -> {
       factories.add((entity, random) -> new MerchantOffer(
           new ItemStack(Items.EMERALD, 20), new ItemStack(FabricRegistries.LINKBOOK_UNLINKED.get(), 1), 3, 15, 0.05f));
@@ -151,7 +138,6 @@ public final class FabricEventHelper implements IEventHelper {
       factories.add(new ArchivistTradeListings.RankedSymbolTrade(4, 1, 20));
     });
 
-    // Level 5 (Master)
     TradeOfferHelper.registerVillagerOffers(FabricRegistries.ARCHIVIST.get(), 5, factories -> {
       factories.add(new ArchivistTradeListings.SymbolPageTrade(1, 25));
       factories.add(new ArchivistTradeListings.RankedSymbolTrade(4, 1, 25));
@@ -162,7 +148,6 @@ public final class FabricEventHelper implements IEventHelper {
     });
   }
 
-  // ========== VILLAGE STRUCTURE INJECTION ==========
   public static void onServerStarting(MinecraftServer server) {
     try {
       Registry<StructureTemplatePool> templatePools = server.registryAccess()
@@ -229,7 +214,6 @@ public final class FabricEventHelper implements IEventHelper {
     return null;
   }
 
-  // ========== IEventHelper INTERFACE ==========
   @Override
   public void registerServerEvents() {
   }
@@ -244,7 +228,6 @@ public final class FabricEventHelper implements IEventHelper {
 
   @Override
   public void fireLevelLoadEvent(ServerLevel level) {
-    // Fabric has no event bus to post to. Level load logic is called directly
-    // from MystcraftFabric when dimensions are loaded.
+
   }
 }

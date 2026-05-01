@@ -22,7 +22,7 @@ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 public class OceanRuinsPopulator implements IPopulate {
 
   private static final int DEFAULT_RARITY = 20;
-  // Cold ruins materials
+
   private static final BlockState[] COLD_BLOCKS = {
       Blocks.STONE_BRICKS.defaultBlockState(),
       Blocks.MOSSY_STONE_BRICKS.defaultBlockState(),
@@ -31,7 +31,7 @@ public class OceanRuinsPopulator implements IPopulate {
       Blocks.MOSSY_COBBLESTONE.defaultBlockState(),
       Blocks.GRAVEL.defaultBlockState()
   };
-  // Warm ruins materials
+
   private static final BlockState[] WARM_BLOCKS = {
       Blocks.SANDSTONE.defaultBlockState(),
       Blocks.CUT_SANDSTONE.defaultBlockState(),
@@ -70,14 +70,12 @@ public class OceanRuinsPopulator implements IPopulate {
     int oceanFloor = world.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, x, z);
     int waterSurface = world.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z);
 
-    // Must be underwater (at least 3 blocks of water above)
     if (oceanFloor >= waterSurface - 3) {
       return;
     }
 
     BlockPos pos = new BlockPos(x, oceanFloor, z);
 
-    // Determine warm/cold variant based on ground block
     BlockState ground = world.getBlockState(pos.below());
     boolean warm = ground.is(Blocks.SAND) || ground.is(Blocks.SANDSTONE);
 
@@ -98,7 +96,6 @@ public class OceanRuinsPopulator implements IPopulate {
   private void generateRuins(WorldGenLevel world, RandomSource random, BlockPos pos, boolean warm) {
     BlockState[] materials = warm ? WARM_BLOCKS : COLD_BLOCKS;
 
-    // Generate 1-3 ruined buildings
     int buildingCount = 1 + random.nextInt(3);
 
     for (int b = 0; b < buildingCount; b++) {
@@ -116,18 +113,15 @@ public class OceanRuinsPopulator implements IPopulate {
     int depth = 4 + random.nextInt(4);
     int maxHeight = 2 + random.nextInt(3);
 
-    // Ruined walls
     for (int x = 0; x < width; x++) {
       for (int z = 0; z < depth; z++) {
         boolean isWall = x == 0 || x == width - 1 || z == 0 || z == depth - 1;
 
-        // Floor
         BlockPos floorPos = pos.offset(x, 0, z);
         if (random.nextFloat() < 0.8f) {
           safeSetBlock(world, floorPos, materials[random.nextInt(materials.length)]);
         }
 
-        // Walls (partially destroyed)
         if (isWall) {
           int wallHeight = random.nextInt(maxHeight + 1);
           for (int y = 1; y <= wallHeight; y++) {
@@ -140,7 +134,6 @@ public class OceanRuinsPopulator implements IPopulate {
       }
     }
 
-    // Suspicious blocks (archaeology)
     for (int i = 0; i < 3; i++) {
       int sx = random.nextInt(width);
       int sz = random.nextInt(depth);
@@ -151,7 +144,6 @@ public class OceanRuinsPopulator implements IPopulate {
       safeSetBlock(world, susPos, susBlock);
     }
 
-    // Chest
     if (random.nextFloat() < 0.6f) {
       int cx = 1 + random.nextInt(Math.max(1, width - 2));
       int cz = 1 + random.nextInt(Math.max(1, depth - 2));
@@ -167,7 +159,6 @@ public class OceanRuinsPopulator implements IPopulate {
       }
     }
 
-    // Magma block vents
     if (random.nextFloat() < 0.3f) {
       int mx = random.nextInt(width);
       int mz = random.nextInt(depth);

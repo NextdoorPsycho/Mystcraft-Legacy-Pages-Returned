@@ -3,8 +3,8 @@ package art.arcane.mystcraft.world.lighting;
 import art.arcane.mystcraft.api.world.logic.ILightingController;
 
 /**
- * Normal lighting controller - standard Minecraft brightness curve.
- * No modifications to lighting behavior.
+ * Normal lighting controller - standard Minecraft brightness curve. No
+ * modifications to lighting behavior.
  */
 public class LightingControllerNormal implements ILightingController {
 
@@ -17,7 +17,7 @@ public class LightingControllerNormal implements ILightingController {
 
   @Override
   public int getMinLightLevel() {
-    return -1; // No minimum override
+    return -1;
   }
 
   @Override
@@ -37,7 +37,7 @@ public class LightingControllerNormal implements ILightingController {
 
   @Override
   public void generateLightBrightnessTable(float[] lightBrightnessTable) {
-    // Standard Minecraft brightness curve
+
     float f = 0.0F;
     for (int i = 0; i <= 15; ++i) {
       float f1 = 1.0F - (float) i / 15.0F;

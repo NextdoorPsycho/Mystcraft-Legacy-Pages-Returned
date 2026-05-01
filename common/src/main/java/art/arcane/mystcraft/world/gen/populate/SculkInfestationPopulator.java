@@ -14,8 +14,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * Sculk infestation that spreads across the surface in irregular veiny patches.
  * Replaces surface blocks with sculk, places sculk veins on exposed sides,
  * embeds sculk sensors and shriekers throughout. The corruption radiates
- * outward from a central catalyst point, growing weaker at the edges.
- * Creates an unsettling living-darkness feeling on the surface.
+ * outward from a central catalyst point, growing weaker at the edges. Creates
+ * an unsettling living-darkness feeling on the surface.
  */
 public class SculkInfestationPopulator implements IPopulate {
 
@@ -84,16 +84,14 @@ public class SculkInfestationPopulator implements IPopulate {
   }
 
   private void generateInfestation(WorldGenLevel world, BlockPos chunkPos,
-                                    int cx, int surfaceY, int cz, int radius) {
+                                   int cx, int surfaceY, int cz, int radius) {
     int radiusSq = radius * radius;
 
-    // Place catalyst at center
     BlockPos catalystPos = new BlockPos(cx, surfaceY, cz);
     if (isInWritableArea(catalystPos, chunkPos)) {
       world.setBlock(catalystPos, SCULK_CATALYST, 2);
     }
 
-    // Spread sculk in irregular patches
     for (int dx = -radius; dx <= radius; dx++) {
       for (int dz = -radius; dz <= radius; dz++) {
         int distSq = dx * dx + dz * dz;
@@ -114,17 +112,14 @@ public class SculkInfestationPopulator implements IPopulate {
           continue;
         }
 
-        // Coverage decreases with distance from center (veiny pattern via hash noise)
         double dist = Math.sqrt(distSq);
         double normalizedDist = dist / radius;
         long spreadHash = positionHash(seed, bx, bSurfaceY, bz);
         float spreadRoll = hashFloat(spreadHash);
 
-        // Veiny pattern: use hash to create irregular edges
         long veinHash = positionHash(seed ^ 0xBE11L, bx, 0, bz);
         float veinValue = hashFloat(veinHash);
 
-        // Coverage threshold increases with distance (harder to spread far)
         float threshold = (float) (normalizedDist * 0.8 + veinValue * 0.3);
         if (spreadRoll > threshold) {
           continue;
@@ -135,10 +130,8 @@ public class SculkInfestationPopulator implements IPopulate {
           continue;
         }
 
-        // Replace surface block
         world.setBlock(surfacePos, SCULK, 2);
 
-        // Corrupt a few blocks below too
         int depth = 1 + (int) (hashFloat(positionHash(seed ^ 0xDE97L, bx, bSurfaceY, bz)) * 3);
         for (int dy = 1; dy <= depth; dy++) {
           BlockPos belowPos = new BlockPos(bx, bSurfaceY - dy, bz);
@@ -155,7 +148,6 @@ public class SculkInfestationPopulator implements IPopulate {
           }
         }
 
-        // Sculk vein on exposed air faces above
         BlockPos abovePos = surfacePos.above();
         if (isInWritableArea(abovePos, chunkPos) && world.getBlockState(abovePos).isAir()) {
           long veinPlaceHash = positionHash(seed ^ 0xBE14L, bx, bSurfaceY + 1, bz);
@@ -164,7 +156,6 @@ public class SculkInfestationPopulator implements IPopulate {
           }
         }
 
-        // Sculk sensors scattered throughout (rare)
         if (normalizedDist < 0.7) {
           long sensorHash = positionHash(seed ^ 0x5E45L, bx, bSurfaceY, bz);
           float sensorRoll = hashFloat(sensorHash);
@@ -176,7 +167,6 @@ public class SculkInfestationPopulator implements IPopulate {
           }
         }
 
-        // Sculk shriekers near center (very rare)
         if (normalizedDist < 0.3) {
           long shriekerHash = positionHash(seed ^ 0x5471L, bx, bSurfaceY, bz);
           float shriekerRoll = hashFloat(shriekerHash);

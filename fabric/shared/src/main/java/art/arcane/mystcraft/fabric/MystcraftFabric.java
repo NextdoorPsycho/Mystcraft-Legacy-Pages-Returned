@@ -37,26 +37,21 @@ public class MystcraftFabric implements ModInitializer {
 
     FabricMystcraftConfig.load();
 
-    // Register all content via consolidated registries
     FabricRegistries.register();
     FabricDefaultAttributeRegistry.register(
         FabricRegistries.PERSONAL_POCKET_PROXY_ENTITY.get(),
         PersonalPocketProxyEntity.createAttributes());
 
-    // Populate common stubs from Fabric registry objects
     FabricRegistries.populateCommonRegistries();
 
     Mystcraft.init();
 
-    // Network registration
     FabricMystcraftNetwork.register();
 
-    // Common setup (equivalent to FMLCommonSetupEvent)
     art.arcane.mystcraft.advancements.ModAdvancements.register();
     Mystcraft.commonSetup();
     Mystcraft.finishSymbolRegistration();
 
-    // Server lifecycle events
     ServerLifecycleEvents.SERVER_STARTING.register(server -> {
       Mystcraft.LOGGER.info("[Mystcraft] Server starting");
       Mystcraft.setCurrentServer(server);
@@ -71,10 +66,8 @@ public class MystcraftFabric implements ModInitializer {
       Mystcraft.setCurrentServer(null);
     });
 
-    // Level load event for Age director reconstruction
     ServerWorldEvents.LOAD.register((server, level) -> onLevelLoad(level));
 
-    // Datapack reload listeners
     ResourceManagerHelper.get(PackType.SERVER_DATA)
         .registerReloadListener(new FabricReloadListeners.GrammarReloadListener());
     ResourceManagerHelper.get(PackType.SERVER_DATA)
@@ -82,18 +75,13 @@ public class MystcraftFabric implements ModInitializer {
     ResourceManagerHelper.get(PackType.SERVER_DATA)
         .registerReloadListener(new FabricReloadListeners.AffinityReloadListener());
 
-    // Register all Fabric event callbacks
     FabricEventHelper.registerAll();
 
-    // Register lectern interaction handler for Mystcraft books
     LecternInteractionHandler.register();
 
     Mystcraft.LOGGER.info("[Mystcraft] Fabric 1.20.1 registration complete");
   }
 
-  /**
-   * Handles dimension-level load events for Mystcraft Ages.
-   */
   private void onLevelLoad(ServerLevel serverLevel) {
     if (!AgeDimensionFactory.isMystcraftAge(serverLevel.dimension())) {
       return;
@@ -106,9 +94,6 @@ public class MystcraftFabric implements ModInitializer {
     }
   }
 
-  /**
-   * Deletes all Mystcraft Ages and their dimension directories.
-   */
   private void deleteAllAges(MinecraftServer server) {
     AgeManager ageManager = AgeManager.get(server);
     int ageCount = ageManager.getAgeCount();

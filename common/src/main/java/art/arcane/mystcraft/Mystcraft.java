@@ -6,8 +6,8 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 /**
- * Common entry point for Mystcraft across all platforms.
- * Platform-specific entry points call into this class.
+ * Common entry point for Mystcraft across all platforms. Platform-specific
+ * entry points call into this class.
  */
 public final class Mystcraft {
   public static final String MOD_ID = "mystcraft";
@@ -28,7 +28,8 @@ public final class Mystcraft {
   }
 
   /**
-   * Sets the current server instance. Called by platform entry points on server start/stop.
+   * Sets the current server instance. Called by platform entry points on server
+   * start/stop.
    */
   public static void setCurrentServer(@Nullable MinecraftServer server) {
     currentServer = server;
@@ -47,13 +48,10 @@ public final class Mystcraft {
   public static void commonSetup() {
     LOGGER.info("[Mystcraft] Common setup");
 
-    // Initialize ink effects registry
     art.arcane.mystcraft.data.InkEffects.init();
 
-    // Register built-in datapack logic types
     art.arcane.mystcraft.datapack.symbol.SymbolLogicTypes.registerDefaults();
 
-    // Initialize instability providers and decks
     art.arcane.mystcraft.instability.InstabilityData.initialize();
   }
 

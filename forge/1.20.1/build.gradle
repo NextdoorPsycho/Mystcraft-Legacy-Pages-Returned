@@ -21,7 +21,6 @@ java {
     withSourcesJar()
 }
 
-// Force Java 17 for all run tasks (client, server, gametest, data)
 tasks.withType(JavaExec).configureEach {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(17)
@@ -46,8 +45,7 @@ minecraft {
             property 'forge.enabledGameTestNamespaces', mod_id
             mods {
                 mystcraft {
-                    // Only include local sourceSets.main - it already contains common sources
-                    // compiled against 1.20.1 jars via the compileJava task configuration
+
                     source sourceSets.main
                 }
             }
@@ -92,13 +90,13 @@ dependencies {
 
 shadowJar {
     configurations = [project.configurations.shadow]
-    // Avoid clobbering the plain jar; Forge's reobfJar expects the normal jar output.
+
     archiveClassifier = 'all'
     archiveFileName = "MystcraftLegacy_Forge-${minecraft_version_1_20_1}-all.jar"
 }
 
 reobf {
-    shadowJar {} // Reobfuscate the shadow jar
+    shadowJar {}
 }
 
 tasks.named('reobfShadowJar') {
@@ -106,15 +104,15 @@ tasks.named('reobfShadowJar') {
 }
 
 tasks.named('compileJava', JavaCompile) {
-    // Add common sources with 1.20.1-specific platform implementations.
+
     source(project(':common').sourceSets.main.allSource.matching {
         exclude '**/client/GuidebookClientHelper.java'
         exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
         exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
         exclude '**/advancements/WritingDeskWriteTrigger.java'
-        // Platform-specific packet implementations (use ObfuscationReflectionHelper for SRG names)
+
         exclude '**/network/LecternBookSyncPacket.java'
-        // Network packets - forge/1.20.1 has its own implementations
+
         exclude '**/network/SyncAgeDataPacket.java'
         exclude '**/network/PocketHeadSyncPacket.java'
         exclude '**/network/OpenLecternBookPacket.java'
@@ -125,7 +123,7 @@ tasks.named('compileJava', JavaCompile) {
 tasks.named('processResources', ProcessResources) {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from(project(':common').sourceSets.main.resources) {
-        // Exclude common's AT - Forge needs SRG names, common uses Mojang names
+
         exclude 'META-INF/accesstransformer.cfg'
     }
     from sourceSets.main.resources

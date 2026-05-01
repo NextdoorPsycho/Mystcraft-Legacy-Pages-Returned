@@ -3,7 +3,6 @@ package art.arcane.mystcraft.block;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
 import art.arcane.mystcraft.platform.Services;
 import art.arcane.mystcraft.registry.ModBlockEntities;
-import art.arcane.mystcraft.util.BlockInteractionCompat;
 import art.arcane.mystcraft.util.CodecCompat;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -38,31 +37,24 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * The Writing Desk block.
- * Used for writing symbols onto pages using ink.
- * This is a multi-block structure (2 blocks wide, 2 blocks tall).
+ * The Writing Desk block. Used for writing symbols onto pages using ink. This
+ * is a multi-block structure (2 blocks wide, 2 blocks tall).
  * <p>
- * Block positions:
- * - Main block (has tile entity): !IS_TOP && !IS_FOOT
- * - Foot block (secondary horizontal): !IS_TOP && IS_FOOT
- * - Top block above main: IS_TOP && !IS_FOOT
- * - Top block above foot: IS_TOP && IS_FOOT
+ * Block positions: - Main block (has tile entity): !IS_TOP && !IS_FOOT - Foot
+ * block (secondary horizontal): !IS_TOP && IS_FOOT - Top block above main:
+ * IS_TOP && !IS_FOOT - Top block above foot: IS_TOP && IS_FOOT
  */
-public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractionCompat {
+public class WritingDeskBlock extends BaseEntityBlock {
 
-  public static final MapCodec<WritingDeskBlock> CODEC = CodecCompat.simpleCodec(WritingDeskBlock::new);
   public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
   public static final BooleanProperty IS_TOP = BooleanProperty.create("is_top");
   public static final BooleanProperty IS_FOOT = BooleanProperty.create("is_foot");
-
-  /**
-   * Offset mapping for each horizontal direction index - foot extends in the facing direction
-   */
+  public static final MapCodec<WritingDeskBlock> CODEC = CodecCompat.simpleCodec(WritingDeskBlock::new);
   private static final int[][] HEAD_FOOT_MAP = {
-      {0, 1},   // SOUTH (index 0): foot to Z+1 (south)
-      {-1, 0},  // WEST (index 1): foot to X-1 (west)
-      {0, -1},  // NORTH (index 2): foot to Z-1 (north)
-      {1, 0}    // EAST (index 3): foot to X+1 (east)
+      {0, 1},
+      {-1, 0},
+      {0, -1},
+      {1, 0}
   };
 
   private static final VoxelShape SHAPE_FULL = Block.box(0, 0, 0, 16, 16, 16);
@@ -80,7 +72,8 @@ public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractio
   }
 
   /**
-   * Gets the position of the main block (with block entity) from any part of the structure.
+   * Gets the position of the main block (with block entity) from any part of
+   * the structure.
    */
   public static BlockPos getMainBlockPos(BlockPos pos, BlockState state) {
     if (!(state.getBlock() instanceof WritingDeskBlock)) {
@@ -103,7 +96,8 @@ public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractio
   }
 
   /**
-   * Gets the block entity for this writing desk from any part of the structure.
+   * Gets the block entity for this writing desk from any part of the
+   * structure.
    */
   @Nullable
   public static WritingDeskBlockEntity getBlockEntity(Level level, BlockPos pos) {
@@ -127,8 +121,7 @@ public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractio
 
   @Override
   public BlockState getStateForPlacement(BlockPlaceContext context) {
-    // Desk FACING is set to player's horizontal facing direction
-    // The foot extends in the facing direction (away from where player is standing)
+
     return defaultBlockState().setValue(FACING, context.getHorizontalDirection());
   }
 
@@ -149,7 +142,7 @@ public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractio
 
   @Override
   public RenderShape getRenderShape(BlockState state) {
-    // Use ENTITYBLOCK_ANIMATED for BER rendering
+
     return RenderShape.ENTITYBLOCK_ANIMATED;
   }
 
@@ -161,7 +154,7 @@ public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractio
   @Nullable
   @Override
   public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-    // Only the main block (not top, not foot) has the block entity
+
     if (!state.getValue(IS_TOP) && !state.getValue(IS_FOOT)) {
       return new WritingDeskBlockEntity(pos, state);
     }
@@ -185,7 +178,6 @@ public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractio
     Direction facing = state.getValue(FACING);
     int dirIndex = facing.get2DDataValue();
 
-    // Calculate foot position offset
     int xOffset = HEAD_FOOT_MAP[dirIndex][0];
     int zOffset = HEAD_FOOT_MAP[dirIndex][1];
 
@@ -193,18 +185,16 @@ public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractio
     BlockPos topMainPos = pos.above();
     BlockPos topFootPos = footPos.above();
 
-    // Check if we have room for the full structure
     if (canPlaceAt(level, footPos) && canPlaceAt(level, topMainPos) && canPlaceAt(level, topFootPos)) {
-      // Place foot block
+
       level.setBlock(footPos, state.setValue(IS_FOOT, true), 3);
 
-      // Place top blocks
       level.setBlock(topMainPos, state.setValue(IS_TOP, true).setValue(IS_FOOT, false), 3);
       level.setBlock(topFootPos, state.setValue(IS_TOP, true).setValue(IS_FOOT, true), 3);
     } else {
-      // Not enough room - remove the placed block
+
       level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
-      // Drop the item back
+
       if (!level.isClientSide) {
         Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(),
             new ItemStack(this));
@@ -226,25 +216,24 @@ public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractio
     boolean isTop = state.getValue(IS_TOP);
     boolean isFoot = state.getValue(IS_FOOT);
 
-    // Check structural integrity
     if (isTop && !isFoot) {
-      // Top main block - check for main block below
+
       if (!isWritingDesk(level.getBlockState(pos.below()))) {
         destroyStructure(level, pos, state);
       }
     } else if (isTop && isFoot) {
-      // Top foot block - check for foot block below
+
       if (!isWritingDesk(level.getBlockState(pos.below()))) {
         destroyStructure(level, pos, state);
       }
     } else if (isFoot) {
-      // Foot block - check for main block
+
       BlockPos mainPos = pos.offset(-HEAD_FOOT_MAP[dirIndex][0], 0, -HEAD_FOOT_MAP[dirIndex][1]);
       if (!isWritingDesk(level.getBlockState(mainPos))) {
         destroyStructure(level, pos, state);
       }
     } else {
-      // Main block - check for foot block
+
       BlockPos footPos = pos.offset(HEAD_FOOT_MAP[dirIndex][0], 0, HEAD_FOOT_MAP[dirIndex][1]);
       if (!isWritingDesk(level.getBlockState(footPos))) {
         destroyStructure(level, pos, state);
@@ -283,6 +272,7 @@ public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractio
     }
   }
 
+  @Override
   @NotNull
   public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     if (level.isClientSide) {
@@ -306,7 +296,7 @@ public class WritingDeskBlock extends BaseEntityBlock implements BlockInteractio
       if (!level.isClientSide) {
         clearStructureOnRemove(level, pos, state);
       }
-      // Only drop items from the main block
+
       if (!state.getValue(IS_TOP) && !state.getValue(IS_FOOT)) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof WritingDeskBlockEntity desk) {

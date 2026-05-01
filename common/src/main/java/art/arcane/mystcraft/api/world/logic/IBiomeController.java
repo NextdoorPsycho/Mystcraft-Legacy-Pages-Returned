@@ -7,7 +7,8 @@ import java.util.List;
 
 /**
  * Interface for biome controllers that determine biome distribution in an Age.
- * Implementations define how biomes are distributed across the world based on coordinates.
+ * Implementations define how biomes are distributed across the world based on
+ * coordinates.
  */
 public interface IBiomeController {
 
@@ -21,8 +22,8 @@ public interface IBiomeController {
   Holder<Biome> getBiomeAtCoords(int x, int z);
 
   /**
-   * Gets biomes for a generation region.
-   * Used during terrain generation to get biome data for height weighting.
+   * Gets biomes for a generation region. Used during terrain generation to get
+   * biome data for height weighting.
    *
    * @param biomes Array to fill, or null to create new
    * @param x      Starting X coordinate
@@ -41,8 +42,7 @@ public interface IBiomeController {
   List<Holder<Biome>> getValidSpawnBiomes();
 
   /**
-   * Cleans up any cached biome data.
-   * Called periodically to free memory.
+   * Cleans up any cached biome data. Called periodically to free memory.
    */
   void cleanupCache();
 

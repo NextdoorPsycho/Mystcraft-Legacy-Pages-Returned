@@ -2,9 +2,6 @@ plugins {
     id 'fabric-loom' version '1.9.2'
 }
 
-// Common module is a SOURCE provider only - platform modules compile sources directly
-// with their own version-specific exclusions. We skip Java compilation here because
-// too many files have cascading dependencies on platform-specific classes.
 tasks.named('compileJava') {
     enabled = false
 }
@@ -25,25 +22,20 @@ tasks.named('remapSourcesJar') {
     enabled = false
 }
 
-// Use fabric-loom to provide Minecraft classes for IDE resolution.
-// This does not affect platform builds because common is only a source provider.
 loom {
-    // Minimal loom config - just enough for IDE resolution
+
 }
 
 dependencies {
-    // Minecraft (via loom - provides actual deobfuscated classes)
+
     minecraft "com.mojang:minecraft:${minecraft_version_1_20_1}"
     mappings loom.officialMojangMappings()
 
-    // Fabric Loader + API (for IDE resolution of Fabric classes)
     modCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version_1_20_1}"
     modCompileOnly "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_1}"
 
-    // Forge (for IDE resolution of Forge classes)
     compileOnly "net.minecraftforge:forge:${minecraft_version_1_20_1}-${forge_version_1_20_1}"
 
-    // Night Config (used for TOML config parsing)
     compileOnly "com.electronwill.night-config:core:3.6.7"
     compileOnly "com.electronwill.night-config:toml:3.6.7"
 }

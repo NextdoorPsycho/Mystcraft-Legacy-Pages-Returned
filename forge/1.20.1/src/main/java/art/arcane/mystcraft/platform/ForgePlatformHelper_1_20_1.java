@@ -14,8 +14,8 @@ import net.minecraftforge.network.NetworkHooks;
 import java.util.function.Consumer;
 
 /**
- * Forge 1.20.1-specific platform helper.
- * Uses NetworkHooks.openScreen() instead of IForgeServerPlayer.openMenu().
+ * Forge 1.20.1-specific platform helper. Uses NetworkHooks.openScreen() instead
+ * of IForgeServerPlayer.openMenu().
  */
 public class ForgePlatformHelper_1_20_1 implements IPlatformHelper {
 

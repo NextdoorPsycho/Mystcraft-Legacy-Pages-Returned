@@ -6,9 +6,10 @@ import net.minecraft.world.level.biome.Biome;
 import java.util.List;
 
 /**
- * Biome controller that tiles biomes in a repeating pattern with Voronoi-jittered
- * boundaries. Each tile center is offset by a deterministic jitter based on the seed,
- * creating organic edges instead of sharp rectangles while maintaining a regular layout.
+ * Biome controller that tiles biomes in a repeating pattern with
+ * Voronoi-jittered boundaries. Each tile center is offset by a deterministic
+ * jitter based on the seed, creating organic edges instead of sharp rectangles
+ * while maintaining a regular layout.
  */
 public class BiomeControllerTiled extends BiomeControllerBase {
 
@@ -41,7 +42,6 @@ public class BiomeControllerTiled extends BiomeControllerBase {
     int closestTileX = tileX;
     int closestTileZ = tileZ;
 
-    // Check 3x3 neighborhood for closest jittered tile center
     for (int dx = -1; dx <= 1; dx++) {
       for (int dz = -1; dz <= 1; dz++) {
         int tx = tileX + dx;
@@ -64,7 +64,6 @@ public class BiomeControllerTiled extends BiomeControllerBase {
       }
     }
 
-    // Deterministic biome index from tile position (repeating pattern)
     int index = Math.abs((closestTileX + closestTileZ * 7)) % biomes.size();
     return biomes.get(index);
   }

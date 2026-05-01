@@ -30,26 +30,25 @@ import java.util.List;
 /**
  * The Folder item - an ORDERED, WRITABLE page container.
  * <p>
- * Key differences from Portfolio:
- * - ORDERED: Pages have fixed slot positions (0, 1, 2, ...)
- * - WRITABLE: Can write symbols directly to blank pages inside
- * - STACKABLE: Stacks to 32 when empty (workspace items)
- * - BOOKBINDER: Can be used as a book cover (when empty)
- * - CAPACITY: 16 pages (a working set for Age creation)
+ * Key differences from Portfolio: - ORDERED: Pages have fixed slot positions
+ * (0, 1, 2, ...) - WRITABLE: Can write symbols directly to blank pages inside -
+ * STACKABLE: Stacks to 32 when empty (workspace items) - BOOKBINDER: Can be
+ * used as a book cover (when empty) - CAPACITY: 16 pages (a working set for Age
+ * creation)
  * <p>
- * The Folder is designed as a portable workspace for organizing
- * pages at the Writing Desk and binding them into Age books.
+ * The Folder is designed as a portable workspace for organizing pages at the
+ * Writing Desk and binding them into Age books.
  */
 public class FolderItem extends Item implements TooltipCompat {
 
   public static final int MAX_PAGES = 16;
   private static final String TAG_PAGES = "Pages";
-  // Folder stacks to 32 when empty (workspace item behavior)
+
   private static final int STACK_SIZE_EMPTY = 32;
   private static final int STACK_SIZE_FILLED = 1;
 
   public FolderItem(Properties properties) {
-    super(properties.stacksTo(STACK_SIZE_EMPTY)); // Default max stack when empty
+    super(properties.stacksTo(STACK_SIZE_EMPTY));
   }
 
   /**
@@ -148,9 +147,9 @@ public class FolderItem extends Item implements TooltipCompat {
   }
 
   /**
-   * Writes a symbol to the first blank page in this folder.
-   * This is a key feature that distinguishes Folder from Portfolio.
-   * Folders are WRITABLE - you can write symbols directly to pages inside.
+   * Writes a symbol to the first blank page in this folder. This is a key
+   * feature that distinguishes Folder from Portfolio. Folders are WRITABLE -
+   * you can write symbols directly to pages inside.
    *
    * @param folder The folder item stack
    * @param symbol The symbol ResourceLocation to write
@@ -162,13 +161,13 @@ public class FolderItem extends Item implements TooltipCompat {
     for (int i = 0; i < pages.size(); i++) {
       ItemStack page = pages.get(i);
       if (!page.isEmpty() && Page.isBlank(page)) {
-        // Found a blank page - write the symbol to it
+
         Page.setSymbol(page, symbol);
         setPages(folder, pages);
         return true;
       }
     }
-    return false; // No blank pages found
+    return false;
   }
 
   /**
@@ -191,19 +190,17 @@ public class FolderItem extends Item implements TooltipCompat {
     return countBlankPages(folder) > 0;
   }
 
-  // --- Folder: Writable ---
-
   /**
-   * Checks if this folder can be used as a BookBinder cover.
-   * Only empty folders can serve as book covers.
+   * Checks if this folder can be used as a BookBinder cover. Only empty folders
+   * can serve as book covers.
    */
   public static boolean canBeBookCover(ItemStack folder) {
     return isEmpty(folder);
   }
 
   /**
-   * Extracts all pages from this folder (for BookBinder batch import).
-   * Returns the list and clears the folder.
+   * Extracts all pages from this folder (for BookBinder batch import). Returns
+   * the list and clears the folder.
    */
   public static List<ItemStack> extractAllPages(ItemStack folder) {
     List<ItemStack> pages = getPages(folder);
@@ -212,8 +209,8 @@ public class FolderItem extends Item implements TooltipCompat {
   }
 
   /**
-   * Gets a page at a specific slot index.
-   * Folders support ORDERED access - pages have fixed positions.
+   * Gets a page at a specific slot index. Folders support ORDERED access -
+   * pages have fixed positions.
    */
   public static ItemStack getPageAt(ItemStack folder, int index) {
     List<ItemStack> pages = getPages(folder);
@@ -223,16 +220,13 @@ public class FolderItem extends Item implements TooltipCompat {
     return pages.get(index);
   }
 
-  // --- Folder: BookBinder Cover ---
-
   /**
-   * Sets a page at a specific slot index, returning the displaced page.
-   * Folders support ORDERED placement - you can put pages at specific positions.
+   * Sets a page at a specific slot index, returning the displaced page. Folders
+   * support ORDERED placement - you can put pages at specific positions.
    */
   public static ItemStack setPageAt(ItemStack folder, int index, ItemStack page) {
     List<ItemStack> pages = getPages(folder);
 
-    // Extend the list if needed
     while (pages.size() <= index) {
       pages.add(ItemStack.EMPTY);
     }
@@ -249,8 +243,6 @@ public class FolderItem extends Item implements TooltipCompat {
   public int getMaxStackSize(ItemStack stack) {
     return isEmpty(stack) ? STACK_SIZE_EMPTY : STACK_SIZE_FILLED;
   }
-
-  // --- Folder: Ordered Access ---
 
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
     List<ItemStack> pages = getPages(stack);

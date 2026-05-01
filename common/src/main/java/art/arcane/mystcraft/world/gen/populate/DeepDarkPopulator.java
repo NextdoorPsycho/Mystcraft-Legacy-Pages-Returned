@@ -11,9 +11,9 @@ import net.minecraft.world.level.block.SculkVeinBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Populates deep underground areas with sculk features.
- * Generates sculk blocks, sculk veins, sculk sensors, and sculk shriekers.
- * Only generates at very low Y levels to create an ominous deep dark atmosphere.
+ * Populates deep underground areas with sculk features. Generates sculk blocks,
+ * sculk veins, sculk sensors, and sculk shriekers. Only generates at very low Y
+ * levels to create an ominous deep dark atmosphere.
  */
 public class DeepDarkPopulator implements IPopulate {
 
@@ -54,7 +54,6 @@ public class DeepDarkPopulator implements IPopulate {
         continue;
       }
 
-      // Check if we're in a cave at deep Y level
       if (!isInCave(world, pos)) {
         continue;
       }
@@ -73,9 +72,6 @@ public class DeepDarkPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Attempts to place a patch of sculk blocks.
-   */
   private void tryPlaceSculkPatch(WorldGenLevel world, RandomSource random, BlockPos center) {
     BlockPos below = center.below();
     BlockState belowState = world.getBlockState(below);
@@ -84,10 +80,8 @@ public class DeepDarkPopulator implements IPopulate {
       return;
     }
 
-    // Place sculk on the floor
     world.setBlock(below, Blocks.SCULK.defaultBlockState(), 2);
 
-    // Spread sculk to nearby floor blocks
     int spread = 3 + random.nextInt(5);
     for (int i = 0; i < spread; i++) {
       int offsetX = random.nextInt(5) - 2;
@@ -97,7 +91,6 @@ public class DeepDarkPopulator implements IPopulate {
       if (world.getBlockState(sculkPos.above()).isAir() && canReplaceSculk(world.getBlockState(sculkPos))) {
         world.setBlock(sculkPos, Blocks.SCULK.defaultBlockState(), 2);
 
-        // Occasionally add sculk catalyst in the center of patches
         if (random.nextFloat() < 0.05f) {
           world.setBlock(sculkPos.above(), Blocks.SCULK_CATALYST.defaultBlockState(), 2);
         }
@@ -105,11 +98,8 @@ public class DeepDarkPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Attempts to place sculk veins on surfaces.
-   */
   private void tryPlaceSculkVeins(WorldGenLevel world, RandomSource random, BlockPos center) {
-    // Try each direction to place veins
+
     for (Direction direction : Direction.values()) {
       if (random.nextFloat() > 0.4f) {
         continue;
@@ -122,10 +112,8 @@ public class DeepDarkPopulator implements IPopulate {
         continue;
       }
 
-      // Create sculk vein state attached to the solid block
       BlockState veinState = Blocks.SCULK_VEIN.defaultBlockState();
 
-      // Set the appropriate direction property to true for attachment
       Direction opposite = direction.getOpposite();
       veinState = veinState.setValue(SculkVeinBlock.getFaceProperty(opposite), true);
 
@@ -134,14 +122,10 @@ public class DeepDarkPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Attempts to place a sculk sensor.
-   */
   private void tryPlaceSculkSensor(WorldGenLevel world, RandomSource random, BlockPos pos) {
     BlockPos below = pos.below();
     BlockState belowState = world.getBlockState(below);
 
-    // Sensors need solid ground (sculk or stone)
     if (!(belowState.is(Blocks.SCULK) || belowState.isSolid())) {
       return;
     }
@@ -149,25 +133,17 @@ public class DeepDarkPopulator implements IPopulate {
     world.setBlock(pos, Blocks.SCULK_SENSOR.defaultBlockState(), 2);
   }
 
-  /**
-   * Attempts to place a sculk shrieker.
-   */
   private void tryPlaceSculkShrieker(WorldGenLevel world, RandomSource random, BlockPos pos) {
     BlockPos below = pos.below();
     BlockState belowState = world.getBlockState(below);
 
-    // Shriekers need solid ground (sculk or stone)
     if (!(belowState.is(Blocks.SCULK) || belowState.isSolid())) {
       return;
     }
 
-    // Place shrieker (can_summon is set to false for safety - no warden spawning)
     world.setBlock(pos, Blocks.SCULK_SHRIEKER.defaultBlockState(), 2);
   }
 
-  /**
-   * Checks if the position is in a cave (air with stone nearby).
-   */
   private boolean isInCave(WorldGenLevel world, BlockPos pos) {
     int stoneCount = 0;
     int airCount = 0;
@@ -184,9 +160,6 @@ public class DeepDarkPopulator implements IPopulate {
     return airCount >= 2 && stoneCount >= 2;
   }
 
-  /**
-   * Checks if sculk can replace this block.
-   */
   private boolean canReplaceSculk(BlockState state) {
     return state.is(Blocks.STONE) ||
         state.is(Blocks.DEEPSLATE) ||

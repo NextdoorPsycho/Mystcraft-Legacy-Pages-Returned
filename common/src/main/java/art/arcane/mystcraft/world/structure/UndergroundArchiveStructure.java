@@ -17,8 +17,8 @@ import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import java.util.Optional;
 
 /**
- * Underground Archive structure that spawns deep underground.
- * Contains rare symbols, ancient D'ni artifacts, and instability effects.
+ * Underground Archive structure that spawns deep underground. Contains rare
+ * symbols, ancient D'ni artifacts, and instability effects.
  */
 public class UndergroundArchiveStructure extends Structure {
 
@@ -57,12 +57,11 @@ public class UndergroundArchiveStructure extends Structure {
 
   @Override
   public Optional<GenerationStub> findGenerationPoint(GenerationContext context) {
-    // Check if the chunk position is valid for underground generation
+
     if (!checkUndergroundLocation(context)) {
       return Optional.empty();
     }
 
-    // Get a position underground
     ChunkPos chunkPos = context.chunkPos();
     WorldGenerationContext worldGenContext = new WorldGenerationContext(
         context.chunkGenerator(), context.heightAccessor());
@@ -86,13 +85,9 @@ public class UndergroundArchiveStructure extends Structure {
     );
   }
 
-  /**
-   * Checks if the location is suitable for underground generation.
-   */
   private boolean checkUndergroundLocation(GenerationContext context) {
     ChunkPos chunkPos = context.chunkPos();
 
-    // Get surface height
     int surfaceY = context.chunkGenerator().getFirstOccupiedHeight(
         chunkPos.getMiddleBlockX(),
         chunkPos.getMiddleBlockZ(),
@@ -101,7 +96,6 @@ public class UndergroundArchiveStructure extends Structure {
         context.randomState()
     );
 
-    // Only generate if there's enough space underground
     return surfaceY > 30;
   }
 

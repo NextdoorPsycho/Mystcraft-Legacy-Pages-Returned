@@ -1,8 +1,8 @@
 package art.arcane.mystcraft.blockentity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -14,8 +14,8 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.Method;
 
 /**
- * Base class for all Mystcraft block entities.
- * Provides common NBT handling and sync utilities.
+ * Base class for all Mystcraft block entities. Provides common NBT handling and
+ * sync utilities.
  */
 public abstract class MystcraftBlockEntity extends BlockEntity {
 
@@ -28,6 +28,10 @@ public abstract class MystcraftBlockEntity extends BlockEntity {
 
   public MystcraftBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
     super(type, pos, blockState);
+  }
+
+  private static Method findMethod(Class<?> owner, String name, Class<?>... params) {
+    return art.arcane.mystcraft.util.ReflectionCompat.findMethod(owner, name, null, params);
   }
 
   protected void saveAdditional(CompoundTag tag) {
@@ -54,14 +58,14 @@ public abstract class MystcraftBlockEntity extends BlockEntity {
    * Override to save custom data to NBT.
    */
   protected void writeNbt(CompoundTag tag) {
-    // Override in subclasses
+
   }
 
   /**
    * Override to load custom data from NBT.
    */
   protected void readNbt(CompoundTag tag) {
-    // Override in subclasses
+
   }
 
   public CompoundTag getUpdateTag() {
@@ -142,9 +146,5 @@ public abstract class MystcraftBlockEntity extends BlockEntity {
     } catch (ReflectiveOperationException ignored) {
     }
     return new CompoundTag();
-  }
-
-  private static Method findMethod(Class<?> owner, String name, Class<?>... params) {
-    return art.arcane.mystcraft.util.ReflectionCompat.findMethod(owner, name, null, params);
   }
 }

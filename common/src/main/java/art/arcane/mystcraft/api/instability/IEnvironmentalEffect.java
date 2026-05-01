@@ -4,8 +4,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 /**
- * Interface for environmental effects caused by instability.
- * Effects tick each world tick in loaded chunks.
+ * Interface for environmental effects caused by instability. Effects tick each
+ * world tick in loaded chunks.
  */
 public interface IEnvironmentalEffect {
 

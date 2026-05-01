@@ -13,8 +13,8 @@ import net.minecraftforge.fluids.ForgeFlowingFluid;
 import java.util.function.Supplier;
 
 /**
- * Black Ink fluid implementation.
- * Used in the ink mixer and writing desk for creating pages.
+ * Black Ink fluid implementation. Used in the ink mixer and writing desk for
+ * creating pages.
  */
 public abstract class BlackInkFluid extends ForgeFlowingFluid {
 
@@ -55,7 +55,8 @@ public abstract class BlackInkFluid extends ForgeFlowingFluid {
 
   /**
    * Creates the properties for black ink fluid using common registry accessors.
-   * Note: This must be called after the fluid type, block, and bucket have been registered.
+   * Note: This must be called after the fluid type, block, and bucket have been
+   * registered.
    *
    * @param fluidType Supplier for the fluid type
    * @param source    Supplier for the source fluid

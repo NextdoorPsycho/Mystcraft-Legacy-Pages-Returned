@@ -11,11 +11,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Generates tall vertical walls of dark stone that "weep" water or lava
- * from cracks in their surface. Made of deepslate, basalt, and dripstone
- * with pointed dripstone stalactites hanging from the top. Water/lava
- * source blocks seep from gaps, flowing down the face. Moss and glow lichen
- * cling to the damp surface. Eerie and primordial.
+ * Generates tall vertical walls of dark stone that "weep" water or lava from
+ * cracks in their surface. Made of deepslate, basalt, and dripstone with
+ * pointed dripstone stalactites hanging from the top. Water/lava source blocks
+ * seep from gaps, flowing down the face. Moss and glow lichen cling to the damp
+ * surface. Eerie and primordial.
  */
 public class WeepingWallsPopulator implements IPopulate {
 
@@ -88,18 +88,18 @@ public class WeepingWallsPopulator implements IPopulate {
       int height = MIN_HEIGHT + random.nextInt(MAX_HEIGHT - MIN_HEIGHT + 1);
       int length = MIN_LENGTH + random.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
       double angle = random.nextDouble() * Math.PI * 2.0;
-      boolean weepsLava = random.nextInt(5) == 0; // 20% chance of lava instead of water
+      boolean weepsLava = random.nextInt(5) == 0;
 
       generateWall(world, chunkPos, x, surfaceY, z, height, length, angle, weepsLava);
     }
   }
 
   private void generateWall(WorldGenLevel world, BlockPos chunkPos,
-                             int startX, int surfaceY, int startZ,
-                             int height, int length, double angle, boolean weepsLava) {
+                            int startX, int surfaceY, int startZ,
+                            int height, int length, double angle, boolean weepsLava) {
     double dx = Math.cos(angle);
     double dz = Math.sin(angle);
-    // Wall normal (perpendicular)
+
     double nx = -dz;
     double nz = dx;
 
@@ -111,7 +111,6 @@ public class WeepingWallsPopulator implements IPopulate {
       int bz = startZ + (int) Math.round(dz * step);
       int localSurfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz) - 1;
 
-      // Height varies along wall length: peaks in the middle
       double lengthProgress = (double) step / length;
       double heightMultiplier = 1.0 - 0.5 * Math.pow(2.0 * lengthProgress - 1.0, 2);
       int localHeight = (int) (height * heightMultiplier);
@@ -128,7 +127,6 @@ public class WeepingWallsPopulator implements IPopulate {
             continue;
           }
 
-          // Pick wall material
           long blockHash = positionHash(seed, wx, wy, wz);
           float roll = hashFloat(blockHash);
           BlockState wallBlock;
@@ -151,12 +149,11 @@ public class WeepingWallsPopulator implements IPopulate {
         }
       }
 
-      // Weeping: water/lava source blocks on one face
       long weepHash = positionHash(seed ^ 0xEE9L, bx, localSurfaceY, bz);
       if (hashFloat(weepHash) < 0.12f) {
-        // Place fluid source at random height on the wall face
+
         int weepY = localSurfaceY + 3 + (int) (hashFloat(positionHash(weepHash, bx, 0, bz)) * (localHeight - 6));
-        // On the face side (one block out from wall)
+
         int fx = bx + (int) Math.round(nx * WALL_THICKNESS);
         int fz = bz + (int) Math.round(nz * WALL_THICKNESS);
         BlockPos fluidPos = new BlockPos(fx, weepY, fz);
@@ -168,7 +165,6 @@ public class WeepingWallsPopulator implements IPopulate {
         }
       }
 
-      // Glow lichen patches on the face
       long lichenHash = positionHash(seed ^ 0x41CAL, bx, localSurfaceY, bz);
       if (hashFloat(lichenHash) < 0.15f) {
         int lichenY = localSurfaceY + 1 + (int) (hashFloat(positionHash(lichenHash, bx, 0, bz)) * (localHeight - 2));
@@ -183,7 +179,6 @@ public class WeepingWallsPopulator implements IPopulate {
         }
       }
 
-      // Pointed dripstone stalactites hanging from top
       if (step % 2 == 0) {
         long dripHash = positionHash(seed ^ 0xD71BL, bx, localSurfaceY + localHeight, bz);
         if (hashFloat(dripHash) < 0.35f) {

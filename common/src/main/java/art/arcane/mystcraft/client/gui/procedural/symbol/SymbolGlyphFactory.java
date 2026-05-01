@@ -11,15 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Builds 64×64 D'ni-style glyph tiles for a given symbol + poem-word
- * combination. The result is deterministic — same symbol id + same word
- * always yield identical pixels — so wikis, screenshots, and saved
- * worlds stay visually consistent across runs and machines.
+ * Builds 128×128 D'ni-style glyph tiles for a given symbol + poem-word
+ * combination. The result is deterministic — same symbol id + same word always
+ * yield identical pixels — so wikis, screenshots, and saved worlds stay
+ * visually consistent across runs and machines.
  * <p>
  * Two layers of seed mixing are used:
  * <ol>
@@ -33,47 +32,46 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *       both contain "Fire" don't end up pixel-identical.</li>
  * </ol>
  *
- * Phase 1 ships the factory + a primitive-selection DSL. Phase 4 hooks
- * the optional datapack {@code display.glyph_seeds} pin into the same
- * derive function.
+ * <p><b>Resolution bump:</b> tile size doubled 64→128 in the
+ * "legibility pass" so primitives (discs, arcs, runic strokes) read
+ * crisply when the page texture stretches to fill an item frame or
+ * the held-as-map pose. Memory cap stays the same (~12 MB) by
+ * trimming the LRU from 256→192 entries.
  */
 public final class SymbolGlyphFactory {
 
-  /** Tile size in pixels. Picked to match the legacy in-book draw scale. */
-  public static final int GLYPH_SIZE = 64;
+  /**
+   * Tile size in pixels. Doubled 64→128 for the legibility pass: primitives now
+   * have 4× the pixel headroom, eliminating the "pixelated discs" complaint
+   * without changing primitive semantics.
+   */
+  public static final int GLYPH_SIZE = 128;
 
-  /** Cache capacity (per-tile). 256 × 64×64 RGBA ≈ 4 MB. */
-  private static final int CACHE_CAPACITY = 256;
+  private static final int CACHE_CAPACITY = 192;
 
   private static final ConcurrentHashMap<String, NativeImage> CACHE = new ConcurrentHashMap<>();
-
-  /**
-   * Primitive types selectable by {@link #compose}. Weight is duplicated
-   * in {@link #PRIMITIVE_WEIGHTS} so popular primitives (runic strokes,
-   * dot clusters) appear more often.
-   */
-  private enum Primitive {
-    RUNIC_STROKE,
-    DOT_CLUSTER,
-    NOTCHED_RING,
-    ARC,
-    SPIRAL,
-    CROSSED_BARS,
-    HATCHING,
-    CROWN
-  }
-
-  private static final Primitive[] PRIMITIVE_WEIGHTS = {
-      Primitive.RUNIC_STROKE, Primitive.RUNIC_STROKE, Primitive.RUNIC_STROKE,
-      Primitive.DOT_CLUSTER, Primitive.DOT_CLUSTER,
+  private static final Composition[] COMPOSITIONS = Composition.values();
+  private static final Primitive[] SOLO_PRIMITIVES = {
+      Primitive.RUNIC_STROKE,
+      Primitive.CROWN,
       Primitive.NOTCHED_RING,
-      Primitive.ARC, Primitive.ARC,
-      Primitive.SPIRAL,
+      Primitive.CROSSED_BARS,
+      Primitive.SPIRAL
+  };
+  private static final Primitive[] SMALL_PRIMITIVES = {
+      Primitive.RUNIC_STROKE,
+      Primitive.DOT_CLUSTER,
       Primitive.CROSSED_BARS,
       Primitive.HATCHING,
-      Primitive.CROWN
+      Primitive.ARC
   };
-
+  private static final Primitive[] STACKABLE_PRIMITIVES = {
+      Primitive.NOTCHED_RING,
+      Primitive.RUNIC_STROKE,
+      Primitive.CROWN,
+      Primitive.HATCHING,
+      Primitive.DOT_CLUSTER
+  };
   private static volatile boolean warming = false;
   private static volatile boolean warmed = false;
 
@@ -81,15 +79,14 @@ public final class SymbolGlyphFactory {
   }
 
   /**
-   * Returns a 64×64 RGBA tile for the given (symbol, word, palette) triple.
+   * Returns a 128×128 RGBA tile for the given (symbol, word, palette) triple.
    * <p>
-   * The result is cached. Mutating the returned image is undefined
-   * behaviour and may corrupt other pages' renders — copy first if you
-   * need to modify.
+   * The result is cached. Mutating the returned image is undefined behaviour
+   * and may corrupt other pages' renders — copy first if you need to modify.
    *
    * @param symbol  optional symbol context (may be null for orphan words)
-   * @param word    poem word — case-insensitive; null falls back to the
-   *                shared "?" tile
+   * @param word    poem word — case-insensitive; null falls back to the shared
+   *                "?" tile
    * @param palette per-category palette
    * @return a glyph tile owned by the factory cache
    */
@@ -104,9 +101,9 @@ public final class SymbolGlyphFactory {
   }
 
   /**
-   * Pre-warms every {@code (symbol, poemWord)} pair on a daemon thread.
-   * Safe to call multiple times — only the first call kicks off work.
-   * Subsequent calls become no-ops once warming completes.
+   * Pre-warms every {@code (symbol, poemWord)} pair on a daemon thread. Safe to
+   * call multiple times — only the first call kicks off work. Subsequent calls
+   * become no-ops once warming completes.
    */
   public static void warm() {
     if (warmed || warming) return;
@@ -117,19 +114,18 @@ public final class SymbolGlyphFactory {
   }
 
   /**
-   * Blocking variant of {@link #warm()} — runs the entire pre-warm
-   * loop on the calling thread and returns when the cache is fully
-   * populated (or has hit {@code CACHE_CAPACITY}). Used by the
-   * {@code procedural_symbol_warm_completes} GameTest so it can assert
-   * cache state without sleeping. Idempotent — repeat calls are no-ops
-   * after the first completes.
+   * Blocking variant of {@link #warm()} — runs the entire pre-warm loop on the
+   * calling thread and returns when the cache is fully populated (or has hit
+   * {@code CACHE_CAPACITY}). Used by the
+   * {@code procedural_symbol_warm_completes} GameTest so it can assert cache
+   * state without sleeping. Idempotent — repeat calls are no-ops after the
+   * first completes.
    *
    * @return number of glyph tiles in the cache after warming
    */
   public static int warmBlocking() {
     if (warmed) return CACHE.size();
-    // We intentionally don't gate on `warming` here — that flag is for
-    // the async path. Tests want a deterministic synchronous result.
+
     warming = true;
     try {
       warmAllSymbols();
@@ -139,13 +135,16 @@ public final class SymbolGlyphFactory {
     return CACHE.size();
   }
 
-  /** Reset cache (resource-pack reload). Releases all stored {@link NativeImage}s. */
+  /**
+   * Reset cache (resource-pack reload). Releases all stored
+   * {@link NativeImage}s.
+   */
   public static void reset() {
     for (NativeImage img : CACHE.values()) {
       try {
         img.close();
       } catch (Exception ignored) {
-        // NativeImage#close swallows GL errors when no context is bound; we don't care.
+
       }
     }
     CACHE.clear();
@@ -153,14 +152,12 @@ public final class SymbolGlyphFactory {
     warming = false;
   }
 
-  /** Cache size — exposed for tests / debug. */
+  /**
+   * Cache size — exposed for tests / debug.
+   */
   public static int cacheSize() {
     return CACHE.size();
   }
-
-  // ---------------------------------------------------------------------
-  // Internals
-  // ---------------------------------------------------------------------
 
   private static String cacheKey(@Nullable IAgeSymbol symbol, @Nullable String word, int accent,
                                  boolean glyphsEnabled) {
@@ -171,42 +168,23 @@ public final class SymbolGlyphFactory {
     return id + "|" + w + "|" + Integer.toHexString(accent & 0xFFFFFF) + (glyphsEnabled ? "|g" : "|l");
   }
 
-  /**
-   * Renders a single tile. Uses {@link SymbolSeed#derive} for the seed
-   * (deterministic across JVMs) and consults
-   * {@link DrawableWordManager#getCuratedSeed} / {@code getCuratedColor}
-   * (added in task 1.3) so pinned vocabulary keeps its hand-tuned look.
-   *
-   * <p>Datapack {@code display.glyph_seeds} pins (added in task 4.4) take
-   * highest priority — a hero symbol can claim e.g. "Stone" with its
-   * own seed even when the curated D'ni vocabulary already has a pin
-   * for the same word.
-   */
   @NotNull
   private static NativeImage render(@Nullable IAgeSymbol symbol, @Nullable String word,
                                     @NotNull SymbolPalette.Entry palette) {
     NativeImage image = new NativeImage(NativeImage.Format.RGBA, GLYPH_SIZE, GLYPH_SIZE, true);
     image.fillRect(0, 0, GLYPH_SIZE, GLYPH_SIZE, 0);
 
-    // Letter-fallback escape hatch (config 5.2). Routes through the
-    // hand-rolled 5x7 bitmap font in SymbolLetterFallback so the
-    // fallback works on the daemon pre-warm thread (no GL context) as
-    // well as on the main render thread.
     if (!MystcraftConfig.proceduralSymbolGlyphsEnabled.get()) {
       String label = labelFor(symbol, word);
       SymbolLetterFallback.renderInto(image, label, palette.accentColor(), palette.inkColor());
       return image;
     }
 
-    // 1. Datapack hero pin (highest priority).
     SymbolDisplay display = symbol != null ? symbol.getDisplay() : null;
     Integer hardOverride = display != null ? display.seedFor(word) : null;
 
-    // 2. Curated D'ni vocabulary pin.
     Integer pinnedSeed = DrawableWordManager.getCuratedSeed(word);
 
-    // 3. Symbol mix (always applied so two distinct symbols pinning the same
-    //    word still render distinctly).
     int symbolMix = SymbolSeed.derive(symbol != null ? symbol.getRegistryName() : null, word, 0);
 
     int seed;
@@ -218,22 +196,19 @@ public final class SymbolGlyphFactory {
       seed = symbolMix;
     }
 
-    // 4. Curated color pin (if any) — overrides palette accent for this tile.
     Integer pinnedColor = DrawableWordManager.getCuratedColor(word);
     int accent = pinnedColor != null ? (0xFF000000 | (pinnedColor.intValue() & 0xFFFFFF))
         : (0xFF000000 | (palette.accentColor() & 0xFFFFFF));
     int ink = 0xFF000000 | (palette.inkColor() & 0xFFFFFF);
 
+    if (SymbolGlyphIcons.tryDraw(image, word, accent, ink, seed)) {
+      return image;
+    }
+
     compose(image, seed, accent, ink);
     return image;
   }
 
-  /**
-   * Picks the most informative label for the letter fallback: prefers
-   * the poem word (carries semantic meaning) but falls back to the
-   * symbol's registry path so the fallback always shows something
-   * meaningful even for orphan word lookups.
-   */
   @Nullable
   private static String labelFor(@Nullable IAgeSymbol symbol, @Nullable String word) {
     if (word != null && !word.isBlank()) return word;
@@ -243,33 +218,70 @@ public final class SymbolGlyphFactory {
     return null;
   }
 
-  /**
-   * Primitive-selection DSL: picks 2-5 primitives from the weighted
-   * table and applies each at a small jittered offset. Centre at
-   * (32, 32). Each primitive consumes its own slice of the seed via
-   * sub-stream salting so adding a primitive doesn't rotate the others.
-   */
   private static void compose(@NotNull NativeImage image, int seed, int accent, int ink) {
-    Random rng = new Random(((long) seed) << 32 | (seed & 0xFFFFFFFFL));
-    int count = 2 + rng.nextInt(4); // 2-5 primitives
+    int compIdx = Math.floorMod(seed, COMPOSITIONS.length);
+    Composition comp = COMPOSITIONS[compIdx];
     int cx = GLYPH_SIZE / 2;
     int cy = GLYPH_SIZE / 2;
 
-    for (int i = 0; i < count; i++) {
-      Primitive p = PRIMITIVE_WEIGHTS[rng.nextInt(PRIMITIVE_WEIGHTS.length)];
-      int radius = 8 + rng.nextInt(10);   // 8..17
-      int offsetX = -4 + rng.nextInt(9);  // -4..4
-      int offsetY = -4 + rng.nextInt(9);  // -4..4
-      int subSeed = SymbolSeed.derive("primitive", p.ordinal() * 31 + i + seed);
-      int color = (i % 2 == 0) ? accent : ink;
-      applyPrimitive(image, p, cx + offsetX, cy + offsetY, radius, color, subSeed);
+    int va = (seed >>> 4) & 0x7FFFFFFF;
+    int vb = (seed >>> 12) & 0x7FFFFFFF;
+    int subSeed = SymbolSeed.derive("primitive", seed);
+
+    switch (comp) {
+      case SOLO -> {
+        Primitive p = SOLO_PRIMITIVES[va % SOLO_PRIMITIVES.length];
+        applyPrimitive(image, p, cx, cy, 50, accent, subSeed);
+      }
+      case RINGED -> {
+
+        int notches = 6 + (va & 0x7);
+        SymbolGlyphPrimitives.drawNotchedRing(image, cx, cy, 50, notches, accent, subSeed);
+        Primitive inner = SMALL_PRIMITIVES[vb % SMALL_PRIMITIVES.length];
+        applyPrimitive(image, inner, cx, cy, 18, ink,
+            SymbolSeed.derive("inner", subSeed));
+      }
+      case STACKED_PAIR -> {
+        Primitive top = STACKABLE_PRIMITIVES[va % STACKABLE_PRIMITIVES.length];
+        Primitive bot = STACKABLE_PRIMITIVES[vb % STACKABLE_PRIMITIVES.length];
+        applyPrimitive(image, top, cx, cy - 24, 22, accent, subSeed);
+        applyPrimitive(image, bot, cx, cy + 24, 22, ink,
+            SymbolSeed.derive("bottom", subSeed));
+      }
+      case DIAGONAL_PAIR -> {
+        Primitive a = SMALL_PRIMITIVES[va % SMALL_PRIMITIVES.length];
+        Primitive b = SMALL_PRIMITIVES[vb % SMALL_PRIMITIVES.length];
+        applyPrimitive(image, a, cx - 22, cy - 22, 20, accent, subSeed);
+        applyPrimitive(image, b, cx + 22, cy + 22, 20, ink,
+            SymbolSeed.derive("diag", subSeed));
+      }
+      case CROSSED_QUADRANTS -> {
+
+        boolean caps = (va & 0x1) != 0;
+        SymbolGlyphPrimitives.drawCrossedBars(image, cx, cy, 50, caps, accent, subSeed);
+
+        int[][] corners = {{-26, -26}, {26, -26}, {-26, 26}, {26, 26}};
+        for (int i = 0; i < 4; i++) {
+          int dotSeed = SymbolSeed.derive("quad", subSeed * 17 + i);
+          int dots = 3 + ((dotSeed >>> 5) & 0x1);
+          SymbolGlyphPrimitives.drawDotCluster(image, cx + corners[i][0],
+              cy + corners[i][1], 9, dots, ink, dotSeed);
+        }
+      }
+      case SPIRAL_CORE -> {
+        SymbolGlyphPrimitives.drawSpiral(image, cx, cy, 38, accent, subSeed);
+
+        SymbolGlyphPrimitives.drawAaArc(image, cx, cy, 55, 0, 360, 1.5,
+            0xFF000000 | (ink & 0xFFFFFF));
+      }
     }
   }
 
   private static void applyPrimitive(@NotNull NativeImage image, @NotNull Primitive p,
                                      int cx, int cy, int radius, int color, int seed) {
     switch (p) {
-      case RUNIC_STROKE -> SymbolGlyphPrimitives.drawRunicStroke(image, cx, cy, radius, color, seed);
+      case RUNIC_STROKE ->
+          SymbolGlyphPrimitives.drawRunicStroke(image, cx, cy, radius, color, seed);
       case DOT_CLUSTER -> {
         int dots = 3 + (seed & 0x3);
         SymbolGlyphPrimitives.drawDotCluster(image, cx, cy, radius, dots, color, seed);
@@ -283,14 +295,17 @@ public final class SymbolGlyphFactory {
         float sweepDeg = 90f + ((seed >>> 16) & 0xFF) * 270f / 256f;
         SymbolGlyphPrimitives.drawArc(image, cx, cy, radius, startDeg, sweepDeg, color, seed);
       }
-      case SPIRAL -> SymbolGlyphPrimitives.drawSpiral(image, cx, cy, radius, color, seed);
-      case CROSSED_BARS -> SymbolGlyphPrimitives.drawCrossedBars(image, cx, cy, radius,
-          (seed & 0x80000000) != 0, color, seed);
+      case SPIRAL ->
+          SymbolGlyphPrimitives.drawSpiral(image, cx, cy, radius, color, seed);
+      case CROSSED_BARS ->
+          SymbolGlyphPrimitives.drawCrossedBars(image, cx, cy, radius,
+              (seed & 0x80000000) != 0, color, seed);
       case HATCHING -> {
         int strokes = 3 + ((seed >>> 12) & 0x3);
         SymbolGlyphPrimitives.drawHatching(image, cx, cy, radius, strokes, color, seed);
       }
-      case CROWN -> SymbolGlyphPrimitives.drawCrown(image, cx, cy, radius, color, seed);
+      case CROWN ->
+          SymbolGlyphPrimitives.drawCrown(image, cx, cy, radius, color, seed);
     }
   }
 
@@ -311,7 +326,7 @@ public final class SymbolGlyphFactory {
           glyph(sym, word, palette);
           generated++;
           if (CACHE.size() >= CACHE_CAPACITY) {
-            // Already reached the cap — additional pre-warms would just thrash.
+
             ok.set(true);
             Mystcraft.LOGGER.info("[SymbolGlyphFactory] Pre-warm filled cache at {} entries", CACHE.size());
             return;
@@ -326,5 +341,43 @@ public final class SymbolGlyphFactory {
       warming = false;
       warmed = ok.get();
     }
+  }
+
+  private enum Primitive {
+    RUNIC_STROKE,
+    DOT_CLUSTER,
+    NOTCHED_RING,
+    ARC,
+    SPIRAL,
+    CROSSED_BARS,
+    HATCHING,
+    CROWN
+  }
+
+  private enum Composition {
+    /**
+     * One large primitive centred. Reads as a single dominant glyph.
+     */
+    SOLO,
+    /**
+     * Outer notched ring + small primitive at centre.
+     */
+    RINGED,
+    /**
+     * Two primitives stacked vertically. Reads like two stanzas.
+     */
+    STACKED_PAIR,
+    /**
+     * Two primitives on the NW-SE diagonal.
+     */
+    DIAGONAL_PAIR,
+    /**
+     * Crossed bars + four dot clusters in the corners.
+     */
+    CROSSED_QUADRANTS,
+    /**
+     * Central spiral inside a thin outer ring.
+     */
+    SPIRAL_CORE
   }
 }

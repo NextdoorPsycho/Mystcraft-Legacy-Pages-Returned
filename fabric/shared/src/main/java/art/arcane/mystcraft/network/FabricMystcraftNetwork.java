@@ -14,14 +14,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
 /**
- * Fabric networking implementation for Mystcraft packets.
- * Registers channel IDs and provides send helpers for all packet types.
+ * Fabric networking implementation for Mystcraft packets. Registers channel IDs
+ * and provides send helpers for all packet types.
  */
 public final class FabricMystcraftNetwork {
 
-  // --- Channel IDs ---
-
-  // Client -> Server
   public static final ResourceLocation OPEN_BOOK = new ResourceLocation(Mystcraft.MOD_ID, "open_book");
   public static final ResourceLocation CONTAINER_ACTION = new ResourceLocation(Mystcraft.MOD_ID, "container_action");
   public static final ResourceLocation LINK_BOOK_ACTIVATE = new ResourceLocation(Mystcraft.MOD_ID, "link_book_activate");
@@ -29,7 +26,6 @@ public final class FabricMystcraftNetwork {
   public static final ResourceLocation BLOCK_BOOK_ACTIVATE = new ResourceLocation(Mystcraft.MOD_ID, "block_book_activate");
   public static final ResourceLocation POCKET_HEAD_SYNC = new ResourceLocation(Mystcraft.MOD_ID, "pocket_head_sync");
 
-  // Server -> Client
   public static final ResourceLocation SYNC_AGE_DATA = new ResourceLocation(Mystcraft.MOD_ID, "sync_age_data");
   public static final ResourceLocation LINK_EFFECT = new ResourceLocation(Mystcraft.MOD_ID, "link_effect");
   public static final ResourceLocation SYMBOL_SYNC = new ResourceLocation(Mystcraft.MOD_ID, "symbol_sync");
@@ -45,10 +41,11 @@ public final class FabricMystcraftNetwork {
   }
 
   /**
-   * Registers all server-side packet receivers. Call from MystcraftFabric.onInitialize().
+   * Registers all server-side packet receivers. Call from
+   * MystcraftFabric.onInitialize().
    */
   public static void register() {
-    // Client -> Server receivers
+
     ServerPlayNetworking.registerGlobalReceiver(OPEN_BOOK, (server, player, handler, buf, responseSender) -> {
       OpenBookPacket packet = OpenBookPacket.decode(buf);
       PacketContext ctx = createServerContext(server, player);
@@ -89,7 +86,8 @@ public final class FabricMystcraftNetwork {
   }
 
   /**
-   * Registers client-side packet receivers. Call from MystcraftFabricClient.onInitializeClient().
+   * Registers client-side packet receivers. Call from
+   * MystcraftFabricClient.onInitializeClient().
    */
   public static void registerClient() {
     ClientPlayNetworking.registerGlobalReceiver(SYNC_AGE_DATA, (client, handler, buf, responseSender) -> {
@@ -152,8 +150,6 @@ public final class FabricMystcraftNetwork {
       OpenLecternBookPacket.handle(packet, ctx);
     });
   }
-
-  // --- Send helpers ---
 
   /**
    * Sends a C->S OpenBookPacket.
@@ -324,7 +320,7 @@ public final class FabricMystcraftNetwork {
     for (ServerPlayer player : PlayerLookup.tracking(entity)) {
       sendToPlayerGeneric(packet, player);
     }
-    // Also send to the entity itself if it's a player
+
     if (entity instanceof ServerPlayer self) {
       sendToPlayerGeneric(packet, self);
     }
@@ -363,8 +359,6 @@ public final class FabricMystcraftNetwork {
       Mystcraft.LOGGER.warn("[FabricMystcraftNetwork] Unknown packet type: {}", packet.getClass().getName());
     }
   }
-
-  // --- PacketContext implementations ---
 
   private static PacketContext createServerContext(MinecraftServer server, ServerPlayer player) {
     return new PacketContext() {

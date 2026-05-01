@@ -12,6 +12,9 @@ import net.minecraft.world.level.material.FlowingFluid;
 
 import java.util.function.Consumer;
 
+/**
+ * Fabric service implementation for common platform lifecycle and registry hooks.
+ */
 public class FabricPlatformHelper implements IPlatformHelper {
 
   @Override

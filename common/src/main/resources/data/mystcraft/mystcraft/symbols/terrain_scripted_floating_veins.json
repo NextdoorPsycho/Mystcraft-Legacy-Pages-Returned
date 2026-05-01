@@ -33,7 +33,9 @@
               "op": "smoothstep",
               "edge0": 200,
               "edge1": 30,
-              "value": { "var": "y" }
+              "value": {
+                "var": "y"
+              }
             },
             "b": 0.15
           }

@@ -32,7 +32,8 @@ public class CrystalBlock extends Block {
   }
 
   /**
-   * Light level used by the block properties — bright when active, dim otherwise.
+   * Light level used by the block properties — bright when active, dim
+   * otherwise.
    */
   public static int getLightLevel(BlockState state) {
     return state.getValue(ACTIVE) ? 8 : 0;
@@ -50,11 +51,32 @@ public class CrystalBlock extends Block {
       return;
     }
 
-    // If the live portal we belong to can no longer reach a receptacle,
-    // tear it down. validatePortal() handles the cascading cleanup.
-    if (PortalUtils.findReceptacle(level, pos) == null) {
-      level.setBlock(pos, defaultBlockState(), Block.UPDATE_CLIENTS);
-      PortalUtils.validatePortal(level, pos);
+    // BE-aware validation: walk our 6 neighbours, read any LinkPortal BE
+    // pointers, and consult the named receptacle directly. No BFS through
+    // portal cells required — much faster and avoids cascading-update
+    // ordering issues that plagued the legacy {@link PortalUtils#validatePortal}
+    // path during cluster crystal breaks.
+    PortalUtils.validatePortalFromCrystal(level, pos);
+  }
+
+  /**
+   * When an ACTIVE crystal is broken (or replaced with anything that isn't
+   * the same crystal block, e.g. AIR from a player break or a fill command),
+   * propagate the teardown to every connected portal. Without this, breaking
+   * a frame crystal leaves the portal blocks lit forever — the legacy
+   * {@code neighborChanged} path doesn't fire when the block is removed
+   * outright (it fires for OTHER blocks' updates, not for the crystal's own
+   * removal), so the BE-pointer-driven shutdown is the only deterministic
+   * way to catch this.
+   */
+  @Override
+  public void onRemove(BlockState state, Level level, BlockPos pos,
+                       BlockState newState, boolean movedByPiston) {
+    if (!state.is(newState.getBlock())) {
+      if (state.getValue(ACTIVE)) {
+        PortalUtils.shutdownPortalFromCrystal(level, pos);
+      }
+      super.onRemove(state, level, pos, newState, movedByPiston);
     }
   }
 

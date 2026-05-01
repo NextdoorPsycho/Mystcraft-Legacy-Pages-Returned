@@ -21,8 +21,8 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Renderer for the Book Receptacle block entity.
- * Renders a closed book on the receptacle plate, oriented based on facing direction.
+ * Renderer for the Book Receptacle block entity. Renders a closed book on the
+ * receptacle plate, oriented based on facing direction.
  */
 public class BookReceptacleRenderer implements BlockEntityRenderer<BookReceptacleBlockEntity> {
 
@@ -54,12 +54,12 @@ public class BookReceptacleRenderer implements BlockEntityRenderer<BookReceptacl
 
     poseStack.pushPose();
 
-    // Translate to center of block (matches old: x + 0.5, y + 0.5, z + 0.5)
     poseStack.translate(0.5, 0.5, 0.5);
 
-    // Apply rotation based on facing — matches the per-face platform shape so
-    // the book sits flat on the receptacle slab. DOWN is excluded because the
-    // block disallows ceiling mounting (see BookReceptacleBlock).
+    final double bookOffset = 0.20;
+    net.minecraft.core.Vec3i n = facing.getNormal();
+    poseStack.translate(n.getX() * bookOffset, n.getY() * bookOffset, n.getZ() * bookOffset);
+
     switch (facing) {
       case UP -> {
         poseStack.mulPose(Axis.XN.rotationDegrees(90));
@@ -69,23 +69,21 @@ public class BookReceptacleRenderer implements BlockEntityRenderer<BookReceptacl
       case SOUTH -> poseStack.mulPose(Axis.YP.rotationDegrees(90));
       case EAST -> poseStack.mulPose(Axis.YP.rotationDegrees(180));
       case WEST -> {
-        // No Y rotation — default orientation.
+
       }
       default -> {
-        // DOWN should never reach here.
+
       }
     }
 
-    poseStack.scale(0.8f, 0.8f, 0.8f); // Book display scale
+    poseStack.scale(0.8f, 0.8f, 0.8f);
 
-    bookModel.setupAnim(0, 0, 0, 0.0f); // Closed state
+    bookModel.setupAnim(0, 0, 0, 0.0f);
 
-    // Choose texture based on book type
     ResourceLocation bookTexture = (book.getItem() instanceof AgebookItem)
         ? AGEBOOK_TEXTURE
         : LINKBOOK_TEXTURE;
 
-    // Render the book model
     VertexConsumer bookConsumer = bufferSource.getBuffer(RenderType.entitySolid(bookTexture));
     bookModel.render(poseStack, bookConsumer, packedLight, OverlayTexture.NO_OVERLAY,
         1.0f, 1.0f, 1.0f, 1.0f);

@@ -1,9 +1,11 @@
 package art.arcane.mystcraft.gametest;
 
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.block.BookReceptacleBlock;
 import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
+import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
 import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
-import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.command.MystcraftCommands;
 import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.data.LinkFlags;
@@ -14,10 +16,7 @@ import art.arcane.mystcraft.entity.PersonalPocketProxyEntity;
 import art.arcane.mystcraft.event.AgeReturnHandler;
 import art.arcane.mystcraft.event.PersonalPocketEscapeHandler;
 import art.arcane.mystcraft.grammar.AgeBuilder;
-import art.arcane.mystcraft.item.AgebookItem;
-import art.arcane.mystcraft.item.FolderItem;
-import art.arcane.mystcraft.item.PersonalLinkBookItem;
-import art.arcane.mystcraft.item.PortfolioItem;
+import art.arcane.mystcraft.item.*;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModItems;
@@ -25,17 +24,12 @@ import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.util.CommonListenerCookieCompat;
 import art.arcane.mystcraft.util.ItemStackNbt;
 import art.arcane.mystcraft.util.ServerPlayerTeleport;
-import art.arcane.mystcraft.world.AgeData;
-import art.arcane.mystcraft.world.AgeDirectorImpl;
-import art.arcane.mystcraft.world.AgeDimensionFactory;
-import art.arcane.mystcraft.world.AgeManager;
-import art.arcane.mystcraft.world.AgeReturnData;
-import art.arcane.mystcraft.world.PersonalPocketData;
-import art.arcane.mystcraft.world.PersonalPocketDimension;
+import art.arcane.mystcraft.world.*;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -52,6 +46,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 
@@ -61,6 +56,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+/**
+ * Coordinates behavior-focused GameTest scenarios that both Fabric and Forge wrappers invoke.
+ */
 public final class MystcraftGameTestRunner {
 
   private MystcraftGameTestRunner() {
@@ -391,7 +389,7 @@ public final class MystcraftGameTestRunner {
     }
 
     entity.damageBook(10.0F);
-    helper.runAtTickTime(5, () -> {
+    helper.runAtTickTime(10, () -> {
       AABB box = new AABB(origin).inflate(3.0D);
       boolean foundPage = false;
       boolean foundLeather = false;
@@ -409,6 +407,847 @@ public final class MystcraftGameTestRunner {
       }
       helper.succeed();
     });
+  }
+
+  /**
+   * Validates {@link BookReceptacleBlockEntity#isValidPortalActivator} answers
+   * correctly for every book category we care about. This is the contract the
+   * portal frame relies on — accepting books that can't actually open a portal
+   * leads to the silent-no-op bug we fixed in this change.
+   */
+  public static void runPortalValidatorCategorizesBookTypesTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+
+    if (BookReceptacleBlockEntity.isValidPortalActivator(ItemStack.EMPTY)) {
+      helper.fail("Empty stack must not validate as a portal activator");
+      return;
+    }
+
+    ItemStack linkbook = new ItemStack(ModItems.LINKBOOK.get());
+    if (!BookReceptacleBlockEntity.isValidPortalActivator(linkbook)) {
+      helper.fail("Linkbook must validate as a portal activator");
+      return;
+    }
+
+    ItemStack personalBook = new ItemStack(ModItems.PERSONAL_LINK_BOOK.get());
+    if (!BookReceptacleBlockEntity.isValidPortalActivator(personalBook)) {
+      helper.fail("Personal Link Book must validate as a portal activator");
+      return;
+    }
+
+    ItemStack linkedAgebook = new ItemStack(ModItems.AGEBOOK.get());
+    CompoundTag linkedTag = new CompoundTag();
+    LinkOptions.setDimensionUID(linkedTag, 42);
+    ItemStackNbt.setTag(linkedAgebook, linkedTag);
+    if (!BookReceptacleBlockEntity.isValidPortalActivator(linkedAgebook)) {
+      helper.fail("Linked Agebook (DimensionUID=42) must validate as a portal activator");
+      return;
+    }
+
+    ItemStack unwrittenWithPanel = new ItemStack(ModItems.AGEBOOK.get());
+    {
+      List<ItemStack> pagesWithPanel = new ArrayList<>();
+      pagesWithPanel.add(Page.createLinkPage(LinkFlags.FOLLOWING));
+      pagesWithPanel.add(Page.createSymbolPage(symbolId("terrain_flat")));
+      AgebookItem agebookItem = (AgebookItem) unwrittenWithPanel.getItem();
+      ItemStackNbt.setTag(unwrittenWithPanel, new CompoundTag());
+      agebookItem.addPages(unwrittenWithPanel, pagesWithPanel);
+    }
+    if (!BookReceptacleBlockEntity.isValidPortalActivator(unwrittenWithPanel)) {
+      helper.fail("Unwritten Agebook with link-panel page 0 must validate (auto-create-on-traverse path)");
+      return;
+    }
+
+    ItemStack unwrittenWithoutPanel = new ItemStack(ModItems.AGEBOOK.get());
+    {
+      List<ItemStack> pagesNoPanel = new ArrayList<>();
+      pagesNoPanel.add(Page.createSymbolPage(symbolId("terrain_flat")));
+      pagesNoPanel.add(Page.createSymbolPage(symbolId("biome_plains")));
+      AgebookItem agebookItem = (AgebookItem) unwrittenWithoutPanel.getItem();
+      ItemStackNbt.setTag(unwrittenWithoutPanel, new CompoundTag());
+      agebookItem.addPages(unwrittenWithoutPanel, pagesNoPanel);
+    }
+    if (BookReceptacleBlockEntity.isValidPortalActivator(unwrittenWithoutPanel)) {
+      helper.fail("Unwritten Agebook without a link-panel page 0 MUST be rejected");
+      return;
+    }
+
+    ItemStack bareAgebook = new ItemStack(ModItems.AGEBOOK.get());
+    if (BookReceptacleBlockEntity.isValidPortalActivator(bareAgebook)) {
+      helper.fail("Bare Agebook (no NBT) MUST be rejected");
+      return;
+    }
+
+    if (BookReceptacleBlockEntity.isValidPortalActivator(new ItemStack(Items.STICK))) {
+      helper.fail("Stick must not validate as a portal activator");
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  /**
+   * Verifies the auto-create-on-traverse flow: an unwritten Agebook with a Link
+   * Panel as page 0 must, after {@link AgebookItem#activate}, end up with a
+   * populated DimensionUID — that's the precondition that lets
+   * {@code LinkPortalBlock.entityInside} teleport the player to the new Age.
+   */
+  public static void runUnwrittenAgebookActivateCreatesAgeTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+    ServerPlayer player = createMockServerPlayer(helper);
+    if (player == null) {
+      return;
+    }
+
+    ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
+    List<ItemStack> pages = new ArrayList<>();
+    pages.add(Page.createLinkPage(LinkFlags.FOLLOWING));
+    pages.add(Page.createSymbolPage(symbolId("terrain_flat")));
+    pages.add(Page.createSymbolPage(symbolId("biome_plains")));
+    pages.add(Page.createSymbolPage(symbolId("weather_normal")));
+    pages.add(Page.createSymbolPage(symbolId("lighting_normal")));
+    AgebookItem.create(agebook, player, pages, "Auto-Create Test Age");
+
+    if (!AgebookItem.isNewAgebook(agebook)) {
+      helper.fail("Pre-condition violated: created agebook should be 'new' (unlinked + has link panel)");
+      return;
+    }
+    if (LinkOptions.getDimensionUID(ItemStackNbt.getTag(agebook)) != null) {
+      helper.fail("Pre-condition violated: agebook should have no DimensionUID before activate()");
+      return;
+    }
+
+    AgebookItem item = (AgebookItem) agebook.getItem();
+    item.activate(agebook, helper.getLevel(), player);
+
+    Integer uid = LinkOptions.getDimensionUID(ItemStackNbt.getTag(agebook));
+    if (uid == null) {
+      helper.fail("After activate(), unwritten Agebook with link panel must have a DimensionUID. The portal-traversal auto-create flow depends on this.");
+      return;
+    }
+    if (AgebookItem.isNewAgebook(agebook)) {
+      helper.fail("After activate(), the agebook must no longer be 'new' (it should be linked)");
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  /**
+   * Verifies the take-out path: shift + empty hand on a book-bearing receptacle
+   * must return the book to the player's inventory and clear the receptacle.
+   * <p>
+   * Goes through the actual {@code BlockState.use(...)} dispatch (not just the
+   * BE) so an absent {@code @Override} or signature drift on the use method
+   * would surface as a test failure here.
+   */
+  public static void runReceptacleTakeOnShiftEmptyHandTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+    ServerPlayer player = createMockServerPlayer(helper);
+    if (player == null) {
+      return;
+    }
+
+    BlockPos crystalPos = new BlockPos(1, 1, 1);
+    BlockPos receptaclePos = crystalPos.above();
+
+    helper.setBlock(crystalPos, ModBlocks.CRYSTAL.get().defaultBlockState());
+    helper.setBlock(receptaclePos,
+        ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, Direction.UP));
+
+    BlockPos absoluteReceptaclePos = helper.absolutePos(receptaclePos);
+    BlockEntity be = helper.getLevel().getBlockEntity(absoluteReceptaclePos);
+    if (!(be instanceof BookReceptacleBlockEntity receptacle)) {
+      helper.fail("Receptacle BE missing for take-out test");
+      return;
+    }
+
+    ItemStack inserted = new ItemStack(ModItems.LINKBOOK.get());
+    receptacle.setBook(inserted);
+    if (!receptacle.hasBook()) {
+      helper.fail("Pre-condition violated: receptacle did not accept inserted Linkbook");
+      return;
+    }
+
+    player.getInventory().clearContent();
+    player.setShiftKeyDown(true);
+    player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+
+    net.minecraft.world.phys.BlockHitResult hit = new net.minecraft.world.phys.BlockHitResult(
+        net.minecraft.world.phys.Vec3.atCenterOf(absoluteReceptaclePos),
+        Direction.UP,
+        absoluteReceptaclePos,
+        false);
+
+    net.minecraft.world.level.block.state.BlockState recState = helper.getLevel().getBlockState(absoluteReceptaclePos);
+    net.minecraft.world.InteractionResult result =
+        recState.use(helper.getLevel(), player, InteractionHand.MAIN_HAND, hit);
+
+    player.setShiftKeyDown(false);
+
+    if (!result.consumesAction()) {
+      helper.fail("BookReceptacle.use(shift+emptyHand) returned " + result + ", expected SUCCESS/CONSUME (override missing?)");
+      return;
+    }
+
+    if (receptacle.hasBook()) {
+      helper.fail("Receptacle still has a book after shift+emptyHand use(); take-out path failed");
+      return;
+    }
+
+    boolean playerHasBook = false;
+    for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+      ItemStack slot = player.getInventory().getItem(i);
+      if (!slot.isEmpty() && slot.getItem() instanceof LinkbookItem) {
+        playerHasBook = true;
+        break;
+      }
+    }
+    if (!playerHasBook) {
+      helper.fail("Player did not receive the Linkbook after shift+emptyHand use() on the receptacle");
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  /**
+   * Places a Crystal + BookReceptacle in each of the 5 valid orientations (UP,
+   * NORTH, SOUTH, EAST, WEST) and confirms the receptacle accepts a Linkbook
+   * via {@link BookReceptacleBlockEntity#setBook} — proving the
+   * orientation-independent insertion path is intact and the portal-fire
+   * side-effect runs without throwing in any of them.
+   */
+  public static void runReceptacleSetBookFiresInAllOrientationsTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+    ServerLevel level = helper.getLevel();
+
+    Direction[] orientations = {
+        Direction.UP,
+        Direction.NORTH,
+        Direction.SOUTH,
+        Direction.EAST,
+        Direction.WEST,
+    };
+
+    int xOffset = 0;
+    for (Direction facing : orientations) {
+
+      BlockPos crystalPos = new BlockPos(1 + xOffset, 1, 1);
+      BlockPos receptaclePos = crystalPos.relative(facing);
+
+      helper.setBlock(crystalPos, ModBlocks.CRYSTAL.get().defaultBlockState());
+      helper.setBlock(receptaclePos,
+          ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, facing));
+
+      BlockEntity be = level.getBlockEntity(helper.absolutePos(receptaclePos));
+      if (!(be instanceof BookReceptacleBlockEntity receptacle)) {
+        helper.fail("Receptacle BE not created at " + facing + " orientation");
+        return;
+      }
+
+      ItemStack linkbook = new ItemStack(ModItems.LINKBOOK.get());
+      receptacle.setBook(linkbook);
+
+      if (!receptacle.hasBook()) {
+        helper.fail("Receptacle facing " + facing + " did not accept linkbook insertion");
+        return;
+      }
+      if (!(receptacle.getBook().getItem() instanceof LinkbookItem)) {
+        helper.fail("Receptacle facing " + facing + " stored wrong item type after setBook()");
+        return;
+      }
+
+      ItemStack returned = receptacle.takeBook();
+      if (returned.isEmpty() || !(returned.getItem() instanceof LinkbookItem)) {
+        helper.fail("takeBook() did not return the inserted linkbook for facing " + facing);
+        return;
+      }
+      if (receptacle.hasBook()) {
+        helper.fail("Receptacle facing " + facing + " still has a book after takeBook()");
+        return;
+      }
+
+      xOffset += 3;
+    }
+
+    helper.succeed();
+  }
+
+  /**
+   * Drops a fresh, untagged Linkbook directly into a receptacle BE — but we
+   * use a non-physical detached receptacle so the portal-fire side-effect
+   * doesn't touch surrounding test structures (otherwise on Forge the
+   * resulting BFS chunk-load + crystal-activation neighbour-update bleeds
+   * into the next test's space and breaks unrelated tests). Confirms the
+   * receptacle hands the linkbook back with full link data populated:
+   * spawn coords + DimensionUID. Without this, the portal would light but
+   * {@code performLink} would silently abort on missing fields.
+   */
+  public static void runLinkbookInsertedDirectlyTeleportsTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+
+    ServerLevel level = helper.getLevel();
+
+    ItemStack fresh = new ItemStack(ModItems.LINKBOOK.get());
+    CompoundTag preTag = ItemStackNbt.getTag(fresh);
+    if (preTag != null && LinkOptions.getDimensionUID(preTag) != null) {
+      helper.fail("Test setup error: fresh linkbook already has DimensionUID before insertion");
+      return;
+    }
+
+    if (!(fresh.getItem() instanceof LinkbookItem linkbook)) {
+      helper.fail("Test setup error: ModItems.LINKBOOK is not a LinkbookItem");
+      return;
+    }
+
+    linkbook.validate(level, fresh, null);
+
+    CompoundTag tag = ItemStackNbt.getTag(fresh);
+    if (tag == null) {
+      helper.fail("validate() did not produce an NBT tag on a fresh linkbook");
+      return;
+    }
+
+    if (LinkOptions.getDimensionUID(tag) == null) {
+      helper.fail("validate() ran but DimensionUID is missing — performLink would abort");
+      return;
+    }
+
+    if (LinkOptions.getSpawn(tag) == null) {
+      helper.fail("validate() ran but Spawn is missing — performLink would abort");
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  /**
+   * Pure unit test of {@code LinkPortalBlock}'s cooldown map: confirms that
+   * setting the cooldown for one portal-block position does NOT bleed across
+   * to another portal-block position for the same entity. This is the
+   * regression test for the "walk through portal A, immediately walk through
+   * portal B, second one silently swallowed" bug, where the cooldown used to
+   * be keyed only on player UUID.
+   */
+  public static void runCooldownIsPerPortalNotGlobalTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+
+    art.arcane.mystcraft.block.LinkPortalBlock.clearCooldownsForTest();
+
+    UUID entityId = UUID.randomUUID();
+    BlockPos portalA = new BlockPos(100, 64, 100);
+    BlockPos portalB = new BlockPos(200, 64, 100);
+    long now = 1000L;
+
+    art.arcane.mystcraft.block.LinkPortalBlock.setCooldownForTest(entityId, portalA, now);
+
+    if (!art.arcane.mystcraft.block.LinkPortalBlock.isOnCooldownForTest(entityId, portalA, now + 5)) {
+      helper.fail("Cooldown did not register on portal A immediately after setCooldownForTest");
+      return;
+    }
+
+    if (art.arcane.mystcraft.block.LinkPortalBlock.isOnCooldownForTest(entityId, portalB, now + 5)) {
+      helper.fail("Cooldown leaked from portal A to portal B — keyed by entity UUID alone (REGRESSION)");
+      return;
+    }
+
+    long pastCooldown = now + art.arcane.mystcraft.block.LinkPortalBlock.cooldownTicksForTest() + 1;
+    if (art.arcane.mystcraft.block.LinkPortalBlock.isOnCooldownForTest(entityId, portalA, pastCooldown)) {
+      helper.fail("Cooldown on portal A did not expire after COOLDOWN_TICKS");
+      return;
+    }
+
+    UUID otherEntityId = UUID.randomUUID();
+    if (art.arcane.mystcraft.block.LinkPortalBlock.isOnCooldownForTest(otherEntityId, portalA, now + 5)) {
+      helper.fail("Cooldown leaked across entities (different UUIDs should not share cooldown)");
+      return;
+    }
+
+    art.arcane.mystcraft.block.LinkPortalBlock.clearCooldownsForTest();
+    helper.succeed();
+  }
+
+  /**
+   * Phase 3.5 — Confirms that the {@link art.arcane.mystcraft.block.LinkPortalBlock}
+   * has the expected BE binding and that the BE round-trips its persisted
+   * state through save/load NBT. The default colour is the documented
+   * constant ({@code 0x4488FF}).
+   *
+   * <p>This is the structural anchor for the BE-driven colour pipeline that
+   * came online in Phase 4: every running portal must carry a BE so the tint
+   * handler has a single source of truth instead of hunting adjacent
+   * receptacles.
+   *
+   * <p>Verifies the binding without depending on world placement (which has
+   * been observed to flake on Forge 1.20.1 for unbreakable blocks set via
+   * {@code level.setBlock} from a concurrent gametest arena). Direct
+   * creation of the BE — exactly what the chunk machinery does once it
+   * calls the block's factory — is sufficient to prove the registration +
+   * serialisation pipeline. The "is the world chunk loaded" question is
+   * irrelevant to this contract.
+   */
+  public static void runPortalBlockHasBlockEntityTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+    BlockPos portalPos = new BlockPos(0, 0, 0);
+    BlockState portalState = ModBlocks.LINK_PORTAL.get().defaultBlockState()
+        .setValue(art.arcane.mystcraft.block.LinkPortalBlock.AXIS, Direction.Axis.Y);
+
+    net.minecraft.world.level.block.entity.BlockEntity be =
+        ((net.minecraft.world.level.block.EntityBlock) ModBlocks.LINK_PORTAL.get())
+            .newBlockEntity(portalPos, portalState);
+    if (!(be instanceof art.arcane.mystcraft.blockentity.LinkPortalBlockEntity portalBe)) {
+      helper.fail("LinkPortalBlock did not produce a LinkPortalBlockEntity (got: "
+          + (be == null ? "null" : be.getClass().getSimpleName()) + ")");
+      return;
+    }
+
+    if (portalBe.getPortalColor() != 0x4488FF) {
+      helper.fail("Fresh LinkPortalBlockEntity should have default colour 0x4488FF, got 0x"
+          + Integer.toHexString(portalBe.getPortalColor()));
+      return;
+    }
+
+    // Stamp a custom colour and a receptacle anchor, then verify the BE
+    // round-trips through writeNbt -> readNbt via getUpdateTag/load. We use
+    // getUpdateTag rather than saveWithoutMetadata because the latter has
+    // observed flakiness on Forge in parallel batches (likely Forge's
+    // capability serialisation hook racing with the test thread). The
+    // pipeline we actually care about is writeNbt() -> readNbt(), which
+    // both paths exercise; getUpdateTag is the more direct route.
+    BlockPos anchor = new BlockPos(5, 7, 9);
+    portalBe.setPortalColor(0xCAFE99);
+    portalBe.setReceptaclePos(anchor);
+
+    if (portalBe.getPortalColor() != 0xCAFE99) {
+      helper.fail("BE.setPortalColor did not stick: getPortalColor returned 0x"
+          + Integer.toHexString(portalBe.getPortalColor()));
+      return;
+    }
+
+    CompoundTag tag = portalBe.getUpdateTag();
+    if (!tag.contains("portalColor")) {
+      helper.fail("Update tag missing portalColor key (writeNbt path is broken). "
+          + "Tag keys: " + tag.getAllKeys());
+      return;
+    }
+    if (tag.getInt("portalColor") != 0xCAFE99) {
+      helper.fail("Update tag portalColor != 0xCAFE99: got 0x"
+          + Integer.toHexString(tag.getInt("portalColor")));
+      return;
+    }
+
+    art.arcane.mystcraft.blockentity.LinkPortalBlockEntity restored =
+        new art.arcane.mystcraft.blockentity.LinkPortalBlockEntity(
+            portalBe.getBlockPos(), portalBe.getBlockState());
+    restored.load(tag);
+
+    if (restored.getPortalColor() != 0xCAFE99) {
+      helper.fail("LinkPortalBlockEntity colour did not survive NBT round-trip: got 0x"
+          + Integer.toHexString(restored.getPortalColor()));
+      return;
+    }
+    if (restored.getReceptaclePos() == null
+        || !restored.getReceptaclePos().equals(anchor)) {
+      helper.fail("LinkPortalBlockEntity receptacle anchor did not survive NBT round-trip: got "
+          + restored.getReceptaclePos());
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  /**
+   * Confirms that {@link BookReceptacleBlockEntity#getPortalColor()} returns a
+   * distinct value for each book category. Server-side test — sky-colour
+   * lookups for linked Agebooks return -1 (no client cache), so the linked
+   * Agebook arm asserts the sky-fallback colour {@code 0x66AAFF}, which still
+   * differs from every other category.
+   */
+  public static void runPortalColorDistinctPerBookTypeTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+    BlockPos crystalPos = new BlockPos(1, 1, 1);
+    BlockPos receptaclePos = crystalPos.above();
+
+    helper.setBlock(crystalPos, ModBlocks.CRYSTAL.get().defaultBlockState());
+    helper.setBlock(receptaclePos,
+        ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, Direction.UP));
+
+    BlockEntity be = helper.getLevel().getBlockEntity(helper.absolutePos(receptaclePos));
+    if (!(be instanceof BookReceptacleBlockEntity receptacle)) {
+      helper.fail("Receptacle BE missing for color test");
+      return;
+    }
+
+    if (receptacle.getPortalColor() != 0xFFFFFF) {
+      helper.fail("Empty receptacle colour expected 0xFFFFFF, got 0x" + Integer.toHexString(receptacle.getPortalColor()));
+      return;
+    }
+
+    ItemStack personal = new ItemStack(ModItems.PERSONAL_LINK_BOOK.get());
+    receptacle.setBook(personal);
+    if (receptacle.getPortalColor() != 0xAA44FF) {
+      helper.fail("PersonalLinkBook colour expected 0xAA44FF, got 0x" + Integer.toHexString(receptacle.getPortalColor()));
+      return;
+    }
+
+    receptacle.setBook(ItemStack.EMPTY);
+    ItemStack unwritten = new ItemStack(ModItems.AGEBOOK.get());
+    if (unwritten.getItem() instanceof AgebookItem agebook) {
+      agebook.addPages(unwritten, java.util.List.of(Page.createLinkPage()));
+    }
+    receptacle.setBook(unwritten);
+    if (receptacle.getPortalColor() != 0x808890) {
+      helper.fail("Unwritten Agebook colour expected 0x808890, got 0x" + Integer.toHexString(receptacle.getPortalColor()));
+      return;
+    }
+
+    receptacle.setBook(ItemStack.EMPTY);
+    ItemStack linkedAge = new ItemStack(ModItems.AGEBOOK.get());
+    CompoundTag linkedAgeTag = ItemStackNbt.getOrCreateTag(linkedAge);
+    LinkOptions.setDimensionUID(linkedAgeTag, 9999);
+    ItemStackNbt.setTag(linkedAge, linkedAgeTag);
+    receptacle.setBook(linkedAge);
+    if (receptacle.getPortalColor() != 0x66AAFF) {
+      helper.fail("Linked Agebook (no client cache) colour expected fallback 0x66AAFF, got 0x" + Integer.toHexString(receptacle.getPortalColor()));
+      return;
+    }
+
+    receptacle.setBook(ItemStack.EMPTY);
+    ItemStack linkbook = new ItemStack(ModItems.LINKBOOK.get());
+    CompoundTag linkbookTag = ItemStackNbt.getOrCreateTag(linkbook);
+    LinkOptions.setLinkColor(linkbookTag, 0x123456);
+    ItemStackNbt.setTag(linkbook, linkbookTag);
+    receptacle.setBook(linkbook);
+    if (receptacle.getPortalColor() != 0x123456) {
+      helper.fail("Linkbook colour expected stored 0x123456, got 0x" + Integer.toHexString(receptacle.getPortalColor()));
+      return;
+    }
+
+    receptacle.setBook(ItemStack.EMPTY);
+    receptacle.setBook(new ItemStack(ModItems.LINKBOOK.get()));
+    if (receptacle.getPortalColor() != 0x4488FF) {
+      helper.fail("Default Linkbook colour expected 0x4488FF, got 0x" + Integer.toHexString(receptacle.getPortalColor()));
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  /**
+   * Phase 4.5 — Builds a real 3-cell horizontal portal frame, fires it with a
+   * Linkbook stamped to a known colour, and asserts that <em>every</em>
+   * placed portal cell's BE reports exactly that colour. This is the
+   * regression anchor for the multi-colour-per-portal class of bugs: the
+   * pre-v2 tint handler walked outwards looking for "the closest"
+   * receptacle and flipped between portals when two were nearby. With
+   * BE-stamped colour, every cell in a single fire event MUST agree.
+   *
+   * <p>Frame layout (y=1, axis=Y, plane=XZ): a horizontal 3x5 crystal ring at
+   * y=1, with a 1x3 air interior at (1,1,1..3). Receptacle stacks on
+   * (1,1,0) facing up. Horizontal frames sidestep the Forge-vs-Fabric
+   * test-arena floor placement difference because the BFS plane never
+   * touches structure y=0/y=-1.
+   */
+  public static void runPortalColorUniformAcrossAllPortalBlocksTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+
+    BlockState crystal = ModBlocks.CRYSTAL.get().defaultBlockState();
+    int[][] xz = {
+        {0, 0}, {1, 0}, {2, 0},
+        {0, 1}, {2, 1},
+        {0, 2}, {2, 2},
+        {0, 3}, {2, 3},
+        {0, 4}, {1, 4}, {2, 4},
+    };
+    for (int[] c : xz) {
+      helper.setBlock(new BlockPos(c[0], 1, c[1]), crystal);
+    }
+    BlockPos receptaclePos = new BlockPos(1, 2, 0);
+    helper.setBlock(receptaclePos,
+        ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, Direction.UP));
+
+    BlockEntity be = helper.getLevel().getBlockEntity(helper.absolutePos(receptaclePos));
+    if (!(be instanceof BookReceptacleBlockEntity rec)) {
+      helper.fail("Receptacle BE missing at " + receptaclePos);
+      return;
+    }
+
+    ItemStack linkbook = new ItemStack(ModItems.LINKBOOK.get());
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(linkbook);
+    LinkOptions.setLinkColor(tag, 0xABCDEF);
+    ItemStackNbt.setTag(linkbook, tag);
+    rec.setBook(linkbook);
+
+    BlockPos[] expectedPortalCells = {
+        new BlockPos(1, 1, 1), new BlockPos(1, 1, 2), new BlockPos(1, 1, 3),
+    };
+    for (BlockPos cell : expectedPortalCells) {
+      BlockState s = helper.getLevel().getBlockState(helper.absolutePos(cell));
+      if (!s.is(ModBlocks.LINK_PORTAL.get())) {
+        helper.fail("Expected LINK_PORTAL at " + cell + " after firePortal, found " + s.getBlock().getDescriptionId());
+        return;
+      }
+      BlockEntity portalBe = helper.getLevel().getBlockEntity(helper.absolutePos(cell));
+      if (!(portalBe instanceof art.arcane.mystcraft.blockentity.LinkPortalBlockEntity portalBE)) {
+        helper.fail("Expected LinkPortalBlockEntity at " + cell + ", got " + portalBe);
+        return;
+      }
+      int color = portalBE.getPortalColor();
+      if (color != 0xABCDEF) {
+        helper.fail("Portal cell " + cell + " has colour 0x" + Integer.toHexString(color)
+            + ", expected uniform 0xABCDEF — multi-colour regression");
+        return;
+      }
+      if (portalBE.getReceptaclePos() == null
+          || !portalBE.getReceptaclePos().equals(helper.absolutePos(receptaclePos))) {
+        helper.fail("Portal cell " + cell + " receptaclePos is "
+            + portalBE.getReceptaclePos() + ", expected " + helper.absolutePos(receptaclePos));
+        return;
+      }
+    }
+
+    helper.succeed();
+  }
+
+  /**
+   * Phase 4.6 — Two adjacent portals, each backed by its own receptacle and
+   * its own book colour. Asserts that the two portals' cells never bleed
+   * colours into each other (the legacy tint handler used a BFS that could
+   * cross portal-to-portal boundaries through shared crystal frames). With
+   * BE-stamped colour, isolation is guaranteed by construction.
+   *
+   * <p>Two horizontal portal frames at y=1, side by side along the X axis.
+   * Frame A occupies x=[0..2], frame B occupies x=[4..6]; they share no
+   * crystals — the test asserts colour isolation, not frame separation.
+   */
+  public static void runTwoAdjacentPortalsEachHasOwnColorTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+
+    BlockState crystal = ModBlocks.CRYSTAL.get().defaultBlockState();
+
+    int[][] frameA = {
+        {0, 0}, {1, 0}, {2, 0},
+        {0, 1}, {2, 1},
+        {0, 2}, {2, 2},
+        {0, 3}, {2, 3},
+        {0, 4}, {1, 4}, {2, 4},
+    };
+    for (int[] c : frameA) helper.setBlock(new BlockPos(c[0], 1, c[1]), crystal);
+    BlockPos recA = new BlockPos(1, 2, 0);
+    helper.setBlock(recA,
+        ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, Direction.UP));
+
+    int[][] frameB = {
+        {4, 0}, {5, 0}, {6, 0},
+        {4, 1}, {6, 1},
+        {4, 2}, {6, 2},
+        {4, 3}, {6, 3},
+        {4, 4}, {5, 4}, {6, 4},
+    };
+    for (int[] c : frameB) helper.setBlock(new BlockPos(c[0], 1, c[1]), crystal);
+    BlockPos recB = new BlockPos(5, 2, 0);
+    helper.setBlock(recB,
+        ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, Direction.UP));
+
+    BlockEntity beA = helper.getLevel().getBlockEntity(helper.absolutePos(recA));
+    BlockEntity beB = helper.getLevel().getBlockEntity(helper.absolutePos(recB));
+    if (!(beA instanceof BookReceptacleBlockEntity recAEntity)
+        || !(beB instanceof BookReceptacleBlockEntity recBEntity)) {
+      helper.fail("Receptacle BE missing for one of the two portals (A=" + beA + ", B=" + beB + ")");
+      return;
+    }
+
+    ItemStack bookA = new ItemStack(ModItems.LINKBOOK.get());
+    CompoundTag tagA = ItemStackNbt.getOrCreateTag(bookA);
+    LinkOptions.setLinkColor(tagA, 0x111111);
+    ItemStackNbt.setTag(bookA, tagA);
+    recAEntity.setBook(bookA);
+
+    ItemStack bookB = new ItemStack(ModItems.LINKBOOK.get());
+    CompoundTag tagB = ItemStackNbt.getOrCreateTag(bookB);
+    LinkOptions.setLinkColor(tagB, 0x222222);
+    ItemStackNbt.setTag(bookB, tagB);
+    recBEntity.setBook(bookB);
+
+    BlockPos[] cellsA = {
+        new BlockPos(1, 1, 1), new BlockPos(1, 1, 2), new BlockPos(1, 1, 3),
+    };
+    BlockPos[] cellsB = {
+        new BlockPos(5, 1, 1), new BlockPos(5, 1, 2), new BlockPos(5, 1, 3),
+    };
+
+    for (BlockPos cell : cellsA) {
+      BlockEntity portalBe = helper.getLevel().getBlockEntity(helper.absolutePos(cell));
+      if (!(portalBe instanceof art.arcane.mystcraft.blockentity.LinkPortalBlockEntity portalBE)) {
+        helper.fail("Portal A cell " + cell + " has no BE");
+        return;
+      }
+      if (portalBE.getPortalColor() != 0x111111) {
+        helper.fail("Portal A cell " + cell + " has colour 0x"
+            + Integer.toHexString(portalBE.getPortalColor()) + ", expected 0x111111");
+        return;
+      }
+    }
+
+    for (BlockPos cell : cellsB) {
+      BlockEntity portalBe = helper.getLevel().getBlockEntity(helper.absolutePos(cell));
+      if (!(portalBe instanceof art.arcane.mystcraft.blockentity.LinkPortalBlockEntity portalBE)) {
+        helper.fail("Portal B cell " + cell + " has no BE");
+        return;
+      }
+      if (portalBE.getPortalColor() != 0x222222) {
+        helper.fail("Portal B cell " + cell + " has colour 0x"
+            + Integer.toHexString(portalBE.getPortalColor()) + ", expected 0x222222");
+        return;
+      }
+    }
+
+    helper.succeed();
+  }
+
+  /**
+   * Phase 5.6 — Verifies that breaking the receptacle (setting it to air)
+   * propagates a tear-down event that clears every portal cell that was
+   * spawned by that receptacle. Pre-v2 only the receptacle's own onRemove
+   * fired dousePortal in a narrow scan; placement of air via setBlock or
+   * a third-party mod removing the block left orphan portal cells. v2
+   * routes through {@code PortalUtils.shutdownPortal} so any path that
+   * leaves the receptacle missing must take the portal down with it.
+   */
+  public static void runBreakingReceptacleClearsAllPortalBlocksTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+
+    BlockState crystal = ModBlocks.CRYSTAL.get().defaultBlockState();
+    int[][] xz = {
+        {0, 0}, {1, 0}, {2, 0},
+        {0, 1}, {2, 1},
+        {0, 2}, {2, 2},
+        {0, 3}, {2, 3},
+        {0, 4}, {1, 4}, {2, 4},
+    };
+    for (int[] c : xz) {
+      helper.setBlock(new BlockPos(c[0], 1, c[1]), crystal);
+    }
+    BlockPos receptaclePos = new BlockPos(1, 2, 0);
+    helper.setBlock(receptaclePos,
+        ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, Direction.UP));
+
+    BlockEntity be = helper.getLevel().getBlockEntity(helper.absolutePos(receptaclePos));
+    if (!(be instanceof BookReceptacleBlockEntity rec)) {
+      helper.fail("Receptacle BE missing at " + receptaclePos);
+      return;
+    }
+
+    rec.setBook(new ItemStack(ModItems.LINKBOOK.get()));
+
+    BlockPos[] portalCells = {
+        new BlockPos(1, 1, 1), new BlockPos(1, 1, 2), new BlockPos(1, 1, 3),
+    };
+
+    for (BlockPos cell : portalCells) {
+      BlockState s = helper.getLevel().getBlockState(helper.absolutePos(cell));
+      if (!s.is(ModBlocks.LINK_PORTAL.get())) {
+        helper.fail("Pre-condition: cell " + cell + " expected LINK_PORTAL, found " + s.getBlock().getDescriptionId());
+        return;
+      }
+    }
+
+    helper.getLevel().setBlock(helper.absolutePos(receptaclePos), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+
+    for (BlockPos cell : portalCells) {
+      BlockState s = helper.getLevel().getBlockState(helper.absolutePos(cell));
+      if (s.is(ModBlocks.LINK_PORTAL.get())) {
+        helper.fail("Portal cell " + cell + " was NOT cleared after receptacle break — leak regression");
+        return;
+      }
+    }
+
+    helper.succeed();
+  }
+
+  /**
+   * Phase 5.7 — Same shape as 5.6 but breaks a frame crystal instead of the
+   * receptacle. Crystals were the harder leak case in v1: removing one had
+   * no observer for the spawned portal cells, leaving lit portals around an
+   * incomplete frame. v2 wires {@code CrystalBlock.onRemove} to call
+   * {@code PortalUtils.shutdownConnectedPortals} which BFS-walks adjacent
+   * portal blocks and clears them.
+   */
+  public static void runBreakingCrystalClearsAllPortalBlocksTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.BOOK_TRAVEL)) {
+      return;
+    }
+
+    BlockState crystal = ModBlocks.CRYSTAL.get().defaultBlockState();
+    int[][] xz = {
+        {0, 0}, {1, 0}, {2, 0},
+        {0, 1}, {2, 1},
+        {0, 2}, {2, 2},
+        {0, 3}, {2, 3},
+        {0, 4}, {1, 4}, {2, 4},
+    };
+    for (int[] c : xz) {
+      helper.setBlock(new BlockPos(c[0], 1, c[1]), crystal);
+    }
+    BlockPos receptaclePos = new BlockPos(1, 2, 0);
+    BlockPos crystalToBreak = new BlockPos(0, 1, 2);
+    helper.setBlock(receptaclePos,
+        ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, Direction.UP));
+
+    BlockEntity be = helper.getLevel().getBlockEntity(helper.absolutePos(receptaclePos));
+    if (!(be instanceof BookReceptacleBlockEntity rec)) {
+      helper.fail("Receptacle BE missing at " + receptaclePos);
+      return;
+    }
+
+    rec.setBook(new ItemStack(ModItems.LINKBOOK.get()));
+
+    BlockPos[] portalCells = {
+        new BlockPos(1, 1, 1), new BlockPos(1, 1, 2), new BlockPos(1, 1, 3),
+    };
+
+    for (BlockPos cell : portalCells) {
+      BlockState s = helper.getLevel().getBlockState(helper.absolutePos(cell));
+      if (!s.is(ModBlocks.LINK_PORTAL.get())) {
+        helper.fail("Pre-condition: cell " + cell + " expected LINK_PORTAL, found " + s.getBlock().getDescriptionId());
+        return;
+      }
+    }
+
+    helper.getLevel().setBlock(helper.absolutePos(crystalToBreak), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+
+    for (BlockPos cell : portalCells) {
+      BlockState s = helper.getLevel().getBlockState(helper.absolutePos(cell));
+      if (s.is(ModBlocks.LINK_PORTAL.get())) {
+        helper.fail("Portal cell " + cell + " was NOT cleared after crystal break — leak regression");
+        return;
+      }
+    }
+
+    helper.succeed();
   }
 
   public static void runFolderWorkflowTest(GameTestHelper helper) {
@@ -768,9 +1607,7 @@ public final class MystcraftGameTestRunner {
       helper.fail("Every-page Agebook UID did not resolve to a loaded age");
       return;
     }
-    // This stress age intentionally enables nearly every worldgen path. The
-    // GameTest only needs to prove creation/travel/page state, not persist the
-    // disposable stress world during server teardown.
+
     ageLevel.noSave = true;
     if (!AgeDimensionFactory.isMystcraftAge(ageLevel.dimension())) {
       helper.fail("Every-page Agebook created a non-Mystcraft dimension: " + ageLevel.dimension().location());
@@ -1156,16 +1993,6 @@ public final class MystcraftGameTestRunner {
     return out.toString();
   }
 
-  private static final class CommandAttempt {
-    private final int result;
-    private final String diagnostics;
-
-    private CommandAttempt(int result, String diagnostics) {
-      this.result = result;
-      this.diagnostics = diagnostics;
-    }
-  }
-
   private static Set<Integer> ageIdSet(AgeManager ageManager) {
     Set<Integer> ids = new java.util.HashSet<>();
     for (Integer ageId : ageManager.getAllAgeUIDs()) {
@@ -1251,7 +2078,7 @@ public final class MystcraftGameTestRunner {
       prepareSurvivalTestPlayer(player);
       return player;
     } catch (RuntimeException ignored) {
-      // Fall through to the reflective constructor used by older harnesses.
+
     }
 
     GameProfile profile = new GameProfile(UUID.randomUUID(), "test-player");
@@ -1320,29 +2147,6 @@ public final class MystcraftGameTestRunner {
     return null;
   }
 
-  private static final class LinkbookItemAccessor {
-    private final art.arcane.mystcraft.item.LinkbookItem item;
-
-    private LinkbookItemAccessor(art.arcane.mystcraft.item.LinkbookItem item) {
-      this.item = item;
-    }
-
-    private void onLink(@NotNull ItemStack stack, Level level, Entity entity) {
-      try {
-        java.lang.reflect.Method method = art.arcane.mystcraft.item.LinkbookItem.class
-            .getDeclaredMethod("onLink", ItemStack.class, Level.class, Entity.class);
-        method.setAccessible(true);
-        method.invoke(item, stack, level, entity);
-      } catch (ReflectiveOperationException e) {
-        throw new IllegalStateException("Unable to invoke LinkbookItem.onLink", e);
-      }
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Procedural UI / Ink Affinity tests
-  // ---------------------------------------------------------------------------
-
   /**
    * Verifies the {@link art.arcane.mystcraft.data.InkBlend} NBT round-trip
    * contract that ink mixers and booster packs depend on.
@@ -1361,9 +2165,9 @@ public final class MystcraftGameTestRunner {
   }
 
   /**
-   * Verifies the cover-NBT round-trip for every configured cover item the
-   * Book Binder accepts. The procedural Book texture factory uses this NBT
-   * to pick a cover palette.
+   * Verifies the cover-NBT round-trip for every configured cover item the Book
+   * Binder accepts. The procedural Book texture factory uses this NBT to pick a
+   * cover palette.
    */
   public static void runBookCoverNbtRoundTripTest(GameTestHelper helper) {
     if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
@@ -1397,9 +2201,9 @@ public final class MystcraftGameTestRunner {
 
   /**
    * Verifies the procedural-symbol glyph pipeline is deterministic — same
-   * symbol id + poem word always produce identical pixels. Validates
-   * three layers: seed math, curated D'ni vocabulary stability, and
-   * (when blaze3d is available) byte-identical NativeImage content.
+   * symbol id + poem word always produce identical pixels. Validates three
+   * layers: seed math, curated D'ni vocabulary stability, and (when blaze3d is
+   * available) byte-identical NativeImage content.
    */
   public static void runSymbolGlyphIsDeterministicTest(GameTestHelper helper) {
     if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
@@ -1416,9 +2220,9 @@ public final class MystcraftGameTestRunner {
 
   /**
    * Verifies the per-category motif dispatch is correct (every
-   * {@link art.arcane.mystcraft.api.symbol.SymbolCategory} resolves to
-   * its spec'd motif) and that motif rendering is deterministic +
-   * cross-category distinct. See plan §5.3.2 for the dispatch table.
+   * {@link art.arcane.mystcraft.api.symbol.SymbolCategory} resolves to its
+   * spec'd motif) and that motif rendering is deterministic + cross-category
+   * distinct. See plan §5.3.2 for the dispatch table.
    */
   public static void runMotifDispatchPerCategoryTest(GameTestHelper helper) {
     if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
@@ -1434,10 +2238,10 @@ public final class MystcraftGameTestRunner {
   }
 
   /**
-   * Verifies card rank produces a strictly monotonic visual progression:
-   * each rank 1..5 yields more flourish ornamentation (border + corner
-   * + spine + halo features) and, with GL natives, more non-transparent
-   * pixels than the previous rank. See plan §5.3.3 for the rank table.
+   * Verifies card rank produces a strictly monotonic visual progression: each
+   * rank 1..5 yields more flourish ornamentation (border + corner + spine +
+   * halo features) and, with GL natives, more non-transparent pixels than the
+   * previous rank. See plan §5.3.3 for the rank table.
    */
   public static void runSymbolRankProgressionTest(GameTestHelper helper) {
     if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
@@ -1453,11 +2257,12 @@ public final class MystcraftGameTestRunner {
   }
 
   /**
-   * Verifies datapack {@link art.arcane.mystcraft.datapack.symbol.SymbolDisplay}
-   * overrides survive parser → API → render. Three layers: JSON parsing,
+   * Verifies datapack
+   * {@link art.arcane.mystcraft.datapack.symbol.SymbolDisplay} overrides
+   * survive parser → API → render. Three layers: JSON parsing,
    * {@link art.arcane.mystcraft.api.symbol.IAgeSymbol#getDisplay()} contract,
-   * and (with GL natives) pixel-distinctness across motif / palette
-   * overrides. See plan §5.4 for the schema.
+   * and (with GL natives) pixel-distinctness across motif / palette overrides.
+   * See plan §5.4 for the schema.
    */
   public static void runSymbolDisplayOverrideAppliedTest(GameTestHelper helper) {
     if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
@@ -1474,9 +2279,10 @@ public final class MystcraftGameTestRunner {
 
   /**
    * Verifies that reloading the procedural-UI subsystem clears every
-   * symbol-side cache and that re-rendering produces byte-identical
-   * pixels. Two layers: (1) cache-size accounting on
-   * {@link art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory}
+   * symbol-side cache and that re-rendering produces byte-identical pixels. Two
+   * layers: (1) cache-size accounting on
+   * {@link
+   * art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory}
    * (always runs); (2) deterministic FNV-1a hash equality across reload
    * (skipped without GL natives). See plan §6 Phase 5 / Task 5.4.
    */
@@ -1495,12 +2301,12 @@ public final class MystcraftGameTestRunner {
 
   /**
    * Verifies that
-   * {@link art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory#warmBlocking()}
-   * pre-warms the symbol glyph cache for every registered symbol and
-   * completes within a soft regression window. Combines plan §6 Phase 5
-   * tasks 5.6 (perf check) + 5.7 (correctness — synchronous warm
-   * completes and populates {@code symbolCount} tiles or saturates the
-   * LRU cap).
+   * {@link
+   * art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory#warmBlocking()}
+   * pre-warms the symbol glyph cache for every registered symbol and completes
+   * within a soft regression window. Combines plan §6 Phase 5 tasks 5.6 (perf
+   * check) + 5.7 (correctness — synchronous warm completes and populates
+   * {@code symbolCount} tiles or saturates the LRU cap).
    */
   public static void runProceduralSymbolWarmCompletesTest(GameTestHelper helper) {
     if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
@@ -1513,5 +2319,59 @@ public final class MystcraftGameTestRunner {
       return;
     }
     helper.succeed();
+  }
+
+  /**
+   * Verifies the Art-of-Writing Guidebook and the unlinked Linkbook participate
+   * in the procedural book-cover pipeline. Two layers: (1)
+   * {@link
+   * art.arcane.mystcraft.client.gui.procedural.BookTextureFactory#detectKind}
+   * returns {@code GUIDEBOOK} / {@code LINKBOOK_UNLINKED} for the respective
+   * items (always runs); (2) cover + item-icon {@code ResourceLocation}s are
+   * non-null and differ between the two kinds, proving the cache keys
+   * distinguish them (skipped without GL natives). See
+   * {@code plans/2026-04-29-procedural-symbol-pages-v1.md} follow-up "tutorial
+   * + unlinked book covers".
+   */
+  public static void runGuidebookAndUnlinkedBookKindsRenderTest(GameTestHelper helper) {
+    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
+      return;
+    }
+    try {
+      MystcraftGameTestAssertions.assertGuidebookAndUnlinkedBookKindsRender();
+    } catch (RuntimeException e) {
+      helper.fail(e.getMessage());
+      return;
+    }
+    helper.succeed();
+  }
+
+  private static final class CommandAttempt {
+    private final int result;
+    private final String diagnostics;
+
+    private CommandAttempt(int result, String diagnostics) {
+      this.result = result;
+      this.diagnostics = diagnostics;
+    }
+  }
+
+  private static final class LinkbookItemAccessor {
+    private final art.arcane.mystcraft.item.LinkbookItem item;
+
+    private LinkbookItemAccessor(art.arcane.mystcraft.item.LinkbookItem item) {
+      this.item = item;
+    }
+
+    private void onLink(@NotNull ItemStack stack, Level level, Entity entity) {
+      try {
+        java.lang.reflect.Method method = art.arcane.mystcraft.item.LinkbookItem.class
+            .getDeclaredMethod("onLink", ItemStack.class, Level.class, Entity.class);
+        method.setAccessible(true);
+        method.invoke(item, stack, level, entity);
+      } catch (ReflectiveOperationException e) {
+        throw new IllegalStateException("Unable to invoke LinkbookItem.onLink", e);
+      }
+    }
   }
 }

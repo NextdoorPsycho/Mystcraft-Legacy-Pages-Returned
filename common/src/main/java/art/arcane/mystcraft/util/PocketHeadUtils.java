@@ -18,12 +18,14 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * Resolves and caches player-head texture data for personal pocket proxy rendering.
+ */
 public final class PocketHeadUtils {
 
   private static final int FACE_SIZE = 8;
   private static final int FACE_PIXELS = FACE_SIZE * FACE_SIZE;
 
-  // Minecraft skin dimensions
   private static final int SKIN_WIDTH = 64;
   private static final int SKIN_HEIGHT_LEGACY = 32;
   private static final int SKIN_HEIGHT_MODERN = 64;
@@ -58,7 +60,6 @@ public final class PocketHeadUtils {
       skinUrl = getSkinUrl(server, profile);
     }
 
-    // Fallback to direct Mojang API if local resolution failed
     if (skinUrl == null) {
       Mystcraft.LOGGER.debug("[PocketHead] Local resolution failed, trying Mojang API for UUID {}", owner);
       skinUrl = fetchSkinUrlFromMojangApiByUuid(owner);
@@ -83,7 +84,7 @@ public final class PocketHeadUtils {
   }
 
   public static Map<AgeData.PocketHeadFace, List<String>> buildPocketHeadBlocksByName(MinecraftServer server, String name) {
-    // First try local profile cache
+
     GameProfile profile = resolveProfileByName(server, name);
     String skinUrl = null;
 
@@ -91,7 +92,6 @@ public final class PocketHeadUtils {
       skinUrl = getSkinUrl(server, profile);
     }
 
-    // Fallback to direct Mojang API if local resolution failed
     if (skinUrl == null) {
       Mystcraft.LOGGER.debug("[PocketHead] Local resolution failed, trying Mojang API for {}", name);
       skinUrl = fetchSkinUrlFromMojangApi(name);
@@ -210,21 +210,20 @@ public final class PocketHeadUtils {
 
   @Nullable
   private static String fetchSkinUrlFromMojangApiByUuid(UUID uuid) {
-    // Convert UUID to non-hyphenated string format for Mojang API
+
     String uuidStr = uuid.toString().replace("-", "");
     return fetchSkinUrlFromSessionServer(uuidStr);
   }
 
   @Nullable
   private static String fetchSkinUrlFromMojangApi(String playerName) {
-    // Step 1: Get UUID from username via Mojang API
+
     String uuid = fetchUuidFromMojangApi(playerName);
     if (uuid == null) {
       Mystcraft.LOGGER.debug("[PocketHead] Could not fetch UUID for player {} from Mojang API", playerName);
       return null;
     }
 
-    // Step 2: Get profile with textures from session server
     return fetchSkinUrlFromSessionServer(uuid);
   }
 
@@ -365,7 +364,7 @@ public final class PocketHeadUtils {
   }
 
   private static Map<AgeData.PocketHeadFace, int[]> extractHeadFaces(BufferedImage skin) {
-    // Validate skin dimensions - must be standard Minecraft skin size (64x32 legacy or 64x64 modern)
+
     int width = skin.getWidth();
     int height = skin.getHeight();
 
@@ -377,17 +376,6 @@ public final class PocketHeadUtils {
 
     Map<AgeData.PocketHeadFace, int[]> faces = new EnumMap<>(AgeData.PocketHeadFace.class);
 
-    // Minecraft skin head texture layout (base layer only, 8x8 pixels per face):
-    //   X:  0   8  16  24
-    // Y:0     [TOP][BOT]
-    // Y:8 [R ][FRT][L ][BCK]
-    //
-    // Room orientation: head faces SOUTH (+Z), so when inside looking at walls:
-    // - SOUTH wall (FRONT, +Z): see player's FACE -> skin (8,8)
-    // - NORTH wall (BACK, -Z): see player's BACK -> skin (24,8)
-    // - EAST wall (RIGHT, +X): see player's LEFT side -> skin (16,8)
-    // - WEST wall (LEFT, -X): see player's RIGHT side -> skin (0,8)
-    // - TOP/BOTTOM: top/bottom of head
     faces.put(AgeData.PocketHeadFace.FRONT, extractFace(skin, 8, 8));
     faces.put(AgeData.PocketHeadFace.BACK, extractFace(skin, 24, 8));
     faces.put(AgeData.PocketHeadFace.RIGHT, extractFace(skin, 16, 8));

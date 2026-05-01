@@ -15,8 +15,8 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Fabric renderer for MystcraftFallingBlockEntity.
- * Uses vanilla block rendering to avoid loader-specific APIs.
+ * Fabric renderer for MystcraftFallingBlockEntity. Uses vanilla block rendering
+ * to avoid loader-specific APIs.
  */
 public class MystcraftFallingBlockRenderer extends EntityRenderer<MystcraftFallingBlockEntity> {
 
@@ -44,7 +44,7 @@ public class MystcraftFallingBlockRenderer extends EntityRenderer<MystcraftFalli
     poseStack.pushPose();
     BlockPos blockPos = BlockPos.containing(entity.getX(), entity.getBoundingBox().maxY, entity.getZ());
     poseStack.translate(-0.5D, 0.0D, -0.5D);
-    // Vanilla block rendering handles render layers internally.
+
     blockRenderer.renderSingleBlock(blockState, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY);
     poseStack.popPose();
 

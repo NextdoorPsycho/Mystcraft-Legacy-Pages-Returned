@@ -14,11 +14,11 @@ import net.minecraft.world.level.block.state.BlockState;
  * Generates ores at approximately vanilla rates (slightly reduced).
  * <p>
  * Uses chunk boundary checking to prevent cascade loading - blocks outside the
- * current chunk are simply skipped rather than triggering neighbor chunk loads.
+ * current chunk are simply skipped rather than triggering neighbor chunk
+ * loads.
  */
 public class StandardOresPopulator implements IPopulate {
 
-  // Ore configurations: blockState, veinSize, veinsPerChunk, minY, maxY
   private static final OreConfig[] ORE_CONFIGS = {
       new OreConfig(Blocks.COAL_ORE.defaultBlockState(), Blocks.DEEPSLATE_COAL_ORE.defaultBlockState(),
           17, 10, -64, 192),
@@ -39,7 +39,7 @@ public class StandardOresPopulator implements IPopulate {
   };
   private final long seed;
   private final float veinMultiplier;
-  // Chunk boundaries for current population
+
   private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
   public StandardOresPopulator(long seed) {
@@ -56,7 +56,6 @@ public class StandardOresPopulator implements IPopulate {
     int chunkX = chunkPos.getX() >> 4;
     int chunkZ = chunkPos.getZ() >> 4;
 
-    // Set chunk boundaries for this population run
     chunkMinX = chunkX << 4;
     chunkMaxX = chunkMinX + 15;
     chunkMinZ = chunkZ << 4;
@@ -67,18 +66,11 @@ public class StandardOresPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Checks if a position is within the current chunk boundaries.
-   * This prevents cascade chunk loading when ore veins extend beyond chunk edges.
-   */
   private boolean isInChunk(BlockPos pos) {
     return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
         pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
   }
 
-  /**
-   * Safe setBlock that only places blocks within current chunk boundaries.
-   */
   private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
     if (isInChunk(pos)) {
       world.setBlock(pos, state, 2);
@@ -158,12 +150,10 @@ public class StandardOresPopulator implements IPopulate {
 
     BlockState existing = world.getBlockState(pos);
 
-    // Replace any solid opaque block (supports custom terrain blocks)
     if (existing.isAir() || !existing.isSolid() || !existing.canOcclude()) {
       return;
     }
 
-    // Use deepslate variant below Y=0, regular ore otherwise
     if (pos.getY() < 0) {
       safeSetBlock(world, pos, config.deepslateOreBlock);
     } else {
@@ -176,6 +166,8 @@ public class StandardOresPopulator implements IPopulate {
     return "mystcraft:standard_ores";
   }
 
-  private record OreConfig(BlockState oreBlock, BlockState deepslateOreBlock, int veinSize, int veinsPerChunk, int minY, int maxY) {
+  private record OreConfig(BlockState oreBlock, BlockState deepslateOreBlock,
+                           int veinSize, int veinsPerChunk, int minY,
+                           int maxY) {
   }
 }

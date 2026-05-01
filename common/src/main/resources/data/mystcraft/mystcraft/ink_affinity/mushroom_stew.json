@@ -1,5 +1,7 @@
 {
-  "items": ["minecraft:mushroom_stew"],
+  "items": [
+    "minecraft:mushroom_stew"
+  ],
   "amount_per_item": 1.0,
   "link_property_weights": {
     "disarm": 0.05

@@ -10,8 +10,8 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
- * Forge-specific event wiring for instability bonuses.
- * Consolidates PlayerKilledBonus and PlayerSurvivalBonus event handling.
+ * Forge-specific event wiring for instability bonuses. Consolidates
+ * PlayerKilledBonus and PlayerSurvivalBonus event handling.
  */
 public class ForgeInstabilityBonuses {
 

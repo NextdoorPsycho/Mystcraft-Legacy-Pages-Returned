@@ -16,29 +16,26 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Menu for the Writing Desk block.
- * Provides access to writing slot, paper slot, ink container slots,
- * tab slots, and displays ink level.
+ * Menu for the Writing Desk block. Provides access to writing slot, paper slot,
+ * ink container slots, tab slots, and displays ink level.
  * <p>
  * Layout: xShift=233 (right panel offset), yShift=20 (button bar + gap)
  */
 public class WritingDeskMenu extends AbstractContainerMenu {
 
-  // Positioning constants
-  public static final int X_SHIFT = 228 + 5; // Left panel width + gap
-  public static final int Y_SHIFT = 20; // Button bar + gap
-  public static final int TAB_SLOT_COUNT = 4; // Visible tab slots
-  // Slot indices in the menu
-  // First 4 slots are tab slots (visible tabs)
+  public static final int X_SHIFT = 228 + 5;
+  public static final int Y_SHIFT = 20;
+  public static final int TAB_SLOT_COUNT = 4;
+
   public static final int TAB_SLOTS_START = 0;
   public static final int TAB_SLOTS_END = TAB_SLOT_COUNT;
-  // Then 4 main inventory slots
-  public static final int SLOT_WRITING = TAB_SLOTS_END; // Target/writing slot
+
+  public static final int SLOT_WRITING = TAB_SLOTS_END;
   public static final int SLOT_PAPER = TAB_SLOTS_END + 1;
   public static final int SLOT_CONTAINER_IN = TAB_SLOTS_END + 2;
   public static final int SLOT_CONTAINER_OUT = TAB_SLOTS_END + 3;
   public static final int BLOCK_ENTITY_SLOTS = TAB_SLOTS_END + 4;
-  // Player inventory slot ranges
+
   private static final int PLAYER_INVENTORY_START = BLOCK_ENTITY_SLOTS;
   private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
   private static final int PLAYER_HOTBAR_END = PLAYER_INVENTORY_END + 9;
@@ -55,15 +52,13 @@ public class WritingDeskMenu extends AbstractContainerMenu {
   }
 
   /**
-   * Server-side constructor.
-   * Slot positions:
-   * - Tab slots (4 visible): x=37, y=14+i*37+yShift for i=0..3
-   * - Main slot 0 (target): (8+xShift, 60+yShift) = (241, 80)
-   * - Main slot 1 (paper): (8+xShift, 8+yShift) = (241, 28)
-   * - Main slot 2 (container in): (152+xShift, 8+yShift) = (385, 28)
-   * - Main slot 3 (container out): (152+xShift, 60+yShift) = (385, 80)
-   * - Player inv: (8+xShift, 84+i*18+yShift) starts at (241, 104)
-   * - Hotbar: (8+xShift, 142+yShift) = (241, 162)
+   * Server-side constructor. Slot positions: - Tab slots (4 visible): x=37,
+   * y=14+i*37+yShift for i=0..3 - Main slot 0 (target): (8+xShift, 60+yShift) =
+   * (241, 80) - Main slot 1 (paper): (8+xShift, 8+yShift) = (241, 28) - Main
+   * slot 2 (container in): (152+xShift, 8+yShift) = (385, 28) - Main slot 3
+   * (container out): (152+xShift, 60+yShift) = (385, 80) - Player inv:
+   * (8+xShift, 84+i*18+yShift) starts at (241, 104) - Hotbar: (8+xShift,
+   * 142+yShift) = (241, 162)
    */
   public WritingDeskMenu(int containerId, Inventory playerInventory, WritingDeskBlockEntity blockEntity) {
     super(ModMenuTypes.WRITING_DESK.get(), containerId);
@@ -73,22 +68,16 @@ public class WritingDeskMenu extends AbstractContainerMenu {
     Container mainContainer = blockEntity.getMainInventory();
     Container tabContainer = blockEntity.getTabInventory();
 
-    // Tab slots (4 visible slots on left side)
     for (int i = 0; i < TAB_SLOT_COUNT; i++) {
       addSlot(new Slot(tabContainer, i, 37, 14 + i * 37 + Y_SHIFT));
     }
 
-    // Main inventory slots in the right panel
-    // Slot 0: Target/writing slot at (8+xShift, 60+yShift) = (241, 80)
     addSlot(new Slot(mainContainer, WritingDeskBlockEntity.SLOT_WRITING, 8 + X_SHIFT, 60 + Y_SHIFT));
 
-    // Slot 1: Paper slot at (8+xShift, 8+yShift) = (241, 28)
     addSlot(new Slot(mainContainer, WritingDeskBlockEntity.SLOT_PAPER, 8 + X_SHIFT, 8 + Y_SHIFT));
 
-    // Slot 2: Container in (ink bucket) at (152+xShift, 8+yShift) = (385, 28)
     addSlot(new Slot(mainContainer, WritingDeskBlockEntity.SLOT_CONTAINER_IN, 152 + X_SHIFT, 8 + Y_SHIFT));
 
-    // Slot 3: Container out (empty bucket) at (152+xShift, 60+yShift) = (385, 80) - output only
     addSlot(new Slot(mainContainer, WritingDeskBlockEntity.SLOT_CONTAINER_OUT, 152 + X_SHIFT, 60 + Y_SHIFT) {
       @Override
       public boolean mayPlace(@NotNull ItemStack stack) {
@@ -97,23 +86,20 @@ public class WritingDeskMenu extends AbstractContainerMenu {
 
       @Override
       public boolean mayPickup(@NotNull Player player) {
-        return true; // Always allow picking up from output slot
+        return true;
       }
     });
 
-    // Player inventory (3 rows of 9) at (8+xShift, 84+yShift) = (241, 104)
     for (int row = 0; row < 3; row++) {
       for (int col = 0; col < 9; col++) {
         addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18 + X_SHIFT, 84 + row * 18 + Y_SHIFT));
       }
     }
 
-    // Player hotbar at (8+xShift, 142+yShift) = (241, 162)
     for (int col = 0; col < 9; col++) {
       addSlot(new Slot(playerInventory, col, 8 + col * 18 + X_SHIFT, 142 + Y_SHIFT));
     }
 
-    // Data slots for ink display
     inkAmountData = addDataSlot(DataSlot.standalone());
     inkCapacityData = addDataSlot(DataSlot.standalone());
     if (blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
@@ -188,18 +174,15 @@ public class WritingDeskMenu extends AbstractContainerMenu {
       ItemStack stackInSlot = slot.getItem();
       result = stackInSlot.copy();
 
-      // Moving from block entity slots to player inventory
       if (index < BLOCK_ENTITY_SLOTS) {
         if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true)) {
           return ItemStack.EMPTY;
         }
-      }
-      // Moving from player inventory to block entity slots
-      else {
-        // Try writing slot first
+      } else {
+
         if (WritingDeskBlockEntity.isWritableItem(stackInSlot)) {
           if (!moveItemStackTo(stackInSlot, SLOT_WRITING, SLOT_WRITING + 1, false)) {
-            // Fall through to other slots
+
           } else {
             if (stackInSlot.isEmpty()) {
               slot.setByPlayer(ItemStack.EMPTY);
@@ -210,10 +193,9 @@ public class WritingDeskMenu extends AbstractContainerMenu {
           }
         }
 
-        // Try container in slot (ink buckets)
         if (WritingDeskBlockEntity.isInkContainer(stackInSlot)) {
           if (!moveItemStackTo(stackInSlot, SLOT_CONTAINER_IN, SLOT_CONTAINER_IN + 1, false)) {
-            // Fall through
+
           } else {
             if (stackInSlot.isEmpty()) {
               slot.setByPlayer(ItemStack.EMPTY);
@@ -224,10 +206,9 @@ public class WritingDeskMenu extends AbstractContainerMenu {
           }
         }
 
-        // Try paper slot
         if (WritingDeskBlockEntity.isBlankPage(stackInSlot)) {
           if (!moveItemStackTo(stackInSlot, SLOT_PAPER, SLOT_PAPER + 1, false)) {
-            // Fall through
+
           } else {
             if (stackInSlot.isEmpty()) {
               slot.setByPlayer(ItemStack.EMPTY);
@@ -238,10 +219,9 @@ public class WritingDeskMenu extends AbstractContainerMenu {
           }
         }
 
-        // Try tab slots (page collections)
         if (WritingDeskBlockEntity.isPageCollectionItem(stackInSlot)) {
           if (!moveItemStackTo(stackInSlot, TAB_SLOTS_START, TAB_SLOTS_END, false)) {
-            // Fall through
+
           } else {
             if (stackInSlot.isEmpty()) {
               slot.setByPlayer(ItemStack.EMPTY);
@@ -252,7 +232,6 @@ public class WritingDeskMenu extends AbstractContainerMenu {
           }
         }
 
-        // Move between inventory and hotbar
         if (index < PLAYER_INVENTORY_END) {
           if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
             return ItemStack.EMPTY;

@@ -12,7 +12,9 @@ import net.minecraft.world.level.material.Fluid;
 
 import java.util.function.Supplier;
 
-// Fabric registration stub
+/**
+ * Fabric service implementation for registering common Mystcraft objects.
+ */
 public class FabricRegistrationHelper implements IRegistrationHelper {
 
   @Override

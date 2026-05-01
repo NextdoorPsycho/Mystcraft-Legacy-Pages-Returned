@@ -25,7 +25,8 @@ public final class AgeReturnHandler {
   }
 
   /**
-   * Handles death in a Mystcraft Age. Prevents death and returns player to entry point.
+   * Handles death in a Mystcraft Age. Prevents death and returns player to
+   * entry point.
    *
    * @return true if death was prevented, false otherwise
    */

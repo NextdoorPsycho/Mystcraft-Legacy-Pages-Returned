@@ -8,8 +8,8 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Populator that generates veins of a single ore type.
- * Used by ore boost symbols to add extra veins of specific ores.
+ * Populator that generates veins of a single ore type. Used by ore boost
+ * symbols to add extra veins of specific ores.
  */
 public class SingleOrePopulator implements IPopulate {
 
@@ -21,7 +21,6 @@ public class SingleOrePopulator implements IPopulate {
   private final int maxY;
   private final String identifier;
 
-  // Chunk boundaries for current population
   private int chunkMinX;
   private int chunkMaxX;
   private int chunkMinZ;
@@ -118,12 +117,10 @@ public class SingleOrePopulator implements IPopulate {
 
     BlockState existing = world.getBlockState(pos);
 
-    // Replace any solid opaque block
     if (existing.isAir() || !existing.isSolid() || !existing.canOcclude()) {
       return;
     }
 
-    // Use deepslate variant below Y=0
     if (pos.getY() < 0) {
       world.setBlock(pos, deepslateOreBlock, 2);
     } else {

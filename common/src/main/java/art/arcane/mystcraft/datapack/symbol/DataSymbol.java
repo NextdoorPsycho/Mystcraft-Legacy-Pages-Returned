@@ -54,10 +54,9 @@ public class DataSymbol extends SymbolBase implements IGrammarBinding {
   }
 
   /**
-   * Backwards-compatible constructor for callers that haven't yet
-   * threaded a {@link SymbolDisplay}. Uses {@code null} (= category
-   * default rendering) so the auto-generated symbol-page path takes
-   * over.
+   * Backwards-compatible constructor for callers that haven't yet threaded a
+   * {@link SymbolDisplay}. Uses {@code null} (= category default rendering) so
+   * the auto-generated symbol-page path takes over.
    */
   public DataSymbol(ResourceLocation id,
                     SymbolCategory category,

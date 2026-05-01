@@ -10,7 +10,8 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.Optional;
 
 /**
- * Triggers when a player enters a Mystcraft dimension while carrying a linkbook.
+ * Triggers when a player enters a Mystcraft dimension while carrying a
+ * linkbook.
  */
 public class EnterMystDimensionSafeTrigger extends SimpleCriterionTrigger<EnterMystDimensionSafeTrigger.TriggerInstance> {
 

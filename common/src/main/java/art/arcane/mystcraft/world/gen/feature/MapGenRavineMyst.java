@@ -10,15 +10,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 /**
- * Ravine generator that carves long, deep canyons into terrain.
- * Similar to caves but longer, narrower, and deeper.
+ * Ravine generator that carves long, deep canyons into terrain. Similar to
+ * caves but longer, narrower, and deeper.
  */
 public class MapGenRavineMyst implements ITerrainAlteration {
 
-  // Range in chunks to check for ravine origins
   private static final int RANGE = 8;
   private final long seed;
-  private final int rate;        // Frequency of ravine starts
+  private final int rate;
   private final BlockState fillBlock;
 
   /**
@@ -77,18 +76,16 @@ public class MapGenRavineMyst implements ITerrainAlteration {
     float pitchChange = 0.0F;
 
     for (int segment = 0; segment < length; segment++) {
-      // Ravines are wider than tall, and narrower at the ends
-      double horizRadius = 1.5D + (Mth.sin(segment * (float) Math.PI / length) * width);
-      double vertRadius = horizRadius * 3.0D; // Much deeper than wide
 
-      // Move in direction
+      double horizRadius = 1.5D + (Mth.sin(segment * (float) Math.PI / length) * width);
+      double vertRadius = horizRadius * 3.0D;
+
       float cosPitch = Mth.cos(pitch);
       float sinPitch = Mth.sin(pitch);
       x += Mth.cos(yaw) * cosPitch;
       y += sinPitch;
       z += Mth.sin(yaw) * cosPitch;
 
-      // Less pitch variation than caves (more horizontal)
       pitch *= 0.7F;
       pitch += pitchChange * 0.05F;
       yaw += yawChange * 0.05F;
@@ -98,7 +95,6 @@ public class MapGenRavineMyst implements ITerrainAlteration {
       pitchChange += (rand.nextFloat() - rand.nextFloat()) * rand.nextFloat() * 2.0F;
       yawChange += (rand.nextFloat() - rand.nextFloat()) * rand.nextFloat() * 4.0F;
 
-      // Check if within chunk range
       double distX = x - chunkCenterX;
       double distZ = z - chunkCenterZ;
       double remaining = length - segment;
@@ -108,7 +104,6 @@ public class MapGenRavineMyst implements ITerrainAlteration {
         return;
       }
 
-      // Only carve if within chunk bounds
       if (x >= chunkCenterX - 16.0D - horizRadius * 2.0D &&
           z >= chunkCenterZ - 16.0D - horizRadius * 2.0D &&
           x <= chunkCenterX + 16.0D + horizRadius * 2.0D &&
@@ -147,7 +142,6 @@ public class MapGenRavineMyst implements ITerrainAlteration {
           for (int y = maxY; y > minY; y--) {
             double yDist = ((y - 1) + 0.5D - centerY) / vertRadius;
 
-            // Use a more vertical ellipsoid shape
             if (xDist * xDist + yDist * yDist + zDist * zDist < 1.0D) {
               pos.set(x, y, z);
               BlockState existing = chunk.getBlockState(pos);
@@ -176,6 +170,6 @@ public class MapGenRavineMyst implements ITerrainAlteration {
 
   @Override
   public int getPriority() {
-    return 60; // Ravines run after caves
+    return 60;
   }
 }

@@ -1,5 +1,7 @@
 {
-  "items": ["minecraft:feather"],
+  "items": [
+    "minecraft:feather"
+  ],
   "amount_per_item": 1.0,
   "link_property_weights": {
     "maintain_momentum": 0.15

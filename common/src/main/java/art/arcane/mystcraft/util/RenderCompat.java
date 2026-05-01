@@ -10,6 +10,9 @@ import org.joml.Matrix3f;
 import java.lang.reflect.Method;
 import java.util.function.Supplier;
 
+/**
+ * Shields renderer code from 1.20.1 vertex-consumer method signature drift.
+ */
 public final class RenderCompat {
 
   private static final Method NORMAL_POSE = ReflectionCompat.findMethod(VertexConsumer.class, "normal",

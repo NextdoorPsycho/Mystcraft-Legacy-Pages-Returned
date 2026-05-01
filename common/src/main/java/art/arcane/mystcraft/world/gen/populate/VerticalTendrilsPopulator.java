@@ -15,8 +15,8 @@ import java.util.Random;
 /**
  * Vertical tendrils populator that generates tall, mostly-straight columns
  * extending from ground or ceiling. These are the classic Mystcraft pillar-like
- * formations that grow vertically with only minor wobble.
- * Uses the neighbor-seed pattern for chunk-safe generation.
+ * formations that grow vertically with only minor wobble. Uses the
+ * neighbor-seed pattern for chunk-safe generation.
  */
 public class VerticalTendrilsPopulator implements IPopulate {
 
@@ -24,9 +24,9 @@ public class VerticalTendrilsPopulator implements IPopulate {
   private static final int DEFAULT_MIN_LENGTH = 25;
   private static final int DEFAULT_MAX_LENGTH = 80;
   private static final float DEFAULT_CEILING_CHANCE = 0.25f;
-  // ~8% of chunks spawn a creepy pillar
+
   private static final float DEFAULT_SPAWN_CHANCE = 0.08f;
-  // Vertical tendrils wobble slightly but can be thick, check nearby chunks
+
   private static final int DEFAULT_NEIGHBOR_RANGE = 2;
   private static final int DEFAULT_MIN_THICKNESS = 2;
   private static final int DEFAULT_MAX_THICKNESS = 6;
@@ -87,7 +87,7 @@ public class VerticalTendrilsPopulator implements IPopulate {
         int neighborMinZ = ncz << 4;
 
         for (int i = 0; i < tendrilsPerChunk; i++) {
-          // Deterministic spawn chance - skip most chunks
+
           if (chunkRand.nextFloat() >= spawnChance) {
             continue;
           }
@@ -101,13 +101,11 @@ public class VerticalTendrilsPopulator implements IPopulate {
           int length = minLength + chunkRand.nextInt(maxLength - minLength + 1);
           int baseThickness = minThickness + chunkRand.nextInt(maxThickness - minThickness + 1);
 
-          // Slight wobble parameters
           double wobbleX = (chunkRand.nextDouble() - 0.5) * wobbleRange;
           double wobbleZ = (chunkRand.nextDouble() - 0.5) * wobbleRange;
           long pathSeed = chunkRand.nextLong();
           long decorSeed = chunkRand.nextLong();
 
-          // Skip if start position is too far from our chunk to avoid accessing unloaded chunks
           if (startX < chunkMinX - baseThickness - 1 || startX > chunkMaxX + baseThickness + 1 ||
               startZ < chunkMinZ - baseThickness - 1 || startZ > chunkMaxZ + baseThickness + 1) {
             continue;
@@ -141,7 +139,7 @@ public class VerticalTendrilsPopulator implements IPopulate {
       if (!world.getBlockState(checkPos).isSolid() || !world.getBlockState(checkPos.below()).isAir()) {
         return;
       }
-      // Bury into the ceiling by moving up into solid blocks
+
       startY += baseThickness + 3;
     } else {
       startY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, startX, startZ);
@@ -149,7 +147,7 @@ public class VerticalTendrilsPopulator implements IPopulate {
       if (!ground.isSolid() || ground.is(BlockTags.LEAVES)) {
         return;
       }
-      // Bury into the ground so the base is embedded in terrain
+
       startY -= (baseThickness + 3);
     }
 
@@ -163,7 +161,6 @@ public class VerticalTendrilsPopulator implements IPopulate {
     for (int segment = 0; segment < length; segment++) {
       float progress = (float) segment / length;
 
-      // Very gentle wobble updates
       if (segment % 5 == 0) {
         wobbleX += (pathRand.nextDouble() - 0.5) * 0.08;
         wobbleZ += (pathRand.nextDouble() - 0.5) * 0.08;
@@ -178,12 +175,12 @@ public class VerticalTendrilsPopulator implements IPopulate {
       long pillarHash = positionHash(pathSeed, (int) currentX, (int) currentY, (int) currentZ);
       int bulge = (int) ((pillarHash >>> 4) & 0x3) - 1;
       int thickness = baseThickness + bulge - (int) (progress * 1.4f);
-      // Flare at top 15% - mushroom cap effect
+
       if (progress > 0.85f) {
         float flareProgress = (progress - 0.85f) / 0.15f;
         thickness += (int) (1 + flareProgress * 2);
       }
-      // Root spread at base 10% - extra width
+
       if (progress < 0.10f) {
         float rootProgress = 1.0f - (progress / 0.10f);
         thickness += (int) (rootProgress * 2);
@@ -203,10 +200,10 @@ public class VerticalTendrilsPopulator implements IPopulate {
             int bz = centerBz + dz;
 
             if (bx >= chunkMinX && bx <= chunkMaxX && bz >= chunkMinZ && bz <= chunkMaxZ) {
-              // For ground pillars, check local terrain height to avoid floating blocks
+
               if (!fromCeiling && centerBy < startY + length) {
                 int localSurface = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz) - 1;
-                // Don't place blocks that would float above air below local terrain
+
                 if (centerBy > localSurface + 1 && world.getBlockState(new BlockPos(bx, centerBy - 1, bz)).isAir()) {
                   continue;
                 }
@@ -220,7 +217,6 @@ public class VerticalTendrilsPopulator implements IPopulate {
         }
       }
 
-      // Occasional ribs/spines
       if ((pillarHash & 0xF) == 0) {
         int dir = (int) ((pillarHash >>> 6) & 0x3);
         int ddx = (dir == 0) ? 1 : (dir == 1) ? -1 : 0;
@@ -239,7 +235,6 @@ public class VerticalTendrilsPopulator implements IPopulate {
         }
       }
 
-      // Position-deterministic decorations
       if (segment > 3) {
         long decorHash = positionHash(decorSeed, centerBx, centerBy, centerBz);
         if ((decorHash & 0x7) == 0) {
@@ -267,7 +262,7 @@ public class VerticalTendrilsPopulator implements IPopulate {
 
   private int findCeilingPosition(WorldGenLevel world, int x, int z, long pathSeed,
                                   int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
-    // Skip if position is outside chunk bounds to avoid accessing unloaded chunks
+
     if (x < chunkMinX - 1 || x > chunkMaxX + 1 || z < chunkMinZ - 1 || z > chunkMaxZ + 1) {
       return -1;
     }
@@ -292,7 +287,7 @@ public class VerticalTendrilsPopulator implements IPopulate {
         existing.is(Blocks.WATER)) {
       return true;
     }
-    // Allow replacing natural terrain so tendrils root into the ground
+
     return existing.is(Blocks.STONE) ||
         existing.is(Blocks.DEEPSLATE) ||
         existing.is(Blocks.DIRT) ||

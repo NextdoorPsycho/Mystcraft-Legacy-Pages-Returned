@@ -3,10 +3,13 @@ package art.arcane.mystcraft.blockentity;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
+import art.arcane.mystcraft.item.PersonalLinkBookItem;
+import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.portal.PortalUtils;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -29,7 +32,6 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
 
   private static final String TAG_INVENTORY = "inventory";
 
-  /** True while loading from NBT — suppresses the portal-state side-effect. */
   private boolean loading = false;
 
   public BookReceptacleBlockEntity(BlockPos pos, BlockState blockState) {
@@ -37,17 +39,49 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
   }
 
   /**
-   * @return {@code true} when the stack is a Linkbook or Agebook (the only
-   *         items that can fire a portal).
+   * @return {@code true} when the stack is a book that can light the portal.
+   *
+   * <p>Accepted:
+   * <ul>
+   *   <li>Any {@link LinkbookItem} (including {@link art.arcane.mystcraft.item.PersonalLinkBookItem},
+   *       which is a subclass).</li>
+   *   <li>A linked {@link AgebookItem} (one with a {@code DimensionUID}).</li>
+   *   <li>An unlinked {@link AgebookItem} whose page&nbsp;0 is a link panel — this is the
+   *       "auto-create-on-traverse" path; the Age is generated when the player walks
+   *       through the portal. See {@link AgebookItem#isNewAgebook(ItemStack)}.</li>
+   * </ul>
+   *
+   * <p>Rejected: Agebooks that lack both a {@code DimensionUID} and a page-0 link panel
+   * (typically a freshly-crafted but never-written stack, which would silently no-op
+   * on portal traversal).
    */
   public static boolean isValidPortalActivator(ItemStack stack) {
     if (stack.isEmpty()) {
       return false;
     }
-    return stack.getItem() instanceof LinkbookItem || stack.getItem() instanceof AgebookItem;
+    if (stack.getItem() instanceof LinkbookItem) {
+
+      return true;
+    }
+    if (stack.getItem() instanceof AgebookItem) {
+      CompoundTag tag = ItemStackNbt.getTag(stack);
+      if (tag != null && LinkOptions.getDimensionUID(tag) != null) {
+
+        return true;
+      }
+
+      return AgebookItem.isNewAgebook(stack);
+    }
+    return false;
   }
 
-  private final SimpleContainer inventory = new SimpleContainer(1) {
+  /**
+   * Container view used by hopper integration etc. — never mutate this directly
+   * unless you also want the portal to fire/shutdown automatically.
+   */
+  public Container getInventory() {
+    return inventory;
+  }  private final SimpleContainer inventory = new SimpleContainer(1) {
     @Override
     public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
       return isValidPortalActivator(stack);
@@ -65,14 +99,6 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
       handleBookChange();
     }
   };
-
-  /**
-   * Container view used by hopper integration etc. — never mutate this directly
-   * unless you also want the portal to fire/shutdown automatically.
-   */
-  public Container getInventory() {
-    return inventory;
-  }
 
   @Override
   protected void writeNbt(CompoundTag tag) {
@@ -108,7 +134,9 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
     }
   }
 
-  /** @return the stored book, or {@link ItemStack#EMPTY}. Never {@code null}. */
+  /**
+   * @return the stored book, or {@link ItemStack#EMPTY}. Never {@code null}.
+   */
   @NotNull
   public ItemStack getBook() {
     return inventory.getItem(0);
@@ -117,12 +145,27 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
   /**
    * Replace the stored book. Pass {@link ItemStack#EMPTY} to clear it. Triggers
    * portal fire/shutdown side-effects automatically.
+   * <p>
+   * Initialises a fresh Linkbook's link data on insertion when none exists —
+   * so a book that was crafted and dropped straight into a receptacle (never
+   * sitting in player inventory, never receiving an {@code inventoryTick})
+   * still has a usable Spawn/DimensionUID by the time {@code firePortal} runs.
+   * Without this, the portal would light but {@code entityInside} would
+   * silently drop the teleport because {@code performLink} aborts on missing
+   * link data.
    */
   public void setBook(@NotNull ItemStack book) {
-    inventory.setItem(0, book);
+    ItemStack prepared = book;
+    if (level != null && !level.isClientSide && book.getItem() instanceof LinkbookItem linkbook) {
+      prepared = book.copy();
+      linkbook.validate(level, prepared, null);
+    }
+    inventory.setItem(0, prepared);
   }
 
-  /** @return {@code true} when a book is present. */
+  /**
+   * @return {@code true} when a book is present.
+   */
   public boolean hasBook() {
     return !inventory.getItem(0).isEmpty();
   }
@@ -134,16 +177,12 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
   @NotNull
   public ItemStack takeBook() {
     ItemStack book = inventory.removeItemNoUpdate(0);
-    // Force the side-effect since removeItemNoUpdate skips setChanged().
+
     handleBookChange();
     setChanged();
     return book;
   }
 
-  /**
-   * Server-side hook fired whenever the inventory mutates. Drives portal
-   * activation: presence of a valid book → fire; otherwise → shutdown.
-   */
   private void handleBookChange() {
     if (level == null || level.isClientSide || loading) {
       return;
@@ -152,21 +191,60 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
 
     ItemStack book = getBook();
     if (isValidPortalActivator(book)) {
+      art.arcane.mystcraft.Mystcraft.LOGGER.info(
+          "[Receptacle] Book inserted at {}: {} — calling firePortal",
+          worldPosition,
+          BuiltInRegistries.ITEM.getKey(book.getItem()));
       PortalUtils.firePortal(level, worldPosition);
     } else {
+      art.arcane.mystcraft.Mystcraft.LOGGER.info(
+          "[Receptacle] Book removed at {} — calling shutdownPortal",
+          worldPosition);
       PortalUtils.shutdownPortal(level, worldPosition);
     }
   }
 
   /**
-   * Returns the tint colour for the connected portal blocks based on the link
-   * data of the stored book. Falls back to Mystcraft blue when no colour is set.
+   * Tint colour for the connected portal blocks. Branches on the stored book's
+   * type so each book reads at a glance:
+   *
+   * <ul>
+   *   <li>Personal Link Book → fixed violet ({@code 0xAA44FF}).</li>
+   *   <li>Linked Agebook → the Age's sky colour from {@link ClientAgeDataCache}
+   *       (or a soft blue if the data hasn't synced yet).</li>
+   *   <li>Unwritten Agebook (page-0 link panel, no UID) → muted grey
+   *       ({@code 0x808890}) — telegraphs the auto-create-on-traverse path.</li>
+   *   <li>Other Linkbook → the book's stored {@code LinkColor}, or default
+   *       Mystcraft blue ({@code 0x4488FF}).</li>
+   *   <li>Empty receptacle → white default; rarely reached because the portal
+   *       is shut down whenever the book is removed.</li>
+   * </ul>
+   *
+   * <p>This method is safe to call from the server (the {@link ClientAgeDataCache}
+   * lookup just returns -1 and we fall back to the default blue), but its
+   * primary caller is the client-side {@code BlockColor} provider on
+   * {@code LINK_PORTAL}.
    */
   public int getPortalColor() {
     ItemStack book = getBook();
     if (book.isEmpty()) {
-      return 0xFFFFFF; // White default — should rarely render with no book
+      return 0xFFFFFF;
     }
+
+    if (book.getItem() instanceof PersonalLinkBookItem) {
+      return 0xAA44FF;
+    }
+
+    if (book.getItem() instanceof AgebookItem) {
+      CompoundTag tag = ItemStackNbt.getTag(book);
+      Integer ageUID = tag != null ? LinkOptions.getDimensionUID(tag) : null;
+      if (ageUID == null) {
+        return 0x808890;
+      }
+      int sky = ClientAgeDataCache.getSkyColor(ageUID);
+      return sky != -1 ? sky : 0x66AAFF;
+    }
+
     CompoundTag tag = ItemStackNbt.getTag(book);
     if (tag != null) {
       Integer color = LinkOptions.getLinkColor(tag);
@@ -174,7 +252,7 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
         return color;
       }
     }
-    return 0x4444FF; // Mystcraft blue
+    return 0x4488FF;
   }
 
   /**
@@ -192,8 +270,11 @@ public class BookReceptacleBlockEntity extends MystcraftBlockEntity {
     }
   }
 
-  /** Comparator output: full when a book is present, empty otherwise. */
+  /**
+   * Comparator output: full when a book is present, empty otherwise.
+   */
   public int getAnalogOutputSignal() {
     return hasBook() ? 15 : 0;
   }
+
 }

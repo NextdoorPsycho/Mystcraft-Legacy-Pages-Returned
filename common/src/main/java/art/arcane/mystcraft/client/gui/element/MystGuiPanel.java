@@ -33,24 +33,23 @@ public class MystGuiPanel extends MystGuiElement {
   }
 
   /**
-   * Adds a child element to this panel.
-   * Alias for addElement for convenience.
+   * Adds a child element to this panel. Alias for addElement for convenience.
    */
   public void addChild(MystGuiElement element) {
     addElement(element);
   }
 
   /**
-   * Removes a child element from this panel.
-   * Alias for removeElement for convenience.
+   * Removes a child element from this panel. Alias for removeElement for
+   * convenience.
    */
   public void removeChild(MystGuiElement element) {
     removeElement(element);
   }
 
   /**
-   * Gets tooltip for the element at the mouse position.
-   * Alias for getTooltipInfo for convenience.
+   * Gets tooltip for the element at the mouse position. Alias for
+   * getTooltipInfo for convenience.
    */
   @Nullable
   public List<Component> getTooltip(int mouseX, int mouseY) {

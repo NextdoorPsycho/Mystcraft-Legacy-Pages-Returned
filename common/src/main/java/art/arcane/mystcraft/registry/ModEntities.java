@@ -1,17 +1,13 @@
 package art.arcane.mystcraft.registry;
 
-import art.arcane.mystcraft.entity.ColoredLightningEntity;
-import art.arcane.mystcraft.entity.LinkbookEntity;
-import art.arcane.mystcraft.entity.MeteorEntity;
-import art.arcane.mystcraft.entity.MystcraftFallingBlockEntity;
-import art.arcane.mystcraft.entity.PersonalPocketProxyEntity;
+import art.arcane.mystcraft.entity.*;
 import net.minecraft.world.entity.EntityType;
 
 import java.util.function.Supplier;
 
 /**
- * Common accessor for registered entity types.
- * Platform modules populate these suppliers during initialization.
+ * Common accessor for registered entity types. Platform modules populate these
+ * suppliers during initialization.
  */
 public final class ModEntities {
 

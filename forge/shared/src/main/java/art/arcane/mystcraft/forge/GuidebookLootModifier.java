@@ -15,7 +15,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Supplier;
 
 /**
- * Loot modifier that adds the Mystcraft Guidebook to loot chests with a configurable chance.
+ * Loot modifier that adds the Mystcraft Guidebook to loot chests with a
+ * configurable chance.
  */
 public class GuidebookLootModifier extends LootModifier {
 
@@ -37,7 +38,6 @@ public class GuidebookLootModifier extends LootModifier {
       return generatedLoot;
     }
 
-    // Add a guidebook to the loot
     generatedLoot.add(new ItemStack(ModItems.GUIDEBOOK.get()));
 
     return generatedLoot;

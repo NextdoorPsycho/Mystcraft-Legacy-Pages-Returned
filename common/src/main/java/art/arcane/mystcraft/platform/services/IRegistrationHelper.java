@@ -12,27 +12,30 @@ import net.minecraft.world.level.material.Fluid;
 import java.util.function.Supplier;
 
 /**
- * Abstracts platform-specific registry operations.
- * Each platform implements this to handle DeferredRegister (Forge) or direct registration (Fabric).
+ * Abstracts platform-specific registry operations. Each platform implements
+ * this to handle DeferredRegister (Forge) or direct registration (Fabric).
  */
 public interface IRegistrationHelper {
 
   /**
-   * Initializes the registration system with the platform's mod event bus.
-   * For Forge this is the IEventBus, for Fabric this may be null.
-   * Must be called before any registrations.
+   * Initializes the registration system with the platform's mod event bus. For
+   * Forge this is the IEventBus, for Fabric this may be null. Must be called
+   * before any registrations.
    *
-   * @param modEventBus Platform-specific event bus (IEventBus for Forge, null for Fabric)
+   * @param modEventBus Platform-specific event bus (IEventBus for Forge, null
+   *                    for Fabric)
    */
   void initialize(Object modEventBus);
 
   /**
-   * Registers all deferred registries with the platform's mod event bus. Called during mod construction.
+   * Registers all deferred registries with the platform's mod event bus. Called
+   * during mod construction.
    */
   void register();
 
   /**
-   * Registers a block supplier. Returns a Supplier that resolves after registration completes.
+   * Registers a block supplier. Returns a Supplier that resolves after
+   * registration completes.
    */
   <T extends Block> Supplier<T> registerBlock(String name, Supplier<T> block);
 

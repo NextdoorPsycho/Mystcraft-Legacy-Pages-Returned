@@ -15,8 +15,7 @@ tasks.register('cleanLibs') {
                     libsDir.listFiles()?.findAll { it.name.endsWith('.jar') }?.each { it.delete() }
                     println "Cleaned ${platform}/build/libs"
                 }
-            } catch (Exception e) {
-                // Subproject may not exist
+            } catch (Exception ignored) {
             }
         }
 
@@ -35,7 +34,6 @@ tasks.register('cleanLibs') {
     }
 }
 
-// Build tasks
 tasks.register('buildAllVersions') {
     group = 'build'
     description = 'Builds the supported 1.20.1 Fabric and Forge jars'
@@ -43,7 +41,6 @@ tasks.register('buildAllVersions') {
     mustRunAfter 'cleanLibs'
 }
 
-// Copy task helper
 def registerCopyTask = { String name, String outputProp ->
     tasks.register(name, Copy) {
         group = 'build'
@@ -76,7 +73,6 @@ def registerCopyTask = { String name, String outputProp ->
                 targetDir.mkdirs()
                 println "Created output directory: ${targetDir.absolutePath}"
             }
-            // Remove old Mystcraft jars to avoid accidentally grabbing stale builds.
             def deleted = 0
             targetDir.listFiles()?.each { File f ->
                 if ((f.name.startsWith('MystcraftLegacy_') || f.name.startsWith('mystcraft_legacy')) && f.name.endsWith('.jar')) {
@@ -97,10 +93,6 @@ registerCopyTask('copyBuilds', 'build_output_dir')
 registerCopyTask('copyPsychoBuilds', 'build_output_dir_psycho')
 registerCopyTask('copyXCompBuilds', 'build_output_dir_xcomp')
 
-// PrismLauncher deploy task helper
-// Builds the platform jar and copies it into <prismDir>/minecraft/mods.
-// `prismDirProp` should point at the PrismLauncher instance root, e.g.
-//   /Users/<you>/Library/Application Support/PrismLauncher/instances/Fabric-1.20.1
 def registerPrismDeployTask = { String taskName, String platform, String versionDir, String prismDirProp ->
     tasks.register(taskName, Copy) {
         group = 'mystcraft'
@@ -127,11 +119,10 @@ def registerPrismDeployTask = { String taskName, String platform, String version
             if (!targetDir.exists()) {
                 throw new GradleException(
                         "PrismLauncher mods directory does not exist:\n  ${targetDir.absolutePath}\n\n" +
-                        "Make sure the instance exists in PrismLauncher and has been launched at least once " +
-                        "so the 'minecraft/mods' folder is created (or update '${prismDirProp}' in gradle.properties)."
+                                "Make sure the instance exists in PrismLauncher and has been launched at least once " +
+                                "so the 'minecraft/mods' folder is created (or update '${prismDirProp}' in gradle.properties)."
                 )
             }
-            // Remove old Mystcraft jars from the target so we don't keep stale builds alongside the new one.
             def deleted = 0
             targetDir.listFiles()?.each { File f ->
                 if ((f.name.startsWith('MystcraftLegacy_') || f.name.startsWith('mystcraft_legacy')) && f.name.endsWith('.jar')) {
@@ -149,9 +140,8 @@ def registerPrismDeployTask = { String taskName, String platform, String version
 }
 
 registerPrismDeployTask('deployToPrismFabric', 'fabric', '1.20.1', 'prism_fabric_dir')
-registerPrismDeployTask('deployToPrismForge',  'forge',  '1.20.1', 'prism_forge_dir')
+registerPrismDeployTask('deployToPrismForge', 'forge', '1.20.1', 'prism_forge_dir')
 
-// Comprehensive build tasks
 tasks.register('buildAll') {
     group = 'build'
     description = 'Cleans, builds the supported 1.20.1 jars, and copies them to build_output_dir'
@@ -169,6 +159,24 @@ tasks.register('buildXCompJars') {
     description = 'Builds the supported 1.20.1 jars and copies them to build_output_dir_xcomp'
     dependsOn 'cleanLibs', 'buildAllVersions', 'copyXCompBuilds'
 }
+
+def registerTaskAlias = { String name, String taskPath, String groupName, String taskDescription ->
+    tasks.register(name) {
+        group = groupName
+        description = taskDescription
+        dependsOn taskPath
+    }
+}
+
+registerTaskAlias('buildFabricJar', ':fabric:1.20.1:build', 'build', 'Builds the Fabric 1.20.1 jar')
+registerTaskAlias('buildForgeJar', ':forge:1.20.1:build', 'build', 'Builds the Forge 1.20.1 jar')
+
+registerTaskAlias('runFabricClient', ':fabric:1.20.1:runClient', 'mystcraft runners', 'Runs the Fabric 1.20.1 client')
+registerTaskAlias('runFabricServer', ':fabric:1.20.1:runServer', 'mystcraft runners', 'Runs the Fabric 1.20.1 server')
+registerTaskAlias('runFabricGameTest', ':fabric:1.20.1:runGametest', 'mystcraft runners', 'Runs the Fabric 1.20.1 GameTest server')
+registerTaskAlias('runForgeClient', ':forge:1.20.1:runClient', 'mystcraft runners', 'Runs the Forge 1.20.1 client')
+registerTaskAlias('runForgeServer', ':forge:1.20.1:runServer', 'mystcraft runners', 'Runs the Forge 1.20.1 server')
+registerTaskAlias('runForgeGameTest', ':forge:1.20.1:runGameTestServer', 'mystcraft runners', 'Runs the Forge 1.20.1 GameTest server')
 
 subprojects {
     apply plugin: 'java'
@@ -205,12 +213,12 @@ subprojects {
         description = 'Deletes the entire saves directory to ensure a fresh start.'
         doLast {
             def paths = [
-                'runs/client/saves',
-                'runs/saves',
-                'run/saves',
-                'run/client/saves'
+                    'runs/client/saves',
+                    'runs/saves',
+                    'run/saves',
+                    'run/client/saves'
             ]
-            
+
             paths.each { path ->
                 def dir = project.file(path)
                 println "Checking for worlds at: ${dir.absolutePath}"
@@ -218,11 +226,11 @@ subprojects {
                     println "Found worlds directory. Deleting..."
                     try {
                         if (dir.deleteDir()) {
-                             println "Successfully deleted: ${path}"
+                            println "Successfully deleted: ${path}"
                         } else {
-                             println "Java delete failed. Trying shell force delete..."
-                             project.exec { commandLine 'rm', '-rf', dir.absolutePath }
-                             println "Shell delete command executed for: ${path}"
+                            println "Java delete failed. Trying shell force delete..."
+                            project.exec { commandLine 'rm', '-rf', dir.absolutePath }
+                            println "Shell delete command executed for: ${path}"
                         }
                     } catch (Exception e) {
                         println "Error deleting ${path}: ${e.message}"
@@ -283,21 +291,21 @@ subprojects {
 
     processResources {
         def expandProps = [
-            'version'                   : version,
-            'group'                     : project.group,
-            'minecraft_version'         : minecraft_version,
-            'minecraft_version_range'   : minecraft_version_range,
-            'fabric_version'            : fabric_version,
-            'fabric_loader_version'     : fabric_loader_version,
-            'forge_version'             : forge_version,
-            'forge_loader_version_range': forge_loader_version_range,
-            'mod_name'                  : mod_name,
-            'mod_author'                : mod_author,
-            'mod_id'                    : mod_id,
-            'license'                   : license,
-            'description'               : mod_description,
-            'credits'                   : credits,
-            'java_version'              : java_version
+                'version'                   : version,
+                'group'                     : project.group,
+                'minecraft_version'         : minecraft_version,
+                'minecraft_version_range'   : minecraft_version_range,
+                'fabric_version'            : fabric_version,
+                'fabric_loader_version'     : fabric_loader_version,
+                'forge_version'             : forge_version,
+                'forge_loader_version_range': forge_loader_version_range,
+                'mod_name'                  : mod_name,
+                'mod_author'                : mod_author,
+                'mod_id'                    : mod_id,
+                'license'                   : license,
+                'description'               : mod_description,
+                'credits'                   : credits,
+                'java_version'              : java_version
         ]
         filesMatching(['pack.mcmeta', 'fabric.mod.json', 'META-INF/mods.toml']) {
             expand expandProps

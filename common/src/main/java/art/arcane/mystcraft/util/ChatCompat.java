@@ -4,6 +4,9 @@ import net.minecraft.SharedConstants;
 
 import java.lang.reflect.Method;
 
+/**
+ * Compatibility wrapper for chat character validation methods that changed across 1.20.x mappings.
+ */
 public final class ChatCompat {
 
   private static final Method ALLOWED_CHAR_INT =

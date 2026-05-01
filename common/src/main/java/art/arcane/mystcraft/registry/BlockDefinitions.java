@@ -6,12 +6,12 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 
 /**
- * Centralized block property definitions for Mystcraft.
- * All BlockBehaviour.Properties are defined here and referenced by platform-specific registration.
+ * Centralized block property definitions for Mystcraft. All
+ * BlockBehaviour.Properties are defined here and referenced by
+ * platform-specific registration.
  */
 public final class BlockDefinitions {
 
-  // Workstation blocks
   public static final BlockBehaviour.Properties INK_MIXER = BlockBehaviour.Properties.of()
       .mapColor(MapColor.WOOD)
       .strength(2.5F)
@@ -37,7 +37,6 @@ public final class BlockDefinitions {
       .strength(2.5F)
       .requiresCorrectToolForDrops();
 
-  // Special blocks
   public static final BlockBehaviour.Properties CRYSTAL = BlockBehaviour.Properties.of()
       .mapColor(MapColor.COLOR_LIGHT_BLUE)
       .strength(1.5F)

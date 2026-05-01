@@ -8,8 +8,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 /**
- * Flat terrain generator that creates a simple flat world.
- * Does not use noise interpolation - fills directly.
+ * Flat terrain generator that creates a simple flat world. Does not use noise
+ * interpolation - fills directly.
  */
 public class TerrainGeneratorFlat extends TerrainGeneratorBase {
 
@@ -31,16 +31,16 @@ public class TerrainGeneratorFlat extends TerrainGeneratorBase {
           BlockState block;
 
           if (y == chunk.getMinBuildHeight()) {
-            // Bedrock at bottom
+
             block = Blocks.BEDROCK.defaultBlockState();
           } else if (y < groundLevel) {
-            // Solid terrain below ground level
+
             block = terrainBlock;
           } else if (hasSea && y < seaLevel) {
-            // Sea/fluid between ground and sea level
+
             block = seaBlock;
           } else {
-            // Air above
+
             block = Blocks.AIR.defaultBlockState();
           }
 
@@ -54,7 +54,7 @@ public class TerrainGeneratorFlat extends TerrainGeneratorBase {
   @Override
   protected double[] initializeNoiseField(double[] field, int x, int y, int z,
                                           int xSize, int ySize, int zSize) {
-    // Flat terrain doesn't use noise
+
     return new double[xSize * ySize * zSize];
   }
 

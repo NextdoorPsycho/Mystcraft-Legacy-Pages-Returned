@@ -8,9 +8,9 @@ import art.arcane.mystcraft.menu.BookBinderMenu;
 import art.arcane.mystcraft.network.ContainerActionPacket;
 import art.arcane.mystcraft.network.MystcraftNetwork;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -20,27 +20,24 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 /**
- * Screen for the Book Binder block.
- * Includes text field for book name and scrollable page list.
+ * Screen for the Book Binder block. Includes text field for book name and
+ * scrollable page list.
  */
 public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
-  // Page list area
   private static final int PAGE_LIST_X = 7;
   private static final int PAGE_LIST_Y = 45;
-  private static final int PAGE_LIST_WIDTH = 162; // 176 - 14
+  private static final int PAGE_LIST_WIDTH = 162;
   private static final int PAGE_LIST_HEIGHT = 40;
-  private static final int PAGE_SIZE = 16; // Size of each page icon
-  private static final int PAGE_SLOT_SIZE = PAGE_SIZE + 2; // Including spacing
-  private static final int PAGES_PER_ROW = PAGE_LIST_WIDTH / PAGE_SLOT_SIZE; // 162/18 = 9
+  private static final int PAGE_SIZE = 16;
+  private static final int PAGE_SLOT_SIZE = PAGE_SIZE + 2;
+  private static final int PAGES_PER_ROW = PAGE_LIST_WIDTH / PAGE_SLOT_SIZE;
 
-  // Text field area
   private static final int TEXT_FIELD_X = 7;
   private static final int TEXT_FIELD_Y = 9;
-  private static final int TEXT_FIELD_WIDTH = 116; // 176 - 60
+  private static final int TEXT_FIELD_WIDTH = 116;
   private static final int TEXT_FIELD_HEIGHT = 14;
 
-  // Missing panel icon position
   private static final int MISSING_PANEL_X = 27;
   private static final int MISSING_PANEL_Y = 26;
 
@@ -57,10 +54,9 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
   @Override
   protected void init() {
     super.init();
-    // Position inventory label for ySize=181 (at ySize - 94 = 87)
+
     this.inventoryLabelY = this.imageHeight - 94;
 
-    // Create title text field
     titleField = new EditBox(this.font, this.leftPos + TEXT_FIELD_X, this.topPos + TEXT_FIELD_Y,
         TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT, Component.literal("Book Title"));
     titleField.setMaxLength(21);
@@ -68,18 +64,16 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     titleField.setVisible(true);
     titleField.setTextColor(0xA0A0A0);
 
-    // Set initial value from block entity
     BookBinderBlockEntity be = menu.getBlockEntity();
     titleField.setValue(be.getPendingTitle());
 
-    // Set responder for text changes
     titleField.setResponder(this::onTitleChanged);
 
     addRenderableWidget(titleField);
   }
 
   private void onTitleChanged(String text) {
-    // Send title change to server
+
     MystcraftNetwork.sendToServer(new ContainerActionPacket(
         ContainerActionPacket.Action.BOOK_BINDER_SET_TITLE,
         menu.containerId,
@@ -92,7 +86,6 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
   public void containerTick() {
     super.containerTick();
 
-    // Update warning alpha (pulsing effect)
     long time = System.currentTimeMillis();
     warningAlpha = (time % 4000) / 2000.0f;
     if (warningAlpha > 1) {
@@ -101,11 +94,10 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     warningAlpha += 0.3f;
     warningAlpha = Math.min(1.0f, warningAlpha);
 
-    // Update text field border color based on whether title is empty
     if (titleField.getValue().isEmpty()) {
-      titleField.setTextColor(0xFF0000); // Red when empty
+      titleField.setTextColor(0xFF0000);
     } else {
-      titleField.setTextColor(0xA0A0A0); // Normal gray
+      titleField.setTextColor(0xA0A0A0);
     }
   }
 
@@ -114,24 +106,19 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     RenderSystem.setShader(GameRenderer::getPositionTexShader);
     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
-    // Container panel background + raised border
     ProceduralUI.drawPanel(guiGraphics, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
 
-    // Inset frame around the title field so the EditBox edges have visual context
     ProceduralUI.drawInsetBorder(guiGraphics,
         this.leftPos + TEXT_FIELD_X - 2,
         this.topPos + TEXT_FIELD_Y - 2,
         TEXT_FIELD_WIDTH + 4,
         TEXT_FIELD_HEIGHT + 4);
 
-    // Player inventory + hotbar slots
     ProceduralUI.drawSlotGrid(guiGraphics, this.leftPos + 8, this.topPos + this.imageHeight - 82, 9, 3, 0);
     ProceduralUI.drawSlotGrid(guiGraphics, this.leftPos + 8, this.topPos + this.imageHeight - 24, 9, 1, 0);
 
-    // Page list (procedural slots + items)
     renderPageList(guiGraphics, mouseX, mouseY);
 
-    // Draw missing link panel warning if needed
     renderMissingPanelWarning(guiGraphics, mouseX, mouseY);
   }
 
@@ -141,11 +128,8 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     int listLeft = this.leftPos + PAGE_LIST_X;
     int listTop = this.topPos + PAGE_LIST_Y;
 
-    // Calculate max visible slots (2 rows)
     int maxVisibleSlots = PAGES_PER_ROW * 2;
 
-    // First pass: Draw slot backgrounds for ALL visible positions via the
-    // shared ProceduralUI helper (PAGE_SLOT_SIZE includes the 1-pixel border).
     for (int i = 0; i < maxVisibleSlots; i++) {
       int col = i % PAGES_PER_ROW;
       int row = i / PAGES_PER_ROW;
@@ -154,21 +138,19 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
       ProceduralUI.drawSlot(guiGraphics, x, y, PAGE_SLOT_SIZE, PAGE_SLOT_SIZE);
     }
 
-    // Second pass: Draw page items on top of slots
     for (int i = scrollOffset; i < pages.size() && i < scrollOffset + maxVisibleSlots; i++) {
       int displayIndex = i - scrollOffset;
       int col = displayIndex % PAGES_PER_ROW;
       int row = displayIndex / PAGES_PER_ROW;
 
-      int x = listLeft + col * (PAGE_SIZE + 2) + 1; // +1 to center in slot
+      int x = listLeft + col * (PAGE_SIZE + 2) + 1;
       int y = listTop + row * (PAGE_SIZE + 2) + 1;
 
       ItemStack page = pages.get(i);
       if (!page.isEmpty()) {
-        // Draw page item
+
         guiGraphics.renderItem(page, x, y);
 
-        // Highlight first position if it's not a link panel
         if (i == 0 && !Page.isLinkPanel(page)) {
           int warn = GuiTheme.color("text_warning");
           int bx = x - 1;
@@ -185,7 +167,6 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
   private void renderMissingPanelWarning(GuiGraphics guiGraphics, int mouseX, int mouseY) {
     List<ItemStack> pages = menu.getBlockEntity().getPageList();
 
-    // Show warning if no pages or first page is not a link panel
     boolean showWarning = pages.isEmpty() || !Page.isLinkPanel(pages.get(0));
     if (!showWarning) {
       return;
@@ -194,7 +175,6 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     int warningX = this.leftPos + MISSING_PANEL_X;
     int warningY = this.topPos + MISSING_PANEL_Y;
 
-    // Procedural warning glyph with the existing pulse modulating alpha.
     RenderSystem.enableBlend();
     RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, warningAlpha);
     ProceduralUI.drawWarningGlyph(guiGraphics, warningX, warningY, 18, 18);
@@ -206,7 +186,6 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
   public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
     super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-    // Render warning tooltip if hovering over warning area
     renderWarningTooltip(guiGraphics, mouseX, mouseY);
   }
 
@@ -237,7 +216,6 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     int textColor = GuiTheme.color("text_primary") & 0x00FFFFFF;
     guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, textColor, false);
 
-    // Show page count (right-aligned, in the title row)
     int pageCount = menu.getPageCount();
     String pageText = "Pages: " + pageCount;
     guiGraphics.drawString(this.font, pageText, this.imageWidth - 8 - this.font.width(pageText), 12, textColor, false);
@@ -245,10 +223,10 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
   @Override
   public boolean mouseClicked(double mouseX, double mouseY, int button) {
-    // Check if clicking on page list area
+
     int listLeft = this.leftPos + PAGE_LIST_X;
     int listTop = this.topPos + PAGE_LIST_Y;
-    int slotSize = PAGE_SIZE + 2; // Same spacing as rendering
+    int slotSize = PAGE_SIZE + 2;
     int listRight = listLeft + PAGES_PER_ROW * slotSize;
     int listBottom = listTop + 2 * slotSize;
 
@@ -264,8 +242,8 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
       ItemStack carried = menu.getCarried();
 
       if (!carried.isEmpty()) {
-        // Insert page at this index
-        boolean singleItem = (button == 1); // Right-click = single
+
+        boolean singleItem = (button == 1);
         MystcraftNetwork.sendToServer(new ContainerActionPacket(
             ContainerActionPacket.Action.BOOK_BINDER_INSERT_PAGE,
             menu.containerId,
@@ -275,7 +253,7 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
         ));
         return true;
       } else if (pageIndex < pages.size()) {
-        // Remove page from this index
+
         MystcraftNetwork.sendToServer(new ContainerActionPacket(
             ContainerActionPacket.Action.BOOK_BINDER_REMOVE_PAGE,
             menu.containerId,
@@ -288,18 +266,16 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
     return super.mouseClicked(mouseX, mouseY, button);
   }
 
-  // 1.20.1 signature (3 params)
   public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
     return handleMouseScroll(mouseX, mouseY, delta);
   }
 
-  // Newer screen API compatibility overload.
   public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
     return handleMouseScroll(mouseX, mouseY, scrollY);
   }
 
   private boolean handleMouseScroll(double mouseX, double mouseY, double delta) {
-    // Scroll the page list
+
     int listLeft = this.leftPos + PAGE_LIST_X;
     int listTop = this.topPos + PAGE_LIST_Y;
     int slotSize = PAGE_SIZE + 2;
@@ -323,9 +299,9 @@ public class BookBinderScreen extends AbstractContainerScreen<BookBinderMenu> {
 
   @Override
   public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-    // Let the title field handle key input first
+
     if (titleField.isFocused()) {
-      if (keyCode == 256) { // Escape
+      if (keyCode == 256) {
         titleField.setFocused(false);
         return true;
       }

@@ -15,8 +15,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Writing Desk block entity model.
- * Uses a 256x128 texture (displayed as 2048x1024 in the actual file - 8x scale).
+ * Writing Desk block entity model. Uses a 256x128 texture (displayed as
+ * 2048x1024 in the actual file - 8x scale).
  */
 public class WritingDeskModel extends Model {
 
@@ -60,42 +60,36 @@ public class WritingDeskModel extends Model {
     MeshDefinition meshdefinition = new MeshDefinition();
     PartDefinition partdefinition = meshdefinition.getRoot();
 
-    // Bottom shelf
     partdefinition.addOrReplaceChild("bottom_shelf",
         CubeListBuilder.create()
             .texOffs(0, 34)
             .addBox(0F, 0F, 0F, 14, 1, 15),
         PartPose.offset(-7F, 23F, -8F));
 
-    // Middle shelf
     partdefinition.addOrReplaceChild("middle_shelf",
         CubeListBuilder.create()
             .texOffs(0, 17)
             .addBox(0F, 0F, 0F, 30, 2, 15),
         PartPose.offset(-7F, 15F, -8F));
 
-    // Desk top surface
     partdefinition.addOrReplaceChild("desk_top",
         CubeListBuilder.create()
             .texOffs(0, 0)
             .addBox(0F, 0F, 0F, 32, 1, 16),
         PartPose.offset(-8F, 8F, -8F));
 
-    // Desk middle vertical divider
     partdefinition.addOrReplaceChild("desk_middle",
         CubeListBuilder.create()
             .texOffs(94, 36)
             .addBox(0F, 0F, 0F, 2, 6, 15),
         PartPose.offset(7F, 9F, -8F));
 
-    // Desk left side
     partdefinition.addOrReplaceChild("desk_left",
         CubeListBuilder.create()
             .texOffs(90, 1)
             .addBox(0F, 0F, 0F, 1, 15, 16),
         PartPose.offset(-8F, 9F, -8F));
 
-    // Desk right side
     partdefinition.addOrReplaceChild("desk_right",
         CubeListBuilder.create()
             .texOffs(90, 1)
@@ -103,57 +97,48 @@ public class WritingDeskModel extends Model {
             .addBox(0F, 0F, 0F, 1, 15, 16),
         PartPose.offset(23F, 9F, -8F));
 
-    // Desk back
     partdefinition.addOrReplaceChild("desk_back",
         CubeListBuilder.create()
             .texOffs(128, 0)
             .addBox(0F, 0F, 0F, 30, 15, 1),
         PartPose.offset(-7F, 9F, 7F));
 
-    // Desk middle bottom
     partdefinition.addOrReplaceChild("desk_middle_bottom",
         CubeListBuilder.create()
             .texOffs(77, 42)
             .addBox(0F, 0F, 0F, 1, 7, 15),
         PartPose.offset(7F, 17F, -8F));
 
-    // Top hutch back
     partdefinition.addOrReplaceChild("desk_top_back",
         CubeListBuilder.create()
             .texOffs(128, 16)
             .addBox(0F, 0F, 0F, 32, 12, 1),
         PartPose.offset(-8F, -4F, 7F));
 
-    // Top hutch left
     partdefinition.addOrReplaceChild("desk_top_left",
         CubeListBuilder.create()
             .texOffs(146, 40)
             .addBox(0F, 0F, 0F, 1, 12, 6),
         PartPose.offset(-8F, -4F, 1F));
 
-    // Top hutch right
     partdefinition.addOrReplaceChild("desk_top_right",
         CubeListBuilder.create()
             .texOffs(146, 40)
             .addBox(0F, 0F, 0F, 1, 12, 6),
         PartPose.offset(23F, -4F, 1F));
 
-    // Top shelf
     partdefinition.addOrReplaceChild("desk_top_top",
         CubeListBuilder.create()
             .texOffs(128, 29)
             .addBox(0F, 0F, 0F, 30, 1, 6),
         PartPose.offset(-7F, -4F, 1F));
 
-    // Floor to close off bottom - single piece covering the full desk footprint
-    // Positioned at Y=22.99 to avoid z-fighting with ground
     partdefinition.addOrReplaceChild("floor",
         CubeListBuilder.create()
             .texOffs(0, 34)
             .addBox(0F, 0.01F, 0F, 32, 1, 16),
         PartPose.offset(-8F, 23F, -8F));
 
-    // Empty placeholder to satisfy model part requirements (no geometry)
     partdefinition.addOrReplaceChild("floor2",
         CubeListBuilder.create(),
         PartPose.ZERO);

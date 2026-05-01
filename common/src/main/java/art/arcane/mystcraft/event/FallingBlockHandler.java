@@ -8,7 +8,8 @@ import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Prevents gravity blocks from falling in Mystcraft Ages when disabled by config.
+ * Prevents gravity blocks from falling in Mystcraft Ages when disabled by
+ * config.
  */
 public final class FallingBlockHandler {
 

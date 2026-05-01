@@ -17,43 +17,35 @@ public final class ProceduralUI {
   private ProceduralUI() {
   }
 
-  // ---------------------------------------------------------------------------
-  // Borders
-  // ---------------------------------------------------------------------------
-
   /**
-   * Draws a 1-pixel raised 3D border (light top/left, dark bottom/right).
-   * Used for buttons and elements that should appear to sit above the surface.
+   * Draws a 1-pixel raised 3D border (light top/left, dark bottom/right). Used
+   * for buttons and elements that should appear to sit above the surface.
    */
   public static void drawRaisedBorder(@NotNull GuiGraphics g, int x, int y, int w, int h) {
     int dark = GuiTheme.color("panel_border_dark");
     int light = GuiTheme.color("panel_border_light");
-    // Top + left edges (light)
+
     g.fill(x, y, x + w, y + 1, light);
     g.fill(x, y, x + 1, y + h, light);
-    // Bottom + right edges (dark)
+
     g.fill(x, y + h - 1, x + w, y + h, dark);
     g.fill(x + w - 1, y, x + w, y + h, dark);
   }
 
   /**
-   * Draws a 1-pixel inset 3D border (dark top/left, light bottom/right).
-   * Used for slots and recessed areas.
+   * Draws a 1-pixel inset 3D border (dark top/left, light bottom/right). Used
+   * for slots and recessed areas.
    */
   public static void drawInsetBorder(@NotNull GuiGraphics g, int x, int y, int w, int h) {
     int dark = GuiTheme.color("panel_border_dark");
     int light = GuiTheme.color("panel_border_light");
-    // Top + left edges (dark)
+
     g.fill(x, y, x + w, y + 1, dark);
     g.fill(x, y, x + 1, y + h, dark);
-    // Bottom + right edges (light)
+
     g.fill(x, y + h - 1, x + w, y + h, light);
     g.fill(x + w - 1, y, x + w, y + h, light);
   }
-
-  // ---------------------------------------------------------------------------
-  // Panels
-  // ---------------------------------------------------------------------------
 
   /**
    * Draws a standard container panel with raised 3D border and background fill.
@@ -90,10 +82,6 @@ public final class ProceduralUI {
     g.fill(x, y + 1, x + w, y + 2, GuiTheme.color("panel_border_light"));
   }
 
-  // ---------------------------------------------------------------------------
-  // Slots (18x18 standard inventory slots)
-  // ---------------------------------------------------------------------------
-
   /**
    * Draws a single 18x18 inventory slot with the standard inset 3D look.
    * Matches the appearance produced by vanilla Minecraft slot textures.
@@ -109,12 +97,12 @@ public final class ProceduralUI {
     int bg = GuiTheme.color("slot_bg");
     int dark = GuiTheme.color("panel_border_dark");
     int light = GuiTheme.color("panel_border_light");
-    // Slot interior
+
     g.fill(x + 1, y + 1, x + w - 1, y + h - 1, bg);
-    // Top + left edges (dark/inset)
+
     g.fill(x, y, x + w, y + 1, dark);
     g.fill(x, y, x + 1, y + h, dark);
-    // Bottom + right edges (light/highlight)
+
     g.fill(x + w - 1, y, x + w, y + h, light);
     g.fill(x, y + h - 1, x + w, y + h, light);
   }
@@ -133,10 +121,6 @@ public final class ProceduralUI {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Material grain backgrounds (for cover surfaces, page surfaces, etc.)
-  // ---------------------------------------------------------------------------
-
   /**
    * Fills a region with a paper-like background: cream base, faint horizontal
    * lines mimicking ruled parchment.
@@ -144,7 +128,7 @@ public final class ProceduralUI {
   public static void drawPaperBackground(@NotNull GuiGraphics g, int x, int y, int w, int h) {
     g.fill(x, y, x + w, y + h, GuiTheme.color("page_bg"));
     int line = GuiTheme.color("page_line");
-    // Subtle ruled lines every 8 px
+
     for (int ly = y + 6; ly < y + h - 4; ly += 8) {
       g.fill(x + 4, ly, x + w - 4, ly + 1, line);
     }
@@ -160,7 +144,7 @@ public final class ProceduralUI {
     g.fill(x, y, x + w, y + h, baseColor);
     int dark = darken(baseColor, 0.78f);
     int light = lighten(baseColor, 1.15f);
-    // Pseudo-random stippling using a hash of pixel coordinates.
+
     for (int dy = 0; dy < h; dy++) {
       for (int dx = 0; dx < w; dx++) {
         int hash = (dx * 1664525 + dy * 1013904223) ^ (baseColor >>> 8);
@@ -195,10 +179,6 @@ public final class ProceduralUI {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Icons / glyphs (small reusable shapes)
-  // ---------------------------------------------------------------------------
-
   /**
    * Draws a small filled triangle warning glyph (yellow with a dark outline).
    * The glyph fits inside the given width/height.
@@ -207,7 +187,7 @@ public final class ProceduralUI {
     int border = 0xFF202020;
     int fill = 0xFFFFCC22;
     int center = 0xFF3A2A04;
-    // Triangle outline: rasterise row by row.
+
     for (int row = 0; row < h; row++) {
       float t = row / (float) (h - 1);
       int halfWidth = (int) (t * (w / 2));
@@ -215,13 +195,13 @@ public final class ProceduralUI {
       int rightX = x + (w / 2) + halfWidth + 1;
       int rowY = y + row;
       g.fill(leftX, rowY, rightX, rowY + 1, fill);
-      // Outline pixels at the edges of this row
+
       g.fill(leftX, rowY, leftX + 1, rowY + 1, border);
       g.fill(rightX - 1, rowY, rightX, rowY + 1, border);
     }
-    // Bottom border
+
     g.fill(x, y + h - 1, x + w, y + h, border);
-    // Exclamation mark in the center
+
     int midX = x + w / 2;
     int markTop = y + h / 4;
     int markBottom = y + (h * 5) / 8;
@@ -258,7 +238,8 @@ public final class ProceduralUI {
   }
 
   /**
-   * Draws a 1px ring at the given radius — used to outline a {@link #drawDisc}.
+   * Draws a 1px ring at the given radius — used to outline a
+   * {@link #drawDisc}.
    */
   public static void drawRing(@NotNull GuiGraphics g, int centerX, int centerY, int radius, int color) {
     int r2Outer = radius * radius;
@@ -266,9 +247,9 @@ public final class ProceduralUI {
     for (int dy = -radius; dy <= radius; dy++) {
       int dxOuter = (int) Math.floor(Math.sqrt(Math.max(0, r2Outer - dy * dy)));
       int dxInner = (int) Math.floor(Math.sqrt(Math.max(0, r2Inner - dy * dy)));
-      // Left arc segment
+
       g.fill(centerX - dxOuter, centerY + dy, centerX - dxInner, centerY + dy + 1, color);
-      // Right arc segment
+
       g.fill(centerX + dxInner, centerY + dy, centerX + dxOuter + 1, centerY + dy + 1, color);
     }
   }
@@ -282,15 +263,13 @@ public final class ProceduralUI {
     int base = GuiTheme.color("ink_base");
     drawDisc(g, centerX, centerY, radius, rim);
     drawDisc(g, centerX, centerY, radius - 2, base);
-    // Subtle outer outline (1 px darker than rim)
+
     drawRing(g, centerX, centerY, radius + 1, darken(rim, 0.6f));
   }
 
-  // ---------------------------------------------------------------------------
-  // Color manipulation helpers
-  // ---------------------------------------------------------------------------
-
-  /** Multiplies the RGB components of an ARGB color by {@code factor}. */
+  /**
+   * Multiplies the RGB components of an ARGB color by {@code factor}.
+   */
   public static int darken(int argb, float factor) {
     int a = (argb >>> 24) & 0xFF;
     int r = clamp((int) (((argb >>> 16) & 0xFF) * factor));
@@ -299,12 +278,16 @@ public final class ProceduralUI {
     return (a << 24) | (r << 16) | (g << 8) | b;
   }
 
-  /** Same as {@link #darken(int, float)} but for factors > 1.0. */
+  /**
+   * Same as {@link #darken(int, float)} but for factors > 1.0.
+   */
   public static int lighten(int argb, float factor) {
     return darken(argb, factor);
   }
 
-  /** Linearly interpolates between two ARGB colors. */
+  /**
+   * Linearly interpolates between two ARGB colors.
+   */
   public static int lerp(int a, int b, float t) {
     int aA = (a >>> 24) & 0xFF;
     int aR = (a >>> 16) & 0xFF;
@@ -327,7 +310,9 @@ public final class ProceduralUI {
     return v;
   }
 
-  /** Direction enum for chevron icons. */
+  /**
+   * Direction enum for chevron icons.
+   */
   public enum ChevronDir {
     UP, DOWN, LEFT, RIGHT
   }

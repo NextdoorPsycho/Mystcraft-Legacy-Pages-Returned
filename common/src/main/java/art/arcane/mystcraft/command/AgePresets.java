@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Curated Age presets that produce well-structured dimensions with high variance.
- * Each preset defines a theme with fixed symbols and pools of random picks,
- * covering the full symbol catalog including timescale, ore control, environment
- * effects, perlin worms, and the complete color/modifier palette.
+ * Curated Age presets that produce well-structured dimensions with high
+ * variance. Each preset defines a theme with fixed symbols and pools of random
+ * picks, covering the full symbol catalog including timescale, ore control,
+ * environment effects, perlin worms, and the complete color/modifier palette.
  * <p>
  * Biome symbol IDs follow the pattern: mystcraft:biome_<biome_path>
  */
@@ -20,11 +20,6 @@ public final class AgePresets {
 
   static {
 
-    // ===================================================================
-    // --- Overworld Variants ---
-    // ===================================================================
-
-    // 1. Classic Age - Vanilla-like, safe starting age
     register(new Preset("classic", "Classic Age",
         list("mystcraft:terrain_normal", "mystcraft:biome_native", "mystcraft:lighting_normal",
             "mystcraft:weather_normal", "mystcraft:caves", "mystcraft:ravines",
@@ -43,7 +38,6 @@ public final class AgePresets {
         )
     ));
 
-    // 2. Lush Paradise - Bright, rainbow, many biomes
     register(new Preset("paradise", "Lush Paradise",
         list("mystcraft:terrain_normal", "mystcraft:biome_medium",
             "mystcraft:lighting_bright", "mystcraft:weather_normal",
@@ -66,7 +60,6 @@ public final class AgePresets {
         )
     ));
 
-    // 3. Towering Peaks - Mountain peaks, snow, aurora, amplified
     register(new Preset("alpine", "Towering Peaks",
         list("mystcraft:terrain_amplified", "mystcraft:biome_large",
             "mystcraft:lighting_normal",
@@ -87,7 +80,6 @@ public final class AgePresets {
         )
     ));
 
-    // 4. Drowned World - Ocean-heavy with islands
     register(new Preset("archipelago", "Drowned World",
         list("mystcraft:terrain_normal", "mystcraft:biome_large",
             "mystcraft:lighting_normal",
@@ -107,7 +99,6 @@ public final class AgePresets {
         )
     ));
 
-    // 5. Scorched Sands - Hot, dry, desert/badlands mix
     register(new Preset("savanna", "Scorched Sands",
         list("mystcraft:terrain_normal", "mystcraft:biome_large",
             "mystcraft:lighting_bright",
@@ -128,7 +119,6 @@ public final class AgePresets {
         )
     ));
 
-    // 6. Ancient Woodland - Dense forests, dark forest, mushroom fields
     register(new Preset("woodland", "Ancient Woodland",
         list("mystcraft:terrain_normal", "mystcraft:biome_huge",
             "mystcraft:lighting_normal",
@@ -151,11 +141,6 @@ public final class AgePresets {
         )
     ));
 
-    // ===================================================================
-    // --- Exotic Variants ---
-    // ===================================================================
-
-    // 7. Sky Archipelago - Floating islands, bright sky, no sea
     register(new Preset("skylands", "Sky Archipelago",
         list("mystcraft:terrain_skylands", "mystcraft:biome_small",
             "mystcraft:lighting_bright", "mystcraft:weather_off",
@@ -175,7 +160,6 @@ public final class AgePresets {
         )
     ));
 
-    // 8. Vast Caverns - Underground cave terrain, dark, sculk
     register(new Preset("cavern", "Vast Caverns",
         list("mystcraft:terrain_cave", "mystcraft:biome_medium",
             "mystcraft:lighting_dark", "mystcraft:weather_off", "mystcraft:caves",
@@ -197,7 +181,6 @@ public final class AgePresets {
         )
     ));
 
-    // 9. Ethereal Realm - Lavender/jade fantasy, crystal formations
     register(new Preset("ethereal", "Ethereal Realm",
         list("mystcraft:terrain_amplified", "mystcraft:biome_small",
             "mystcraft:lighting_bright",
@@ -222,7 +205,6 @@ public final class AgePresets {
         )
     ));
 
-    // 10. Eternal Twilight - Perpetual dusk, slow time, eerie
     register(new Preset("twilight", "Eternal Twilight",
         list("mystcraft:terrain_normal", "mystcraft:biome_medium",
             "mystcraft:lighting_normal",
@@ -245,7 +227,6 @@ public final class AgePresets {
         )
     ));
 
-    // 11. Fungal Kingdom - Mushroom biomes, huge trees, teal/lime
     register(new Preset("fungal", "Fungal Kingdom",
         list("mystcraft:terrain_normal", "mystcraft:biome_huge",
             "mystcraft:lighting_normal",
@@ -267,7 +248,6 @@ public final class AgePresets {
         )
     ));
 
-    // 12. Ancient Civilization - Ancient cities, dark, bronze/olive theme
     register(new Preset("ancient", "Ancient Civilization",
         list("mystcraft:terrain_normal", "mystcraft:biome_large",
             "mystcraft:lighting_dark",
@@ -291,11 +271,6 @@ public final class AgePresets {
         )
     ));
 
-    // ===================================================================
-    // --- Hostile Variants ---
-    // ===================================================================
-
-    // 13. Infernal Wastes - Nether terrain, lava sea, crimson
     register(new Preset("infernal", "Infernal Wastes",
         list("mystcraft:terrain_nether", "mystcraft:biome_medium",
             "mystcraft:lighting_nether",
@@ -317,7 +292,6 @@ public final class AgePresets {
         )
     ));
 
-    // 14. Void Rift - End terrain with void, floating islands
     register(new Preset("void_rift", "Void Rift",
         list("mystcraft:terrain_end", "mystcraft:biome_medium",
             "mystcraft:lighting_dark", "mystcraft:weather_off", "mystcraft:color_indigo",
@@ -335,7 +309,6 @@ public final class AgePresets {
         )
     ));
 
-    // 15. Blood Moon Rising - Crimson everything, lightning, creepy tendrils
     register(new Preset("blood_moon", "Blood Moon Rising",
         list("mystcraft:terrain_normal", "mystcraft:biome_large",
             "mystcraft:lighting_dark",
@@ -358,7 +331,6 @@ public final class AgePresets {
         )
     ));
 
-    // 16. Blighted Wasteland - Wasteland, scorched, meteors, no ores
     register(new Preset("desolation", "Blighted Wasteland",
         list("mystcraft:terrain_flat", "mystcraft:biome_single",
             "mystcraft:lighting_dark",
@@ -377,7 +349,6 @@ public final class AgePresets {
         )
     ));
 
-    // 17. Shattered Realm - Mixed biomes from all dimensions, unstable
     register(new Preset("chaos", "Shattered Realm",
         list("mystcraft:terrain_checkerboard", "mystcraft:biome_grid",
             "mystcraft:lighting_normal",
@@ -402,11 +373,6 @@ public final class AgePresets {
         )
     ));
 
-    // ===================================================================
-    // --- Themed Variants ---
-    // ===================================================================
-
-    // 18. Miner's Paradise - Dense ores, all extra ores, caves everywhere
     register(new Preset("miner", "Miner's Paradise",
         list("mystcraft:terrain_normal", "mystcraft:biome_native",
             "mystcraft:lighting_normal",
@@ -427,7 +393,6 @@ public final class AgePresets {
         )
     ));
 
-    // 19. Hoard of Ages - Many structures, huge biomes, long days
     register(new Preset("explorer", "Hoard of Ages",
         list("mystcraft:terrain_normal", "mystcraft:biome_medium",
             "mystcraft:lighting_normal",
@@ -448,7 +413,6 @@ public final class AgePresets {
         )
     ));
 
-    // 20. Glacial Tomb - Ice age, blizzard, packed ice
     register(new Preset("frozen", "Glacial Tomb",
         list("mystcraft:terrain_normal", "mystcraft:biome_large",
             "mystcraft:lighting_bright", "mystcraft:weather_blizzard",
@@ -471,7 +435,6 @@ public final class AgePresets {
         )
     ));
 
-    // 21. Sanctuary - Anti-PVP, star fissure, rainbow, lush
     register(new Preset("peaceful", "Sanctuary",
         list("mystcraft:terrain_normal", "mystcraft:biome_medium",
             "mystcraft:lighting_bright",
@@ -494,7 +457,6 @@ public final class AgePresets {
         )
     ));
 
-    // 22. Temporal Rift - Fast time, accelerated, short days, blend terrain
     register(new Preset("temporal", "Temporal Rift",
         list("mystcraft:terrain_blend", "mystcraft:biome_small",
             "mystcraft:lighting_normal",
@@ -517,11 +479,6 @@ public final class AgePresets {
         )
     ));
 
-    // ===================================================================
-    // --- Extreme Variants ---
-    // ===================================================================
-
-    // 23. Horrible Instability - All negative effects, horrible instability
     register(new Preset("unstable", "Horrible Instability",
         list("mystcraft:terrain_normal", "mystcraft:biome_small",
             "mystcraft:lighting_dark",
@@ -549,7 +506,6 @@ public final class AgePresets {
         )
     ));
 
-    // 24. The Empty - Empty void, dark, star fissures only
     register(new Preset("void", "The Empty",
         list("mystcraft:terrain_void", "mystcraft:biome_single",
             "mystcraft:lighting_dark", "mystcraft:weather_off",
@@ -563,7 +519,6 @@ public final class AgePresets {
         )
     ));
 
-    // 25. Corrupted Overworld - Nether biomes on overworld terrain, storms, lava
     register(new Preset("corrupted", "Corrupted Overworld",
         list("mystcraft:terrain_normal", "mystcraft:biome_medium",
             "mystcraft:lighting_nether",
@@ -622,6 +577,8 @@ public final class AgePresets {
   /**
    * A curated preset definition.
    */
-  public record Preset(String name, String displayName, List<String> fixedSymbols, List<RandomPool> randomPools) {
+  public record Preset(String name, String displayName,
+                       List<String> fixedSymbols,
+                       List<RandomPool> randomPools) {
   }
 }

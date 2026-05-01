@@ -5,6 +5,9 @@ import com.mojang.authlib.GameProfile;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
+/**
+ * Builds and reads connection cookies without forcing common code onto one loader's mapped signature.
+ */
 public final class CommonListenerCookieCompat {
 
   private CommonListenerCookieCompat() {

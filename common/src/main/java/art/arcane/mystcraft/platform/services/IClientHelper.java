@@ -4,9 +4,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 
 /**
- * Abstracts client-side registration operations.
- * Handles menu screen bindings, entity renderers, block entity renderers, model layers, and item colors.
- * Also provides version-specific screen rendering utilities.
+ * Abstracts client-side registration operations. Handles menu screen bindings,
+ * entity renderers, block entity renderers, model layers, and item colors. Also
+ * provides version-specific screen rendering utilities.
  */
 public interface IClientHelper {
 

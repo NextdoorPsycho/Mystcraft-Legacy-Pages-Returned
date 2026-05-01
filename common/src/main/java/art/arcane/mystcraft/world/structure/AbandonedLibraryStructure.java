@@ -17,8 +17,8 @@ import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import java.util.Optional;
 
 /**
- * Abandoned Library structure that spawns in the Overworld.
- * Contains bookshelves, lecterns with symbol pages, and Mystcraft artifacts.
+ * Abandoned Library structure that spawns in the Overworld. Contains
+ * bookshelves, lecterns with symbol pages, and Mystcraft artifacts.
  */
 public class AbandonedLibraryStructure extends Structure {
 
@@ -61,12 +61,11 @@ public class AbandonedLibraryStructure extends Structure {
 
   @Override
   public Optional<GenerationStub> findGenerationPoint(GenerationContext context) {
-    // Check if the chunk position is valid for generation
+
     if (!checkLocation(context)) {
       return Optional.empty();
     }
 
-    // Use jigsaw placement for structure generation
     return JigsawPlacement.addPieces(
         context,
         this.startPool,
@@ -79,14 +78,10 @@ public class AbandonedLibraryStructure extends Structure {
     );
   }
 
-  /**
-   * Checks if the location is suitable for structure generation.
-   */
   private boolean checkLocation(GenerationContext context) {
     ChunkPos chunkPos = context.chunkPos();
     WorldgenRandom random = context.random();
 
-    // Get terrain height at the chunk center
     int centerX = chunkPos.getMiddleBlockX();
     int centerZ = chunkPos.getMiddleBlockZ();
 
@@ -97,12 +92,10 @@ public class AbandonedLibraryStructure extends Structure {
         context.randomState()
     );
 
-    // Don't generate if too high or too low
     if (surfaceY < 60 || surfaceY > 100) {
       return false;
     }
 
-    // Check for relatively flat terrain
     int corner1 = context.chunkGenerator().getFirstOccupiedHeight(
         centerX - 8, centerZ - 8,
         Heightmap.Types.WORLD_SURFACE_WG,
@@ -117,7 +110,7 @@ public class AbandonedLibraryStructure extends Structure {
     );
 
     int heightDiff = Math.abs(corner1 - corner2);
-    return heightDiff <= 4; // Relatively flat
+    return heightDiff <= 4;
   }
 
   @Override

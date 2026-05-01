@@ -22,19 +22,30 @@
             "a": 75,
             "b": {
               "op": "mul",
-              "a": { "op": "noise2", "scale": 0.01, "octaves": 3, "seed": 8282 },
+              "a": {
+                "op": "noise2",
+                "scale": 0.01,
+                "octaves": 3,
+                "seed": 8282
+              },
               "b": 20
             }
           },
           "b": {
             "op": "add",
-            "a": { "var": "y" },
+            "a": {
+              "var": "y"
+            },
             "b": {
               "op": "mul",
               "a": {
                 "op": "sub",
                 "a": 1,
-                "b": { "op": "cell_distance", "mode": "square", "size": 28 }
+                "b": {
+                  "op": "cell_distance",
+                  "mode": "square",
+                  "size": 28
+                }
               },
               "b": 40
             }

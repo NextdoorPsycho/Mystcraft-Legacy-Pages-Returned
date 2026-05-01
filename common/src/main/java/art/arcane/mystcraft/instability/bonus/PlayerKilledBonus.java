@@ -19,9 +19,9 @@ import java.util.UUID;
  * Death caused by another player gives full penalty, other deaths give half.
  * The penalty decays over time.
  * <p>
- * Event registration is handled by the platform module. The common logic methods
- * (onPlayerDeath, onPlayerLogin, onPlayerChangedDimension) are called from
- * platform-specific event handlers.
+ * Event registration is handled by the platform module. The common logic
+ * methods (onPlayerDeath, onPlayerLogin, onPlayerChangedDimension) are called
+ * from platform-specific event handlers.
  */
 public class PlayerKilledBonus implements IInstabilityBonus {
 
@@ -58,13 +58,13 @@ public class PlayerKilledBonus implements IInstabilityBonus {
 
   @Override
   public int getValue() {
-    // Return negative value (penalty = increases instability)
+
     return -(int) currentPenalty;
   }
 
   @Override
   public void tick(ServerLevel level) {
-    // Decay the penalty over time
+
     if (currentPenalty > 0) {
       currentPenalty = Math.max(0, currentPenalty - decayRate);
     }
@@ -77,12 +77,11 @@ public class PlayerKilledBonus implements IInstabilityBonus {
    * @param killerPlayer The player who killed them, or null if not a PvP death
    */
   public void onPlayerDeath(Player player, Player killerPlayer) {
-    // Check if this is our tracked player
+
     if (!player.getUUID().equals(playerId)) {
       return;
     }
 
-    // Check if death occurred in our dimension
     if (!AgeDimensionFactory.isMystcraftAge(player.level().dimension())) {
       return;
     }
@@ -92,21 +91,21 @@ public class PlayerKilledBonus implements IInstabilityBonus {
       return;
     }
 
-    // Check if killed by another player (PvP death)
     if (killerPlayer != null && !killerPlayer.getUUID().equals(playerId)) {
-      // Full penalty for PvP death
+
       currentPenalty = maxPenalty;
       announceToAge(player.level(), "instability.bonus.death",
           playerName, killerPlayer.getName().getString());
     } else {
-      // Half penalty for other deaths
+
       currentPenalty = Math.max(currentPenalty, maxPenalty / 2.0f);
       announceToAge(player.level(), "instability.bonus.death.partial", playerName);
     }
   }
 
   /**
-   * Called when a player logs in. Should be invoked from platform event handlers.
+   * Called when a player logs in. Should be invoked from platform event
+   * handlers.
    */
   public void onPlayerLogin(ServerPlayer player) {
     if (!player.getUUID().equals(playerId)) {
@@ -124,7 +123,8 @@ public class PlayerKilledBonus implements IInstabilityBonus {
   }
 
   /**
-   * Called when a player changes dimension. Should be invoked from platform event handlers.
+   * Called when a player changes dimension. Should be invoked from platform
+   * event handlers.
    */
   public void onPlayerChangedDimension(ServerPlayer player, ResourceKey<Level> to) {
     if (!player.getUUID().equals(playerId)) {
@@ -155,18 +155,12 @@ public class PlayerKilledBonus implements IInstabilityBonus {
     return dimensionId;
   }
 
-  /**
-   * Gets the Age UID from a level.
-   */
   private int getAgeUID(Level level) {
     MinecraftServer server = Mystcraft.getCurrentServer();
     if (server == null) return -1;
     return AgeManager.get(server).getAgeUID(level.dimension());
   }
 
-  /**
-   * Gets the Age UID from a dimension key.
-   */
   private int getAgeUIDFromKey(ResourceKey<Level> key) {
     MinecraftServer server = Mystcraft.getCurrentServer();
     if (server == null) return -1;
@@ -186,6 +180,6 @@ public class PlayerKilledBonus implements IInstabilityBonus {
    * Cleans up this bonus tracker.
    */
   public void cleanup() {
-    // No event bus to unregister from in common - platform handles cleanup
+
   }
 }

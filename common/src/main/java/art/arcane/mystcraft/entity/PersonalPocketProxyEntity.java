@@ -10,7 +10,6 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
@@ -20,15 +19,15 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 
 /**
- * A server-owned body proxy left behind while a player is inside their personal pocket.
+ * A server-owned body proxy left behind while a player is inside their personal
+ * pocket.
  */
 public class PersonalPocketProxyEntity extends LivingEntity {
 
@@ -64,6 +63,18 @@ public class PersonalPocketProxyEntity extends LivingEntity {
         .add(Attributes.MAX_HEALTH, 20.0D)
         .add(Attributes.MOVEMENT_SPEED, 0.0D)
         .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D);
+  }
+
+  @Nullable
+  private static Property firstTextureProperty(GameProfile profile) {
+    if (profile == null) {
+      return null;
+    }
+    Collection<Property> textures = profile.getProperties().get(TEXTURES_PROPERTY);
+    if (textures == null || textures.isEmpty()) {
+      return null;
+    }
+    return textures.iterator().next();
   }
 
   @Override
@@ -231,17 +242,5 @@ public class PersonalPocketProxyEntity extends LivingEntity {
     if (returnLink != null) {
       tag.put(TAG_RETURN_LINK, returnLink.copy());
     }
-  }
-
-  @Nullable
-  private static Property firstTextureProperty(GameProfile profile) {
-    if (profile == null) {
-      return null;
-    }
-    Collection<Property> textures = profile.getProperties().get(TEXTURES_PROPERTY);
-    if (textures == null || textures.isEmpty()) {
-      return null;
-    }
-    return textures.iterator().next();
   }
 }

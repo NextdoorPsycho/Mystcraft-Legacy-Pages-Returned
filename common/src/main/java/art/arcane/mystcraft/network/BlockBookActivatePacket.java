@@ -11,8 +11,8 @@ import net.minecraft.world.level.block.entity.LecternBlockEntity;
 
 /**
  * Packet sent from client to server to activate a book on a vanilla Lectern.
- * This is sent when the player clicks the "Link" button in the book GUI
- * that was opened from a lectern.
+ * This is sent when the player clicks the "Link" button in the book GUI that
+ * was opened from a lectern.
  */
 public class BlockBookActivatePacket {
 
@@ -41,12 +41,10 @@ public class BlockBookActivatePacket {
         return;
       }
 
-      // Validate distance - player must be close enough to interact
       if (player.blockPosition().distSqr(packet.blockPos) > MAX_INTERACTION_DISTANCE_SQ) {
         return;
       }
 
-      // Get the block entity - vanilla LecternBlockEntity
       BlockEntity be = player.level().getBlockEntity(packet.blockPos);
       ItemStack book;
 
@@ -60,7 +58,6 @@ public class BlockBookActivatePacket {
         return;
       }
 
-      // Activate the book
       if (book.getItem() instanceof LinkbookItem linkbook) {
         linkbook.activate(book, player.level(), player);
       } else if (book.getItem() instanceof AgebookItem agebook) {

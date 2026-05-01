@@ -10,13 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Fabric-side configuration for Mystcraft 1.20.1.
- * Uses TOML file storage to match Forge format.
- * Fields expose .get() methods to match the ForgeConfigSpec API used by common code.
+ * Fabric-side configuration for Mystcraft 1.20.1. Uses TOML file storage to
+ * match Forge format. Fields expose .get() methods to match the ForgeConfigSpec
+ * API used by common code.
  */
 public class FabricMystcraftConfig {
 
-  // --- General ---
   public static final BooleanValue giveGuidebookOnFirstSpawn = new BooleanValue(true);
   public static final IntValue maxSymbolsPerBook = new IntValue(50);
   public static final BooleanValue deleteAgesOnStartup = new BooleanValue(false);
@@ -35,10 +34,10 @@ public class FabricMystcraftConfig {
   public static final BooleanValue safeStories = new BooleanValue(true);
   public static final BooleanValue droppedBooksBecomeLivingEntities = new BooleanValue(true);
   public static final BooleanValue dropBooksOnRead = new BooleanValue(true);
-  // --- Procedural UI / book-cover toggles ---
+
   public static final BooleanValue proceduralUiEnabled = new BooleanValue(true);
   public static final BooleanValue proceduralBookCoversEnabled = new BooleanValue(true);
-  // --- Personal Pocket Dimension ---
+
   public static final IntValue pocketInnerHalfSizeXZ = new IntValue(24);
   public static final IntValue pocketInnerHalfSizeY = new IntValue(24);
   public static final IntValue pocketInnerThickness = new IntValue(3);
@@ -55,27 +54,27 @@ public class FabricMystcraftConfig {
       "minecraft:cherry_planks"
   )));
   public static final StringValue pocketOuterBlock = new StringValue("minecraft:bedrock");
-  // --- Instability ---
+
   public static final BooleanValue instabilityEnabled = new BooleanValue(true);
   public static final BooleanValue deathEffectsEnabled = new BooleanValue(true);
   public static final BooleanValue allowUnstableAges = new BooleanValue(true);
   public static final DoubleValue instabilityMultiplier = new DoubleValue(1.0);
   public static final DoubleValue maxAllowedInstability = new DoubleValue(150.0);
-  // --- Instability Thresholds ---
+
   public static final DoubleValue thresholdDecay = new DoubleValue(40.0);
   public static final DoubleValue thresholdTransmute = new DoubleValue(50.0);
   public static final DoubleValue thresholdLightning = new DoubleValue(70.0);
   public static final DoubleValue thresholdMeteor = new DoubleValue(70.0);
   public static final DoubleValue thresholdPoison = new DoubleValue(80.0);
   public static final DoubleValue thresholdWither = new DoubleValue(100.0);
-  // --- Effect Chances ---
+
   public static final DoubleValue chanceDecay = new DoubleValue(0.001);
   public static final DoubleValue chanceTransmute = new DoubleValue(0.002);
   public static final DoubleValue chanceLightning = new DoubleValue(0.0005);
   public static final DoubleValue chanceMeteor = new DoubleValue(0.0002);
   public static final DoubleValue chancePlayerEffect = new DoubleValue(0.0001);
   private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("mystcraft-common.toml");
-  // --- Symbols ---
+
   private static final List<String> DEFAULT_DISABLED_SYMBOLS = List.of(
       "mystcraft:block_minecraft_coal_block",
       "mystcraft:block_minecraft_copper_block",
@@ -108,9 +107,6 @@ public class FabricMystcraftConfig {
 
     config.load();
 
-    // Set defaults and read values
-
-    // --- General ---
     setCommentAndDefault(config, "general.giveGuidebookOnFirstSpawn", giveGuidebookOnFirstSpawn.defaultValue,
         "Whether to give new players a copy of the Mystcraft Guidebook when they first join the world.");
     giveGuidebookOnFirstSpawn.set(config.getOrElse("general.giveGuidebookOnFirstSpawn", giveGuidebookOnFirstSpawn.defaultValue));
@@ -183,7 +179,6 @@ public class FabricMystcraftConfig {
         "When false, the open book renders with a uniform leather cover and neutral ink regardless of NBT (saves VRAM on low-end clients).");
     proceduralBookCoversEnabled.set(config.getOrElse("general.proceduralBookCoversEnabled", proceduralBookCoversEnabled.defaultValue));
 
-    // --- Personal Pocket ---
     setCommentAndDefault(config, "personal_pocket.innerHalfSizeXZ", pocketInnerHalfSizeXZ.defaultValue,
         "Half the inner void space horizontally (X/Z axes). Range: 2-4096. Default: 24 (48 block diameter).");
     pocketInnerHalfSizeXZ.set(config.getOrElse("personal_pocket.innerHalfSizeXZ", pocketInnerHalfSizeXZ.defaultValue));
@@ -212,7 +207,6 @@ public class FabricMystcraftConfig {
         "Block ID for the outer shell. Default: minecraft:bedrock");
     pocketOuterBlock.set(config.getOrElse("personal_pocket.outerBlock", pocketOuterBlock.defaultValue));
 
-    // --- Instability ---
     setCommentAndDefault(config, "instability.enabled", instabilityEnabled.defaultValue,
         "Master switch for the instability system. If false, no instability effects occur.");
     instabilityEnabled.set(config.getOrElse("instability.enabled", instabilityEnabled.defaultValue));
@@ -233,7 +227,6 @@ public class FabricMystcraftConfig {
         "Maximum instability allowed when 'allowUnstableAges' is false.");
     maxAllowedInstability.set(config.getOrElse("instability.maxAllowedInstability", maxAllowedInstability.defaultValue));
 
-    // --- Instability Thresholds ---
     setCommentAndDefault(config, "instability_thresholds.decay", thresholdDecay.defaultValue,
         "Instability threshold for decay blocks to start spreading.");
     thresholdDecay.set(config.getOrElse("instability_thresholds.decay", thresholdDecay.defaultValue));
@@ -258,7 +251,6 @@ public class FabricMystcraftConfig {
         "Instability threshold for wither effects on players (most severe).");
     thresholdWither.set(config.getOrElse("instability_thresholds.wither", thresholdWither.defaultValue));
 
-    // --- Effect Chances ---
     setCommentAndDefault(config, "instability_chances.decay", chanceDecay.defaultValue,
         "Base chance per tick for decay to spread (0.001 = 0.1%).");
     chanceDecay.set(config.getOrElse("instability_chances.decay", chanceDecay.defaultValue));
@@ -291,8 +283,6 @@ public class FabricMystcraftConfig {
       config.set(path, defaultValue);
     }
   }
-
-  // --- Value wrapper types matching ForgeConfigSpec API ---
 
   public static final class BooleanValue {
     private final boolean defaultValue;

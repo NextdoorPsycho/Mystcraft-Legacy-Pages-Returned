@@ -2,6 +2,7 @@ package art.arcane.mystcraft.client.screen;
 
 import art.arcane.mystcraft.client.gui.procedural.BookTextureFactory;
 import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolPageTextureFactory;
+import art.arcane.mystcraft.client.render.BookItemRendererBEWLR;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.AgebookItem;
@@ -29,38 +30,28 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Screen for viewing book contents (Agebooks and Linkbooks).
- * Page 0 is the title page with link panel. Click to link.
- * Navigate with left/right clicks. Agebooks have gold borders.
+ * Screen for viewing book contents (Agebooks and Linkbooks). Page 0 is the
+ * title page with link panel. Click to link. Navigate with left/right clicks.
+ * Agebooks have gold borders.
  */
 public class BookScreen extends Screen {
 
-  // Book dimensions (327x199)
   private static final int BOOK_TEX_WIDTH = 327;
   private static final int BOOK_TEX_HEIGHT = 199;
 
-  // Actual rendered size (may be scaled)
   private static final int BOOK_WIDTH = 327;
   private static final int BOOK_HEIGHT = 199;
 
-  /**
-   * Entity ID of -1 means the book is in player's hand, otherwise it's a LinkbookEntity
-   */
   private static final int HAND_BASED = -1;
 
   private final ItemStack book;
   private final InteractionHand hand;
   private final int entityId;
-  private final BlockPos blockPos;  // Non-null when book is on a vanilla Lectern
+  private final BlockPos blockPos;
   private final boolean isAgebook;
   private final boolean isLinkbook;
-  /**
-   * Decorative book treatment — drives the procedural side-border
-   * palette (gold/green/silver). See {@link BookTextureFactory.BookKind}.
-   */
   private final BookTextureFactory.BookKind bookKind;
 
-  // Pages for Agebooks
   private final List<ItemStack> pages;
   private int currentPageIndex = 0;
 
@@ -94,12 +85,6 @@ public class BookScreen extends Screen {
     this(book, InteractionHand.MAIN_HAND, HAND_BASED, blockPos);
   }
 
-  /**
-   * Full constructor for all book viewing modes.
-   *
-   * @param entityId -1 for non-entity, or the entity ID for LinkbookEntity-based
-   * @param blockPos null for non-block, or the position for the vanilla Lectern holding the book
-   */
   private BookScreen(ItemStack book, InteractionHand hand, int entityId, BlockPos blockPos) {
     super(getBookTitle(book));
     this.book = book;
@@ -110,7 +95,6 @@ public class BookScreen extends Screen {
     this.isLinkbook = book.getItem() instanceof LinkbookItem;
     this.bookKind = BookTextureFactory.detectKind(book);
 
-    // Get pages for Agebooks
     if (isAgebook && book.getItem() instanceof AgebookItem agebookItem) {
       this.pages = agebookItem.getPageList(book);
     } else {
@@ -180,79 +164,74 @@ public class BookScreen extends Screen {
     this.topPos = (this.height - BOOK_HEIGHT) / 2;
     this.xScale = 1.0f;
     this.yScale = 1.0f;
+
+    if (entityId == HAND_BASED) {
+      BookItemRendererBEWLR.setHeldBookOpen(true);
+    }
+  }
+
+  @Override
+  public void removed() {
+    super.removed();
+
+    BookItemRendererBEWLR.setHeldBookOpen(false);
   }
 
   public void renderBackground(@NotNull GuiGraphics guiGraphics) {
-    // 1.20.1 legacy signature
+
     renderBackground(guiGraphics, 0, 0, 0.0f);
   }
 
   public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-    // Don't render dark background overlay - book has its own visual backing
+
   }
 
   @Override
   public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-    // Render with custom background handling
+
     guiGraphics.pose().pushPose();
     guiGraphics.pose().translate(leftPos, topPos, 0);
     guiGraphics.pose().scale(xScale, yScale, 1);
 
-    // Draw book cover/backing using a procedurally generated texture whose
-    // appearance depends on the book's cover material, ink tint, page count,
-    // link properties, and book kind. Falls back to neutral leather for old
-    // saves.
     ResourceLocation coverTex = BookTextureFactory.getCoverTexture(book, bookKind);
     RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-    guiGraphics.blit(coverTex, 0, 7, 152, 0, 34, 192, 256, 256);  // Left border
-    guiGraphics.blit(coverTex, 34, 7, 49, 0, 103, 192, 256, 256); // Left panel
-    guiGraphics.blit(coverTex, 137, 7, 45, 0, 4, 192, 256, 256);  // Left panel edge
-    guiGraphics.blit(coverTex, 141, 7, 0, 0, 186, 192, 256, 256); // Spine + right
+    guiGraphics.blit(coverTex, 0, 7, 152, 0, 34, 192, 256, 256);
+    guiGraphics.blit(coverTex, 34, 7, 49, 0, 103, 192, 256, 256);
+    guiGraphics.blit(coverTex, 137, 7, 45, 0, 4, 192, 256, 256);
+    guiGraphics.blit(coverTex, 141, 7, 0, 0, 186, 192, 256, 256);
 
-    // Decorative side borders — the {186,0,34,192} sub-region of the cover
-    // texture is filled by BookTextureFactory with kind-specific art:
-    //   AGEBOOK       -> warm gold filigree
-    //   LINKBOOK      -> emerald green vine
-    //   PERSONAL_LINK -> silver/white star
-    // Generic / unwritten books skip this step and just show the bare cover.
     if (bookKind != BookTextureFactory.BookKind.GENERIC) {
-      guiGraphics.blit(coverTex, 0, 7, 186, 0, 34, 192, 256, 256);   // Left border
-      guiGraphics.blit(coverTex, 293, 7, 186, 0, 34, 192, 256, 256); // Right border
+      guiGraphics.blit(coverTex, 0, 7, 186, 0, 34, 192, 256, 256);
+      guiGraphics.blit(coverTex, 293, 7, 186, 0, 34, 192, 256, 256);
     }
 
-    // Draw left page parchment if not on page 0
     if (currentPageIndex > 0 && !pages.isEmpty()) {
       drawPageInterior(guiGraphics, 7, 0, 156, 195);
     }
 
-    // Draw right page with link panel
     ItemStack currentPage = getCurrentPage();
     boolean hasLinkPanel = !currentPage.isEmpty() && Page.isLinkPanel(currentPage);
 
-    // On page 0 (title page), draw the link panel
     if (currentPageIndex == 0) {
-      // Draw right page parchment under the panel
+
       drawPageInterior(guiGraphics, 163, 0, 156, 195);
-      // Link panel area (173, 20) size (132, 83)
+
       drawLinkPanel(guiGraphics, 173, 20, 132, 83);
-      // Draw title and authors on left page
+
       drawTitlePage(guiGraphics);
     } else if (hasLinkPanel) {
-      // Link panel on non-title page
+
       drawPageInterior(guiGraphics, 163, 0, 156, 195);
       drawLinkPanel(guiGraphics, 173, 20, 132, 83);
     } else if (!currentPage.isEmpty()) {
-      // Solid right page for symbol pages — overlay the procedural
-      // symbol-page texture so flipping through an Agebook actually
-      // shows what's written on each page rather than a blank parchment.
+
       drawPageInterior(guiGraphics, 163, 0, 156, 195);
       drawSymbolOnPage(guiGraphics, currentPage, 163, 0, 156, 195);
     } else {
-      // Empty page - just show solid right page
+
       drawPageInterior(guiGraphics, 163, 0, 156, 195);
     }
 
-    // Draw page numbers
     drawPageNumbers(guiGraphics);
 
     guiGraphics.pose().popPose();
@@ -260,11 +239,6 @@ public class BookScreen extends Screen {
     super.render(guiGraphics, mouseX, mouseY, partialTick);
   }
 
-  /**
-   * Draws a parchment-coloured page interior with subtle horizontal ruling
-   * and an inner shadow, replacing the legacy
-   * {@code bookui_pagel.png} / {@code bookui_pager.png} / {@code bookui_rpage_full.png} blits.
-   */
   private void drawPageInterior(GuiGraphics g, int x, int y, int w, int h) {
     int parchment = 0xFFF1E8CC;
     int shade = 0x40A88E5C;
@@ -272,34 +246,23 @@ public class BookScreen extends Screen {
     int frame = 0xFF8C6E3A;
 
     g.fill(x, y, x + w, y + h, parchment);
-    // Inner shadow at top + spine-side edge so the page reads as recessed
+
     g.fill(x, y, x + w, y + 2, shade);
     g.fill(x, y, x + 2, y + h, shade);
-    // Bottom + outer-edge highlight
+
     g.fill(x, y + h - 1, x + w, y + h, 0x30FFFFFF);
     g.fill(x + w - 1, y, x + w, y + h, 0x30FFFFFF);
-    // Frame outline
+
     g.fill(x, y, x + w, y + 1, frame);
     g.fill(x, y + h - 1, x + w, y + h, frame);
     g.fill(x, y, x + 1, y + h, frame);
     g.fill(x + w - 1, y, x + w, y + h, frame);
-    // Faint ruled lines
+
     for (int ly = y + 12; ly < y + h - 8; ly += 12) {
       g.fill(x + 8, ly, x + w - 8, ly + 1, rule);
     }
   }
 
-  /**
-   * Draws the procedural symbol-page texture (motif + glyphs + flourish
-   * + halos) centred inside the supplied page-interior rectangle.
-   * <p>
-   * The symbol-page texture is square (see
-   * {@link SymbolPageTextureFactory#TEX_SIZE}); we centre it
-   * horizontally and bias slightly upward so the page-number area
-   * ({@link #drawPageNumbers}) at {@code y=185} is left clear. A small
-   * outer margin (8 px) keeps the parchment frame visible around the
-   * symbol so the eye can still tell it's a page.
-   */
   private void drawSymbolOnPage(GuiGraphics g, ItemStack page, int x, int y, int w, int h) {
     int margin = 8;
     int square = Math.min(w, h) - margin * 2;
@@ -311,9 +274,6 @@ public class BookScreen extends Screen {
     g.blit(pageTex, sx, sy, 0, 0, square, square, square, square);
   }
 
-  /**
-   * Draws the link panel with gradient background.
-   */
   private void drawLinkPanel(GuiGraphics guiGraphics, int x, int y, int width, int height) {
     boolean visited = isTargetVisited();
     int topColor = visited ? 0xFF000044 : 0xFF000000;
@@ -323,10 +283,8 @@ public class BookScreen extends Screen {
       bottomColor = 0xFFEFEFEF;
     }
 
-    // Draw gradient rectangle
     guiGraphics.fillGradient(x, y, x + width, y + height, topColor, bottomColor);
 
-    // Show "unwritten" text only if no valid destination
     if (!hasValidDestination()) {
       Component unwrittenText = Component.translatable("gui.mystcraft.book.unwritten");
       int textWidth = this.font.width(unwrittenText);
@@ -337,15 +295,11 @@ public class BookScreen extends Screen {
     }
   }
 
-  /**
-   * Draws the title page (page 0) content.
-   */
   private void drawTitlePage(GuiGraphics guiGraphics) {
-    // Book title
+
     String bookTitle = getBookDisplayName();
     guiGraphics.drawString(this.font, bookTitle, 40, 40, 0x000000, false);
 
-    // Authors
     Collection<String> authors = getAuthors();
     int y = 55;
     if (!authors.isEmpty()) {
@@ -361,7 +315,6 @@ public class BookScreen extends Screen {
       }
     }
 
-    // Destination info
     CompoundTag linkTag = ItemStackNbt.getTag(book);
     if (linkTag != null) {
       y += 10;
@@ -385,9 +338,6 @@ public class BookScreen extends Screen {
     }
   }
 
-  /**
-   * Draws page numbers at the bottom.
-   */
   private void drawPageNumbers(GuiGraphics guiGraphics) {
     int pageCount = getPageCount();
     String pageText;
@@ -403,11 +353,10 @@ public class BookScreen extends Screen {
   @Override
   public boolean mouseClicked(double mouseX, double mouseY, int button) {
     if (button == 0) {
-      // Convert to local coordinates
+
       double localX = (mouseX - leftPos) / xScale;
       double localY = (mouseY - topPos) / yScale;
 
-      // Check link panel click (page 0 always has panel, other pages may have link panels)
       boolean hasLinkPanelOnCurrentPage = (currentPageIndex == 0) ||
           (!getCurrentPage().isEmpty() && Page.isLinkPanel(getCurrentPage()));
 
@@ -420,13 +369,11 @@ public class BookScreen extends Screen {
         }
       }
 
-      // Left page click - go left
       if (localX >= 0 && localX <= 156 && localY >= 0 && localY <= 195) {
         pageLeft();
         return true;
       }
 
-      // Right page click - go right
       if (localX >= 158 && localX <= 312 && localY >= 0 && localY <= 195) {
         pageRight();
         return true;
@@ -438,12 +385,12 @@ public class BookScreen extends Screen {
 
   @Override
   public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-    // Left arrow or A key
+
     if (keyCode == 263 || keyCode == 65) {
       pageLeft();
       return true;
     }
-    // Right arrow or D key
+
     if (keyCode == 262 || keyCode == 68) {
       pageRight();
       return true;
@@ -502,14 +449,10 @@ public class BookScreen extends Screen {
   }
 
   private boolean isTargetVisited() {
-    // For now, always return false (unvisited appearance)
-    // Could track visited ages in the future
+
     return ItemStackNbt.getTag(book) != null && LinkOptions.getDimensionUID(ItemStackNbt.getTag(book)) != null;
   }
 
-  /**
-   * Checks if the book has a valid link destination or can create one.
-   */
   private boolean hasValidDestination() {
     if (ItemStackNbt.getTag(book) == null) {
       return false;
@@ -518,17 +461,14 @@ public class BookScreen extends Screen {
     Integer dimId = LinkOptions.getDimensionUID(tag2);
     BlockPos spawn = LinkOptions.getSpawn(tag2);
 
-    // Existing books with destination
     if (dimId != null && spawn != null) {
       return true;
     }
 
-    // New Agebooks can be activated if they have a link panel
     if (isAgebook) {
       return AgebookItem.isNewAgebook(book);
     }
 
-    // Personal link books can always attempt to create their pocket
     if (isPersonalBook()) {
       return false;
     }
@@ -536,9 +476,6 @@ public class BookScreen extends Screen {
     return false;
   }
 
-  /**
-   * Checks if linking is allowed (for permission overlay).
-   */
   private boolean canLink() {
     return hasValidDestination() || isPersonalBook();
   }
@@ -547,18 +484,15 @@ public class BookScreen extends Screen {
     return book.getItem() instanceof PersonalLinkBookItem;
   }
 
-  /**
-   * Performs the link when the link panel is clicked.
-   */
   private void performLink() {
     if (blockPos != null) {
-      // Book is on a vanilla Lectern
+
       MystcraftNetwork.sendToServer(new BlockBookActivatePacket(blockPos));
     } else if (entityId == HAND_BASED) {
-      // Book is in player's hand
+
       MystcraftNetwork.sendToServer(new LinkBookActivatePacket(hand));
     } else {
-      // Book is on a LinkbookEntity
+
       MystcraftNetwork.sendToServer(new EntityBookActivatePacket(entityId));
     }
     this.onClose();

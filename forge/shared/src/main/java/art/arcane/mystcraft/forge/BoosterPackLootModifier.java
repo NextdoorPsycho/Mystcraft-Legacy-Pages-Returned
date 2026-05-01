@@ -40,7 +40,7 @@ public class BoosterPackLootModifier extends LootModifier {
 
   @Override
   protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-    // Check if booster loot is enabled
+
     if (!MystcraftConfig.enableBoosterLoot.get()) {
       return generatedLoot;
     }

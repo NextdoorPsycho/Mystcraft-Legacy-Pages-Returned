@@ -27,16 +27,15 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Links to a specific location in any dimension.
- * Right-click opens the book GUI; linking happens through activate().
- * Auto-initializes with current position when first in inventory.
- * Dropped as an entity when used for linking (unless "following" flag is set).
+ * Links to a specific location in any dimension. Right-click opens the book
+ * GUI; linking happens through activate(). Auto-initializes with current
+ * position when first in inventory. Dropped as an entity when used for linking
+ * (unless "following" flag is set).
  */
 public class LinkbookItem extends Item implements TooltipCompat {
 
   private static final float DEFAULT_MAX_HEALTH = 10.0f;
 
-  // Recursion guard to prevent StackOverflow when Minecraft calls setDamage during ItemStack deserialization
   private static final ThreadLocal<Boolean> SETTING_HEALTH = ThreadLocal.withInitial(() -> false);
 
   public LinkbookItem(Properties properties) {
@@ -45,7 +44,7 @@ public class LinkbookItem extends Item implements TooltipCompat {
 
   public static void setHealth(@NotNull ItemStack book, float health) {
     if (book.isEmpty()) return;
-    if (SETTING_HEALTH.get()) return; // Prevent recursion during ItemStack deserialization
+    if (SETTING_HEALTH.get()) return;
     SETTING_HEALTH.set(true);
     try {
       CompoundTag tag = ItemStackNbt.getOrCreateTag(book);
@@ -95,7 +94,7 @@ public class LinkbookItem extends Item implements TooltipCompat {
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
     CompoundTag tag = ItemStackNbt.getTag(stack);
     if (tag != null) {
-      // Show display name in tooltip
+
       String name = LinkOptions.getDisplayName(tag);
       if (!name.isEmpty() && !"???".equals(name)) {
         tooltip.add(Component.literal(name));
@@ -105,36 +104,54 @@ public class LinkbookItem extends Item implements TooltipCompat {
 
   @Override
   public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slotId, boolean isSelected) {
-    // Ensure the book is initialized with link data
+
     if (!level.isClientSide) {
       validate(level, stack, entity);
     }
   }
 
   /**
-   * Ensures the book has been initialized with link data.
+   * Ensures the book has been initialized with link data. Re-initialises when
+   * either no tag exists OR the tag is missing the {@code DimensionUID}/
+   * {@code Spawn} fields {@link LinkingManager#performLink} requires — which
+   * happens for stacks that have a damage tag but were never given link data
+   * (the path a fresh-from-craft book takes when dropped straight into a
+   * receptacle).
    */
   public void validate(@Nullable Level level, @NotNull ItemStack stack, @Nullable Entity entity) {
-    if (ItemStackNbt.getTag(stack) == null) {
+    CompoundTag tag = ItemStackNbt.getTag(stack);
+    if (tag == null
+        || LinkOptions.getDimensionUID(tag) == null
+        || LinkOptions.getSpawn(tag) == null) {
       initialize(level, stack, entity);
     }
   }
 
   /**
-   * Creates link info from current position. Called when the book has no tag yet.
+   * Creates link info from current position. Called when the book has no tag
+   * yet, or when the tag is missing the critical fields. Falls back to the
+   * world's spawn (a non-null block pos) when no entity is supplied so a book
+   * inserted directly into a receptacle without ever sitting in player
+   * inventory still gets a usable Spawn/DimensionUID and the portal can
+   * teleport. Preserves any existing tag fields (damage, MaxHealth, etc.) by
+   * merging into the existing tag rather than replacing it.
    */
   protected void initialize(@Nullable Level level, @NotNull ItemStack stack, @Nullable Entity entity) {
-    if (level == null || entity == null) {
+    if (level == null) {
       return;
     }
-    CompoundTag tag = new CompoundTag();
-    LinkOptions.setSpawn(tag, entity.blockPosition());
-    LinkOptions.setSpawnYaw(tag, entity.getYRot());
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
+    BlockPos spawn = entity != null ? entity.blockPosition() : BlockPos.ZERO;
+    LinkOptions.setSpawn(tag, spawn);
+    if (entity != null) {
+      LinkOptions.setSpawnYaw(tag, entity.getYRot());
+    }
     int dimId = LinkingManager.getDimensionUID(level);
     LinkOptions.setDimensionUID(tag, dimId);
 
-    // Set max health
-    tag.putFloat("MaxHealth", DEFAULT_MAX_HEALTH);
+    if (!tag.contains("MaxHealth")) {
+      tag.putFloat("MaxHealth", DEFAULT_MAX_HEALTH);
+    }
 
     ItemStackNbt.setTag(stack, tag);
   }
@@ -144,20 +161,17 @@ public class LinkbookItem extends Item implements TooltipCompat {
   public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
     ItemStack stack = player.getItemInHand(hand);
 
-    // Client opens book GUI; server handles linking through activate()
     if (level.isClientSide) {
-      // On client, open the book viewing screen
+
       art.arcane.mystcraft.client.screen.BookScreen.open(stack);
-      return InteractionResultHolder.success(stack);
     }
 
-    // On server, the GUI will handle the link via a packet/callback
-    // For now, opening the GUI is the main action
-    return InteractionResultHolder.success(stack);
+    return InteractionResultHolder.consume(stack);
   }
 
   /**
-   * Performs the actual linking. Called from the book GUI or other activation sources.
+   * Performs the actual linking. Called from the book GUI or other activation
+   * sources.
    */
   public void activate(@NotNull ItemStack stack, Level level, Entity entity) {
     if (level.isClientSide) {
@@ -169,17 +183,14 @@ public class LinkbookItem extends Item implements TooltipCompat {
 
     CompoundTag linkData = ItemStackNbt.getTag(stack);
 
-    // Check link info validity
     BlockPos spawn = LinkOptions.getSpawn(linkData);
     Integer dimId = LinkOptions.getDimensionUID(linkData);
     if (spawn == null || dimId == null) {
       return;
     }
 
-    // Perform pre-link actions
     onLink(stack, level, entity);
 
-    // Perform the actual teleport
     LinkingManager.performLink(entity, linkData);
   }
 
@@ -188,8 +199,7 @@ public class LinkbookItem extends Item implements TooltipCompat {
    */
   protected void onLink(@NotNull ItemStack stack, Level level, Entity entity) {
     if (entity instanceof Player player) {
-      // Find which slot has this book (main hand or off hand)
-      // Content comparison since BookScreen is client-only
+
       ItemStack mainHand = player.getInventory().getSelected();
       ItemStack offHand = player.getOffhandItem();
 
@@ -197,20 +207,18 @@ public class LinkbookItem extends Item implements TooltipCompat {
       if (ItemStackNbt.isSameItemSameTags(mainHand, stack)) {
         slotToEmpty = player.getInventory().selected;
       } else if (ItemStackNbt.isSameItemSameTags(offHand, stack)) {
-        slotToEmpty = 40; // Offhand slot index
+        slotToEmpty = 40;
       } else {
-        // Book not found in either hand
+
         return;
       }
 
-      // Drop book if not "following" flag
       if (dropItemOnLink(stack)) {
-        // Spawn the book entity in the original world
+
         LinkbookEntity bookEntity = new LinkbookEntity(level, player.getX(), player.getY(), player.getZ());
         bookEntity.setBookItem(stack.copy());
         level.addFreshEntity(bookEntity);
 
-        // Remove from inventory (use tracked slot, not just selected)
         player.getInventory().setItem(slotToEmpty, ItemStack.EMPTY);
       }
     }
@@ -252,8 +260,6 @@ public class LinkbookItem extends Item implements TooltipCompat {
     LinkOptions.setDisplayName(tag, name);
     ItemStackNbt.setTag(stack, tag);
   }
-
-  // --- Health/Durability ---
 
   /**
    * Gets the display name of the linkbook.
@@ -307,8 +313,6 @@ public class LinkbookItem extends Item implements TooltipCompat {
   public int getMaxDamage(@NotNull ItemStack stack) {
     return (int) getMaxHealth(stack);
   }
-
-  // --- Custom Entity on Q-Drop ---
 
   public boolean hasCustomEntity(@NotNull ItemStack stack) {
     return art.arcane.mystcraft.config.MystcraftConfig.droppedBooksBecomeLivingEntities.get();

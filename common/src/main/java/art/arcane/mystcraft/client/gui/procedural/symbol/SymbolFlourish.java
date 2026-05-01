@@ -5,10 +5,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Card-rank decorative frames drawn around the motif on a symbol page.
- * The frame's complexity scales with the symbol's
- * {@link art.arcane.mystcraft.api.symbol.IAgeSymbol#getCardRank() card rank}
- * so a player can read rarity at a glance:
+ * Card-rank decorative frames drawn around the motif on a symbol page. The
+ * frame's complexity scales with the symbol's
+ * {@link art.arcane.mystcraft.api.symbol.IAgeSymbol#getCardRank() card rank} so
+ * a player can read rarity at a glance:
  *
  * <pre>
  *   rank 1 → no frame (plain page edge)
@@ -18,47 +18,18 @@ import org.jetbrains.annotations.Nullable;
  *   rank 5 → double-line border + corner ornaments + spine ribbon + halo
  * </pre>
  *
- * The frame palette comes from the same {@link SymbolPalette.Entry}, so
+ * <p>The frame palette comes from the same {@link SymbolPalette.Entry}, so
  * a rank-5 biome page has a green halo, a rank-5 structure page has cobalt.
+ *
+ * <h3>Resolution</h3>
+ * After the legibility pass, all literal pixel offsets here are doubled (was
+ * tuned for {@code SymbolPageTextureFactory.PAGE_SIZE = 128} → now tuned for
+ * {@code 256}). Visible ornaments (dots, filigree, halo) route through
+ * {@link SymbolGlyphPrimitives}'s anti-aliased path so corner pips and halo
+ * rings read as smooth-edged ink rather than pixel-stair octagons.
  */
 public final class SymbolFlourish {
 
-  /** Visual treatment of the page border. */
-  public enum BorderStyle {
-    NONE,
-    SINGLE_HAIRLINE,
-    DOUBLE_LINE,
-    SINGLE_WITH_CORNERS,
-    DOUBLE_WITH_ORNAMENTS
-  }
-
-  /** Decoration drawn at the four page corners. */
-  public enum CornerOrnament {
-    NONE,
-    DOTS,
-    PIPS,
-    FILIGREE_3_STROKE,
-    FILIGREE_5_STROKE_PIP
-  }
-
-  /**
-   * Immutable per-rank flourish descriptor.
-   *
-   * @param borderStyle    Border treatment.
-   * @param cornerOrnament Corner decoration.
-   * @param useSpineRibbon Whether to draw a vertical ribbon along the binding edge.
-   * @param useMidEdgePips Whether to draw small accent dots at mid-edge.
-   * @param useHalo        Whether the page gets an outward halo glow.
-   */
-  public record Treatment(BorderStyle borderStyle, CornerOrnament cornerOrnament,
-                          boolean useSpineRibbon, boolean useMidEdgePips, boolean useHalo) {
-  }
-
-  // Rank treatments are intentionally monotone in visual weight: each
-  // higher rank inherits everything the previous rank had and only ADDS
-  // ornamentation. This makes the on-page "rarity read" predictable and
-  // lets `procedural_symbol_rank_progression` assert strictly increasing
-  // non-transparent pixel counts.
   private static final Treatment RANK_1 =
       new Treatment(BorderStyle.NONE, CornerOrnament.NONE, false, false, false);
   private static final Treatment RANK_2 =
@@ -69,13 +40,12 @@ public final class SymbolFlourish {
       new Treatment(BorderStyle.DOUBLE_LINE, CornerOrnament.FILIGREE_3_STROKE, true, true, false);
   private static final Treatment RANK_5 =
       new Treatment(BorderStyle.DOUBLE_WITH_ORNAMENTS, CornerOrnament.FILIGREE_5_STROKE_PIP, true, true, true);
-
   private SymbolFlourish() {
   }
 
   /**
-   * Returns the treatment for the given card rank. Null / unknown ranks
-   * fall back to the rank-1 plain treatment so generation never fails.
+   * Returns the treatment for the given card rank. Null / unknown ranks fall
+   * back to the rank-1 plain treatment so generation never fails.
    */
   @NotNull
   public static Treatment forRank(@Nullable Integer rank) {
@@ -89,9 +59,9 @@ public final class SymbolFlourish {
   }
 
   /**
-   * Draws the rank-appropriate frame around the rectangle {@code (x0, y0, w, h)}
-   * inside {@code image}. Pixels outside the rectangle (halo etc.) are
-   * clipped to image bounds.
+   * Draws the rank-appropriate frame around the rectangle
+   * {@code (x0, y0, w, h)} inside {@code image}. Pixels outside the rectangle
+   * (halo etc.) are clipped to image bounds.
    */
   public static void frame(@NotNull NativeImage image, int x0, int y0, int w, int h,
                            @NotNull SymbolPalette.Entry palette, @NotNull Treatment treatment) {
@@ -105,28 +75,33 @@ public final class SymbolFlourish {
       case SINGLE_HAIRLINE -> drawRectOutline(image, x0, y0, w, h, inkArgb);
       case DOUBLE_LINE -> {
         drawRectOutline(image, x0, y0, w, h, inkArgb);
-        drawRectOutline(image, x0 + 2, y0 + 2, w - 4, h - 4, inkArgb);
+
+        drawRectOutline(image, x0 + 4, y0 + 4, w - 8, h - 8, inkArgb);
       }
       case SINGLE_WITH_CORNERS -> {
         drawRectOutline(image, x0, y0, w, h, inkArgb);
-        drawCornerNotch(image, x0, y0, w, h, accentArgb, 4);
+
+        drawCornerNotch(image, x0, y0, w, h, accentArgb, 8);
       }
       case DOUBLE_WITH_ORNAMENTS -> {
         drawRectOutline(image, x0, y0, w, h, inkArgb);
-        drawRectOutline(image, x0 + 2, y0 + 2, w - 4, h - 4, inkArgb);
-        drawCornerNotch(image, x0, y0, w, h, accentArgb, 5);
+        drawRectOutline(image, x0 + 4, y0 + 4, w - 8, h - 8, inkArgb);
+
+        drawCornerNotch(image, x0, y0, w, h, accentArgb, 10);
       }
     }
 
     switch (treatment.cornerOrnament()) {
       case NONE -> {
       }
-      case DOTS -> drawCornerDots(image, x0, y0, w, h, accentArgb, 1);
-      case PIPS -> drawCornerDots(image, x0, y0, w, h, accentArgb, 2);
-      case FILIGREE_3_STROKE -> drawCornerFiligree(image, x0, y0, w, h, accentArgb, 3);
+
+      case DOTS -> drawCornerDots(image, x0, y0, w, h, accentArgb, 2.0);
+      case PIPS -> drawCornerDots(image, x0, y0, w, h, accentArgb, 4.0);
+      case FILIGREE_3_STROKE ->
+          drawCornerFiligree(image, x0, y0, w, h, accentArgb, 3);
       case FILIGREE_5_STROKE_PIP -> {
         drawCornerFiligree(image, x0, y0, w, h, accentArgb, 5);
-        drawCornerDots(image, x0, y0, w, h, accentArgb, 2);
+        drawCornerDots(image, x0, y0, w, h, accentArgb, 4.0);
       }
     }
 
@@ -142,8 +117,6 @@ public final class SymbolFlourish {
       drawSoftHalo(image, x0, y0, w, h, haloArgb);
     }
   }
-
-  // -------------- low-level helpers ----------------------------------------
 
   private static void drawRectOutline(NativeImage image, int x, int y, int w, int h, int argb) {
     if (w <= 0 || h <= 0) return;
@@ -161,10 +134,10 @@ public final class SymbolFlourish {
   private static void drawCornerNotch(NativeImage image, int x, int y, int w, int h, int argb, int size) {
     int abgr = toAbgr(argb);
     int[][] corners = {
-        {x, y, 1, 1},                       // top-left
-        {x + w - 1, y, -1, 1},              // top-right
-        {x, y + h - 1, 1, -1},              // bottom-left
-        {x + w - 1, y + h - 1, -1, -1}      // bottom-right
+        {x, y, 1, 1},
+        {x + w - 1, y, -1, 1},
+        {x, y + h - 1, 1, -1},
+        {x + w - 1, y + h - 1, -1, -1}
     };
     for (int[] corner : corners) {
       int cx = corner[0];
@@ -178,74 +151,84 @@ public final class SymbolFlourish {
     }
   }
 
-  private static void drawCornerDots(NativeImage image, int x, int y, int w, int h, int argb, int radius) {
-    int[][] corners = {
-        {x + 2, y + 2},
-        {x + w - 3, y + 2},
-        {x + 2, y + h - 3},
-        {x + w - 3, y + h - 3}
+  private static void drawCornerDots(NativeImage image, int x, int y, int w, int h,
+                                     int argb, double radius) {
+    double[][] corners = {
+        {x + 4, y + 4},
+        {x + w - 5, y + 4},
+        {x + 4, y + h - 5},
+        {x + w - 5, y + h - 5}
     };
-    for (int[] c : corners) {
-      fillDisc(image, c[0], c[1], radius, argb);
+    for (double[] c : corners) {
+      SymbolGlyphPrimitives.fillSmoothDisc(image, c[0], c[1], radius, argb);
     }
   }
 
-  private static void drawCornerFiligree(NativeImage image, int x, int y, int w, int h, int argb, int strokeCount) {
-    int abgr = toAbgr(argb);
-    int[][] corners = {
-        {x + 2, y + 2, 1, 1},
-        {x + w - 3, y + 2, -1, 1},
-        {x + 2, y + h - 3, 1, -1},
-        {x + w - 3, y + h - 3, -1, -1}
+  private static void drawCornerFiligree(NativeImage image, int x, int y, int w, int h,
+                                         int argb, int strokeCount) {
+
+    double[][] corners = {
+        {x + 4, y + 4, 1, 1},
+        {x + w - 5, y + 4, -1, 1},
+        {x + 4, y + h - 5, 1, -1},
+        {x + w - 5, y + h - 5, -1, -1}
     };
-    for (int[] corner : corners) {
-      int cx = corner[0];
-      int cy = corner[1];
-      int dx = corner[2];
-      int dy = corner[3];
-      for (int s = 0; s < strokeCount; s++) {
-        // Three short tendrils emanating from the corner along x, y and the diagonal.
-        for (int t = 0; t <= s; t++) {
-          safeSet(image, cx + dx * (1 + t), cy + dy * 0, abgr);
-          safeSet(image, cx + dx * 0, cy + dy * (1 + t), abgr);
-          safeSet(image, cx + dx * (1 + t), cy + dy * (1 + t), abgr);
-        }
+    double tendrilLen = 4 + strokeCount * 2;
+    double thickness = 1.5;
+    for (double[] corner : corners) {
+      double cx = corner[0];
+      double cy = corner[1];
+      double dx = corner[2];
+      double dy = corner[3];
+
+      SymbolGlyphPrimitives.drawAaLine(image, cx, cy, cx + dx * tendrilLen, cy,
+          thickness, argb);
+      SymbolGlyphPrimitives.drawAaLine(image, cx, cy, cx, cy + dy * tendrilLen,
+          thickness, argb);
+      SymbolGlyphPrimitives.drawAaLine(image, cx, cy,
+          cx + dx * tendrilLen * 0.7, cy + dy * tendrilLen * 0.7,
+          thickness, argb);
+
+      for (int s = 1; s < strokeCount - 2; s++) {
+        double angleFraction = s / (double) (strokeCount - 1);
+        double angle = angleFraction * (Math.PI / 2);
+        double ex = cx + dx * Math.cos(angle) * tendrilLen * 0.85;
+        double ey = cy + dy * Math.sin(angle) * tendrilLen * 0.85;
+        SymbolGlyphPrimitives.drawAaLine(image, cx, cy, ex, ey, 1.0, argb);
       }
     }
   }
 
   private static void drawSpineRibbon(NativeImage image, int x, int y, int w, int h, int argb) {
     int abgr = toAbgr(argb);
-    int spineX = x + 1;
+    int spineX = x + 2;
     int top = y + h / 6;
     int bottom = y + h - h / 6;
+
     for (int sy = top; sy <= bottom; sy++) {
       safeSet(image, spineX, sy, abgr);
       safeSet(image, spineX + 1, sy, abgr);
+      safeSet(image, spineX + 2, sy, abgr);
     }
-    // Forked tail at bottom.
+
     int tailX = spineX;
     int tailY = bottom;
-    safeSet(image, tailX - 1, tailY + 1, abgr);
-    safeSet(image, tailX + 2, tailY + 1, abgr);
+    safeSet(image, tailX - 2, tailY + 2, abgr);
+    safeSet(image, tailX + 4, tailY + 2, abgr);
   }
 
   private static void drawMidEdgePips(NativeImage image, int x, int y, int w, int h, int argb) {
     int midX = x + w / 2;
     int midY = y + h / 2;
-    fillDisc(image, midX, y + 1, 1, argb);
-    fillDisc(image, midX, y + h - 2, 1, argb);
-    fillDisc(image, x + 1, midY, 1, argb);
-    fillDisc(image, x + w - 2, midY, 1, argb);
+    SymbolGlyphPrimitives.fillSmoothDisc(image, midX, y + 2, 2, argb);
+    SymbolGlyphPrimitives.fillSmoothDisc(image, midX, y + h - 3, 2, argb);
+    SymbolGlyphPrimitives.fillSmoothDisc(image, x + 2, midY, 2, argb);
+    SymbolGlyphPrimitives.fillSmoothDisc(image, x + w - 3, midY, 2, argb);
   }
 
-  /**
-   * Draws a soft 4-pixel halo around the rectangle by writing increasingly
-   * transparent halo color values. Skipped if the image isn't large enough
-   * to hold the outward bleed.
-   */
   private static void drawSoftHalo(NativeImage image, int x, int y, int w, int h, int rgb) {
-    int[] alphas = {0x40, 0x30, 0x20, 0x10};
+
+    int[] alphas = {0x40, 0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08};
     for (int ring = 0; ring < alphas.length; ring++) {
       int alpha = alphas[ring];
       int argb = (alpha << 24) | (rgb & 0xFFFFFF);
@@ -265,32 +248,55 @@ public final class SymbolFlourish {
     }
   }
 
-  private static void fillDisc(NativeImage image, int cx, int cy, int radius, int argb) {
-    int abgr = toAbgr(argb);
-    int rSq = radius * radius;
-    for (int dy = -radius; dy <= radius; dy++) {
-      for (int dx = -radius; dx <= radius; dx++) {
-        if (dx * dx + dy * dy <= rSq) {
-          safeSet(image, cx + dx, cy + dy, abgr);
-        }
-      }
-    }
-  }
-
   private static void safeSet(NativeImage image, int x, int y, int abgr) {
-    if (x < 0 || y < 0 || x >= image.getWidth() || y >= image.getHeight()) return;
+    if (x < 0 || y < 0 || x >= image.getWidth() || y >= image.getHeight())
+      return;
     image.setPixelRGBA(x, y, abgr);
   }
 
-  /**
-   * Converts an ARGB int (Java-friendly) into the ABGR layout NativeImage
-   * stores internally on little-endian systems.
-   */
   private static int toAbgr(int argb) {
     int a = (argb >>> 24) & 0xFF;
     int r = (argb >>> 16) & 0xFF;
     int g = (argb >>> 8) & 0xFF;
     int b = argb & 0xFF;
     return (a << 24) | (b << 16) | (g << 8) | r;
+  }
+
+  /**
+   * Visual treatment of the page border.
+   */
+  public enum BorderStyle {
+    NONE,
+    SINGLE_HAIRLINE,
+    DOUBLE_LINE,
+    SINGLE_WITH_CORNERS,
+    DOUBLE_WITH_ORNAMENTS
+  }
+
+  /**
+   * Decoration drawn at the four page corners.
+   */
+  public enum CornerOrnament {
+    NONE,
+    DOTS,
+    PIPS,
+    FILIGREE_3_STROKE,
+    FILIGREE_5_STROKE_PIP
+  }
+
+  /**
+   * Immutable per-rank flourish descriptor.
+   *
+   * @param borderStyle    Border treatment.
+   * @param cornerOrnament Corner decoration.
+   * @param useSpineRibbon Whether to draw a vertical ribbon along the binding
+   *                       edge.
+   * @param useMidEdgePips Whether to draw small accent dots at mid-edge.
+   * @param useHalo        Whether the page gets an outward halo glow.
+   */
+  public record Treatment(BorderStyle borderStyle,
+                          CornerOrnament cornerOrnament,
+                          boolean useSpineRibbon, boolean useMidEdgePips,
+                          boolean useHalo) {
   }
 }

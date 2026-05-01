@@ -15,27 +15,29 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Optional per-symbol presentation override loaded from datapack JSON.
- * Pack authors point hero symbols at a non-default motif, override
- * specific palette swatches, or pin curated D'ni words to a chosen seed
- * value while leaving the other 500+ symbols on the auto-generated path.
+ * Optional per-symbol presentation override loaded from datapack JSON. Pack
+ * authors point hero symbols at a non-default motif, override specific palette
+ * swatches, or pin curated D'ni words to a chosen seed value while leaving the
+ * other 500+ symbols on the auto-generated path.
  *
  * <p>Schema (all fields optional):
  * <pre>
  *   "display": {
- *     "motif": "wreath",                         // SymbolMotif enum name (case-insensitive)
+ *     "motif": "wreath",
  *     "palette_override": {
- *       "base":   "#FF6B4F2C",                   // 8-digit ARGB or 6-digit RGB hex
+ *       "base":   "#FF6B4F2C",
  *       "accent": "#FFE8B070",
  *       "ink":    "#FF1A0F08",
  *       "halo":   "#FFFFD9A0"
  *     },
  *     "glyph_seeds": {
- *       "Dripstone": -889275714                  // signed int32 OR hex string ("0xCAFEBABE")
+ *       "Dripstone": -889275714
  *     }
  *   }
  * </pre>
- *
+ * Color fields accept 8-digit ARGB or 6-digit RGB hex strings. Glyph seeds
+ * accept signed int32 values or hex strings such as {@code "0xCAFEBABE"}.
+ * <p>
  * Resolution happens at render time:
  * <ul>
  *   <li>{@link #motifName()} — looked up via
@@ -52,47 +54,18 @@ public record SymbolDisplay(@Nullable String motifName,
                             @Nullable PaletteOverride paletteOverride,
                             @NotNull Map<String, Integer> glyphSeeds) {
 
-  /** Empty-but-valid display block — convenience for callers that need a non-null. */
+  /**
+   * Empty-but-valid display block — convenience for callers that need a
+   * non-null.
+   */
   public static final SymbolDisplay EMPTY =
       new SymbolDisplay(null, null, Collections.emptyMap());
 
   /**
-   * Per-channel palette override. Each field is nullable so pack authors
-   * can override e.g. just the accent without touching the base / ink /
-   * halo. Color values are stored as ARGB ints; alpha defaults to {@code 0xFF}
-   * when the JSON value is 6-digit RGB.
-   */
-  public record PaletteOverride(@Nullable Integer base,
-                                @Nullable Integer accent,
-                                @Nullable Integer ink,
-                                @Nullable Integer halo) {
-
-    /** True when at least one override channel is non-null. */
-    public boolean hasAny() {
-      return base != null || accent != null || ink != null || halo != null;
-    }
-  }
-
-  /** Returns the seed override for {@code word}, or {@code null} if unset. */
-  @Nullable
-  public Integer seedFor(@Nullable String word) {
-    if (word == null || glyphSeeds.isEmpty()) return null;
-    Integer pinned = glyphSeeds.get(word);
-    if (pinned != null) return pinned;
-    // Allow case-insensitive match so "Dripstone" and "dripstone" both pin.
-    for (Map.Entry<String, Integer> e : glyphSeeds.entrySet()) {
-      if (e.getKey().equalsIgnoreCase(word)) {
-        return e.getValue();
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Parses a {@code display} JSON object. Returns {@code null} when the
-   * block is structurally invalid (missing object, etc.) so callers can
-   * cleanly fall back to category defaults. Logs a warning for individual
-   * field failures rather than aborting the whole symbol load.
+   * Parses a {@code display} JSON object. Returns {@code null} when the block
+   * is structurally invalid (missing object, etc.) so callers can cleanly fall
+   * back to category defaults. Logs a warning for individual field failures
+   * rather than aborting the whole symbol load.
    */
   @Nullable
   public static SymbolDisplay fromJson(@NotNull ResourceLocation symbolId, @Nullable JsonElement element) {
@@ -129,17 +102,12 @@ public record SymbolDisplay(@Nullable String motifName,
     }
 
     if (motifName == null && paletteOverride == null && glyphSeeds.isEmpty()) {
-      // Block is present but empty — collapse to null so the consumer
-      // can skip override resolution entirely.
+
       return null;
     }
 
     return new SymbolDisplay(motifName, paletteOverride, glyphSeeds);
   }
-
-  // ---------------------------------------------------------------------
-  // Internals
-  // ---------------------------------------------------------------------
 
   @Nullable
   private static PaletteOverride parsePaletteOverride(@NotNull ResourceLocation symbolId, @NotNull JsonObject json) {
@@ -171,7 +139,7 @@ public record SymbolDisplay(@Nullable String motifName,
       return parsed;
     }
     if (primitive.isNumber()) {
-      // Treat numeric as a literal ARGB integer.
+
       return primitive.getAsInt();
     }
     Mystcraft.LOGGER.warn("[SymbolDisplay] {} display.palette_override.{} unsupported value: {}",
@@ -181,8 +149,8 @@ public record SymbolDisplay(@Nullable String motifName,
 
   /**
    * Parses {@code "#RRGGBB"}, {@code "#AARRGGBB"}, or {@code "RRGGBB"} /
-   * {@code "AARRGGBB"} (without leading {@code #}). Returns {@code null}
-   * on malformed input.
+   * {@code "AARRGGBB"} (without leading {@code #}). Returns {@code null} on
+   * malformed input.
    */
   @Nullable
   static Integer parseHexColor(@NotNull String raw) {
@@ -191,7 +159,7 @@ public record SymbolDisplay(@Nullable String motifName,
     try {
       long parsed = Long.parseLong(s, 16);
       if (s.length() == 6) {
-        // No alpha — assume opaque.
+
         return (int) (0xFF000000L | parsed);
       }
       return (int) parsed;
@@ -246,5 +214,41 @@ public record SymbolDisplay(@Nullable String motifName,
     Mystcraft.LOGGER.warn("[SymbolDisplay] {} display.glyph_seeds.{} unsupported value: {}",
         symbolId, word, primitive);
     return null;
+  }
+
+  /**
+   * Returns the seed override for {@code word}, or {@code null} if unset.
+   */
+  @Nullable
+  public Integer seedFor(@Nullable String word) {
+    if (word == null || glyphSeeds.isEmpty()) return null;
+    Integer pinned = glyphSeeds.get(word);
+    if (pinned != null) return pinned;
+
+    for (Map.Entry<String, Integer> e : glyphSeeds.entrySet()) {
+      if (e.getKey().equalsIgnoreCase(word)) {
+        return e.getValue();
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Per-channel palette override. Each field is nullable so pack authors can
+   * override e.g. just the accent without touching the base / ink / halo. Color
+   * values are stored as ARGB ints; alpha defaults to {@code 0xFF} when the
+   * JSON value is 6-digit RGB.
+   */
+  public record PaletteOverride(@Nullable Integer base,
+                                @Nullable Integer accent,
+                                @Nullable Integer ink,
+                                @Nullable Integer halo) {
+
+    /**
+     * True when at least one override channel is non-null.
+     */
+    public boolean hasAny() {
+      return base != null || accent != null || ink != null || halo != null;
+    }
   }
 }

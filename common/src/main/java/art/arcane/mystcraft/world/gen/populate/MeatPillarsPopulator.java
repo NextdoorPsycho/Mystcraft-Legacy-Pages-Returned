@@ -8,16 +8,14 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.Random;
 
 /**
- * Meat Pillars populator that generates fleshy organic columns.
- * Crimson stem cores wrapped in nether wart block flesh, with
- * red mushroom block tumors, shroomlight veins, weeping vines,
- * and crimson fungus at the base. Something alive grew wrong.
- * Uses the neighbor-seed pattern for multi-chunk safety.
+ * Meat Pillars populator that generates fleshy organic columns. Crimson stem
+ * cores wrapped in nether wart block flesh, with red mushroom block tumors,
+ * shroomlight veins, weeping vines, and crimson fungus at the base. Something
+ * alive grew wrong. Uses the neighbor-seed pattern for multi-chunk safety.
  */
 public class MeatPillarsPopulator implements IPopulate {
 
@@ -53,10 +51,6 @@ public class MeatPillarsPopulator implements IPopulate {
     this.maxWidth = Math.max(this.minWidth, PopulatorConfig.getInt(params, "max_width", DEFAULT_MAX_WIDTH));
   }
 
-  /**
-   * Position-deterministic hash. Same position always produces the same value
-   * regardless of which chunk is being populated.
-   */
   private static long positionHash(long seed, int x, int y, int z) {
     long h = seed;
     h ^= (long) x * 73856093L;
@@ -85,26 +79,22 @@ public class MeatPillarsPopulator implements IPopulate {
         int neighborMinZ = ncz << 4;
 
         for (int i = 0; i < count; i++) {
-          // Deterministic spawn chance - skip most chunks
+
           if (chunkRand.nextFloat() >= spawnChance) {
             continue;
           }
 
-          // Compute ALL pillar parameters deterministically BEFORE any skip checks.
           int cx = neighborMinX + chunkRand.nextInt(16);
           int cz = neighborMinZ + chunkRand.nextInt(16);
           int height = minHeight + chunkRand.nextInt(maxHeight - minHeight + 1);
           int width = minWidth + chunkRand.nextInt(maxWidth - minWidth + 1);
           long pillarSeed = chunkRand.nextLong();
 
-          // Quick AABB check: can this pillar overlap our chunk at all?
           if (cx + width < chunkMinX || cx - width > chunkMaxX ||
               cz + width < chunkMinZ || cz - width > chunkMaxZ) {
             continue;
           }
 
-          // Derive base Y deterministically from the pillar's own seed so
-          // all chunks agree on the same position
           int baseY = 40 + (int) ((pillarSeed & 0x7FL) % 60);
 
           generatePillar(world, pillarSeed, cx, baseY, cz, height, width,
@@ -114,17 +104,14 @@ public class MeatPillarsPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Deterministic per-chunk seed based on world seed and chunk coordinates.
-   */
   private long getChunkSeed(int chunkX, int chunkZ) {
     return seed ^ ((long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + 0xAE47B1L);
   }
 
   private void generatePillar(WorldGenLevel world, long pillarSeed, int cx, int baseY, int cz,
-                               int height, int width,
-                               int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
-    // Bury the base 2 blocks into terrain
+                              int height, int width,
+                              int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
+
     int startY = baseY - 2;
     int endY = baseY + height;
 
@@ -140,14 +127,12 @@ public class MeatPillarsPopulator implements IPopulate {
     BlockState tumorBlock = Blocks.RED_MUSHROOM_BLOCK.defaultBlockState();
     BlockState veinBlock = Blocks.SHROOMLIGHT.defaultBlockState();
 
-    // Determine shroomlight vein interval deterministically
     long veinIntervalHash = positionHash(pillarSeed, cx, 0, cz);
-    int veinInterval = 5 + (int) ((veinIntervalHash & 0x3L));  // 5-8 blocks
+    int veinInterval = 5 + (int) ((veinIntervalHash & 0x3L));
 
-    // Main pillar body
     for (int y = startY; y <= endY; y++) {
       double progress = (double) (y - startY) / (endY - startY);
-      // Slight taper at the top
+
       double taper = 1.0 - (progress * progress * 0.3);
       int effectiveWidth = (int) Math.max(1, Math.round(width * taper));
 
@@ -156,7 +141,6 @@ public class MeatPillarsPopulator implements IPopulate {
           int bx = cx + dx;
           int bz = cz + dz;
 
-          // Only place blocks within the current chunk's bounds
           if (bx < chunkMinX || bx > chunkMaxX || bz < chunkMinZ || bz > chunkMaxZ) {
             continue;
           }
@@ -174,7 +158,6 @@ public class MeatPillarsPopulator implements IPopulate {
             continue;
           }
 
-          // Center column is crimson stem core, outer ring is nether wart block
           boolean isCore = (dx == 0 && dz == 0) || (effectiveWidth <= 1 && distSq == 0);
           if (isCore) {
             world.setBlock(pos, coreBlock, 2);
@@ -184,26 +167,23 @@ public class MeatPillarsPopulator implements IPopulate {
         }
       }
 
-      // Shroomlight veins along the pillar
       if (y > baseY && (y - baseY) % veinInterval == 0) {
-        // Place shroomlight on the core column if in chunk bounds
+
         if (cx >= chunkMinX && cx <= chunkMaxX && cz >= chunkMinZ && cz <= chunkMaxZ) {
           BlockPos veinPos = new BlockPos(cx, y, cz);
           world.setBlock(veinPos, veinBlock, 2);
         }
       }
 
-      // Tumor protrusions: ~15% chance per vertical segment, using position hash
       long tumorHash = positionHash(pillarSeed ^ 0xDA0C1FL, cx, y, cz);
       boolean hasTumor = ((tumorHash & 0xFFFF) % 100) < 15;
 
       if (hasTumor && y > baseY && y < endY - 2) {
-        // Determine tumor direction from hash
+
         int tumorDir = (int) ((tumorHash >>> 16) & 0x3);
         int tdx = (tumorDir == 0) ? 1 : (tumorDir == 1) ? -1 : 0;
         int tdz = (tumorDir == 2) ? 1 : (tumorDir == 3) ? -1 : 0;
 
-        // 2x2 protrusion offset from the pillar wall
         int tumorBaseX = cx + tdx * (width + 1);
         int tumorBaseZ = cz + tdz * (width + 1);
 
@@ -229,7 +209,6 @@ public class MeatPillarsPopulator implements IPopulate {
           }
         }
 
-        // Weeping vines hanging from tumor protrusions (2-5 blocks long)
         long vineHash = positionHash(pillarSeed ^ 0xF1DE5L, tumorBaseX, y, tumorBaseZ);
         int vineLength = 2 + (int) ((vineHash & 0x3));
 
@@ -242,7 +221,6 @@ public class MeatPillarsPopulator implements IPopulate {
               continue;
             }
 
-            // Only hang vines from about half the tumor blocks
             long vineBlockHash = positionHash(vineHash, vbx, y, vbz);
             if ((vineBlockHash & 0x1) == 0) {
               continue;
@@ -266,7 +244,6 @@ public class MeatPillarsPopulator implements IPopulate {
       }
     }
 
-    // Crimson fungus at the base (2-3 blocks around)
     long baseFungusHash = positionHash(pillarSeed ^ 0xBA5E1L, cx, baseY, cz);
     int fungusSpread = 2 + (int) ((baseFungusHash & 0x1));
 
@@ -283,7 +260,6 @@ public class MeatPillarsPopulator implements IPopulate {
           continue;
         }
 
-        // Use position hash to deterministically decide placement
         long fungusHash = positionHash(baseFungusHash, bx, baseY, bz);
         if ((fungusHash & 0x3) != 0) {
           continue;

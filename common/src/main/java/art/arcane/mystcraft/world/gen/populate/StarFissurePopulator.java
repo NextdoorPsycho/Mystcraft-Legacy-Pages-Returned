@@ -12,19 +12,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Star Fissure populator that generates star fissures (escape routes from ages).
- * A star fissure is a deep crack in the terrain with a starry void at the bottom.
- * Falling into it teleports entities back to the overworld spawn.
+ * Star Fissure populator that generates star fissures (escape routes from
+ * ages). A star fissure is a deep crack in the terrain with a starry void at
+ * the bottom. Falling into it teleports entities back to the overworld spawn.
  * Very rare - only generates in approximately 1 out of 16 chunks.
  * <p>
  * Uses chunk boundary checking to prevent cascade loading - blocks outside the
- * current chunk are simply skipped rather than triggering neighbor chunk loads.
+ * current chunk are simply skipped rather than triggering neighbor chunk
+ * loads.
  */
 public class StarFissurePopulator implements IPopulate {
 
-  // Rarity: 1 in 16 chunks
   private static final int DEFAULT_RARITY = 16;
-  // Fissure dimensions
+
   private static final int DEFAULT_MIN_WIDTH = 3;
   private static final int DEFAULT_MAX_WIDTH = 5;
   private static final int DEFAULT_MIN_LENGTH = 10;
@@ -35,7 +35,7 @@ public class StarFissurePopulator implements IPopulate {
   private final int maxWidth;
   private final int minLength;
   private final int maxLength;
-  // Chunk boundaries for current population
+
   private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
   public StarFissurePopulator(long seed) {
@@ -53,7 +53,7 @@ public class StarFissurePopulator implements IPopulate {
 
   @Override
   public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
-    // Set chunk boundaries for this population run
+
     int chunkX = chunkPos.getX() >> 4;
     int chunkZ = chunkPos.getZ() >> 4;
     chunkMinX = chunkX << 4;
@@ -93,18 +93,11 @@ public class StarFissurePopulator implements IPopulate {
         surface.is(Blocks.SANDSTONE);
   }
 
-  /**
-   * Checks if a position is within the current chunk boundaries.
-   * This prevents cascade chunk loading when fissures extend beyond chunk edges.
-   */
   private boolean isInChunk(BlockPos pos) {
     return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
         pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
   }
 
-  /**
-   * Safe setBlock that only places blocks within current chunk boundaries.
-   */
   private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
     if (isInChunk(pos)) {
       world.setBlock(pos, state, 2);
@@ -120,7 +113,7 @@ public class StarFissurePopulator implements IPopulate {
     double sinAngle = Math.sin(angle);
 
     int surfaceY = centerPos.getY();
-    // Carve to near bedrock (leave 1 block above min build height for the star fissure block)
+
     int bottomY = world.getMinBuildHeight() + 1;
 
     for (int lPos = 0; lPos < length; lPos++) {
@@ -152,7 +145,6 @@ public class StarFissurePopulator implements IPopulate {
         for (int y = fissureTop; y >= fissureBottom; y--) {
           BlockPos pos = new BlockPos(x, y, z);
 
-          // Skip blocks outside chunk boundaries to prevent cascade loading
           if (!isInChunk(pos)) {
             continue;
           }

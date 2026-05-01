@@ -6,21 +6,21 @@ import net.minecraft.server.level.ServerLevel;
 import java.util.Random;
 
 /**
- * Normal weather controller - vanilla-like weather behavior.
- * Rain and thunder occur naturally based on random cycles.
+ * Normal weather controller - vanilla-like weather behavior. Rain and thunder
+ * occur naturally based on random cycles.
  */
 public class WeatherControllerNormal implements IWeatherController {
 
   public static final String TYPE = "normal";
-  // Duration and cooldown in ticks
-  private static final int RAIN_DURATION_BASE = 6000; // ~5 minutes
+
+  private static final int RAIN_DURATION_BASE = 6000;
   private static final int RAIN_DURATION_VARIANCE = 12000;
   private static final int RAIN_COOLDOWN_BASE = 6000;
-  private static final int RAIN_COOLDOWN_VARIANCE = 48000; // Up to ~40 minutes
-  private static final int THUNDER_DURATION_BASE = 3600; // ~3 minutes
+  private static final int RAIN_COOLDOWN_VARIANCE = 48000;
+  private static final int THUNDER_DURATION_BASE = 3600;
   private static final int THUNDER_DURATION_VARIANCE = 6000;
   private static final int THUNDER_COOLDOWN_BASE = 12000;
-  private static final int THUNDER_COOLDOWN_VARIANCE = 60000; // Up to ~50 minutes
+  private static final int THUNDER_COOLDOWN_VARIANCE = 60000;
   private final Random random = new Random();
   private float rainLevel = 0.0f;
   private float thunderLevel = 0.0f;
@@ -40,7 +40,7 @@ public class WeatherControllerNormal implements IWeatherController {
 
   @Override
   public void updateWeather(ServerLevel level) {
-    // Update rain timer
+
     if (rainTime > 0) {
       rainTime--;
       if (rainTime <= 0) {
@@ -53,7 +53,6 @@ public class WeatherControllerNormal implements IWeatherController {
       }
     }
 
-    // Update thunder timer (only when raining)
     if (raining && thunderTime > 0) {
       thunderTime--;
       if (thunderTime <= 0) {
@@ -68,7 +67,6 @@ public class WeatherControllerNormal implements IWeatherController {
       thundering = false;
     }
 
-    // Smooth transitions
     if (raining) {
       rainLevel = Math.min(1.0f, rainLevel + 0.01f);
     } else {
@@ -81,7 +79,6 @@ public class WeatherControllerNormal implements IWeatherController {
       thunderLevel = Math.max(0.0f, thunderLevel - 0.01f);
     }
 
-    // Sync with vanilla weather for proper mob spawning, etc.
     level.setWeatherParameters(
         raining ? 0 : rainTime,
         raining ? rainTime : 0,

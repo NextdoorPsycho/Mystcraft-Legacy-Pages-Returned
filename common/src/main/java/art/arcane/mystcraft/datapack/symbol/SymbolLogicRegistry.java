@@ -9,8 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Registry of datapack symbol logic types.
- * Mods can register new behavior types here.
+ * Registry of datapack symbol logic types. Mods can register new behavior types
+ * here.
  */
 public final class SymbolLogicRegistry {
 

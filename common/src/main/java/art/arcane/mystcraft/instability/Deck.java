@@ -6,8 +6,8 @@ import java.util.LinkedList;
 import java.util.Random;
 
 /**
- * Represents a deck of instability effect cards.
- * Cards are drawn in order based on instability level.
+ * Represents a deck of instability effect cards. Cards are drawn in order based
+ * on instability level.
  */
 public class Deck {
 
@@ -100,8 +100,8 @@ public class Deck {
   }
 
   /**
-   * Transfers all cards from another deck to the bottom of this deck.
-   * The other deck is cleared after transfer.
+   * Transfers all cards from another deck to the bottom of this deck. The other
+   * deck is cleared after transfer.
    *
    * @param other The deck to transfer from
    */

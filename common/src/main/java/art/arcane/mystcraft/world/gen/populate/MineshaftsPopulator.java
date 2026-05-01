@@ -15,8 +15,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 /**
- * Mineshaft populator that generates underground tunnel networks.
- * Mineshafts consist of oak fence supports, rails, cobwebs, and occasional cave spider spawners.
+ * Mineshaft populator that generates underground tunnel networks. Mineshafts
+ * consist of oak fence supports, rails, cobwebs, and occasional cave spider
+ * spawners.
  */
 public class MineshaftsPopulator implements IPopulate {
 
@@ -71,7 +72,6 @@ public class MineshaftsPopulator implements IPopulate {
         currentPos = currentPos.above(yChange);
       }
 
-      // Skip blocks outside the writable area
       if (!isInWritableArea(currentPos, chunkPos)) {
         break;
       }

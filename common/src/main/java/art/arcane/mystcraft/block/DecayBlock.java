@@ -17,9 +17,8 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The Decay block.
- * Spreads through unstable Ages, destroying blocks in its path.
- * Different decay types have different behaviors and colors.
+ * The Decay block. Spreads through unstable Ages, destroying blocks in its
+ * path. Different decay types have different behaviors and colors.
  */
 public class DecayBlock extends Block {
 
@@ -51,12 +50,8 @@ public class DecayBlock extends Block {
     }
   }
 
-  /**
-   * Black decay has special aggressive behavior:
-   * falling through blocks, aggressive horizontal corruption, and fluid removal.
-   */
   private void tickBlackDecay(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-    // 1/4 chance: destroy block below and fall
+
     if (random.nextInt(4) == 0) {
       BlockPos below = pos.below();
       BlockState belowState = level.getBlockState(below);
@@ -66,7 +61,6 @@ public class DecayBlock extends Block {
       }
     }
 
-    // 1/3 chance: aggressively corrupt all 4 horizontal neighbors
     if (random.nextInt(3) == 0) {
       for (Direction direction : Direction.Plane.HORIZONTAL) {
         BlockPos neighborPos = pos.relative(direction);
@@ -76,11 +70,10 @@ public class DecayBlock extends Block {
         }
       }
     } else {
-      // Normal spread
+
       trySpread(state, level, pos, random);
     }
 
-    // Remove adjacent fluids
     for (Direction direction : Direction.values()) {
       BlockPos neighborPos = pos.relative(direction);
       BlockState neighborState = level.getBlockState(neighborPos);
@@ -91,34 +84,30 @@ public class DecayBlock extends Block {
   }
 
   private void trySpread(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-    // Choose a random adjacent block
+
     Direction direction = Direction.values()[random.nextInt(Direction.values().length)];
     BlockPos targetPos = pos.relative(direction);
     BlockState targetState = level.getBlockState(targetPos);
 
-    // Check if the target can be decayed
     if (canDecay(targetState)) {
       level.setBlock(targetPos, state, 3);
     }
   }
 
-  /**
-   * Checks if a block state can be replaced by decay.
-   */
   private boolean canDecay(BlockState state) {
-    // Cannot decay air
+
     if (state.isAir()) {
       return false;
     }
-    // Cannot decay bedrock or other unbreakable blocks
+
     if (state.getDestroySpeed(null, BlockPos.ZERO) < 0) {
       return false;
     }
-    // Cannot decay other decay blocks
+
     if (state.getBlock() instanceof DecayBlock) {
       return false;
     }
-    // Cannot decay certain portal-related blocks
+
     return !state.is(Blocks.END_PORTAL) && !state.is(Blocks.END_PORTAL_FRAME) &&
         !state.is(Blocks.NETHER_PORTAL) && !state.is(Blocks.END_GATEWAY);
   }
@@ -127,7 +116,7 @@ public class DecayBlock extends Block {
   public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
     if (entity instanceof LivingEntity living) {
       DecayType type = state.getValue(DECAY_TYPE);
-      // Apply damage based on decay type
+
       if (type.damageOnContact()) {
         living.hurt(level.damageSources().magic(), type.getDamage());
       }

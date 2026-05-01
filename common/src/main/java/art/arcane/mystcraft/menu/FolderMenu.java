@@ -16,14 +16,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Menu for the Folder item.
- * Shows pages stored in the folder and allows adding/removing pages.
+ * Menu for the Folder item. Shows pages stored in the folder and allows
+ * adding/removing pages.
  */
 public class FolderMenu extends AbstractContainerMenu {
 
-  // Slot indices
   public static final int FOLDER_SLOTS = FolderItem.MAX_PAGES;
-  // Player inventory slot ranges
+
   private static final int PLAYER_INVENTORY_START = FOLDER_SLOTS;
   private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
   private static final int PLAYER_HOTBAR_END = PLAYER_INVENTORY_END + 9;
@@ -47,7 +46,6 @@ public class FolderMenu extends AbstractContainerMenu {
     this.folderStack = playerInventory.getItem(folderSlot);
     this.folderInventory = new FolderInventoryHandler(folderStack);
 
-    // Folder page slots (2 rows of 8)
     for (int row = 0; row < 2; row++) {
       for (int col = 0; col < 8; col++) {
         int slotIndex = col + row * 8;
@@ -65,11 +63,10 @@ public class FolderMenu extends AbstractContainerMenu {
       }
     }
 
-    // Player inventory (3 rows of 9)
     for (int row = 0; row < 3; row++) {
       for (int col = 0; col < 9; col++) {
         int slotIdx = col + row * 9 + 9;
-        // Lock the folder slot to prevent duplication
+
         if (slotIdx == folderSlot) {
           addSlot(new LockedSlot(playerInventory, slotIdx, 8 + col * 18, 72 + row * 18));
         } else {
@@ -78,10 +75,9 @@ public class FolderMenu extends AbstractContainerMenu {
       }
     }
 
-    // Player hotbar
     for (int col = 0; col < 9; col++) {
       int slotIdx = col;
-      // Lock the folder slot to prevent duplication
+
       if (slotIdx == folderSlot) {
         addSlot(new LockedSlot(playerInventory, slotIdx, 8 + col * 18, 130));
       } else {
@@ -99,7 +95,7 @@ public class FolderMenu extends AbstractContainerMenu {
   @Override
   public void removed(@NotNull Player player) {
     super.removed(player);
-    // Save pages back to folder
+
     folderInventory.saveToFolder();
   }
 
@@ -113,18 +109,15 @@ public class FolderMenu extends AbstractContainerMenu {
       ItemStack stackInSlot = slot.getItem();
       result = stackInSlot.copy();
 
-      // Moving from folder slots to player inventory
       if (index < FOLDER_SLOTS) {
         if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true)) {
           return ItemStack.EMPTY;
         }
-      }
-      // Moving from player inventory to folder slots
-      else {
-        // Only pages can go in folder
+      } else {
+
         if (stackInSlot.getItem() instanceof PageItem) {
           if (!moveItemStackTo(stackInSlot, 0, FOLDER_SLOTS, false)) {
-            // Move between inventory and hotbar
+
             if (index < PLAYER_INVENTORY_END) {
               if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
                 return ItemStack.EMPTY;
@@ -136,7 +129,7 @@ public class FolderMenu extends AbstractContainerMenu {
             }
           }
         } else {
-          // Non-page items: move between inventory and hotbar
+
           if (index < PLAYER_INVENTORY_END) {
             if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
               return ItemStack.EMPTY;
@@ -166,9 +159,6 @@ public class FolderMenu extends AbstractContainerMenu {
     return folderStack;
   }
 
-  /**
-   * Custom inventory handler that wraps folder page storage.
-   */
   private static class FolderInventoryHandler extends SimpleContainer {
     private final ItemStack folder;
 
@@ -213,9 +203,6 @@ public class FolderMenu extends AbstractContainerMenu {
     }
   }
 
-  /**
-   * A slot that cannot be interacted with (used to lock the folder slot).
-   */
   private static class LockedSlot extends Slot {
     public LockedSlot(Inventory inventory, int index, int x, int y) {
       super(inventory, index, x, y);

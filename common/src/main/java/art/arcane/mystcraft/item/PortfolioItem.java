@@ -33,17 +33,15 @@ import java.util.List;
 /**
  * The Portfolio item - an UNORDERED, COLLECTION-BASED page archive.
  * <p>
- * Key differences from Folder:
- * - UNORDERED: Pages are a collection, not fixed slots
- * - NOT WRITABLE: Cannot write symbols directly to pages
- * - SORTING: Has automatic sorting by category/name
- * - COLLECTION: Removes pages by content matching, not index
- * - CAPACITY: 64 pages (mass storage)
- * - ALWAYS STACK 1: Cannot stack even when empty
+ * Key differences from Folder: - UNORDERED: Pages are a collection, not fixed
+ * slots - NOT WRITABLE: Cannot write symbols directly to pages - SORTING: Has
+ * automatic sorting by category/name - COLLECTION: Removes pages by content
+ * matching, not index - CAPACITY: 64 pages (mass storage) - ALWAYS STACK 1:
+ * Cannot stack even when empty
  * <p>
- * The Portfolio is designed as a permanent storage archive for
- * collected pages, with automatic organization features.
- * It's crafted FROM a Folder (upgrade path).
+ * The Portfolio is designed as a permanent storage archive for collected pages,
+ * with automatic organization features. It's crafted FROM a Folder (upgrade
+ * path).
  */
 public class PortfolioItem extends Item implements TooltipCompat {
 
@@ -51,7 +49,7 @@ public class PortfolioItem extends Item implements TooltipCompat {
   private static final String TAG_PAGES = "Pages";
 
   public PortfolioItem(Properties properties) {
-    super(properties.stacksTo(1)); // Portfolio never stacks (unlike Folder)
+    super(properties.stacksTo(1));
   }
 
   /**
@@ -129,22 +127,22 @@ public class PortfolioItem extends Item implements TooltipCompat {
   }
 
   /**
-   * Sorts pages by symbol category first, then by symbol name.
-   * Link panels are sorted to the front.
+   * Sorts pages by symbol category first, then by symbol name. Link panels are
+   * sorted to the front.
    */
   public static void sortPages(ItemStack portfolio) {
     List<ItemStack> pages = getPages(portfolio);
 
     pages.sort(Comparator.comparing((ItemStack page) -> {
-      // Link panels come first
+
       if (Page.isLinkPanel(page)) {
         return "000_linkpanel";
       }
-      // Blank pages come second
+
       if (Page.isBlank(page)) {
         return "001_blank";
       }
-      // Sort by category then name
+
       ResourceLocation symbolId = Page.getSymbol(page);
       if (symbolId != null) {
         IAgeSymbol symbol = SymbolRegistry.get(symbolId);
@@ -183,9 +181,10 @@ public class PortfolioItem extends Item implements TooltipCompat {
   }
 
   /**
-   * Removes a page by CONTENT matching (not by index).
-   * This is the collection-based removal that distinguishes Portfolio from Folder.
-   * Portfolio is a COLLECTION - you remove items by what they ARE, not where they are.
+   * Removes a page by CONTENT matching (not by index). This is the
+   * collection-based removal that distinguishes Portfolio from Folder.
+   * Portfolio is a COLLECTION - you remove items by what they ARE, not where
+   * they are.
    *
    * @param portfolio    The portfolio item stack
    * @param pageToRemove The page to find and remove (matched by NBT content)
@@ -216,8 +215,6 @@ public class PortfolioItem extends Item implements TooltipCompat {
     }
     return false;
   }
-
-  // --- Portfolio: Collection Semantics ---
 
   /**
    * Counts how many copies of a specific page are in this portfolio.
@@ -258,8 +255,6 @@ public class PortfolioItem extends Item implements TooltipCompat {
     return count;
   }
 
-  // --- Portfolio: Category Statistics ---
-
   /**
    * Counts symbol pages in this portfolio.
    */
@@ -274,8 +269,8 @@ public class PortfolioItem extends Item implements TooltipCompat {
   }
 
   /**
-   * Imports all pages from another portfolio or folder into this one.
-   * Returns any pages that couldn't fit.
+   * Imports all pages from another portfolio or folder into this one. Returns
+   * any pages that couldn't fit.
    */
   public static List<ItemStack> importFrom(ItemStack portfolio, List<ItemStack> pagesToImport) {
     List<ItemStack> overflow = new ArrayList<>();
@@ -300,8 +295,6 @@ public class PortfolioItem extends Item implements TooltipCompat {
     }
     return symbols;
   }
-
-  // --- Portfolio: Bulk Operations ---
 
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
     List<ItemStack> pages = getPages(stack);

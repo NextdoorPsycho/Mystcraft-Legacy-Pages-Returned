@@ -43,8 +43,7 @@ public interface IRegistryHelper {
   /**
    * Gets the biome registry key for use with dynamic registries.
    * <p>
-   * 1.20.x: {@code Registries.BIOME}
-   * 1.19.x: {@code Registry.BIOME_REGISTRY}
+   * 1.20.x: {@code Registries.BIOME} 1.19.x: {@code Registry.BIOME_REGISTRY}
    *
    * @return The biome registry key
    */
@@ -53,8 +52,8 @@ public interface IRegistryHelper {
   /**
    * Gets the dimension type registry key for use with dynamic registries.
    * <p>
-   * 1.20.x: {@code Registries.DIMENSION_TYPE}
-   * 1.19.x: {@code Registry.DIMENSION_TYPE_REGISTRY}
+   * 1.20.x: {@code Registries.DIMENSION_TYPE} 1.19.x:
+   * {@code Registry.DIMENSION_TYPE_REGISTRY}
    *
    * @return The dimension type registry key
    */
@@ -63,8 +62,8 @@ public interface IRegistryHelper {
   /**
    * Gets the level stem registry key for use with dynamic registries.
    * <p>
-   * 1.20.x: {@code Registries.LEVEL_STEM}
-   * 1.19.x: {@code Registry.LEVEL_STEM_REGISTRY}
+   * 1.20.x: {@code Registries.LEVEL_STEM} 1.19.x:
+   * {@code Registry.LEVEL_STEM_REGISTRY}
    *
    * @return The level stem registry key
    */
@@ -73,8 +72,8 @@ public interface IRegistryHelper {
   /**
    * Gets the noise settings registry key for use with dynamic registries.
    * <p>
-   * 1.20.x: {@code Registries.NOISE_SETTINGS}
-   * 1.19.x: {@code Registry.NOISE_GENERATOR_SETTINGS_REGISTRY}
+   * 1.20.x: {@code Registries.NOISE_SETTINGS} 1.19.x:
+   * {@code Registry.NOISE_GENERATOR_SETTINGS_REGISTRY}
    *
    * @return The noise settings registry key
    */

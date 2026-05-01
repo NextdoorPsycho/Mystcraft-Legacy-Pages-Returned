@@ -4,22 +4,20 @@ import art.arcane.mystcraft.api.world.logic.IWeatherController;
 import net.minecraft.server.level.ServerLevel;
 
 /**
- * Weather controller for cloudy skies without precipitation.
- * Overcast appearance but no actual rain or snow.
+ * Weather controller for cloudy skies without precipitation. Overcast
+ * appearance but no actual rain or snow.
  */
 public class WeatherControllerCloudy implements IWeatherController {
 
   public static final String TYPE = "cloudy";
 
-  // Simulate "almost raining" state for cloud darkness
   private float cloudLevel = 0.0f;
 
   @Override
   public void updateWeather(ServerLevel level) {
-    // Keep clouds but no rain
+
     cloudLevel = Math.min(0.5f, cloudLevel + 0.01f);
 
-    // Force clear weather but with darkened sky effect
     if (level.isRaining()) {
       level.setWeatherParameters(6000, 0, false, false);
     }
@@ -37,7 +35,7 @@ public class WeatherControllerCloudy implements IWeatherController {
 
   @Override
   public float getRainLevel() {
-    return cloudLevel; // Returns cloud level for visual dimming
+    return cloudLevel;
   }
 
   @Override

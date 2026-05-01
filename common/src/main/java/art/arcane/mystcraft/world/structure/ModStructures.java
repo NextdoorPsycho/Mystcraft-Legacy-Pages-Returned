@@ -5,8 +5,8 @@ import net.minecraft.world.level.levelgen.structure.StructureType;
 import java.util.function.Supplier;
 
 /**
- * Common accessor for registered structure types.
- * Platform modules populate these suppliers during initialization.
+ * Common accessor for registered structure types. Platform modules populate
+ * these suppliers during initialization.
  */
 public final class ModStructures {
 

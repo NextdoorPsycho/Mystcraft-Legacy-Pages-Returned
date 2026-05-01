@@ -9,7 +9,6 @@ public final class FabricInstabilityEffects {
   }
 
   public static void register() {
-    // Currently disabled - instability effects are communicated through gameplay
-    // rather than screen overlays. When enabled, register HudRenderCallback here.
+
   }
 }

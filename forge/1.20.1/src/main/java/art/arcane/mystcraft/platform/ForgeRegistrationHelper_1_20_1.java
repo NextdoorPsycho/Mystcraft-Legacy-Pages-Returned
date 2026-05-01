@@ -3,17 +3,12 @@ package art.arcane.mystcraft.platform;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.block.*;
 import art.arcane.mystcraft.blockentity.*;
-import art.arcane.mystcraft.entity.ColoredLightningEntity;
-import art.arcane.mystcraft.entity.LinkbookEntity;
-import art.arcane.mystcraft.entity.MeteorEntity;
-import art.arcane.mystcraft.entity.MystcraftFallingBlockEntity;
-import art.arcane.mystcraft.entity.PersonalPocketProxyEntity;
-import art.arcane.mystcraft.forge.BlackInkFluid;
-import art.arcane.mystcraft.forge.BlackInkFluidType;
-import art.arcane.mystcraft.forge.ForgeMystcraftConfig;
-import art.arcane.mystcraft.forge.ForgePageItem;
-import art.arcane.mystcraft.forge.MystcraftForgeRegistries;
-import art.arcane.mystcraft.item.*;
+import art.arcane.mystcraft.entity.*;
+import art.arcane.mystcraft.forge.*;
+import art.arcane.mystcraft.item.BoosterPackItem;
+import art.arcane.mystcraft.item.FolderItem;
+import art.arcane.mystcraft.item.InkVialItem;
+import art.arcane.mystcraft.item.PortfolioItem;
 import art.arcane.mystcraft.menu.*;
 import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_20_1;
 import art.arcane.mystcraft.platform.services.IRegistrationHelper;
@@ -44,9 +39,9 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Forge 1.20.1 implementation of IRegistrationHelper.
- * Handles all block, item, entity, and other registrations using MystcraftForgeRegistries.
- * This class consolidates registration logic that was previously spread across
+ * Forge 1.20.1 implementation of IRegistrationHelper. Handles all block, item,
+ * entity, and other registrations using MystcraftForgeRegistries. This class
+ * consolidates registration logic that was previously spread across
  * ForgeModBlocks, ForgeModItems, ForgeModBlockEntities, etc.
  */
 public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
@@ -54,7 +49,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   private IEventBus modEventBus;
   private boolean initialized = false;
 
-  // Blocks
   private RegistryObject<Block> inkMixer;
   private RegistryObject<Block> bookBinder;
   private RegistryObject<Block> bookReceptacle;
@@ -66,7 +60,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   private RegistryObject<Block> starFissure;
   private RegistryObject<LiquidBlock> fluidInk;
 
-  // Items
   private RegistryObject<Item> page;
   private RegistryObject<Item> agebook;
   private RegistryObject<Item> linkbook;
@@ -86,27 +79,24 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   private RegistryObject<Item> crystalItem;
   private RegistryObject<Item> decayItem;
 
-  // Block Entities
   private RegistryObject<BlockEntityType<InkMixerBlockEntity>> inkMixerBE;
   private RegistryObject<BlockEntityType<BookBinderBlockEntity>> bookBinderBE;
   private RegistryObject<BlockEntityType<BookReceptacleBlockEntity>> bookReceptacleBE;
   private RegistryObject<BlockEntityType<WritingDeskBlockEntity>> writingDeskBE;
   private RegistryObject<BlockEntityType<StarFissureBlockEntity>> starFissureBE;
   private RegistryObject<BlockEntityType<LinkModifierBlockEntity>> linkModifierBE;
+  private RegistryObject<BlockEntityType<LinkPortalBlockEntity>> linkPortalBE;
 
-  // Entities
   private RegistryObject<EntityType<LinkbookEntity>> linkbookEntity;
   private RegistryObject<EntityType<PersonalPocketProxyEntity>> personalPocketProxyEntity;
   private RegistryObject<EntityType<MystcraftFallingBlockEntity>> fallingBlockEntity;
   private RegistryObject<EntityType<MeteorEntity>> meteorEntity;
   private RegistryObject<EntityType<ColoredLightningEntity>> coloredLightningEntity;
 
-  // Fluids
   private RegistryObject<FluidType> blackInkType;
   private RegistryObject<FlowingFluid> blackInkSource;
   private RegistryObject<FlowingFluid> blackInkFlowing;
 
-  // Sounds
   private RegistryObject<SoundEvent> linkingPop;
   private RegistryObject<SoundEvent> linkingLink;
   private RegistryObject<SoundEvent> linkingDisarm;
@@ -117,7 +107,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   private RegistryObject<SoundEvent> meteorRoar;
   private RegistryObject<SoundEvent> meteorImpact;
 
-  // Menus
   private RegistryObject<MenuType<InkMixerMenu>> inkMixerMenu;
   private RegistryObject<MenuType<BookBinderMenu>> bookBinderMenu;
   private RegistryObject<MenuType<LinkModifierMenu>> linkModifierMenu;
@@ -136,32 +125,25 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   }
 
   private void registerAllContent() {
-    // Fluids first (blocks depend on them)
+
     registerFluids();
 
-    // Blocks
     registerBlocks();
 
-    // Items (after blocks for block items)
     registerItems();
 
-    // Block Entities (after blocks)
     registerBlockEntities();
 
-    // Entities
     registerEntities();
 
-    // Sounds
     registerSounds();
 
-    // Menus
     registerMenus();
   }
 
   private void registerFluids() {
     blackInkType = MystcraftForgeRegistries.FLUID_TYPES.register("black_ink", BlackInkFluidType::new);
 
-    // Set the fluid type supplier for BlackInkFluid instances
     BlackInkFluid.setFluidTypeSupplier(blackInkType);
 
     blackInkSource = MystcraftForgeRegistries.FLUIDS.register("black_ink",
@@ -196,17 +178,17 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
   }
 
   private void registerItems() {
-    // Standalone items
+
     page = MystcraftForgeRegistries.ITEMS.register("page",
         () -> new ForgePageItem(ItemDefinitions.page()));
     agebook = MystcraftForgeRegistries.ITEMS.register("agebook",
-        () -> new AgebookItem(ItemDefinitions.agebook()));
+        () -> new ForgeAgebookItem(ItemDefinitions.agebook()));
     linkbook = MystcraftForgeRegistries.ITEMS.register("linkbook",
-        () -> new LinkbookItem(ItemDefinitions.linkbook()));
+        () -> new ForgeLinkbookItem(ItemDefinitions.linkbook()));
     linkbookUnlinked = MystcraftForgeRegistries.ITEMS.register("linkbook_unlinked",
-        () -> new LinkbookUnlinkedItem(ItemDefinitions.linkbookUnlinked()));
+        () -> new ForgeLinkbookUnlinkedItem(ItemDefinitions.linkbookUnlinked()));
     personalLinkBook = MystcraftForgeRegistries.ITEMS.register("personal_link_book",
-        () -> new PersonalLinkBookItem(ItemDefinitions.personalLinkBook()));
+        () -> new ForgePersonalLinkBookItem(ItemDefinitions.personalLinkBook()));
     boosterPack = MystcraftForgeRegistries.ITEMS.register("booster",
         () -> new BoosterPackItem(ItemDefinitions.boosterPack()));
     folder = MystcraftForgeRegistries.ITEMS.register("folder",
@@ -216,11 +198,10 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
     inkVial = MystcraftForgeRegistries.ITEMS.register("inkvial",
         () -> new InkVialItem(ItemDefinitions.inkVial()));
     guidebook = MystcraftForgeRegistries.ITEMS.register("guidebook",
-        () -> new GuidebookItem(ItemDefinitions.guidebook()));
+        () -> new ForgeGuidebookItem(ItemDefinitions.guidebook()));
     inkBucket = MystcraftForgeRegistries.ITEMS.register("ink_bucket",
         () -> new BucketItem(blackInkSource, ItemDefinitions.inkBucket()));
 
-    // Block items
     inkMixerItem = MystcraftForgeRegistries.ITEMS.register("blockinkmixer",
         () -> new BlockItem(inkMixer.get(), ItemDefinitions.blockItem()));
     bookBinderItem = MystcraftForgeRegistries.ITEMS.register("blockbookbinder",
@@ -250,6 +231,8 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
         () -> BlockEntityType.Builder.of(StarFissureBlockEntity::new, starFissure.get()).build(null));
     linkModifierBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("link_modifier",
         () -> BlockEntityType.Builder.of(LinkModifierBlockEntity::new, linkModifier.get()).build(null));
+    linkPortalBE = MystcraftForgeRegistries.BLOCK_ENTITIES.register("link_portal",
+        () -> BlockEntityType.Builder.of(LinkPortalBlockEntity::new, linkPortal.get()).build(null));
   }
 
   private void registerEntities() {
@@ -328,7 +311,7 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
 
   @Override
   public void populateCommonRegistries() {
-    // Blocks
+
     ModBlocks.INK_MIXER = inkMixer;
     ModBlocks.BOOK_BINDER = bookBinder;
     ModBlocks.BOOK_RECEPTACLE = bookReceptacle;
@@ -340,7 +323,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
     ModBlocks.STAR_FISSURE = starFissure;
     ModBlocks.FLUID_INK = fluidInk;
 
-    // Items
     ModItems.PAGE = page;
     ModItems.AGEBOOK = agebook;
     ModItems.LINKBOOK = linkbook;
@@ -360,27 +342,24 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
     ModItems.CRYSTAL_ITEM = crystalItem;
     ModItems.DECAY_ITEM = decayItem;
 
-    // Block Entities
     ModBlockEntities.INK_MIXER = inkMixerBE;
     ModBlockEntities.BOOK_BINDER = bookBinderBE;
     ModBlockEntities.BOOK_RECEPTACLE = bookReceptacleBE;
     ModBlockEntities.WRITING_DESK = writingDeskBE;
     ModBlockEntities.STAR_FISSURE = starFissureBE;
     ModBlockEntities.LINK_MODIFIER = linkModifierBE;
+    ModBlockEntities.LINK_PORTAL = linkPortalBE;
 
-    // Entities
     ModEntities.LINKBOOK = linkbookEntity;
     ModEntities.PERSONAL_POCKET_PROXY = personalPocketProxyEntity;
     ModEntities.FALLING_BLOCK = fallingBlockEntity;
     ModEntities.METEOR = meteorEntity;
     ModEntities.COLORED_LIGHTNING = coloredLightningEntity;
 
-    // Fluids
     ModFluids.BLACK_INK_SOURCE = blackInkSource;
     ModFluids.BLACK_INK_FLOWING = blackInkFlowing;
     ModFluids.BLACK_INK_BUCKET = inkBucket;
 
-    // Sounds
     ModSounds.LINKING_POP = linkingPop;
     ModSounds.LINKING_LINK = linkingLink;
     ModSounds.LINKING_DISARM = linkingDisarm;
@@ -391,7 +370,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
     ModSounds.METEOR_ROAR = meteorRoar;
     ModSounds.METEOR_IMPACT = meteorImpact;
 
-    // Menu Types
     ModMenuTypes.INK_MIXER = inkMixerMenu;
     ModMenuTypes.BOOK_BINDER = bookBinderMenu;
     ModMenuTypes.LINK_MODIFIER = linkModifierMenu;
@@ -399,10 +377,8 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
     ModMenuTypes.FOLDER = folderMenu;
     ModMenuTypes.PORTFOLIO = portfolioMenu;
 
-    // Config - wire Forge config values to common suppliers
     populateConfigSuppliers();
 
-    // Network
     populateNetworkHandlers();
   }
 
@@ -459,7 +435,6 @@ public class ForgeRegistrationHelper_1_20_1 implements IRegistrationHelper {
     art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingBlockHandler = ForgeMystcraftNetwork_1_20_1::sendToTrackingBlock;
   }
 
-  // The following methods can be used by common code to register additional content
   @Override
   public <T extends Block> Supplier<T> registerBlock(String name, Supplier<T> block) {
     return MystcraftForgeRegistries.BLOCKS.register(name, block);

@@ -85,7 +85,6 @@ public class MystGuiTextField extends MystGuiElement {
   protected void onTick() {
     cursorCounter++;
 
-    // Sync text from provider
     if (textProvider != null && !focused) {
       String provided = textProvider.get();
       if (provided != null && !provided.equals(text)) {
@@ -101,21 +100,17 @@ public class MystGuiTextField extends MystGuiElement {
     int x = getLeft();
     int y = getTop();
 
-    // Draw border
     int borderColorToUse = focused ? 0xFFFFFF : borderColor;
     graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF000000 | borderColorToUse);
 
-    // Draw background
     graphics.fill(x, y, x + width, y + height, 0xFF000000);
 
-    // Draw text
     int textX = x + 4;
     int textY = y + (height - 8) / 2;
 
     String displayText = text;
     int textWidth = mc.font.width(displayText);
 
-    // Scroll if text is too long
     int maxTextWidth = width - 8;
     int scrollOffset = 0;
     if (textWidth > maxTextWidth && focused) {
@@ -125,17 +120,14 @@ public class MystGuiTextField extends MystGuiElement {
       }
     }
 
-    // Enable scissor
     graphics.enableScissor(x + 2, y, x + width - 2, y + height);
     graphics.drawString(mc.font, displayText, textX - scrollOffset, textY, textColor);
 
-    // Draw cursor
     if (focused && editable && (cursorCounter / 6) % 2 == 0) {
       int cursorX = textX + mc.font.width(text.substring(0, cursorPosition)) - scrollOffset;
       graphics.fill(cursorX, textY - 1, cursorX + 1, textY + 9, 0xFFD0D0D0);
     }
 
-    // Draw selection
     if (selectionEnd != cursorPosition) {
       int startPos = Math.min(cursorPosition, selectionEnd);
       int endPos = Math.max(cursorPosition, selectionEnd);
@@ -153,7 +145,7 @@ public class MystGuiTextField extends MystGuiElement {
     setFocused(wasClicked && editable);
 
     if (focused && button == 0) {
-      // Calculate cursor position from click
+
       int x = getLeft() + 4;
       int relX = (int) mouseX - x;
       int pos = 0;

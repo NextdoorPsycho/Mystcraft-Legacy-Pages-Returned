@@ -1,7 +1,6 @@
 package art.arcane.mystcraft.fabric;
 
 import com.google.gson.JsonObject;
-import net.minecraft.advancements.CriterionTrigger;
 import net.minecraft.advancements.critereon.AbstractCriterionTriggerInstance;
 import net.minecraft.advancements.critereon.ContextAwarePredicate;
 import net.minecraft.advancements.critereon.DeserializationContext;
@@ -10,7 +9,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Fabric 1.20.1 advancement triggers using the legacy API with ContextAwarePredicate and getId().
+ * Fabric 1.20.1 advancement triggers using the legacy API with
+ * ContextAwarePredicate and getId().
  */
 public final class FabricTriggers {
 

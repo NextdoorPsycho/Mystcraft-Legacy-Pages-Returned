@@ -13,8 +13,8 @@ import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 
 /**
- * Forge 1.20.1 implementation of IRegistryHelper.
- * Uses BuiltInRegistries for static registries and Registries for dynamic registry keys.
+ * Forge 1.20.1 implementation of IRegistryHelper. Uses BuiltInRegistries for
+ * static registries and Registries for dynamic registry keys.
  */
 public class ForgeRegistryHelper_1_20_1 implements IRegistryHelper {
 

@@ -9,10 +9,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Generates impossibly thin glass and ice bridges spanning vast distances
- * at extreme altitude. Bridges are 1-2 blocks wide and 60-200 blocks long,
- * with a gentle parabolic arc. Occasional lanterns hang below on chains.
- * The bridges appear to defy physics, connecting nothing to nothing.
+ * Generates impossibly thin glass and ice bridges spanning vast distances at
+ * extreme altitude. Bridges are 1-2 blocks wide and 60-200 blocks long, with a
+ * gentle parabolic arc. Occasional lanterns hang below on chains. The bridges
+ * appear to defy physics, connecting nothing to nothing.
  */
 public class PhantomBridgesPopulator implements IPopulate {
 
@@ -84,9 +84,8 @@ public class PhantomBridgesPopulator implements IPopulate {
       double angle = random.nextDouble() * Math.PI * 2.0;
       int width = 1 + random.nextInt(2);
 
-      // Pick material palette for this bridge
       long matHash = positionHash(seed, startX, bridgeY, startZ);
-      int matBase = (int) ((matHash >>> 8) & 0xFF) % 3; // 0=glass, 1=ice, 2=mixed
+      int matBase = (int) ((matHash >>> 8) & 0xFF) % 3;
       boolean useSoulLanterns = (matHash & 1L) == 0;
 
       generateBridge(world, chunkPos, startX, bridgeY, startZ,
@@ -95,12 +94,12 @@ public class PhantomBridgesPopulator implements IPopulate {
   }
 
   private void generateBridge(WorldGenLevel world, BlockPos chunkPos,
-                               int startX, int baseY, int startZ,
-                               int length, double angle, int width,
-                               int matBase, boolean useSoulLanterns) {
+                              int startX, int baseY, int startZ,
+                              int length, double angle, int width,
+                              int matBase, boolean useSoulLanterns) {
     double dx = Math.cos(angle);
     double dz = Math.sin(angle);
-    // Perpendicular direction for width
+
     double perpX = -dz;
     double perpZ = dx;
 
@@ -108,7 +107,7 @@ public class PhantomBridgesPopulator implements IPopulate {
 
     for (int step = 0; step < length; step++) {
       double progress = (double) step / length;
-      // Parabolic arc: highest at center
+
       int arcY = (int) (ARC_HEIGHT * 4.0 * progress * (1.0 - progress));
       int blockY = baseY + arcY;
 
@@ -127,12 +126,10 @@ public class PhantomBridgesPopulator implements IPopulate {
           continue;
         }
 
-        // Pick material
         long blockHash = positionHash(seed, bx, blockY, bz);
         BlockState material = pickMaterial(blockHash, matBase);
         world.setBlock(pos, material, 2);
 
-        // Glass pane railings on edges of wider bridges
         if (width >= 2 && w == 0) {
           BlockPos railPos = new BlockPos(bx, blockY + 1, bz);
           if (isInWritableArea(railPos, chunkPos)) {
@@ -141,7 +138,6 @@ public class PhantomBridgesPopulator implements IPopulate {
         }
       }
 
-      // Hanging lanterns at intervals
       if (step > 0 && step % lanternInterval == 0 && step < length - 5) {
         int lx = (int) Math.round(centerX);
         int lz = (int) Math.round(centerZ);
@@ -160,24 +156,23 @@ public class PhantomBridgesPopulator implements IPopulate {
       }
     }
 
-    // Anchor pillars at each end (short decorative columns)
     placeAnchor(world, chunkPos, startX, baseY, startZ);
     int endX = (int) Math.round(startX + dx * (length - 1));
     int endZ = (int) Math.round(startZ + dz * (length - 1));
-    int endArcY = baseY; // Ends at base height
+    int endArcY = baseY;
     placeAnchor(world, chunkPos, endX, endArcY, endZ);
   }
 
   private void placeAnchor(WorldGenLevel world, BlockPos chunkPos,
-                            int x, int y, int z) {
-    // Small 3-block tall pillar
+                           int x, int y, int z) {
+
     for (int dy = -2; dy <= 1; dy++) {
       BlockPos pos = new BlockPos(x, y + dy, z);
       if (isInWritableArea(pos, chunkPos)) {
         world.setBlock(pos, Blocks.QUARTZ_PILLAR.defaultBlockState(), 2);
       }
     }
-    // End rod on top
+
     BlockPos topPos = new BlockPos(x, y + 2, z);
     if (isInWritableArea(topPos, chunkPos)) {
       world.setBlock(topPos, Blocks.END_ROD.defaultBlockState(), 2);
@@ -187,13 +182,11 @@ public class PhantomBridgesPopulator implements IPopulate {
   private BlockState pickMaterial(long hash, int matBase) {
     float roll = hashFloat(hash);
     return switch (matBase) {
-      case 0 -> // Glass palette
-          roll < 0.5f ? BRIDGE_MATERIALS[0] :
-              roll < 0.8f ? BRIDGE_MATERIALS[1] : BRIDGE_MATERIALS[2];
-      case 1 -> // Ice palette
-          roll < 0.4f ? BRIDGE_MATERIALS[3] :
-              roll < 0.7f ? BRIDGE_MATERIALS[4] : BRIDGE_MATERIALS[5];
-      default -> // Mixed
+      case 0 -> roll < 0.5f ? BRIDGE_MATERIALS[0] :
+          roll < 0.8f ? BRIDGE_MATERIALS[1] : BRIDGE_MATERIALS[2];
+      case 1 -> roll < 0.4f ? BRIDGE_MATERIALS[3] :
+          roll < 0.7f ? BRIDGE_MATERIALS[4] : BRIDGE_MATERIALS[5];
+      default ->
           BRIDGE_MATERIALS[(int) ((hash >>> 24) & 0xFF) % BRIDGE_MATERIALS.length];
     };
   }

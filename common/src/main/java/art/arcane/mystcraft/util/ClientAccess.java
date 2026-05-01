@@ -6,7 +6,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 /**
- * Reflection-based access to client-only classes to keep common code server-safe.
+ * Reflection-based access to client-only classes to keep common code
+ * server-safe.
  */
 public final class ClientAccess {
 

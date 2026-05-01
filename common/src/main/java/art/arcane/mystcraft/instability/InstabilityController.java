@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Runtime controller for instability effects in an Age.
- * Manages deck drawing and effect execution based on instability score.
+ * Runtime controller for instability effects in an Age. Manages deck drawing
+ * and effect execution based on instability score.
  */
 public class InstabilityController implements InstabilityDirector {
 
@@ -43,7 +43,6 @@ public class InstabilityController implements InstabilityDirector {
     this.enabled = ageData.getInstability() > 0;
     this.lastScore = (int) ageData.getInstability();
 
-    // Build decks from registry
     this.decks = InstabilityProviderRegistry.createDecks();
     initializeDecks();
     reconstruct();
@@ -51,19 +50,15 @@ public class InstabilityController implements InstabilityDirector {
     LOGGER.debug("InstabilityController initialized with {} decks, enabled={}", decks.size(), enabled);
   }
 
-  /**
-   * Initializes deck order, shuffling with saved state if available.
-   */
   private void initializeDecks() {
     Random rand = new Random(seed);
 
     for (Deck deck : decks) {
       String deckName = deck.getName();
 
-      // Get saved deck order if available
       List<String> savedOrder = ageData.getSavedDeckOrder(deckName);
       if (savedOrder != null && !savedOrder.isEmpty()) {
-        // Reconstruct deck from saved order
+
         Collection<String> cards = HashMultiset.create(deck.getCards());
         deck.removeAll();
 
@@ -76,7 +71,6 @@ public class InstabilityController implements InstabilityDirector {
           }
         }
 
-        // Add any new cards that weren't in saved order
         if (!cards.isEmpty()) {
           Deck newCards = new Deck("temp", cards);
           newCards.shuffle(rand);
@@ -88,16 +82,13 @@ public class InstabilityController implements InstabilityDirector {
           ageData.saveDeckOrder(deckName, deck.getCards());
         }
       } else {
-        // New deck - shuffle and save
+
         deck.shuffle(rand);
         ageData.saveDeckOrder(deckName, deck.getCards());
       }
     }
   }
 
-  /**
-   * Validates the current state and rebuilds effects if needed.
-   */
   private void validate() {
     boolean shouldBeEnabled = ageData.getInstability() > 0;
     if (enabled != shouldBeEnabled) {
@@ -106,7 +97,6 @@ public class InstabilityController implements InstabilityDirector {
       return;
     }
 
-    // Check if instability score has changed significantly
     int currentScore = (int) ageData.getInstability();
     int smallestCost = InstabilityProviderRegistry.getSmallestCost();
     int normalizedNew = currentScore - (currentScore % smallestCost);
@@ -117,9 +107,6 @@ public class InstabilityController implements InstabilityDirector {
     }
   }
 
-  /**
-   * Rebuilds all active effects based on current instability.
-   */
   private void reconstruct() {
     providerLevels.clear();
     effects.clear();
@@ -128,7 +115,6 @@ public class InstabilityController implements InstabilityDirector {
       return;
     }
 
-    // Determine which providers are active from each deck
     for (Deck deck : decks) {
       Collection<String> activeProviders = getActiveProviders(deck);
       if (activeProviders != null) {
@@ -138,16 +124,12 @@ public class InstabilityController implements InstabilityDirector {
       }
     }
 
-    // Rebuild effects from active providers
     rebuildEffects();
 
     LOGGER.debug("Reconstructed instability effects: {} providers active, {} effects registered",
         providerLevels.size(), effects.size());
   }
 
-  /**
-   * Gets the active providers from a deck based on instability score.
-   */
   private Collection<String> getActiveProviders(Deck deck) {
     int instabilityScore = getInstabilityScore();
     instabilityScore -= InstabilityProviderRegistry.getDeckCost(deck.getName());
@@ -171,16 +153,10 @@ public class InstabilityController implements InstabilityDirector {
     return activeProviders;
   }
 
-  /**
-   * Increments the level for a provider.
-   */
   private void addProviderLevel(String provider) {
     providerLevels.merge(provider, 1, Integer::sum);
   }
 
-  /**
-   * Rebuilds effect instances from active providers.
-   */
   private void rebuildEffects() {
     effects.clear();
 

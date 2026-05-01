@@ -18,16 +18,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Menu for the Book Binder block.
- * Provides access to cover slot and page list.
+ * Menu for the Book Binder block. Provides access to cover slot and page list.
  */
 public class BookBinderMenu extends AbstractContainerMenu {
 
-  // Slot indices
   public static final int SLOT_COVER = 0;
   public static final int SLOT_OUTPUT = 1;
   public static final int BLOCK_ENTITY_SLOTS = 2;
-  // Player inventory slot ranges
+
   private static final int PLAYER_INVENTORY_START = BLOCK_ENTITY_SLOTS;
   private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
   private static final int PLAYER_HOTBAR_END = PLAYER_INVENTORY_END + 9;
@@ -55,42 +53,37 @@ public class BookBinderMenu extends AbstractContainerMenu {
 
     Container container = blockEntity.getInventory();
 
-    // Cover/Input slot at (8, 27)
     addSlot(new Slot(container, 0, 8, 27));
 
-    // Output/Craft result slot at (152, 27) - uses separate inventory
     addSlot(new Slot(craftResult, 0, 152, 27) {
       @Override
       public boolean mayPlace(@NotNull ItemStack stack) {
-        return false; // Cannot place items in output
+        return false;
       }
 
       @Override
       public boolean mayPickup(@NotNull Player player) {
-        return true; // Always allow picking up the output
+        return true;
       }
 
       @Override
       public void onTake(@NotNull Player player, @NotNull ItemStack stack) {
-        // When taking the crafted item, build it
+
         blockEntity.buildItem(stack, player);
         super.onTake(player, stack);
       }
     });
 
-    // Player inventory (3 rows of 9) - ySize=181, so inventory starts at y=99
     for (int row = 0; row < 3; row++) {
       for (int col = 0; col < 9; col++) {
         addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 99 + row * 18));
       }
     }
 
-    // Player hotbar - at y=157 for ySize=181
     for (int col = 0; col < 9; col++) {
       addSlot(new Slot(playerInventory, col, 8 + col * 18, 157));
     }
 
-    // Data slots
     pageCountData = addDataSlot(DataSlot.standalone());
     canBuildData = addDataSlot(DataSlot.standalone());
 
@@ -119,7 +112,6 @@ public class BookBinderMenu extends AbstractContainerMenu {
     pageCountData.set(blockEntity.getPageList().size());
     canBuildData.set(blockEntity.canBuildItem() ? 1 : 0);
 
-    // Update the craft result slot with preview of what would be crafted
     craftResult.setItem(0, blockEntity.getCraftedItem());
   }
 
@@ -154,37 +146,32 @@ public class BookBinderMenu extends AbstractContainerMenu {
       ItemStack stackInSlot = slot.getItem();
       result = stackInSlot.copy();
 
-      // Moving from block entity slots to player inventory
       if (index < BLOCK_ENTITY_SLOTS) {
         if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true)) {
           return ItemStack.EMPTY;
         }
-      }
-      // Moving from player inventory to block entity slots
-      else {
-        // Check if it's a page - insert ONE at a time into the binder's page list
+      } else {
+
         if (stackInSlot.getItem() instanceof PageItem) {
-          // Create a single-item copy to insert
+
           ItemStack singlePage = stackInSlot.copy();
           singlePage.setCount(1);
 
-          // Try to insert into the page list
           ItemStack remainder = blockEntity.insertPage(singlePage, blockEntity.getPageList().size());
           if (remainder.isEmpty()) {
-            // Successfully inserted one page
+
             stackInSlot.shrink(1);
             slot.setChanged();
-            // Return the original stack to indicate something was moved
+
             return result;
           }
-          // Failed to insert (page list full)
+
           return ItemStack.EMPTY;
         }
 
-        // Try cover slot - only if it's a valid cover item
         if (BookBinderBlockEntity.isValidCover(stackInSlot)) {
           if (!moveItemStackTo(stackInSlot, SLOT_COVER, SLOT_COVER + 1, false)) {
-            // Move between inventory and hotbar
+
             if (index < PLAYER_INVENTORY_END) {
               if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
                 return ItemStack.EMPTY;
@@ -196,7 +183,7 @@ public class BookBinderMenu extends AbstractContainerMenu {
             }
           }
         } else {
-          // Not a page and not a valid cover - move between inventory and hotbar
+
           if (index < PLAYER_INVENTORY_END) {
             if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
               return ItemStack.EMPTY;
@@ -220,8 +207,8 @@ public class BookBinderMenu extends AbstractContainerMenu {
   }
 
   /**
-   * Shift-clicks a page out of the binder's page list to the player's inventory.
-   * Called from the screen when clicking on a page in the list.
+   * Shift-clicks a page out of the binder's page list to the player's
+   * inventory. Called from the screen when clicking on a page in the list.
    *
    * @param pageIndex the index of the page in the binder's page list
    * @return true if the page was successfully moved to inventory
@@ -236,9 +223,8 @@ public class BookBinderMenu extends AbstractContainerMenu {
       return false;
     }
 
-    // Try to add to player inventory
     if (!moveItemStackTo(page, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true)) {
-      // Failed - put it back
+
       blockEntity.insertPage(page, pageIndex);
       return false;
     }

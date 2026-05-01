@@ -6,6 +6,9 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
+/**
+ * Forge GameTest wrapper that forwards loader-discovered tests into the shared runner.
+ */
 @GameTestHolder(value = Mystcraft.MOD_ID)
 @PrefixGameTestTemplate(false)
 public class MystcraftForgeGameTests {
@@ -38,6 +41,66 @@ public class MystcraftForgeGameTests {
   @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 40)
   public void book_travel_dropped_books_take_damage_and_drop_parts(GameTestHelper helper) {
     MystcraftGameTestRunner.runLinkbookEntityDamageAndDropsTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 40)
+  public void book_travel_portal_validator_categorizes_book_types(GameTestHelper helper) {
+    MystcraftGameTestRunner.runPortalValidatorCategorizesBookTypesTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 200)
+  public void book_travel_unwritten_agebook_activate_creates_age(GameTestHelper helper) {
+    MystcraftGameTestRunner.runUnwrittenAgebookActivateCreatesAgeTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 60)
+  public void book_travel_receptacle_take_on_shift_empty_hand(GameTestHelper helper) {
+    MystcraftGameTestRunner.runReceptacleTakeOnShiftEmptyHandTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 60)
+  public void book_travel_receptacle_setbook_fires_in_all_orientations(GameTestHelper helper) {
+    MystcraftGameTestRunner.runReceptacleSetBookFiresInAllOrientationsTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 40)
+  public void book_travel_linkbook_inserted_directly_teleports(GameTestHelper helper) {
+    MystcraftGameTestRunner.runLinkbookInsertedDirectlyTeleportsTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 40)
+  public void book_travel_cooldown_is_per_portal_not_global(GameTestHelper helper) {
+    MystcraftGameTestRunner.runCooldownIsPerPortalNotGlobalTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 40)
+  public void book_travel_portal_block_has_block_entity(GameTestHelper helper) {
+    MystcraftGameTestRunner.runPortalBlockHasBlockEntityTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 40)
+  public void book_travel_portal_color_distinct_per_book_type(GameTestHelper helper) {
+    MystcraftGameTestRunner.runPortalColorDistinctPerBookTypeTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 80)
+  public void book_travel_portal_color_uniform_across_all_portal_blocks(GameTestHelper helper) {
+    MystcraftGameTestRunner.runPortalColorUniformAcrossAllPortalBlocksTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 80)
+  public void book_travel_two_adjacent_portals_each_has_own_color(GameTestHelper helper) {
+    MystcraftGameTestRunner.runTwoAdjacentPortalsEachHasOwnColorTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 60)
+  public void book_travel_breaking_receptacle_clears_all_portal_blocks(GameTestHelper helper) {
+    MystcraftGameTestRunner.runBreakingReceptacleClearsAllPortalBlocksTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_TRAVEL, timeoutTicks = 60)
+  public void book_travel_breaking_crystal_clears_all_portal_blocks(GameTestHelper helper) {
+    MystcraftGameTestRunner.runBreakingCrystalClearsAllPortalBlocksTest(helper);
   }
 
   @GameTest(template = "empty", batch = MystcraftGameTestSuites.BOOK_CRAFTING, timeoutTicks = 40)
@@ -153,5 +216,10 @@ public class MystcraftForgeGameTests {
   @GameTest(template = "empty", batch = MystcraftGameTestSuites.PROCEDURAL_UI, timeoutTicks = 600)
   public void procedural_ui_symbol_warm_completes(GameTestHelper helper) {
     MystcraftGameTestRunner.runProceduralSymbolWarmCompletesTest(helper);
+  }
+
+  @GameTest(template = "empty", batch = MystcraftGameTestSuites.PROCEDURAL_UI, timeoutTicks = 60)
+  public void procedural_ui_guidebook_and_unlinked_book_kinds_render(GameTestHelper helper) {
+    MystcraftGameTestRunner.runGuidebookAndUnlinkedBookKindsRenderTest(helper);
   }
 }

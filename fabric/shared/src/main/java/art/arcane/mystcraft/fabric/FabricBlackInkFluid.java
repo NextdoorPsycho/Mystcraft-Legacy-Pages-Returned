@@ -16,6 +16,9 @@ import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 
+/**
+ * Fabric implementation of the shared black ink fluid behavior and bucket interaction contract.
+ */
 public abstract class FabricBlackInkFluid extends FlowingFluid {
 
   @Override

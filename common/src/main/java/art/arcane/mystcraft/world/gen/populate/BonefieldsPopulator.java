@@ -11,11 +11,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Bonefields populator that generates scattered skeletal formations
- * resembling the remains of colossal ancient creatures.
- * Structures include ribcage arches, spine trails, and skull mounds,
- * decorated with soul sand patches and soul torches.
- * All formations fit within a single chunk.
+ * Bonefields populator that generates scattered skeletal formations resembling
+ * the remains of colossal ancient creatures. Structures include ribcage arches,
+ * spine trails, and skull mounds, decorated with soul sand patches and soul
+ * torches. All formations fit within a single chunk.
  */
 public class BonefieldsPopulator implements IPopulate {
 
@@ -72,11 +71,6 @@ public class BonefieldsPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Generates two parallel parabolic arcs of bone_block forming a ribcage.
-   * Height: 5-8 blocks, width: 6-12 blocks, spacing between arcs: 3-4 blocks.
-   * Buried 1-2 blocks into terrain.
-   */
   private void generateRibcageArch(WorldGenLevel world, RandomSource random,
                                    BlockPos surface, BlockPos chunkPos) {
     int height = 5 + random.nextInt(4);
@@ -85,13 +79,12 @@ public class BonefieldsPopulator implements IPopulate {
     int buryDepth = 1 + random.nextInt(2);
     int baseY = surface.getY() - buryDepth;
 
-    // Two parallel arcs offset along Z axis
     int halfSpacing = spacing / 2;
     for (int arc = -1; arc <= 1; arc += 2) {
       int arcZ = surface.getZ() + arc * halfSpacing;
 
       for (int dx = -halfWidth; dx <= halfWidth; dx++) {
-        // Parabolic shape: y = height * (1 - (dx/halfWidth)^2)
+
         double normalized = (double) dx / halfWidth;
         int arcY = (int) Math.round(height * (1.0 - normalized * normalized));
         if (arcY < 0) {
@@ -99,7 +92,7 @@ public class BonefieldsPopulator implements IPopulate {
         }
 
         int bx = surface.getX() + dx;
-        // Place the bone column from base up to the arc height
+
         for (int dy = 0; dy <= arcY; dy++) {
           BlockPos pos = new BlockPos(bx, baseY + dy, arcZ);
           if (isInWritableArea(pos, chunkPos)) {
@@ -110,11 +103,6 @@ public class BonefieldsPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Generates a ground-level trail of bone_block 10-20 blocks long
-   * in a random direction. Occasional vertebrae bumps (+1Y) every 3-5 blocks.
-   * Buried 1-2 blocks into terrain.
-   */
   private void generateSpineTrail(WorldGenLevel world, RandomSource random,
                                   BlockPos surface, BlockPos chunkPos) {
     int length = 10 + random.nextInt(11);
@@ -136,15 +124,13 @@ public class BonefieldsPopulator implements IPopulate {
         continue;
       }
 
-      // Place the buried spine block
       placeBoneBlock(world, pos);
-      // Also place at surface level for visibility
+
       BlockPos surfaceBlock = new BlockPos(bx, surfaceY, bz);
       if (isInWritableArea(surfaceBlock, chunkPos)) {
         placeBoneBlock(world, surfaceBlock);
       }
 
-      // Vertebrae bump
       bumpCounter++;
       if (bumpCounter >= nextBump) {
         bumpCounter = 0;
@@ -157,17 +143,11 @@ public class BonefieldsPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Generates a 3x3x3 bone_block cube with hollow center (air inside)
-   * and coal_block at 2 positions for "eye sockets".
-   * Buried 1-2 blocks into terrain.
-   */
   private void generateSkullMound(WorldGenLevel world, RandomSource random,
                                   BlockPos surface, BlockPos chunkPos) {
     int buryDepth = 1 + random.nextInt(2);
     int baseY = surface.getY() - buryDepth;
 
-    // 3x3x3 bone cube
     for (int dx = -1; dx <= 1; dx++) {
       for (int dy = 0; dy <= 2; dy++) {
         for (int dz = -1; dz <= 1; dz++) {
@@ -176,7 +156,6 @@ public class BonefieldsPopulator implements IPopulate {
             continue;
           }
 
-          // Hollow center
           if (dx == 0 && dy == 1 && dz == 0) {
             world.setBlock(pos, AIR, 2);
             continue;
@@ -187,7 +166,6 @@ public class BonefieldsPopulator implements IPopulate {
       }
     }
 
-    // Eye sockets: two coal_block positions on the front face at eye level
     BlockPos leftEye = new BlockPos(surface.getX() - 1, baseY + 2, surface.getZ() + 1);
     BlockPos rightEye = new BlockPos(surface.getX() + 1, baseY + 2, surface.getZ() + 1);
     if (isInWritableArea(leftEye, chunkPos)) {
@@ -198,10 +176,6 @@ public class BonefieldsPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Places soul_sand patches (3-5 blocks) around the formation base
-   * with an occasional soul_torch on top.
-   */
   private void placeSoulSandPatches(WorldGenLevel world, RandomSource random,
                                     BlockPos surface, BlockPos chunkPos) {
     int patchCount = 3 + random.nextInt(3);
@@ -221,7 +195,6 @@ public class BonefieldsPopulator implements IPopulate {
       if (existing.isSolid() && !existing.is(Blocks.BONE_BLOCK)) {
         world.setBlock(sandPos, SOUL_SAND, 2);
 
-        // Occasional soul torch on top
         if (random.nextInt(4) == 0) {
           BlockPos torchPos = sandPos.above();
           if (isInWritableArea(torchPos, chunkPos) && world.getBlockState(torchPos).isAir()) {
@@ -232,9 +205,6 @@ public class BonefieldsPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Places a bone block, replacing air, leaves, snow, or natural terrain.
-   */
   private void placeBoneBlock(WorldGenLevel world, BlockPos pos) {
     BlockState existing = world.getBlockState(pos);
     if (existing.isAir() ||

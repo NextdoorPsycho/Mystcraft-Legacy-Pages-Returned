@@ -10,11 +10,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Shattered Grid populator that generates a geometric grid pattern of thin walls
- * at regular intervals, like a broken matrix or simulation. Grid lines are
- * partially missing to create the "shattered" look, with intersections forming
- * short columns and edges forming wall segments.
- *
+ * Shattered Grid populator that generates a geometric grid pattern of thin
+ * walls at regular intervals, like a broken matrix or simulation. Grid lines
+ * are partially missing to create the "shattered" look, with intersections
+ * forming short columns and edges forming wall segments.
+ * <p>
  * This is a simple single-chunk populator. When triggered, it applies the grid
  * pattern across the entire chunk using deterministic position hashing so the
  * grid aligns seamlessly across chunk boundaries.
@@ -55,10 +55,6 @@ public class ShatteredGridPopulator implements IPopulate {
     this.maxGridSpacing = Math.max(this.minGridSpacing, PopulatorConfig.getInt(params, "max_grid_spacing", DEFAULT_MAX_GRID_SPACING));
   }
 
-  /**
-   * Position-deterministic hash. Same position always produces the same value
-   * regardless of which chunk is being populated.
-   */
   private static long positionHash(long seed, int x, int y, int z) {
     long h = seed;
     h ^= (long) x * 73856093L;
@@ -68,16 +64,10 @@ public class ShatteredGridPopulator implements IPopulate {
     return h;
   }
 
-  /**
-   * Returns a deterministic float in [0, 1) from a position hash.
-   */
   private static float hashToFloat(long hash) {
     return (float) ((hash >>> 16) & 0xFFFFL) / 65536.0f;
   }
 
-  /**
-   * Selects a material deterministically based on position hash.
-   */
   private static BlockState getMaterial(long hash) {
     int index = (int) ((hash >>> 32) & 0x3);
     return MATERIALS[index];
@@ -95,7 +85,6 @@ public class ShatteredGridPopulator implements IPopulate {
         continue;
       }
 
-      // Derive grid spacing deterministically from seed + chunk coordinates
       int chunkX = chunkPos.getX() >> 4;
       int chunkZ = chunkPos.getZ() >> 4;
       long spacingSeed = positionHash(seed, chunkX, i, chunkZ);
@@ -107,14 +96,13 @@ public class ShatteredGridPopulator implements IPopulate {
   }
 
   private void generateGrid(WorldGenLevel world,
-                             int chunkMinX, int chunkMaxX,
-                             int chunkMinZ, int chunkMaxZ,
-                             int gridSpacing, BlockPos chunkPos) {
-    // Iterate all block columns in this chunk and check if they lie on a grid line
+                            int chunkMinX, int chunkMaxX,
+                            int chunkMinZ, int chunkMaxZ,
+                            int gridSpacing, BlockPos chunkPos) {
+
     for (int bx = chunkMinX; bx <= chunkMaxX; bx++) {
       for (int bz = chunkMinZ; bz <= chunkMaxZ; bz++) {
-        // Determine alignment with the global grid
-        // Use Math.floorMod for consistent behavior with negative coordinates
+
         int modX = Math.floorMod(bx, gridSpacing);
         int modZ = Math.floorMod(bz, gridSpacing);
 
@@ -127,23 +115,20 @@ public class ShatteredGridPopulator implements IPopulate {
 
         boolean isIntersection = onXLine && onZLine;
 
-        // Get surface height for this position
         int surfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz) - 1;
         if (surfaceY <= world.getMinBuildHeight() + 1 || surfaceY >= world.getMaxBuildHeight() - 2) {
           continue;
         }
 
-        // Use position hash to determine if this segment is "shattered" (missing)
         long placeHash = positionHash(seed ^ 0x54A77L, bx, surfaceY, bz);
         float placeChance = hashToFloat(placeHash);
 
         if (isIntersection) {
-          // Intersections have a higher chance of surviving the shatter
+
           if (placeChance >= INTERSECTION_PLACE_CHANCE) {
             continue;
           }
 
-          // Place a short column at the intersection
           long heightHash = positionHash(seed ^ 0xC01A9BL, bx, surfaceY, bz);
           int columnHeight = MIN_COLUMN_HEIGHT + (int) (((heightHash >>> 8) & 0xFFL) % (MAX_COLUMN_HEIGHT - MIN_COLUMN_HEIGHT + 1));
           BlockState material = getMaterial(placeHash);
@@ -155,7 +140,7 @@ public class ShatteredGridPopulator implements IPopulate {
             }
           }
         } else {
-          // Edge segments between intersections
+
           if (placeChance >= EDGE_PLACE_CHANCE) {
             continue;
           }
@@ -170,25 +155,19 @@ public class ShatteredGridPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Places a grid block at the given position, embedding 1 block into terrain.
-   * Only places if the target position is air or replaceable.
-   */
   private void placeGridBlock(WorldGenLevel world, BlockPos pos, BlockState material) {
-    // Embed 1 block into terrain (place at surface - 1)
+
     BlockPos embeddedPos = pos.below();
     BlockState existingBelow = world.getBlockState(embeddedPos);
     if (existingBelow.isSolid()) {
       world.setBlock(embeddedPos, material, 2);
     }
 
-    // Place at surface level
     BlockState existing = world.getBlockState(pos);
     if (existing.isAir() || !existing.isSolid()) {
       world.setBlock(pos, material, 2);
     }
 
-    // Place above surface for visibility
     BlockPos abovePos = pos.above();
     BlockState existingAbove = world.getBlockState(abovePos);
     if (existingAbove.isAir()) {

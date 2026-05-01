@@ -16,9 +16,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 
 /**
- * Jungle temple populator that generates mossy cobblestone structures.
- * Jungle temples consist of a puzzle-filled temple with levers, tripwires,
- * and hidden chests containing loot.
+ * Jungle temple populator that generates mossy cobblestone structures. Jungle
+ * temples consist of a puzzle-filled temple with levers, tripwires, and hidden
+ * chests containing loot.
  */
 public class JungleTemplesPopulator implements IPopulate {
 

@@ -16,18 +16,19 @@ import java.util.Map;
 /**
  * Mutable runtime accumulator for ink-mixer affinity contributions.
  * <p>
- * As the player drops items into the mixer each one's
- * {@link InkAffinity.Entry} is added to the blend. The blend is then frozen
- * into NBT when the link panel is built so the resulting page (and any
- * downstream booster pack crafted with the ink) can use it to bias symbol
- * rolls in {@code SymbolRegistry.getRandomWeightedWithAffinity}.
+ * As the player drops items into the mixer each one's {@link InkAffinity.Entry}
+ * is added to the blend. The blend is then frozen into NBT when the link panel
+ * is built so the resulting page (and any downstream booster pack crafted with
+ * the ink) can use it to bias symbol rolls in
+ * {@code SymbolRegistry.getRandomWeightedWithAffinity}.
  */
 public final class InkBlend {
 
-  /** Per-entry weight cap to keep one item type from saturating the blend. */
+  /**
+   * Per-entry weight cap to keep one item type from saturating the blend.
+   */
   public static final float WEIGHT_CAP = 5.0f;
 
-  // Wire format keys
   private static final String TAG_TIER = "tier";
   private static final String TAG_TOTAL = "total";
   private static final String TAG_SYMBOLS = "symbols";
@@ -45,14 +46,39 @@ public final class InkBlend {
   public InkBlend() {
   }
 
-  // -------------------------------------------------------------------------
-  // Mutation
-  // -------------------------------------------------------------------------
+  /**
+   * Convenience constructor: build an instance from NBT.
+   */
+  @NotNull
+  public static InkBlend fromTag(@Nullable CompoundTag tag) {
+    InkBlend blend = new InkBlend();
+    blend.fromNbt(tag);
+    return blend;
+  }
+
+  private static <K> void addTo(Map<K, Float> dst, Map<K, Float> src, float scale) {
+    for (Map.Entry<K, Float> e : src.entrySet()) {
+      Float existing = dst.get(e.getKey());
+      float total = (existing == null ? 0f : existing) + e.getValue() * scale;
+      if (total > WEIGHT_CAP) total = WEIGHT_CAP;
+      dst.put(e.getKey(), total);
+    }
+  }
+
+  private static void addToString(Map<String, Float> dst, Map<String, Float> src, float scale) {
+    for (Map.Entry<String, Float> e : src.entrySet()) {
+      String key = e.getKey().toLowerCase(Locale.ROOT);
+      Float existing = dst.get(key);
+      float total = (existing == null ? 0f : existing) + e.getValue() * scale;
+      if (total > WEIGHT_CAP) total = WEIGHT_CAP;
+      dst.put(key, total);
+    }
+  }
 
   /**
-   * Adds the given affinity {@code count} times. Weights accumulate
-   * additively (capped at {@link #WEIGHT_CAP}); tier bonus takes the
-   * maximum of contributions.
+   * Adds the given affinity {@code count} times. Weights accumulate additively
+   * (capped at {@link #WEIGHT_CAP}); tier bonus takes the maximum of
+   * contributions.
    */
   public synchronized void add(@NotNull InkAffinity.Entry entry, int count) {
     if (entry == null || entry == InkAffinity.EMPTY || count <= 0) {
@@ -70,8 +96,8 @@ public final class InkBlend {
   }
 
   /**
-   * Merges another blend into this one. Useful when a booster pack crafted
-   * with two themed inks is consumed.
+   * Merges another blend into this one. Useful when a booster pack crafted with
+   * two themed inks is consumed.
    */
   public synchronized void merge(@NotNull InkBlend other) {
     if (other == null || other.isEmpty()) return;
@@ -85,7 +111,9 @@ public final class InkBlend {
     totalContribution += other.totalContribution;
   }
 
-  /** Wipes all accumulated weights. */
+  /**
+   * Wipes all accumulated weights.
+   */
   public synchronized void clear() {
     symbolWeights.clear();
     categoryWeights.clear();
@@ -94,10 +122,6 @@ public final class InkBlend {
     tierBonus = 0;
     totalContribution = 0f;
   }
-
-  // -------------------------------------------------------------------------
-  // Read
-  // -------------------------------------------------------------------------
 
   public synchronized boolean isEmpty() {
     return symbolWeights.isEmpty() && categoryWeights.isEmpty()
@@ -129,21 +153,28 @@ public final class InkBlend {
     return Collections.unmodifiableMap(new HashMap<>(linkPropertyWeights));
   }
 
-  /** Symbol weight for a specific id (0 if absent). */
+  /**
+   * Symbol weight for a specific id (0 if absent).
+   */
   public synchronized float symbolWeight(@Nullable ResourceLocation id) {
     if (id == null) return 0f;
     Float v = symbolWeights.get(id);
     return v == null ? 0f : v;
   }
 
-  /** Category weight (0 if absent). */
+  /**
+   * Category weight (0 if absent).
+   */
   public synchronized float categoryWeight(@Nullable SymbolCategory cat) {
     if (cat == null) return 0f;
     Float v = categoryWeights.get(cat);
     return v == null ? 0f : v;
   }
 
-  /** Sums poem-token weights for any tokens this poem array matches (case-insensitive). */
+  /**
+   * Sums poem-token weights for any tokens this poem array matches
+   * (case-insensitive).
+   */
   public synchronized float poemTokenSum(@Nullable String[] poem) {
     if (poem == null || poem.length == 0 || poemTokenWeights.isEmpty()) {
       return 0f;
@@ -153,22 +184,21 @@ public final class InkBlend {
       if (word == null) continue;
       Float v = poemTokenWeights.get(word.trim().toLowerCase(Locale.ROOT));
       if (v != null) total += v;
-      // Also support exact-case match in case datapacks register canonical capitalisation.
+
       Float exact = poemTokenWeights.get(word.trim());
       if (exact != null) total += exact;
     }
     return total;
   }
 
-  /** Link-property probability accumulated for the given property (capped at 1.0). */
+  /**
+   * Link-property probability accumulated for the given property (capped at
+   * 1.0).
+   */
   public synchronized float linkPropertyProbability(@NotNull String property) {
     Float v = linkPropertyWeights.get(property);
     return v == null ? 0f : Math.min(1f, v);
   }
-
-  // -------------------------------------------------------------------------
-  // Serialization
-  // -------------------------------------------------------------------------
 
   public synchronized CompoundTag toNbt() {
     CompoundTag tag = new CompoundTag();
@@ -208,7 +238,10 @@ public final class InkBlend {
     return tag;
   }
 
-  /** Replaces this blend's contents with the data deserialised from {@code tag}. */
+  /**
+   * Replaces this blend's contents with the data deserialised from
+   * {@code tag}.
+   */
   public synchronized void fromNbt(@Nullable CompoundTag tag) {
     clear();
     if (tag == null || tag.isEmpty()) return;
@@ -245,47 +278,22 @@ public final class InkBlend {
     }
   }
 
-  /** Convenience constructor: build an instance from NBT. */
-  @NotNull
-  public static InkBlend fromTag(@Nullable CompoundTag tag) {
-    InkBlend blend = new InkBlend();
-    blend.fromNbt(tag);
-    return blend;
-  }
-
-  // -------------------------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------------------------
-
-  private static <K> void addTo(Map<K, Float> dst, Map<K, Float> src, float scale) {
-    for (Map.Entry<K, Float> e : src.entrySet()) {
-      Float existing = dst.get(e.getKey());
-      float total = (existing == null ? 0f : existing) + e.getValue() * scale;
-      if (total > WEIGHT_CAP) total = WEIGHT_CAP;
-      dst.put(e.getKey(), total);
-    }
-  }
-
-  private static void addToString(Map<String, Float> dst, Map<String, Float> src, float scale) {
-    for (Map.Entry<String, Float> e : src.entrySet()) {
-      String key = e.getKey().toLowerCase(Locale.ROOT);
-      Float existing = dst.get(key);
-      float total = (existing == null ? 0f : existing) + e.getValue() * scale;
-      if (total > WEIGHT_CAP) total = WEIGHT_CAP;
-      dst.put(key, total);
-    }
-  }
-
-  /** Quick debug print used by tooltips during dev only. */
+  /**
+   * Quick debug print used by tooltips during dev only.
+   */
   @Override
   public synchronized String toString() {
     StringBuilder sb = new StringBuilder("InkBlend[");
     sb.append("tier=").append(tierBonus);
     sb.append(", total=").append(String.format(Locale.ROOT, "%.2f", totalContribution));
-    if (!symbolWeights.isEmpty()) sb.append(", symbols=").append(symbolWeights.size());
-    if (!categoryWeights.isEmpty()) sb.append(", categories=").append(categoryWeights.size());
-    if (!poemTokenWeights.isEmpty()) sb.append(", poem=").append(poemTokenWeights.size());
-    if (!linkPropertyWeights.isEmpty()) sb.append(", linkProps=").append(linkPropertyWeights.size());
+    if (!symbolWeights.isEmpty())
+      sb.append(", symbols=").append(symbolWeights.size());
+    if (!categoryWeights.isEmpty())
+      sb.append(", categories=").append(categoryWeights.size());
+    if (!poemTokenWeights.isEmpty())
+      sb.append(", poem=").append(poemTokenWeights.size());
+    if (!linkPropertyWeights.isEmpty())
+      sb.append(", linkProps=").append(linkPropertyWeights.size());
     sb.append(']');
     return sb.toString();
   }

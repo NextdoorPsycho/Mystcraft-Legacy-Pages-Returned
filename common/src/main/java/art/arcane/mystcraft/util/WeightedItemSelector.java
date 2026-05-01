@@ -7,8 +7,8 @@ import java.util.Collection;
 import java.util.Random;
 
 /**
- * Utility for weighted random selection from collections.
- * Supports both weighted and evenly distributed selection.
+ * Utility for weighted random selection from collections. Supports both
+ * weighted and evenly distributed selection.
  */
 public final class WeightedItemSelector {
 
@@ -36,7 +36,8 @@ public final class WeightedItemSelector {
   }
 
   /**
-   * Gets a random item from a collection using weighted selection and default provider.
+   * Gets a random item from a collection using weighted selection and default
+   * provider.
    */
   public static <T> T getRandomItem(Random rand, Collection<T> collection) {
     return getRandomItem(rand, collection, WeightProviderDefault.INSTANCE);
@@ -99,10 +100,9 @@ public final class WeightedItemSelector {
    */
   public interface IWeightedItem {
     /**
-     * The weight is used to determine how often the item is chosen.
-     * Higher = more often; 0 = no chance.
-     * Note: In a collection of items with no chance (all 0 weight),
-     * the system will default to an even distribution.
+     * The weight is used to determine how often the item is chosen. Higher =
+     * more often; 0 = no chance. Note: In a collection of items with no chance
+     * (all 0 weight), the system will default to an even distribution.
      */
     float getWeight();
   }

@@ -22,9 +22,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Global manager for Mystcraft Ages.
- * Tracks all ages across the server and provides lookup functionality.
- * This data is saved in the overworld.
+ * Global manager for Mystcraft Ages. Tracks all ages across the server and
+ * provides lookup functionality. This data is saved in the overworld.
  */
 public class AgeManager extends SavedData {
 
@@ -35,21 +34,9 @@ public class AgeManager extends SavedData {
   private static final String TAG_UID = "UID";
   private static final String TAG_UUID = "UUID";
   private static final String TAG_DIMENSION = "Dimension";
-  /**
-   * Map of age UID to dimension ResourceLocation
-   */
   private final Map<Integer, ResourceLocation> ageUIDtoDimension = new HashMap<>();
-  /**
-   * Map of dimension ResourceLocation to age UID
-   */
   private final Map<ResourceLocation, Integer> dimensionToAgeUID = new HashMap<>();
-  /**
-   * Map of age UUID to age UID
-   */
   private final Map<UUID, Integer> ageUUIDtoUID = new HashMap<>();
-  /**
-   * Next available age UID (starts at 1000 for 4-digit IDs, avoids collision with The End which is UID 1)
-   */
   private int nextUID = 1000;
 
   public AgeManager() {
@@ -65,8 +52,8 @@ public class AgeManager extends SavedData {
   }
 
   /**
-   * Gets the AgeManager for the server.
-   * Uses version-specific SavedData API through Services.VERSION.
+   * Gets the AgeManager for the server. Uses version-specific SavedData API
+   * through Services.VERSION.
    */
   public static AgeManager get(MinecraftServer server) {
     ServerLevel overworld = server.getLevel(Level.OVERWORLD);
@@ -88,13 +75,9 @@ public class AgeManager extends SavedData {
     return get(level.getServer());
   }
 
-  /**
-   * Loads the age manager data from NBT.
-   */
   private void loadFromTag(CompoundTag tag) {
     this.nextUID = tag.getInt(TAG_NEXT_UID);
-    // Don't bump existing saves - existing Ages with low UIDs must keep working.
-    // Only fresh worlds (nextUID == 0 from missing tag) get the 1000 floor.
+
     if (this.nextUID <= 0) {
       this.nextUID = 1000;
     }
@@ -131,8 +114,6 @@ public class AgeManager extends SavedData {
     Mystcraft.LOGGER.info("Saving AgeManager data...");
     tag.putInt(TAG_NEXT_UID, nextUID);
 
-    // Create a local copy of the maps to avoid concurrent modification issues
-    // and use a reverse map for UUID lookup to avoid O(N^2) complexity.
     Map<Integer, ResourceLocation> ageMap;
     Map<UUID, Integer> uuidMap;
     synchronized (this) {

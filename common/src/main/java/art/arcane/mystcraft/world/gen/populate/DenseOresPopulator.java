@@ -10,37 +10,35 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Dense ore populator that generates ores at approximately double the standard rate.
- * Used when the Dense Ores symbol is applied to an age.
- * This replaces the standard ore generation (not additive).
+ * Dense ore populator that generates ores at approximately double the standard
+ * rate. Used when the Dense Ores symbol is applied to an age. This replaces the
+ * standard ore generation (not additive).
  */
 public class DenseOresPopulator implements IPopulate {
 
-  // Dense ore configurations
-  // blockState, veinSize, veinsPerChunk, minY, maxY
   private static final OreConfig[] ORE_CONFIGS = {
-      // Coal: 20 veins, size 16, 0-128 -> adjusted to -64 to 128
+
       new OreConfig(Blocks.COAL_ORE.defaultBlockState(), Blocks.DEEPSLATE_COAL_ORE.defaultBlockState(),
           16, 20, -64, 128),
-      // Iron: 20 veins, size 8, 0-64 -> adjusted to -64 to 64
+
       new OreConfig(Blocks.IRON_ORE.defaultBlockState(), Blocks.DEEPSLATE_IRON_ORE.defaultBlockState(),
           8, 20, -64, 64),
-      // Gold: 2 veins, size 8, 0-32 -> adjusted to -64 to 32
+
       new OreConfig(Blocks.GOLD_ORE.defaultBlockState(), Blocks.DEEPSLATE_GOLD_ORE.defaultBlockState(),
           8, 2, -64, 32),
-      // Redstone: 8 veins, size 7, 0-16 -> adjusted to -64 to 16
+
       new OreConfig(Blocks.REDSTONE_ORE.defaultBlockState(), Blocks.DEEPSLATE_REDSTONE_ORE.defaultBlockState(),
           7, 8, -64, 16),
-      // Diamond: 1 vein, size 7, 0-16 -> adjusted to -64 to 16
+
       new OreConfig(Blocks.DIAMOND_ORE.defaultBlockState(), Blocks.DEEPSLATE_DIAMOND_ORE.defaultBlockState(),
           7, 1, -64, 16),
-      // Lapis: 1 vein, size 6, 0-16 -> adjusted to -64 to 16
+
       new OreConfig(Blocks.LAPIS_ORE.defaultBlockState(), Blocks.DEEPSLATE_LAPIS_ORE.defaultBlockState(),
           6, 1, -64, 16),
-      // Emerald: 6 veins, size 1, 4-32 -> adjusted to -60 to 32
+
       new OreConfig(Blocks.EMERALD_ORE.defaultBlockState(), Blocks.DEEPSLATE_EMERALD_ORE.defaultBlockState(),
           1, 6, -60, 32),
-      // Copper (new in 1.17+): moderate amount
+
       new OreConfig(Blocks.COPPER_ORE.defaultBlockState(), Blocks.DEEPSLATE_COPPER_ORE.defaultBlockState(),
           10, 10, -16, 112)
   };
@@ -132,12 +130,10 @@ public class DenseOresPopulator implements IPopulate {
   private void tryPlaceOre(WorldGenLevel world, BlockPos pos, OreConfig config) {
     BlockState existing = world.getBlockState(pos);
 
-    // Replace any solid opaque block (supports custom terrain blocks)
     if (existing.isAir() || !existing.isSolid() || !existing.canOcclude()) {
       return;
     }
 
-    // Use deepslate variant below Y=0, regular ore otherwise
     if (pos.getY() < 0) {
       world.setBlock(pos, config.deepslateOreBlock, 2);
     } else {
@@ -150,6 +146,8 @@ public class DenseOresPopulator implements IPopulate {
     return "mystcraft:dense_ores";
   }
 
-  private record OreConfig(BlockState oreBlock, BlockState deepslateOreBlock, int veinSize, int veinsPerChunk, int minY, int maxY) {
+  private record OreConfig(BlockState oreBlock, BlockState deepslateOreBlock,
+                           int veinSize, int veinsPerChunk, int minY,
+                           int maxY) {
   }
 }

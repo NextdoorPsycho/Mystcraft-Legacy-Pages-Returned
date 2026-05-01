@@ -42,12 +42,10 @@ import net.minecraftforge.registries.RegistryObject;
 import java.util.List;
 
 /**
- * Central holder for all Mystcraft DeferredRegister instances.
- * Consolidates all registry definitions including loot modifiers, villagers, and world gen.
+ * Central holder for all Mystcraft DeferredRegister instances. Consolidates all
+ * registry definitions including loot modifiers, villagers, and world gen.
  */
 public final class MystcraftRegistries {
-
-  // ==================== Core Registries ====================
 
   public static final DeferredRegister<Block> BLOCKS =
       DeferredRegister.create(ForgeRegistries.BLOCKS, Mystcraft.MOD_ID);
@@ -85,8 +83,6 @@ public final class MystcraftRegistries {
   public static final DeferredRegister<VillagerProfession> VILLAGER_PROFESSIONS =
       DeferredRegister.create(ForgeRegistries.VILLAGER_PROFESSIONS, Mystcraft.MOD_ID);
 
-  // ==================== World Generation Registries ====================
-
   public static final DeferredRegister<Codec<? extends ChunkGenerator>> CHUNK_GENERATORS =
       DeferredRegister.create(Registries.CHUNK_GENERATOR, Mystcraft.MOD_ID);
 
@@ -95,8 +91,6 @@ public final class MystcraftRegistries {
 
   public static final DeferredRegister<StructureType<?>> STRUCTURE_TYPES =
       DeferredRegister.create(Registries.STRUCTURE_TYPE, Mystcraft.MOD_ID);
-
-  // ==================== Loot Modifier Registrations ====================
 
   public static final RegistryObject<Codec<SymbolPageLootModifier>> SYMBOL_PAGE_LOOT =
       LOOT_MODIFIERS.register("symbol_page", SymbolPageLootModifier.CODEC);
@@ -107,15 +101,11 @@ public final class MystcraftRegistries {
   public static final RegistryObject<Codec<BoosterPackLootModifier>> BOOSTER_PACK_LOOT =
       LOOT_MODIFIERS.register("booster_pack", BoosterPackLootModifier.CODEC);
 
-  // ==================== World Gen Registrations ====================
-
   public static final RegistryObject<Codec<? extends ChunkGenerator>> AGE_CHUNK_GENERATOR =
       CHUNK_GENERATORS.register("age_chunk_generator", () -> AgeChunkGenerator.CODEC);
 
   public static final RegistryObject<Codec<? extends BiomeSource>> AGE_BIOME_SOURCE =
       BIOME_SOURCES.register("age_biome_source", () -> AgeBiomeSource.CODEC);
-
-  // ==================== Structure Registrations ====================
 
   public static final RegistryObject<StructureType<AbandonedLibraryStructure>> ABANDONED_LIBRARY =
       STRUCTURE_TYPES.register("abandoned_library",
@@ -128,8 +118,6 @@ public final class MystcraftRegistries {
   public static final RegistryObject<StructureType<ScatteredLibraryStructure>> SCATTERED_LIBRARY =
       STRUCTURE_TYPES.register("scattered_library",
           () -> () -> ScatteredLibraryStructure.CODEC);
-
-  // ==================== Villager Registrations ====================
 
   /**
    * POI type for the Archivist workstation (Book Binder).
@@ -156,8 +144,6 @@ public final class MystcraftRegistries {
           SoundEvents.VILLAGER_WORK_LIBRARIAN
       )
   );
-
-  // ==================== Creative Tab Registrations ====================
 
   /**
    * Main Mystcraft tab - blocks, items, tools
@@ -226,8 +212,8 @@ public final class MystcraftRegistries {
   }
 
   /**
-   * Registers all DeferredRegister instances to the mod event bus.
-   * Call this from the main mod constructor.
+   * Registers all DeferredRegister instances to the mod event bus. Call this
+   * from the main mod constructor.
    */
   public static void register(IEventBus modEventBus) {
     BLOCKS.register(modEventBus);
@@ -246,7 +232,6 @@ public final class MystcraftRegistries {
     BIOME_SOURCES.register(modEventBus);
     STRUCTURE_TYPES.register(modEventBus);
 
-    // Populate common ModStructures suppliers
     art.arcane.mystcraft.world.structure.ModStructures.ABANDONED_LIBRARY = ABANDONED_LIBRARY;
     art.arcane.mystcraft.world.structure.ModStructures.UNDERGROUND_ARCHIVE = UNDERGROUND_ARCHIVE;
     art.arcane.mystcraft.world.structure.ModStructures.SCATTERED_LIBRARY = SCATTERED_LIBRARY;

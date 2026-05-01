@@ -13,8 +13,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Fabric 1.20.1 implementation of IVersionHelper.
- * Uses the legacy SavedData API without DataFixTypes.
+ * Fabric 1.20.1 implementation of IVersionHelper. Uses the legacy SavedData API
+ * without DataFixTypes.
  */
 public class FabricVersionHelper_1_20_1 implements IVersionHelper {
 

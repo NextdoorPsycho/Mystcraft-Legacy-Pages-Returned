@@ -43,23 +43,18 @@ public class MystGuiPageSurface extends MystGuiElement {
     int scrollbarWidth = 16;
     int contentWidth = width - scrollbarWidth;
 
-    // Draw background
     graphics.fill(guiLeft, guiTop, guiLeft + contentWidth, guiTop + height, 0xAA000000);
 
-    // Draw scrollbar background
     graphics.fill(guiLeft + contentWidth, guiTop, guiLeft + width, guiTop + height, 0x80404040);
 
-    // Calculate scrollbar position and size
     if (maxScroll > 0) {
       int scrollbarHeight = Math.max(20, (height * height) / (height + maxScroll));
       int scrollbarY = guiTop + (scrollOffset * (height - scrollbarHeight)) / maxScroll;
       graphics.fill(guiLeft + contentWidth + 2, scrollbarY, guiLeft + width - 2, scrollbarY + scrollbarHeight, 0xFFC0C0C0);
     }
 
-    // Enable scissor for content area
     graphics.enableScissor(guiLeft, guiTop, guiLeft + contentWidth, guiTop + height);
 
-    // Render pages
     List<PositionableItem> pages = provider != null ? provider.getPositionedPages() : null;
     hoverItem = null;
     hoverTooltip.clear();
@@ -70,17 +65,14 @@ public class MystGuiPageSurface extends MystGuiElement {
         float pageX = guiLeft + item.x;
         float pageY = guiTop + item.y - scrollOffset;
 
-        // Track max scroll
         if (item.y + PAGE_HEIGHT > maxScroll + height) {
           maxScroll = (int) (item.y + PAGE_HEIGHT + 6 - height);
         }
 
-        // Skip if out of view
         if (pageY + PAGE_HEIGHT < guiTop || pageY > guiTop + height) {
           continue;
         }
 
-        // Filter by search text
         ItemStack stack = item.itemstack;
         if (!searchText.isEmpty() && !stack.isEmpty()) {
           String displayName = getDisplayName(stack);
@@ -89,11 +81,9 @@ public class MystGuiPageSurface extends MystGuiElement {
           }
         }
 
-        // Render page
         if (item.count > 0 && !stack.isEmpty()) {
           renderPage(graphics, stack, (int) pageX, (int) pageY, (int) PAGE_WIDTH, (int) PAGE_HEIGHT);
 
-          // Show count if more than 1
           if (item.count > 1) {
             String countStr = String.valueOf(item.count);
             graphics.drawString(mc.font, countStr,
@@ -101,13 +91,12 @@ public class MystGuiPageSurface extends MystGuiElement {
                 (int) (pageY + PAGE_HEIGHT - 10), 0xFFFFFF);
           }
 
-          // Check hover
           if (mouseX >= pageX && mouseX < pageX + PAGE_WIDTH &&
               mouseY >= pageY && mouseY < pageY + PAGE_HEIGHT &&
               mouseX < guiLeft + contentWidth) {
             hoverItem = item;
             updateHoverTooltip(stack);
-            // Draw highlight
+
             graphics.fill((int) pageX, (int) pageY,
                 (int) (pageX + PAGE_WIDTH), (int) (pageY + PAGE_HEIGHT),
                 0x40FFFFFF);
@@ -118,14 +107,12 @@ public class MystGuiPageSurface extends MystGuiElement {
 
     graphics.disableScissor();
 
-    // Cap scroll
     if (maxScroll < 0) maxScroll = 0;
     if (scrollOffset > maxScroll) scrollOffset = maxScroll;
   }
 
   private void renderPage(GuiGraphics graphics, ItemStack stack, int x, int y, int width, int height) {
-    // Render the page using GuiGraphics abstraction
-    // Draw a simple representation - platform-specific versions can override for D'ni symbols
+
     graphics.renderItem(stack, x + (width - 16) / 2, y + (height - 16) / 2);
   }
 
@@ -145,12 +132,10 @@ public class MystGuiPageSurface extends MystGuiElement {
   private void updateHoverTooltip(ItemStack stack) {
     hoverTooltip.clear();
 
-    // Get page tooltip
     List<Component> pageTooltip = new java.util.ArrayList<>();
     Page.getTooltip(stack, pageTooltip);
     hoverTooltip.addAll(pageTooltip);
 
-    // Add display name
     String displayName = getDisplayName(stack);
     if (displayName != null) {
       hoverTooltip.add(Component.literal(displayName));
@@ -171,11 +156,9 @@ public class MystGuiPageSurface extends MystGuiElement {
     int guiLeft = getLeft();
     int contentWidth = width - 16;
 
-    // Check if in content area
     if (mouseX < guiLeft + contentWidth) {
       if (provider == null) return false;
 
-      // Check if holding item
       ItemStack carried = mc.player.containerMenu.getCarried();
       if (!carried.isEmpty()) {
         List<PositionableItem> pages = provider.getPositionedPages();
@@ -187,13 +170,11 @@ public class MystGuiPageSurface extends MystGuiElement {
         return true;
       }
 
-      // Copy with middle click
       if (hoverItem != null && button == 2) {
         provider.copy(hoverItem);
         return true;
       }
 
-      // Pickup with left click
       if (hoverItem != null && button == 0) {
         provider.pickup(hoverItem);
         return true;
@@ -210,7 +191,6 @@ public class MystGuiPageSurface extends MystGuiElement {
     int guiLeft = getLeft();
     int contentWidth = width - 16;
 
-    // Right-click release = copy
     if (mouseX >= guiLeft && mouseX < guiLeft + contentWidth &&
         hoverItem != null && button == 1 && mouseDown) {
       provider.copy(hoverItem);

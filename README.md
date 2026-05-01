@@ -71,8 +71,8 @@ TLDR: You can do just about everything you could before, it supports newer
 - Book Binder: Binds pages into Agebooks or Linkbooks.
 - Ink Mixer: Creates colored inks and imbues link properties.
 - Link Modifier: Applies link flags to books. (Borked)
-- Book Receptacle: Holds a book and activates a portal. (Borked)
-- Crystal Block + Link Portal: Portal frame and portal surface. (Borked)
+- Book Receptacle: Holds a book and activates a portal. Right-click with a book to insert; shift+empty-hand to retrieve. Each portal cell tints to the held book's colour (Linkbook: stored link colour, default 0x4488FF; Agebook: 0x66AAFF linked / 0x808890 unwritten; PersonalLinkBook: 0xAA44FF). Breaking the receptacle, breaking any frame crystal, or `/setblock`-ing it to air takes the lit portal down deterministically.
+- Crystal Block + Link Portal: Portal frame and portal surface. Each lit portal block carries a `LinkPortalBlockEntity` that stores a stamped colour, the source receptacle's BlockPos, and a snapshot of the book NBT — so the colour is uniform across every cell of a portal, two adjacent portals never bleed colours, and teleportation works even if the receptacle is removed mid-traversal.
 - Lectern (Vanilla): Displays and opens Mystcraft books. (Borked)
 
 ---
@@ -175,6 +175,22 @@ The project uses Gradle.
 ./gradlew :forge:1.20.1:runClient
 ```
 
+### VS Code / VS Code Insiders
+
+Open `Mystcraft-Legacy-Returned.code-workspace` from either VS Code or VS Code
+Insiders. The workspace applies a blue UI background so it is obvious the
+workspace settings loaded, recommends the Java/Gradle extensions, and exposes
+the supported build/run/test entries through **Terminal > Run Task**.
+
+The workspace tasks mirror the supported 1.20.1 targets:
+
+- Build all game platform jars
+- Build Fabric / Forge jars separately
+- Build Psycho / XComp jars
+- Run Fabric / Forge client and server
+- Run Fabric / Forge GameTest servers
+- Run the fast all-platform GameTest script
+
 ---
 
 ## Access Transformers / Access Wideners
@@ -182,10 +198,10 @@ The project uses Gradle.
 This mod requires access to private Minecraft fields (e.g.,
 `LecternBlockEntity.book`). Each loader has different requirements:
 
-| Loader       | File Location                                                       | Field Naming           |
-|--------------|---------------------------------------------------------------------|------------------------|
-| **Forge**    | `forge/1.20.1/src/main/resources/META-INF/accesstransformer.cfg`    | SRG names (`f_59527_`) |
-| **Fabric**   | `fabric/1.20.1/src/main/resources/mystcraft.accesswidener`          | Mojang names (`book`)  |
+| Loader     | File Location                                                    | Field Naming           |
+|------------|------------------------------------------------------------------|------------------------|
+| **Forge**  | `forge/1.20.1/src/main/resources/META-INF/accesstransformer.cfg` | SRG names (`f_59527_`) |
+| **Fabric** | `fabric/1.20.1/src/main/resources/mystcraft.accesswidener`       | Mojang names (`book`)  |
 
 **Why different names?** Forge's AT processor runs on the SRG-mapped JAR before
 remapping to Mojang names. Fabric process access wideners after Mojang mapping

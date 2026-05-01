@@ -14,8 +14,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.*;
 
 /**
- * Block shuffle populator that remaps blocks after generation.
- * Supports terrain-only and global shuffle modes.
+ * Block shuffle populator that remaps blocks after generation. Supports
+ * terrain-only and global shuffle modes.
  */
 public class BlockShufflePopulator implements IPopulate {
 
@@ -71,7 +71,8 @@ public class BlockShufflePopulator implements IPopulate {
       BlockState state = block.defaultBlockState();
       if (state.isAir() || !state.getFluidState().isEmpty()) continue;
       if (!state.isSolid()) continue;
-      if (state.is(Blocks.BEDROCK) || state.is(Blocks.END_PORTAL) || state.is(Blocks.NETHER_PORTAL)) continue;
+      if (state.is(Blocks.BEDROCK) || state.is(Blocks.END_PORTAL) || state.is(Blocks.NETHER_PORTAL))
+        continue;
 
       if (state.is(BlockTags.BASE_STONE_OVERWORLD)
           || state.is(BlockTags.BASE_STONE_NETHER)

@@ -13,17 +13,15 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Registry for ink effects.
- * Maps items to link property probabilities.
- * When items are added to ink, they have a chance to add properties to link panels.
+ * Registry for ink effects. Maps items to link property probabilities. When
+ * items are added to ink, they have a chance to add properties to link panels.
  */
 public final class InkEffects {
 
-  // Property colors for each link flag
   private static final Map<String, PropertyColor> PROPERTY_COLORS = new HashMap<>();
-  // Item -> (Property -> Probability) mappings
+
   private static final Map<Item, Map<String, Float>> ITEM_EFFECTS = new HashMap<>();
-  // Tag -> (Property -> Probability) mappings
+
   private static final Map<TagKey<Item>, Map<String, Float>> TAG_EFFECTS = new HashMap<>();
   private static boolean initialized = false;
 
@@ -31,8 +29,7 @@ public final class InkEffects {
   }
 
   /**
-   * Initializes the ink effects registry.
-   * Should be called during mod setup.
+   * Initializes the ink effects registry. Should be called during mod setup.
    * <p>
    * Item-level effects are now data-driven via the {@link InkAffinity} datapack
    * loader (JSONs under {@code data/mystcraft/mystcraft/ink_affinity/}). This
@@ -43,14 +40,13 @@ public final class InkEffects {
     if (initialized) return;
     initialized = true;
 
-    // Register property colors
-    registerPropertyColor(LinkFlags.INTRA_LINKING, new PropertyColor(0f, 1f, 0f));          // Green
-    registerPropertyColor(LinkFlags.INTRA_LINKING_ONLY, new PropertyColor(1f, 1f, 1f));     // White
-    registerPropertyColor(LinkFlags.GENERATE_PLATFORM, new PropertyColor(0.5f, 0.5f, 0.5f)); // Gray
-    registerPropertyColor(LinkFlags.MAINTAIN_MOMENTUM, new PropertyColor(0f, 0f, 1f));       // Blue
-    registerPropertyColor(LinkFlags.DISARM, new PropertyColor(1f, 0f, 0f));                  // Red
-    registerPropertyColor(LinkFlags.RELATIVE, new PropertyColor(0.6f, 0f, 0.6f));            // Purple
-    registerPropertyColor(LinkFlags.FOLLOWING, new PropertyColor(1f, 0.5f, 0f));             // Orange
+    registerPropertyColor(LinkFlags.INTRA_LINKING, new PropertyColor(0f, 1f, 0f));
+    registerPropertyColor(LinkFlags.INTRA_LINKING_ONLY, new PropertyColor(1f, 1f, 1f));
+    registerPropertyColor(LinkFlags.GENERATE_PLATFORM, new PropertyColor(0.5f, 0.5f, 0.5f));
+    registerPropertyColor(LinkFlags.MAINTAIN_MOMENTUM, new PropertyColor(0f, 0f, 1f));
+    registerPropertyColor(LinkFlags.DISARM, new PropertyColor(1f, 0f, 0f));
+    registerPropertyColor(LinkFlags.RELATIVE, new PropertyColor(0.6f, 0f, 0.6f));
+    registerPropertyColor(LinkFlags.FOLLOWING, new PropertyColor(1f, 0.5f, 0f));
   }
 
   /**
@@ -92,7 +88,7 @@ public final class InkEffects {
     if (I18n.exists(key)) {
       return I18n.get(key);
     }
-    // Fallback to formatted property name
+
     return formatPropertyName(property);
   }
 
@@ -104,9 +100,6 @@ public final class InkEffects {
     return "linkeffect.mystcraft." + property.toLowerCase().replace(' ', '_');
   }
 
-  /**
-   * Formats a property name for display (fallback when no translation exists).
-   */
   @NotNull
   private static String formatPropertyName(String property) {
     if (property == null || property.isEmpty()) return "";
@@ -139,9 +132,6 @@ public final class InkEffects {
     validateProbabilities(itemMap, item.toString());
   }
 
-  /**
-   * Validates that probabilities don't exceed 1.0.
-   */
   private static void validateProbabilities(Map<String, Float> probMap, String source) {
     float total = 0f;
     for (Float f : probMap.values()) {
@@ -163,20 +153,17 @@ public final class InkEffects {
   public static Map<String, Float> getItemEffects(ItemStack stack) {
     if (stack.isEmpty()) return null;
 
-    // Check direct item mapping first (legacy in-code registrations)
     Map<String, Float> effects = ITEM_EFFECTS.get(stack.getItem());
     if (effects != null && !effects.isEmpty()) {
       return Collections.unmodifiableMap(effects);
     }
 
-    // Check tag mappings (legacy in-code registrations)
     for (Map.Entry<TagKey<Item>, Map<String, Float>> entry : TAG_EFFECTS.entrySet()) {
       if (stack.is(entry.getKey()) && !entry.getValue().isEmpty()) {
         return Collections.unmodifiableMap(entry.getValue());
       }
     }
 
-    // Fall back to datapack-driven InkAffinity entries.
     InkAffinity.Entry affinity = InkAffinity.getAffinity(stack);
     Map<String, Float> linkEffects = affinity.linkPropertyWeights();
     if (linkEffects != null && !linkEffects.isEmpty()) {

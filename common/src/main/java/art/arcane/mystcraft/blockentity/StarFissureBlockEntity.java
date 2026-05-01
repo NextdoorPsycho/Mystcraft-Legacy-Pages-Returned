@@ -6,15 +6,15 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Block entity for the Star Fissure.
- * The gateway out of an Age back to the overworld.
+ * Block entity for the Star Fissure. The gateway out of an Age back to the
+ * overworld.
  */
 public class StarFissureBlockEntity extends MystcraftBlockEntity {
 
   private static final String TAG_STATE = "FissureState";
   private static final String TAG_PROGRESS = "FormProgress";
   private FissureState state = FissureState.OPEN;
-  private float formProgress = 1.0f; // 0 = closed, 1 = open
+  private float formProgress = 1.0f;
   private float animationTick = 0f;
 
   public StarFissureBlockEntity(BlockPos pos, BlockState blockState) {
@@ -95,14 +95,13 @@ public class StarFissureBlockEntity extends MystcraftBlockEntity {
   }
 
   /**
-   * Updates the fissure animation state.
-   * Should be called every tick on the client.
+   * Updates the fissure animation state. Should be called every tick on the
+   * client.
    */
   public void tickAnimation(float partialTick) {
     animationTick += partialTick;
 
-    // Update formation progress based on state
-    float progressDelta = 0.02f; // 50 ticks to fully open/close
+    float progressDelta = 0.02f;
     switch (state) {
       case FORMING:
         formProgress = Math.min(1.0f, formProgress + progressDelta);
@@ -141,9 +140,9 @@ public class StarFissureBlockEntity extends MystcraftBlockEntity {
    * The current state of the fissure.
    */
   public enum FissureState {
-    CLOSED,    // Not active, not visible
-    FORMING,   // Animating to open state
-    OPEN,      // Fully open, can be used
-    CLOSING    // Animating to closed state
+    CLOSED,
+    FORMING,
+    OPEN,
+    CLOSING
   }
 }

@@ -19,18 +19,15 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Handles thematic death effects when players die in Mystcraft Ages.
- * Sends narrative death messages, applies instability surges, and inflicts respawn debuffs
- * based on the Age's instability level.
+ * Handles thematic death effects when players die in Mystcraft Ages. Sends
+ * narrative death messages, applies instability surges, and inflicts respawn
+ * debuffs based on the Age's instability level.
  */
 public class AgeDeathHandler {
 
   private static final Random RANDOM = new Random();
 
-  // Tracks death counts per player per Age dimension (resets on server restart)
   private static final Map<UUID, Map<ResourceKey<Level>, Integer>> DEATH_COUNTS = new ConcurrentHashMap<>();
-
-  // --- Death Messages by Instability Tier ---
 
   private static final String[] MESSAGES_LOW = {
       "mystcraft.death.low.release",
@@ -51,16 +48,12 @@ public class AgeDeathHandler {
       "mystcraft.death.high.already_dying"
   };
 
-  // --- Cause-specific Messages ---
-
   private static final String MSG_VOID_FALL = "mystcraft.death.cause.void_fall";
   private static final String MSG_FIRE = "mystcraft.death.cause.fire";
   private static final String MSG_MAGIC = "mystcraft.death.cause.magic";
   private static final String MSG_EXPLOSION = "mystcraft.death.cause.explosion";
   private static final String MSG_MOB = "mystcraft.death.cause.mob";
   private static final String MSG_DECAY = "mystcraft.death.cause.decay";
-
-  // --- Repeat Death Messages ---
 
   private static final String[] MESSAGES_REPEAT = {
       "mystcraft.death.repeat.remembers",
@@ -69,8 +62,7 @@ public class AgeDeathHandler {
   };
 
   /**
-   * Handles player death in a Mystcraft Age.
-   * Sends narrative death messages.
+   * Handles player death in a Mystcraft Age. Sends narrative death messages.
    */
   public static void onPlayerDeath(ServerPlayer player, DamageSource source, ServerLevel level) {
     if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) return;
@@ -84,23 +76,19 @@ public class AgeDeathHandler {
     String playerName = player.getName().getString();
     ResourceKey<Level> dimensionKey = level.dimension();
 
-    // Track death count
     int deathCount = incrementDeathCount(player.getUUID(), dimensionKey);
 
-    // Select and send death message
     String messageKey = selectDeathMessage(instability, deathCount, source);
     Component message = Component.translatable(messageKey, playerName);
 
-    // Send to dying player and all players in the same Age
     for (ServerPlayer p : level.players()) {
       p.sendSystemMessage(message);
     }
-    // Also send to the dying player if they're not in the player list yet (edge case)
+
     if (!level.players().contains(player)) {
       player.sendSystemMessage(message);
     }
 
-    // Deaths no longer add instability or apply respawn debuffs.
   }
 
   /**
@@ -111,22 +99,17 @@ public class AgeDeathHandler {
     }
   }
 
-  /**
-   * Selects the appropriate death message based on instability, death count, and damage source.
-   */
   private static String selectDeathMessage(float instability, int deathCount, DamageSource source) {
-    // Repeat death messages override after 3+ deaths in same Age
+
     if (deathCount >= 3 && RANDOM.nextFloat() < 0.6f) {
       return MESSAGES_REPEAT[RANDOM.nextInt(MESSAGES_REPEAT.length)];
     }
 
-    // Cause-specific messages override tier-based (any instability)
     String causeMessage = getCauseSpecificMessage(source);
     if (causeMessage != null && RANDOM.nextFloat() < 0.5f) {
       return causeMessage;
     }
 
-    // Tier-based messages
     if (instability > 80.0f) {
       return MESSAGES_HIGH[RANDOM.nextInt(MESSAGES_HIGH.length)];
     } else if (instability >= 50.0f) {
@@ -136,9 +119,6 @@ public class AgeDeathHandler {
     }
   }
 
-  /**
-   * Returns a cause-specific death message key, or null if no special message applies.
-   */
   private static String getCauseSpecificMessage(DamageSource source) {
     if (source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.FALL)) {
       return MSG_VOID_FALL;
@@ -147,7 +127,7 @@ public class AgeDeathHandler {
       return MSG_FIRE;
     }
     if (source.is(DamageTypes.WITHER) || source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC)) {
-      // Check if this is decay block damage (magic type from DecayBlock)
+
       if (source.getMsgId().contains("decay")) {
         return MSG_DECAY;
       }
@@ -162,9 +142,6 @@ public class AgeDeathHandler {
     return null;
   }
 
-  /**
-   * Increments and returns the death count for a player in a specific Age.
-   */
   private static int incrementDeathCount(UUID playerId, ResourceKey<Level> dimension) {
     Map<ResourceKey<Level>, Integer> playerDeaths = DEATH_COUNTS.computeIfAbsent(
         playerId, k -> new HashMap<>());
@@ -174,7 +151,8 @@ public class AgeDeathHandler {
   }
 
   /**
-   * Disables vanilla death messages for Mystcraft Ages so custom messages can replace them.
+   * Disables vanilla death messages for Mystcraft Ages so custom messages can
+   * replace them.
    */
   public static void configureAgeGameRules(ServerLevel level) {
     if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {

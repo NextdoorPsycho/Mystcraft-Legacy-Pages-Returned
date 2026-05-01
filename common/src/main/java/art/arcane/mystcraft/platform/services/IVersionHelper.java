@@ -12,7 +12,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Centralizes Minecraft API calls that are sensitive to mappings or loader setup.
+ * Centralizes Minecraft API calls that are sensitive to mappings or loader
+ * setup.
  */
 public interface IVersionHelper {
 
@@ -50,7 +51,8 @@ public interface IVersionHelper {
   }
 
   /**
-   * Checks if the screen API uses the newer 4-parameter renderBackground method.
+   * Checks if the screen API uses the newer 4-parameter renderBackground
+   * method.
    *
    * @return false for the supported 1.20.1 API.
    */
@@ -61,8 +63,7 @@ public interface IVersionHelper {
   /**
    * Gets the level from an entity.
    * <p>
-   * 1.20.x: {@code entity.level()}
-   * 1.19.x: {@code entity.getLevel()}
+   * 1.20.x: {@code entity.level()} 1.19.x: {@code entity.getLevel()}
    *
    * @param entity The entity
    * @return The entity's level
@@ -86,8 +87,7 @@ public interface IVersionHelper {
   /**
    * Creates a BlockPos containing the given Vec3 coordinates.
    * <p>
-   * 1.20.x: {@code BlockPos.containing(vec)}
-   * 1.19.x: {@code new BlockPos(vec)}
+   * 1.20.x: {@code BlockPos.containing(vec)} 1.19.x: {@code new BlockPos(vec)}
    *
    * @param vec The position vector
    * @return A BlockPos at those coordinates
@@ -97,8 +97,8 @@ public interface IVersionHelper {
   /**
    * Creates a BlockPos containing the given coordinates.
    * <p>
-   * 1.20.x: {@code BlockPos.containing(x, y, z)}
-   * 1.19.x: {@code new BlockPos(x, y, z)}
+   * 1.20.x: {@code BlockPos.containing(x, y, z)} 1.19.x:
+   * {@code new BlockPos(x, y, z)}
    *
    * @param x The x coordinate
    * @param y The y coordinate

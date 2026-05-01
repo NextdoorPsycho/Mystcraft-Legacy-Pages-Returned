@@ -58,14 +58,13 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Consolidated Fabric registrations for Mystcraft 1.20.1.
- * Combines: FabricModBlocks, FabricModItems, FabricModEntities, FabricModBlockEntities,
- * FabricModSounds, FabricModMenuTypes, FabricModFluids, FabricModStructures, ModVillagers,
- * ModWorldGen, ModCreativeTabs.
+ * Consolidated Fabric registrations for Mystcraft 1.20.1. Combines:
+ * FabricModBlocks, FabricModItems, FabricModEntities, FabricModBlockEntities,
+ * FabricModSounds, FabricModMenuTypes, FabricModFluids, FabricModStructures,
+ * ModVillagers, ModWorldGen, ModCreativeTabs.
  */
 public final class FabricRegistries {
 
-  // ========== BLOCKS ==========
   public static final Supplier<Block> INK_MIXER = registerBlock("blockinkmixer",
       new InkMixerBlock(BlockBehaviour.Properties.of()
           .mapColor(MapColor.WOOD)
@@ -120,7 +119,7 @@ public final class FabricRegistries {
           .lightLevel(state -> 15)
           .pushReaction(PushReaction.BLOCK)));
   public static final Supplier<Block> FLUID_INK;
-  // ========== ITEMS ==========
+
   public static final Supplier<Item> PAGE = registerItem("page",
       new PageItem(new Item.Properties().stacksTo(64)));
   public static final Supplier<Item> AGEBOOK = registerItem("agebook",
@@ -148,7 +147,7 @@ public final class FabricRegistries {
   public static final Supplier<Item> WRITING_DESK_ITEM = registerBlockItem("writingdesk", WRITING_DESK);
   public static final Supplier<Item> CRYSTAL_ITEM = registerBlockItem("blockcrystal", CRYSTAL);
   public static final Supplier<Item> DECAY_ITEM = registerBlockItem("blockdecay", DECAY);
-  // ========== ENTITIES ==========
+
   public static final Supplier<EntityType<LinkbookEntity>> LINKBOOK_ENTITY =
       registerEntity("linkbook",
           EntityType.Builder.<LinkbookEntity>of(LinkbookEntity::new, MobCategory.MISC)
@@ -187,7 +186,7 @@ public final class FabricRegistries {
               .updateInterval(Integer.MAX_VALUE)
               .noSave()
               .build(new ResourceLocation(Mystcraft.MOD_ID, "colored_lightning").toString()));
-  // ========== BLOCK ENTITIES ==========
+
   public static final Supplier<BlockEntityType<InkMixerBlockEntity>> INK_MIXER_BE =
       registerBlockEntity("ink_mixer",
           FabricBlockEntityTypeBuilder.create(InkMixerBlockEntity::new, INK_MIXER.get()).build());
@@ -206,7 +205,10 @@ public final class FabricRegistries {
   public static final Supplier<BlockEntityType<LinkModifierBlockEntity>> LINK_MODIFIER_BE =
       registerBlockEntity("link_modifier",
           FabricBlockEntityTypeBuilder.create(LinkModifierBlockEntity::new, LINK_MODIFIER.get()).build());
-  // ========== SOUNDS ==========
+  public static final Supplier<BlockEntityType<LinkPortalBlockEntity>> LINK_PORTAL_BE =
+      registerBlockEntity("link_portal",
+          FabricBlockEntityTypeBuilder.create(LinkPortalBlockEntity::new, LINK_PORTAL.get()).build());
+
   public static final Supplier<SoundEvent> LINKING_POP = registerSound("linking.pop");
   public static final Supplier<SoundEvent> LINKING_LINK = registerSound("linking.link");
   public static final Supplier<SoundEvent> LINKING_DISARM = registerSound("linking.link-disarm");
@@ -216,7 +218,7 @@ public final class FabricRegistries {
   public static final Supplier<SoundEvent> LINKING_PORTAL = registerSound("linking.link-portal");
   public static final Supplier<SoundEvent> METEOR_ROAR = registerSound("entity.meteor.roar");
   public static final Supplier<SoundEvent> METEOR_IMPACT = registerSound("entity.meteor.impact");
-  // ========== MENU TYPES ==========
+
   public static final Supplier<MenuType<InkMixerMenu>> INK_MIXER_MENU =
       registerMenu("ink_mixer", new ExtendedScreenHandlerType<>(InkMixerMenu::new));
   public static final Supplier<MenuType<BookBinderMenu>> BOOK_BINDER_MENU =
@@ -229,7 +231,7 @@ public final class FabricRegistries {
       registerMenu("folder", new ExtendedScreenHandlerType<>(FolderMenu::new));
   public static final Supplier<MenuType<PortfolioMenu>> PORTFOLIO_MENU =
       registerMenu("portfolio", new ExtendedScreenHandlerType<>(PortfolioMenu::new));
-  // ========== FLUIDS ==========
+
   static final FabricBlackInkFluid.Source BLACK_INK_SOURCE_FLUID = new FabricBlackInkFluid.Source();
   public static final Supplier<FlowingFluid> BLACK_INK_SOURCE = () -> BLACK_INK_SOURCE_FLUID;
   public static final Supplier<Item> INK_BUCKET = registerItem("ink_bucket",
@@ -237,21 +239,21 @@ public final class FabricRegistries {
           new Item.Properties().stacksTo(1).craftRemainder(Items.BUCKET)));
   static final FabricBlackInkFluid.Flowing BLACK_INK_FLOWING_FLUID = new FabricBlackInkFluid.Flowing();
   public static final Supplier<FlowingFluid> BLACK_INK_FLOWING = () -> BLACK_INK_FLOWING_FLUID;
-  // ========== CREATIVE TABS ==========
+
   private static final ResourceKey<CreativeModeTab> MYSTCRAFT_TAB_KEY =
       ResourceKey.create(BuiltInRegistries.CREATIVE_MODE_TAB.key(),
           new ResourceLocation(Mystcraft.MOD_ID, "mystcraft"));
   private static final ResourceKey<CreativeModeTab> MYSTCRAFT_PAGES_TAB_KEY =
       ResourceKey.create(BuiltInRegistries.CREATIVE_MODE_TAB.key(),
           new ResourceLocation(Mystcraft.MOD_ID, "mystcraft_pages"));
-  // ========== STRUCTURES ==========
+
   public static Supplier<StructureType<AbandonedLibraryStructure>> ABANDONED_LIBRARY;
   public static Supplier<StructureType<UndergroundArchiveStructure>> UNDERGROUND_ARCHIVE;
   public static Supplier<StructureType<ScatteredLibraryStructure>> SCATTERED_LIBRARY;
-  // ========== VILLAGERS ==========
+
   public static Supplier<PoiType> ARCHIVIST_POI;
   public static Supplier<VillagerProfession> ARCHIVIST;
-  // ========== WORLD GEN ==========
+
   public static Supplier<Codec<? extends ChunkGenerator>> AGE_CHUNK_GENERATOR;
   public static Supplier<Codec<? extends BiomeSource>> AGE_BIOME_SOURCE;
   public static Supplier<CreativeModeTab> MYSTCRAFT_TAB;
@@ -268,7 +270,6 @@ public final class FabricRegistries {
   private FabricRegistries() {
   }
 
-  // ========== REGISTRATION HELPERS ==========
   private static <T extends Block> Supplier<T> registerBlock(String name, T block) {
     Registry.register(BuiltInRegistries.BLOCK, new ResourceLocation(Mystcraft.MOD_ID, name), block);
     return () -> block;
@@ -311,16 +312,13 @@ public final class FabricRegistries {
     return () -> menuType;
   }
 
-  // ========== MAIN REGISTRATION ==========
   public static void register() {
-    // Fluids
+
     Registry.register(BuiltInRegistries.FLUID, new ResourceLocation(Mystcraft.MOD_ID, "black_ink"), BLACK_INK_SOURCE_FLUID);
     Registry.register(BuiltInRegistries.FLUID, new ResourceLocation(Mystcraft.MOD_ID, "black_ink_flowing"), BLACK_INK_FLOWING_FLUID);
 
-    // Fluid block
     Registry.register(BuiltInRegistries.BLOCK, new ResourceLocation(Mystcraft.MOD_ID, "fluidblockblackink"), FLUID_INK.get());
 
-    // Structures
     StructureType<AbandonedLibraryStructure> abandonedLibrary = () -> AbandonedLibraryStructure.CODEC;
     Registry.register(BuiltInRegistries.STRUCTURE_TYPE,
         new ResourceLocation(Mystcraft.MOD_ID, "abandoned_library"), abandonedLibrary);
@@ -336,7 +334,6 @@ public final class FabricRegistries {
         new ResourceLocation(Mystcraft.MOD_ID, "scattered_library"), scatteredLibrary);
     SCATTERED_LIBRARY = () -> scatteredLibrary;
 
-    // Villagers
     PoiType poiType = PointOfInterestHelper.register(
         new ResourceLocation(Mystcraft.MOD_ID, "archivist"),
         1, 1, BOOK_BINDER.get());
@@ -354,7 +351,6 @@ public final class FabricRegistries {
         new ResourceLocation(Mystcraft.MOD_ID, "archivist"), profession);
     ARCHIVIST = () -> profession;
 
-    // World gen
     Codec<? extends ChunkGenerator> chunkGenCodec = AgeChunkGenerator.CODEC;
     AGE_CHUNK_GENERATOR = () -> chunkGenCodec;
     Registry.register(BuiltInRegistries.CHUNK_GENERATOR,
@@ -365,7 +361,6 @@ public final class FabricRegistries {
     Registry.register(BuiltInRegistries.BIOME_SOURCE,
         new ResourceLocation(Mystcraft.MOD_ID, "age_biome_source"), biomeSourceCodec);
 
-    // Creative tabs
     CreativeModeTab mainTab = CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
         .title(Component.translatable("itemGroup." + Mystcraft.MOD_ID))
         .icon(() -> new ItemStack(AGEBOOK.get()))
@@ -439,9 +434,8 @@ public final class FabricRegistries {
     Mystcraft.LOGGER.info("[FabricRegistries] Registered all Mystcraft content");
   }
 
-  // ========== POPULATE COMMON REGISTRIES ==========
   public static void populateCommonRegistries() {
-    // Blocks
+
     ModBlocks.INK_MIXER = INK_MIXER;
     ModBlocks.BOOK_BINDER = BOOK_BINDER;
     ModBlocks.BOOK_RECEPTACLE = BOOK_RECEPTACLE;
@@ -453,7 +447,6 @@ public final class FabricRegistries {
     ModBlocks.STAR_FISSURE = STAR_FISSURE;
     ModBlocks.FLUID_INK = () -> (LiquidBlock) FLUID_INK.get();
 
-    // Items
     ModItems.PAGE = PAGE;
     ModItems.AGEBOOK = AGEBOOK;
     ModItems.LINKBOOK = LINKBOOK;
@@ -473,27 +466,24 @@ public final class FabricRegistries {
     ModItems.CRYSTAL_ITEM = CRYSTAL_ITEM;
     ModItems.DECAY_ITEM = DECAY_ITEM;
 
-    // Block entities
     ModBlockEntities.INK_MIXER = INK_MIXER_BE;
     ModBlockEntities.BOOK_BINDER = BOOK_BINDER_BE;
     ModBlockEntities.BOOK_RECEPTACLE = BOOK_RECEPTACLE_BE;
     ModBlockEntities.WRITING_DESK = WRITING_DESK_BE;
     ModBlockEntities.STAR_FISSURE = STAR_FISSURE_BE;
     ModBlockEntities.LINK_MODIFIER = LINK_MODIFIER_BE;
+    ModBlockEntities.LINK_PORTAL = LINK_PORTAL_BE;
 
-    // Entities
     ModEntities.LINKBOOK = LINKBOOK_ENTITY;
     ModEntities.PERSONAL_POCKET_PROXY = PERSONAL_POCKET_PROXY_ENTITY;
     ModEntities.FALLING_BLOCK = FALLING_BLOCK_ENTITY;
     ModEntities.METEOR = METEOR_ENTITY;
     ModEntities.COLORED_LIGHTNING = COLORED_LIGHTNING_ENTITY;
 
-    // Fluids
     ModFluids.BLACK_INK_SOURCE = BLACK_INK_SOURCE;
     ModFluids.BLACK_INK_FLOWING = BLACK_INK_FLOWING;
     ModFluids.BLACK_INK_BUCKET = INK_BUCKET;
 
-    // Sounds
     ModSounds.LINKING_POP = LINKING_POP;
     ModSounds.LINKING_LINK = LINKING_LINK;
     ModSounds.LINKING_DISARM = LINKING_DISARM;
@@ -504,7 +494,6 @@ public final class FabricRegistries {
     ModSounds.METEOR_ROAR = METEOR_ROAR;
     ModSounds.METEOR_IMPACT = METEOR_IMPACT;
 
-    // Menu types
     ModMenuTypes.INK_MIXER = INK_MIXER_MENU;
     ModMenuTypes.BOOK_BINDER = BOOK_BINDER_MENU;
     ModMenuTypes.LINK_MODIFIER = LINK_MODIFIER_MENU;
@@ -512,7 +501,6 @@ public final class FabricRegistries {
     ModMenuTypes.FOLDER = FOLDER_MENU;
     ModMenuTypes.PORTFOLIO = PORTFOLIO_MENU;
 
-    // Config
     MystcraftConfig.giveGuidebookOnFirstSpawn = () -> FabricMystcraftConfig.giveGuidebookOnFirstSpawn.get();
     MystcraftConfig.maxSymbolsPerBook = () -> FabricMystcraftConfig.maxSymbolsPerBook.get();
     MystcraftConfig.deleteAgesOnStartup = () -> FabricMystcraftConfig.deleteAgesOnStartup.get();
@@ -555,7 +543,6 @@ public final class FabricRegistries {
     MystcraftConfig.pocketInnerBlockPalette = () -> FabricMystcraftConfig.pocketInnerBlockPalette.get();
     MystcraftConfig.pocketOuterBlock = () -> FabricMystcraftConfig.pocketOuterBlock.get();
 
-    // Network
     art.arcane.mystcraft.network.MystcraftNetwork.sendToServerHandler = packet -> {
       FabricMystcraftNetwork.sendToServerGeneric(packet);
     };
@@ -573,7 +560,6 @@ public final class FabricRegistries {
     };
     art.arcane.mystcraft.network.MystcraftNetwork.sendToTrackingBlockHandler = FabricMystcraftNetwork::sendToTrackingBlock;
 
-    // Structure types
     art.arcane.mystcraft.world.structure.ModStructures.ABANDONED_LIBRARY = ABANDONED_LIBRARY;
     art.arcane.mystcraft.world.structure.ModStructures.UNDERGROUND_ARCHIVE = UNDERGROUND_ARCHIVE;
     art.arcane.mystcraft.world.structure.ModStructures.SCATTERED_LIBRARY = SCATTERED_LIBRARY;

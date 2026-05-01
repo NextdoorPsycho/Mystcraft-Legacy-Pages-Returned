@@ -12,10 +12,10 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
  * Generates ruins of ancient mechanical structures. Partially collapsed
- * frameworks of copper and iron blocks with piston "gears", redstone
- * block accents, and lightning rod antennas. Some sections are oxidized
- * (weathered copper), others still gleam. Suggests a civilization that
- * built thinking machines long before the current age.
+ * frameworks of copper and iron blocks with piston "gears", redstone block
+ * accents, and lightning rod antennas. Some sections are oxidized (weathered
+ * copper), others still gleam. Suggests a civilization that built thinking
+ * machines long before the current age.
  */
 public class ClockworkRuinsPopulator implements IPopulate {
 
@@ -93,28 +93,25 @@ public class ClockworkRuinsPopulator implements IPopulate {
   }
 
   private void generateRuin(WorldGenLevel world, BlockPos chunkPos,
-                             int cx, int surfaceY, int cz, int size, RandomSource random) {
+                            int cx, int surfaceY, int cz, int size, RandomSource random) {
     int halfSize = size / 2;
     int height = size + random.nextInt(6);
 
-    // Determine oxidation level for this ruin
     long oxidHash = positionHash(seed, cx, surfaceY, cz);
-    float oxidLevel = hashFloat(oxidHash); // 0=fresh, 1=fully oxidized
+    float oxidLevel = hashFloat(oxidHash);
 
-    // Foundation platform
     for (int dx = -halfSize; dx <= halfSize; dx++) {
       for (int dz = -halfSize; dz <= halfSize; dz++) {
         BlockPos foundPos = new BlockPos(cx + dx, surfaceY, cz + dz);
         if (!isInWritableArea(foundPos, chunkPos)) continue;
         long foundHash = positionHash(seed, cx + dx, surfaceY, cz + dz);
         float foundRoll = hashFloat(foundHash);
-        if (foundRoll < 0.7f) { // 70% coverage (partially collapsed)
+        if (foundRoll < 0.7f) {
           world.setBlock(foundPos, foundRoll < 0.3f ? IRON : pickCopper(oxidLevel, foundHash), 2);
         }
       }
     }
 
-    // Corner pillars (may be partially destroyed)
     int[][] corners = {
         {cx - halfSize, cz - halfSize},
         {cx + halfSize, cz - halfSize},
@@ -131,14 +128,12 @@ public class ClockworkRuinsPopulator implements IPopulate {
         BlockPos pillarPos = new BlockPos(corner[0], surfaceY + dy, corner[1]);
         if (!isInWritableArea(pillarPos, chunkPos)) continue;
 
-        // Some blocks missing from damage
         long damageHash = positionHash(seed ^ 0xDA5EL, corner[0], surfaceY + dy, corner[1]);
-        if (hashFloat(damageHash) < 0.15f) continue; // 15% blocks missing
+        if (hashFloat(damageHash) < 0.15f) continue;
 
         world.setBlock(pillarPos, pickCopper(oxidLevel, damageHash), 2);
       }
 
-      // Lightning rod on top of surviving pillars
       if (survivalChance > 0.5f) {
         BlockPos rodPos = new BlockPos(corner[0], surfaceY + pillarHeight + 1, corner[1]);
         if (isInWritableArea(rodPos, chunkPos)) {
@@ -147,21 +142,20 @@ public class ClockworkRuinsPopulator implements IPopulate {
       }
     }
 
-    // Horizontal beams connecting pillars (at multiple heights)
     int beamInterval = 4 + random.nextInt(3);
     for (int beamY = beamInterval; beamY < height; beamY += beamInterval) {
-      // X-aligned beams
+
       for (int dx = -halfSize; dx <= halfSize; dx++) {
         for (int side = -1; side <= 1; side += 2) {
           int bz = cz + side * halfSize;
           BlockPos beamPos = new BlockPos(cx + dx, surfaceY + beamY, bz);
           if (!isInWritableArea(beamPos, chunkPos)) continue;
           long beamHash = positionHash(seed ^ 0xBEAFL, cx + dx, surfaceY + beamY, bz);
-          if (hashFloat(beamHash) < 0.3f) continue; // 30% missing
+          if (hashFloat(beamHash) < 0.3f) continue;
           world.setBlock(beamPos, IRON, 2);
         }
       }
-      // Z-aligned beams
+
       for (int dz = -halfSize; dz <= halfSize; dz++) {
         for (int side = -1; side <= 1; side += 2) {
           int bx = cx + side * halfSize;
@@ -174,7 +168,6 @@ public class ClockworkRuinsPopulator implements IPopulate {
       }
     }
 
-    // Interior machinery: pistons, redstone blocks, iron bars
     int machineCount = 3 + random.nextInt(5);
     for (int m = 0; m < machineCount; m++) {
       int mx = cx + random.nextInt(size) - halfSize;
@@ -202,7 +195,6 @@ public class ClockworkRuinsPopulator implements IPopulate {
       }
     }
 
-    // Central gear assembly: ring of pistons around a redstone core
     int gearY = surfaceY + height / 2;
     BlockPos corePos = new BlockPos(cx, gearY, cz);
     if (isInWritableArea(corePos, chunkPos)) {
@@ -214,14 +206,13 @@ public class ClockworkRuinsPopulator implements IPopulate {
         BlockPos gearPos = new BlockPos(cx + gx, gearY, cz + gz);
         if (isInWritableArea(gearPos, chunkPos)) {
           long gearHash = positionHash(seed, cx + gx, gearY, cz + gz);
-          if (hashFloat(gearHash) > 0.2f) { // Some pieces missing
+          if (hashFloat(gearHash) > 0.2f) {
             world.setBlock(gearPos, hashFloat(gearHash) < 0.6f ? PISTON : STICKY_PISTON, 2);
           }
         }
       }
     }
 
-    // Scattered rubble around base
     for (int r = 0; r < size; r++) {
       int rx = cx + random.nextInt(size + 4) - halfSize - 2;
       int rz = cz + random.nextInt(size + 4) - halfSize - 2;

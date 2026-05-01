@@ -15,8 +15,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 
 /**
- * Buried treasure populator that generates underground chests near beaches.
- * A single chest buried 3-6 blocks underground, surrounded by sand or gravel.
+ * Buried treasure populator that generates underground chests near beaches. A
+ * single chest buried 3-6 blocks underground, surrounded by sand or gravel.
  * Approximately 1 per 20 chunks.
  */
 public class BuriedTreasurePopulator implements IPopulate {
@@ -48,7 +48,6 @@ public class BuriedTreasurePopulator implements IPopulate {
       return;
     }
 
-    // Place at chunk center for consistency with explorer maps
     int x = chunkMinX + 9;
     int z = chunkMinZ + 9;
 
@@ -57,7 +56,6 @@ public class BuriedTreasurePopulator implements IPopulate {
       return;
     }
 
-    // Check for sandy/gravelly ground (beach-like)
     BlockPos surfacePos = new BlockPos(x, surfaceY - 1, z);
     BlockState ground = world.getBlockState(surfacePos);
     boolean isSuitable = ground.is(Blocks.SAND) || ground.is(Blocks.GRAVEL) ||
@@ -75,7 +73,6 @@ public class BuriedTreasurePopulator implements IPopulate {
       return;
     }
 
-    // Place the chest
     world.setBlock(chestPos, Blocks.CHEST.defaultBlockState().setValue(
         ChestBlock.FACING, Direction.NORTH), 2);
     BlockEntity be = world.getBlockEntity(chestPos);
@@ -83,7 +80,6 @@ public class BuriedTreasurePopulator implements IPopulate {
       chest.setLootTable(BuiltInLootTables.BURIED_TREASURE, random.nextLong());
     }
 
-    // Ensure solid blocks around the chest so it stays buried
     BlockState fillBlock = ground.is(Blocks.SAND) || ground.is(Blocks.RED_SAND) ?
         Blocks.SAND.defaultBlockState() : Blocks.GRAVEL.defaultBlockState();
 

@@ -1,15 +1,14 @@
 package art.arcane.mystcraft.network;
 
 import art.arcane.mystcraft.Mystcraft;
-import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.Collections;
 
 /**
- * Packet sent from server to client to sync Age data.
- * Used to keep clients informed about Age properties.
+ * Packet sent from server to client to sync Age data. Used to keep clients
+ * informed about Age properties.
  */
 public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
 
@@ -29,10 +28,9 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
       return;
     }
     ctx.enqueueWork(() -> {
-      // Store the age data in client-side cache even if the client level isn't ready yet.
+
       ClientAgeDataCache.setAgeData(packet.ageUID, packet.data);
 
-      // Log received color values for pipeline tracing
       CompoundTag config = packet.data.contains("AgeConfig") ? packet.data.getCompound("AgeConfig") : null;
       if (config != null) {
         String[] colorKeys = {"SkyColor", "FogColor", "GrassColors", "FoliageColor", "WaterColor", "CloudColor", "NightSkyColor", "SunsetColor"};
@@ -50,8 +48,8 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
   }
 
   /**
-   * Client-side cache for Age data.
-   * Stores synced Age information for rendering and display.
+   * Client-side cache for Age data. Stores synced Age information for rendering
+   * and display.
    */
   public static class ClientAgeDataCache {
     private static final java.util.Map<Integer, CompoundTag> CACHE = new java.util.concurrent.ConcurrentHashMap<>();
@@ -87,8 +85,6 @@ public record SyncAgeDataPacket(int ageUID, CompoundTag data) {
       }
       return 0.0f;
     }
-
-    // --- Rendering Configuration Getters ---
 
     private static CompoundTag getConfig(int ageUID) {
       CompoundTag data = CACHE.get(ageUID);

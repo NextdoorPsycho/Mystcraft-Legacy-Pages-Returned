@@ -11,11 +11,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Generates a honeycomb-like fungal hive structure of interconnected
- * hexagonal chambers. Made of mushroom blocks, mycelium, and shroomlight
- * with connecting tunnels between cells. The structure emerges from
- * underground and breaches the surface, revealing the alien fungal
- * architecture inside.
+ * Generates a honeycomb-like fungal hive structure of interconnected hexagonal
+ * chambers. Made of mushroom blocks, mycelium, and shroomlight with connecting
+ * tunnels between cells. The structure emerges from underground and breaches
+ * the surface, revealing the alien fungal architecture inside.
  */
 public class MyceliumHivePopulator implements IPopulate {
 
@@ -88,47 +87,42 @@ public class MyceliumHivePopulator implements IPopulate {
   }
 
   private void generateHive(WorldGenLevel world, BlockPos chunkPos, RandomSource random,
-                             int cx, int surfaceY, int cz, int cellCount) {
-    // Generate cell centers in a rough hex grid pattern
-    int[][] cellCenters = new int[cellCount][3]; // x, y, z
+                            int cx, int surfaceY, int cz, int cellCount) {
+
+    int[][] cellCenters = new int[cellCount][3];
     int[] cellRadii = new int[cellCount];
 
-    // First cell at center, below surface
     cellCenters[0] = new int[]{cx, surfaceY - 4, cz};
     cellRadii[0] = MIN_CELL_RADIUS + (int) (hashFloat(positionHash(seed, cx, surfaceY, cz))
         * (MAX_CELL_RADIUS - MIN_CELL_RADIUS + 1));
 
-    // Subsequent cells branch outward
     for (int i = 1; i < cellCount; i++) {
-      int parentIdx = random.nextInt(i); // Connect to a random existing cell
+      int parentIdx = random.nextInt(i);
       int[] parent = cellCenters[parentIdx];
       int parentR = cellRadii[parentIdx];
 
       double angle = random.nextDouble() * Math.PI * 2.0;
       int cellRadius = MIN_CELL_RADIUS + random.nextInt(MAX_CELL_RADIUS - MIN_CELL_RADIUS + 1);
-      int spacing = parentR + cellRadius + 2; // Cells touch/overlap slightly
+      int spacing = parentR + cellRadius + 2;
 
       int newX = parent[0] + (int) Math.round(Math.cos(angle) * spacing);
       int newZ = parent[2] + (int) Math.round(Math.sin(angle) * spacing);
-      // Slight vertical offset: some cells above, some below
+
       int newY = parent[1] + random.nextInt(5) - 2;
       newY = Math.max(world.getMinBuildHeight() + cellRadius + 2, newY);
 
       cellCenters[i] = new int[]{newX, newY, newZ};
       cellRadii[i] = cellRadius;
 
-      // Generate tunnel connecting to parent
       generateTunnel(world, chunkPos, parent[0], parent[1], parent[2],
           newX, newY, newZ);
     }
 
-    // Generate each cell chamber
     for (int i = 0; i < cellCount; i++) {
       generateCell(world, chunkPos, cellCenters[i][0], cellCenters[i][1],
           cellCenters[i][2], cellRadii[i]);
     }
 
-    // Surface breach: mycelium patch and mushrooms where hive nears surface
     for (int dx = -12; dx <= 12; dx++) {
       for (int dz = -12; dz <= 12; dz++) {
         int distSq = dx * dx + dz * dz;
@@ -147,7 +141,6 @@ public class MyceliumHivePopulator implements IPopulate {
           if (existing.is(Blocks.GRASS_BLOCK) || existing.is(BlockTags.DIRT)) {
             world.setBlock(surfacePos, MYCELIUM, 2);
 
-            // Small mushrooms on surface
             BlockPos mushPos = surfacePos.above();
             if (isInWritableArea(mushPos, chunkPos) && world.getBlockState(mushPos).isAir()) {
               long mushHash = positionHash(seed ^ 0xF77AL, bx, bSurfaceY + 1, bz);
@@ -163,7 +156,7 @@ public class MyceliumHivePopulator implements IPopulate {
   }
 
   private void generateCell(WorldGenLevel world, BlockPos chunkPos,
-                             int cx, int cy, int cz, int radius) {
+                            int cx, int cy, int cz, int radius) {
     int radiusSq = radius * radius;
     int shellThickness = 2;
     int innerRadiusSq = (radius - shellThickness) * (radius - shellThickness);
@@ -181,7 +174,7 @@ public class MyceliumHivePopulator implements IPopulate {
           if (!isInWritableArea(pos, chunkPos)) continue;
 
           if (distSq <= innerRadiusSq) {
-            // Interior: air with occasional shroomlight
+
             long innerHash = positionHash(seed, bx, by, bz);
             if (hashFloat(innerHash) < 0.015f) {
               world.setBlock(pos, SHROOMLIGHT, 2);
@@ -189,7 +182,7 @@ public class MyceliumHivePopulator implements IPopulate {
               world.setBlock(pos, AIR, 2);
             }
           } else {
-            // Shell: mushroom blocks and stems
+
             long shellHash = positionHash(seed, bx, by, bz);
             float shellRoll = hashFloat(shellHash);
             if (shellRoll < 0.1f) {
@@ -206,7 +199,6 @@ public class MyceliumHivePopulator implements IPopulate {
       }
     }
 
-    // Floor: mycelium
     for (int dx = -(radius - shellThickness); dx <= radius - shellThickness; dx++) {
       for (int dz = -(radius - shellThickness); dz <= radius - shellThickness; dz++) {
         if (dx * dx + dz * dz > innerRadiusSq) continue;
@@ -219,7 +211,7 @@ public class MyceliumHivePopulator implements IPopulate {
   }
 
   private void generateTunnel(WorldGenLevel world, BlockPos chunkPos,
-                               int x1, int y1, int z1, int x2, int y2, int z2) {
+                              int x1, int y1, int z1, int x2, int y2, int z2) {
     int tunnelRadius = 2;
     double dist = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));
     int steps = (int) Math.ceil(dist);
@@ -230,14 +222,14 @@ public class MyceliumHivePopulator implements IPopulate {
       int ty = y1 + (int) Math.round((y2 - y1) * t);
       int tz = z1 + (int) Math.round((z2 - z1) * t);
 
-      // Carve a circular tunnel cross-section
       for (int dx = -tunnelRadius; dx <= tunnelRadius; dx++) {
         for (int dy = -tunnelRadius; dy <= tunnelRadius; dy++) {
           for (int dz = -tunnelRadius; dz <= tunnelRadius; dz++) {
-            if (dx * dx + dy * dy + dz * dz > tunnelRadius * tunnelRadius) continue;
+            if (dx * dx + dy * dy + dz * dz > tunnelRadius * tunnelRadius)
+              continue;
             BlockPos pos = new BlockPos(tx + dx, ty + dy, tz + dz);
             if (isInWritableArea(pos, chunkPos)) {
-              // Edge of tunnel: mushroom stem walls
+
               if (dx * dx + dy * dy + dz * dz >= (tunnelRadius - 1) * (tunnelRadius - 1)) {
                 world.setBlock(pos, MUSHROOM_STEM, 2);
               } else {

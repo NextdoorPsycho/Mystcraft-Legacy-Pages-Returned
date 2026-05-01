@@ -10,8 +10,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The Age Director receives symbol logic registrations and builds an Age's properties.
- * Symbols register their effects with this interface during Age creation.
+ * The Age Director receives symbol logic registrations and builds an Age's
+ * properties. Symbols register their effects with this interface during Age
+ * creation.
  */
 public interface AgeDirector {
 
@@ -35,8 +36,6 @@ public interface AgeDirector {
    * @param amount Amount to add
    */
   void addInstability(float amount);
-
-  // ========================= Terrain =========================
 
   /**
    * Gets the terrain generator type.
@@ -150,8 +149,6 @@ public interface AgeDirector {
    */
   void setSeaBlock(BlockState block);
 
-  // ========================= Biomes =========================
-
   /**
    * Gets the biome controller type.
    *
@@ -180,8 +177,6 @@ public interface AgeDirector {
    */
   List<Holder<Biome>> getBiomes();
 
-  // ========================= Weather =========================
-
   /**
    * Gets the weather type.
    *
@@ -196,8 +191,6 @@ public interface AgeDirector {
    */
   void setWeatherType(String type);
 
-  // ========================= Lighting =========================
-
   /**
    * Gets the lighting type.
    *
@@ -211,8 +204,6 @@ public interface AgeDirector {
    * @param type The lighting type (normal, bright, dark)
    */
   void setLightingType(String type);
-
-  // ========================= Colors =========================
 
   /**
    * Gets the sky color.
@@ -258,8 +249,8 @@ public interface AgeDirector {
   void setGrassColor(int color);
 
   /**
-   * Gets all grass colors in the palette.
-   * Empty list means natural biome-based colors.
+   * Gets all grass colors in the palette. Empty list means natural biome-based
+   * colors.
    *
    * @return Unmodifiable list of RGB colors
    */
@@ -293,8 +284,6 @@ public interface AgeDirector {
    */
   void setWaterColor(int color);
 
-  // ========================= Features =========================
-
   /**
    * Enables or disables caves.
    *
@@ -322,8 +311,6 @@ public interface AgeDirector {
    * @param enabled true to enable
    */
   void setSkylandsEnabled(boolean enabled);
-
-  // ========================= Structures =========================
 
   /**
    * Enables or disables villages.
@@ -353,8 +340,6 @@ public interface AgeDirector {
    */
   void setStrongholdsEnabled(boolean enabled);
 
-  // ========================= Environment =========================
-
   /**
    * Enables or disables accelerated time effects.
    *
@@ -370,10 +355,9 @@ public interface AgeDirector {
   float getTimescale();
 
   /**
-   * Sets the timescale multiplier for day/night cycle speed.
-   * Values below 1.0 slow down time, above 1.0 speed it up.
-   * A value of 0.0 stops the cycle entirely (static time).
-   * Default is 1.0 (normal speed).
+   * Sets the timescale multiplier for day/night cycle speed. Values below 1.0
+   * slow down time, above 1.0 speed it up. A value of 0.0 stops the cycle
+   * entirely (static time). Default is 1.0 (normal speed).
    *
    * @param scale The timescale multiplier
    */
@@ -399,8 +383,6 @@ public interface AgeDirector {
    * @param enabled true to enable
    */
   void setScorchedEnabled(boolean enabled);
-
-  // ========================= Modifiers =========================
 
   /**
    * Pushes a color modifier onto the stack.
@@ -459,8 +441,8 @@ public interface AgeDirector {
   float popPhase();
 
   /**
-   * Clears all modifier stacks (color, angle, length, phase).
-   * Used by the Clear symbol to reset modifier state.
+   * Clears all modifier stacks (color, angle, length, phase). Used by the Clear
+   * symbol to reset modifier state.
    */
   void clearModifiers();
 
@@ -477,8 +459,6 @@ public interface AgeDirector {
    * @return The biome, or null if empty
    */
   Holder<Biome> popBiome();
-
-  // ========================= Additional Features =========================
 
   /**
    * Enables or disables nether fortress generation.
@@ -725,8 +705,6 @@ public interface AgeDirector {
    */
   void setHorizonHidden(boolean hidden);
 
-  // ========================= World Heights =========================
-
   /**
    * Gets the cloud height.
    *
@@ -754,8 +732,6 @@ public interface AgeDirector {
    * @param height The Y level of the horizon line (default 0.0)
    */
   void setHorizonHeight(float height);
-
-  // ========================= Additional Structures =========================
 
   /**
    * Enables or disables pillager outpost generation.
@@ -869,8 +845,6 @@ public interface AgeDirector {
    */
   void setNetherFossilsEnabled(boolean enabled);
 
-  // ========================= Cave Features =========================
-
   /**
    * Enables or disables dripstone cave features.
    *
@@ -891,8 +865,6 @@ public interface AgeDirector {
    * @param enabled true to enable
    */
   void setDeepDarkEnabled(boolean enabled);
-
-  // ========================= Gradient Colors =========================
 
   /**
    * Gets the sunset/sunrise color.
@@ -921,8 +893,6 @@ public interface AgeDirector {
    * @return The color value, or -1 if empty
    */
   int popGradient();
-
-  // ========================= Additional Colors =========================
 
   /**
    * Gets the cloud color.
@@ -1015,63 +985,58 @@ public interface AgeDirector {
    */
   void setHorizonColorNatural(boolean natural);
 
-  // --- Interface Registration ---
-  // These methods allow symbols to register actual generation logic objects
-  // rather than just configuration strings.
-
   /**
-   * Registers a terrain generator for this Age.
-   * Only one terrain generator can be active. Registering a second one
-   * replaces the first and adds instability.
+   * Registers a terrain generator for this Age. Only one terrain generator can
+   * be active. Registering a second one replaces the first and adds
+   * instability.
    *
    * @param generator The terrain generator implementation
    */
   void registerInterface(ITerrainGenerator generator);
 
   /**
-   * Registers a biome controller for this Age.
-   * Only one biome controller can be active. Registering a second one
-   * replaces the first and adds instability.
+   * Registers a biome controller for this Age. Only one biome controller can be
+   * active. Registering a second one replaces the first and adds instability.
    *
    * @param controller The biome controller implementation
    */
   void registerInterface(IBiomeController controller);
 
   /**
-   * Registers a terrain alteration for this Age.
-   * Multiple alterations can be registered (caves, ravines, floating islands).
+   * Registers a terrain alteration for this Age. Multiple alterations can be
+   * registered (caves, ravines, floating islands).
    *
    * @param alteration The terrain alteration implementation
    */
   void registerInterface(ITerrainAlteration alteration);
 
   /**
-   * Registers a chunk finalization handler for this Age.
-   * Multiple handlers can be registered.
+   * Registers a chunk finalization handler for this Age. Multiple handlers can
+   * be registered.
    *
    * @param finalizer The chunk finalization implementation
    */
   void registerInterface(IChunkProviderFinalization finalizer);
 
   /**
-   * Registers a population function for this Age.
-   * Multiple population functions can be registered.
+   * Registers a population function for this Age. Multiple population functions
+   * can be registered.
    *
    * @param populate The population implementation
    */
   void registerInterface(IPopulate populate);
 
   /**
-   * Registers a lighting controller for this Age.
-   * Only one lighting controller can be active.
+   * Registers a lighting controller for this Age. Only one lighting controller
+   * can be active.
    *
    * @param controller The lighting controller implementation
    */
   void registerInterface(ILightingController controller);
 
   /**
-   * Registers a weather controller for this Age.
-   * Only one weather controller can be active.
+   * Registers a weather controller for this Age. Only one weather controller
+   * can be active.
    *
    * @param controller The weather controller implementation
    */
@@ -1126,19 +1091,17 @@ public interface AgeDirector {
    */
   IWeatherController getWeatherController();
 
-  // ========================= Color Provider Registration =========================
-
   /**
-   * Registers a dynamic color provider for this Age.
-   * Multiple providers can be registered per color type and their colors will be averaged.
+   * Registers a dynamic color provider for this Age. Multiple providers can be
+   * registered per color type and their colors will be averaged.
    *
    * @param provider The color provider implementation
    */
   void registerInterface(IDynamicColorProvider provider);
 
   /**
-   * Registers a static color provider for this Age.
-   * Multiple providers can be registered per color type and their colors will be averaged.
+   * Registers a static color provider for this Age. Multiple providers can be
+   * registered per color type and their colors will be averaged.
    *
    * @param provider The color provider implementation
    */

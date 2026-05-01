@@ -13,9 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Packet for syncing symbol data from server to client.
- * Sends a list of all registered symbols with their basic metadata.
- * Used when a player joins to ensure client has correct symbol information.
+ * Packet for syncing symbol data from server to client. Sends a list of all
+ * registered symbols with their basic metadata. Used when a player joins to
+ * ensure client has correct symbol information.
  */
 public record SymbolSyncPacket(List<SymbolData> symbols) {
 
@@ -119,12 +119,8 @@ public record SymbolSyncPacket(List<SymbolData> symbols) {
    */
   public static void handle(SymbolSyncPacket packet, PacketContext ctx) {
     ctx.enqueueWork(() -> {
-      // Log received symbols for debugging
-      Mystcraft.LOGGER.info("Received symbol sync packet with {} symbols", packet.symbols.size());
 
-      // In a full implementation, this would update a client-side symbol cache
-      // For now, symbols are registered statically at mod load time
-      // This packet is primarily for future extensibility (datapacks, custom symbols)
+      Mystcraft.LOGGER.info("Received symbol sync packet with {} symbols", packet.symbols.size());
 
       for (SymbolData data : packet.symbols) {
         boolean exists = SymbolRegistry.contains(data.id);
@@ -163,6 +159,10 @@ public record SymbolSyncPacket(List<SymbolData> symbols) {
   /**
    * Simple data class for symbol information.
    */
-  public record SymbolData(ResourceLocation id, SymbolCategory category, int cardRank, float instabilityCost, String[] poem, String displayName, boolean allowRandom, boolean canDuplicate, boolean isDatapack, boolean isOverride) {
+  public record SymbolData(ResourceLocation id, SymbolCategory category,
+                           int cardRank, float instabilityCost, String[] poem,
+                           String displayName, boolean allowRandom,
+                           boolean canDuplicate, boolean isDatapack,
+                           boolean isOverride) {
   }
 }

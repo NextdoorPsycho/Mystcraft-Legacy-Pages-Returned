@@ -17,8 +17,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Tracks which players have received the Mystcraft guidebook.
- * Stored as server-level saved data.
+ * Tracks which players have received the Mystcraft guidebook. Stored as
+ * server-level saved data.
  */
 public class GuidebookData extends SavedData {
 
@@ -60,7 +60,7 @@ public class GuidebookData extends SavedData {
       try {
         playersGiven.add(UUID.fromString(list.getString(i)));
       } catch (IllegalArgumentException ignored) {
-        // Skip malformed entries
+
       }
     }
   }

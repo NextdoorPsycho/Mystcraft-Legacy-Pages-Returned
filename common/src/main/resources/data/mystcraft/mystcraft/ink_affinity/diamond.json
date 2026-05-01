@@ -1,6 +1,10 @@
 {
-  "items": ["minecraft:diamond"],
-  "tags": ["forge:gems/diamond"],
+  "items": [
+    "minecraft:diamond"
+  ],
+  "tags": [
+    "forge:gems/diamond"
+  ],
   "amount_per_item": 1.0,
   "tier_bonus": 0,
   "symbol_weights": {

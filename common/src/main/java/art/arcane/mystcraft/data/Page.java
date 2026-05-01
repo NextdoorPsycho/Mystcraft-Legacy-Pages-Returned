@@ -1,6 +1,7 @@
 package art.arcane.mystcraft.data;
 
 import art.arcane.mystcraft.registry.ModItems;
+import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -10,15 +11,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import art.arcane.mystcraft.util.ItemStackNbt;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 /**
- * Utility class for working with Page item data.
- * Handles symbol pages, link panels, and page properties.
+ * Utility class for working with Page item data. Handles symbol pages, link
+ * panels, and page properties.
  */
 public abstract class Page {
 
@@ -230,16 +230,10 @@ public abstract class Page {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Ink tint + affinity snapshot (added 2026-04 for procedural book UI / ink
-  // affinity bias). Both are optional and default to "unset" so old pages
-  // continue to read cleanly.
-  // ---------------------------------------------------------------------------
-
   /**
-   * Records the blended ARGB tint of the ink used to write this page.
-   * Used by the procedural book UI to colour ink-edged decorations.
-   * Pass {@code 0} to clear.
+   * Records the blended ARGB tint of the ink used to write this page. Used by
+   * the procedural book UI to colour ink-edged decorations. Pass {@code 0} to
+   * clear.
    */
   public static void setInkTint(@NotNull ItemStack page, int argb) {
     if (page.isEmpty()) {
@@ -270,9 +264,9 @@ public abstract class Page {
 
   /**
    * Stores the ink-affinity snapshot (a {@link CompoundTag} containing the
-   * per-symbol / per-category / per-token weights frozen in at
-   * link-panel write time). Used by the symbol-roll algorithm and by the
-   * procedural cover sigil renderer.
+   * per-symbol / per-category / per-token weights frozen in at link-panel write
+   * time). Used by the symbol-roll algorithm and by the procedural cover sigil
+   * renderer.
    */
   public static void setAffinitySnapshot(@NotNull ItemStack page, @Nullable CompoundTag snapshot) {
     if (page.isEmpty()) {
@@ -309,11 +303,11 @@ public abstract class Page {
       Collection<String> properties = getLinkProperties(page);
       if (properties != null && !properties.isEmpty()) {
         for (String property : properties) {
-          // Get localized name from InkEffects
+
           String localizedName = InkEffects.getLocalizedName(property);
           InkEffects.PropertyColor color = InkEffects.getPropertyColor(property);
           if (color != null) {
-            // Add colored text
+
             int rgb = color.toRGB();
             list.add(Component.literal(localizedName).withStyle(style ->
                 style.withColor(rgb)));

@@ -7,6 +7,9 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Names the supported GameTest batches and parses suite filters used by the runner script.
+ */
 public final class MystcraftGameTestSuites {
 
   public static final String CORE = "core";

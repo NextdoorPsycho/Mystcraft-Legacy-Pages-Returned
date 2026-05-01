@@ -9,10 +9,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Inverted trees populator that generates upside-down trees floating in the sky.
- * Trees hang from an invisible ceiling with roots reaching skyward and
- * leaf canopies at the bottom. Decorated with chains, lanterns, and
- * weeping vines trailing below the canopy.
+ * Inverted trees populator that generates upside-down trees floating in the
+ * sky. Trees hang from an invisible ceiling with roots reaching skyward and
+ * leaf canopies at the bottom. Decorated with chains, lanterns, and weeping
+ * vines trailing below the canopy.
  */
 public class InvertedTreesPopulator implements IPopulate {
 
@@ -57,10 +57,6 @@ public class InvertedTreesPopulator implements IPopulate {
     this.maxCanopyRadius = Math.max(this.minCanopyRadius, PopulatorConfig.getInt(params, "max_canopy_radius", DEFAULT_MAX_CANOPY_RADIUS));
   }
 
-  /**
-   * Position-deterministic hash. Same position always produces the same value
-   * regardless of which chunk is being populated.
-   */
   private static long positionHash(long seed, int x, int y, int z) {
     long h = seed;
     h ^= (long) x * 73856093L;
@@ -82,18 +78,14 @@ public class InvertedTreesPopulator implements IPopulate {
       int x = chunkPos.getX() + random.nextInt(16);
       int z = chunkPos.getZ() + random.nextInt(16);
 
-      // Use position hash to determine top Y: 100 + hash(x,z) % 60
       long topHash = positionHash(seed, x, 0, z);
       int topY = 100 + (int) (Math.abs(topHash) % 60);
 
-      // Trunk length
       int trunkLength = minTrunk + random.nextInt(maxTrunk - minTrunk + 1);
 
-      // Root count and canopy radius
       int rootCount = minRoots + random.nextInt(maxRoots - minRoots + 1);
       int canopyRadius = minCanopyRadius + random.nextInt(maxCanopyRadius - minCanopyRadius + 1);
 
-      // Choose leaf type: azalea or cherry
       boolean useCherryLeaves = random.nextBoolean();
 
       generateInvertedTree(world, random, x, topY, z, trunkLength, rootCount,
@@ -111,7 +103,6 @@ public class InvertedTreesPopulator implements IPopulate {
         ? Blocks.CHERRY_LEAVES.defaultBlockState()
         : Blocks.AZALEA_LEAVES.defaultBlockState();
 
-    // Step 1: Trunk hanging DOWNWARD from topY
     int trunkBottomY = topY - trunkLength;
     for (int dy = 0; dy < trunkLength; dy++) {
       BlockPos trunkPos = new BlockPos(x, topY - dy, z);
@@ -120,13 +111,11 @@ public class InvertedTreesPopulator implements IPopulate {
       }
     }
 
-    // Step 2: Root branches reaching UPWARD from the top of the trunk
     long rootSeed = positionHash(seed ^ 0xA00D5L, x, topY, z);
     for (int r = 0; r < rootCount; r++) {
       long branchHash = positionHash(rootSeed, r, topY, x + z);
       int rootLen = minRootLen + (int) (Math.abs(branchHash) % (maxRootLen - minRootLen + 1));
 
-      // Random angle outward from center
       double angle = ((branchHash >>> 16) & 0xFFFFL) / (double) 0xFFFFL * Math.PI * 2.0;
       double spread = 0.3 + ((branchHash >>> 32) & 0xFFL) / 255.0 * 0.5;
 
@@ -137,7 +126,7 @@ public class InvertedTreesPopulator implements IPopulate {
       BlockPos lastRootPos = null;
       for (int seg = 0; seg < rootLen; seg++) {
         currentX += Math.cos(angle) * spread;
-        currentY += 1; // Growing upward
+        currentY += 1;
         currentZ += Math.sin(angle) * spread;
 
         BlockPos rootPos = new BlockPos((int) Math.floor(currentX), (int) currentY, (int) Math.floor(currentZ));
@@ -147,13 +136,11 @@ public class InvertedTreesPopulator implements IPopulate {
         lastRootPos = rootPos;
       }
 
-      // Step 6: Hanging decorations from 1-2 branch tips
       if (lastRootPos != null && r < 2) {
         placeHangingDecoration(world, lastRootPos);
       }
     }
 
-    // Step 5: Inverse canopy (sphere of leaves at the BOTTOM of the trunk)
     int canopyCenterY = trunkBottomY;
     for (int dx = -canopyRadius; dx <= canopyRadius; dx++) {
       for (int dy = -canopyRadius; dy <= canopyRadius; dy++) {
@@ -169,7 +156,6 @@ public class InvertedTreesPopulator implements IPopulate {
       }
     }
 
-    // Step 7: Weeping vines trailing below the leaf canopy (2-4 blocks)
     for (int dx = -canopyRadius; dx <= canopyRadius; dx++) {
       for (int dz = -canopyRadius; dz <= canopyRadius; dz++) {
         double distSq = (double) dx * dx + (double) dz * dz;
@@ -177,7 +163,6 @@ public class InvertedTreesPopulator implements IPopulate {
           continue;
         }
 
-        // Use position hash to decide if a vine hangs here (~30% chance)
         long vineHash = positionHash(seed ^ 0xB1AE5L, x + dx, canopyCenterY, z + dz);
         if ((vineHash & 0x7) > 2) {
           continue;
@@ -196,12 +181,11 @@ public class InvertedTreesPopulator implements IPopulate {
   }
 
   private void placeHangingDecoration(WorldGenLevel world, BlockPos branchTip) {
-    // Chain block below the branch tip
+
     BlockPos chainPos = branchTip.below();
     if (isInWritableArea(chainPos, currentChunkPos) && world.getBlockState(chainPos).isAir()) {
       world.setBlock(chainPos, Blocks.CHAIN.defaultBlockState(), 2);
 
-      // Lantern below the chain
       BlockPos lanternPos = chainPos.below();
       if (isInWritableArea(lanternPos, currentChunkPos) && world.getBlockState(lanternPos).isAir()) {
         world.setBlock(lanternPos, Blocks.LANTERN.defaultBlockState(), 2);

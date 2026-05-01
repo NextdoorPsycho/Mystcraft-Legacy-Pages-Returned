@@ -11,10 +11,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Generates nested cubic chambers connected by tunnels - like looking
- * into a tesseract unfolded in 3D space. An outer cube of end stone bricks
- * contains an inner cube of purpur blocks, with connecting tunnels on each
- * face and end rod lighting. Deeply unsettling impossible geometry.
+ * Generates nested cubic chambers connected by tunnels - like looking into a
+ * tesseract unfolded in 3D space. An outer cube of end stone bricks contains an
+ * inner cube of purpur blocks, with connecting tunnels on each face and end rod
+ * lighting. Deeply unsettling impossible geometry.
  */
 public class TesseractChambersPopulator implements IPopulate {
 
@@ -70,7 +70,7 @@ public class TesseractChambersPopulator implements IPopulate {
       int surfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
 
       int outerSize = MIN_OUTER_SIZE + random.nextInt(MAX_OUTER_SIZE - MIN_OUTER_SIZE + 1);
-      // Make size odd for symmetry
+
       if (outerSize % 2 == 0) {
         outerSize++;
       }
@@ -92,17 +92,16 @@ public class TesseractChambersPopulator implements IPopulate {
   }
 
   private void generateTesseract(WorldGenLevel world, BlockPos chunkPos,
-                                  int cx, int cy, int cz, int outerSize) {
+                                 int cx, int cy, int cz, int outerSize) {
     int outerHalf = outerSize / 2;
     int innerSize = Math.max(5, outerSize / 2 - 1);
-    // Make inner size odd
+
     if (innerSize % 2 == 0) {
       innerSize++;
     }
     int innerHalf = innerSize / 2;
     int tunnelRadius = 1;
 
-    // Build outer cube shell
     for (int dx = -outerHalf; dx <= outerHalf; dx++) {
       for (int dy = -outerHalf; dy <= outerHalf; dy++) {
         for (int dz = -outerHalf; dz <= outerHalf; dz++) {
@@ -124,26 +123,25 @@ public class TesseractChambersPopulator implements IPopulate {
               && Math.abs(dy) < innerHalf - 1
               && Math.abs(dz) < innerHalf - 1;
 
-          // Tunnel check: axis-aligned tubes connecting inner to outer
           boolean inTunnel = false;
-          // X-axis tunnels
+
           if (Math.abs(dy) <= tunnelRadius && Math.abs(dz) <= tunnelRadius
               && Math.abs(dx) > innerHalf - 1) {
             inTunnel = true;
           }
-          // Y-axis tunnels
+
           if (Math.abs(dx) <= tunnelRadius && Math.abs(dz) <= tunnelRadius
               && Math.abs(dy) > innerHalf - 1) {
             inTunnel = true;
           }
-          // Z-axis tunnels
+
           if (Math.abs(dx) <= tunnelRadius && Math.abs(dy) <= tunnelRadius
               && Math.abs(dz) > innerHalf - 1) {
             inTunnel = true;
           }
 
           if (outerShell && !inTunnel) {
-            // Outer shell: end stone bricks with edge accents
+
             long blockHash = positionHash(seed, bx, by, bz);
             float roll = hashFloat(blockHash);
             if (roll < 0.08f) {
@@ -152,10 +150,10 @@ public class TesseractChambersPopulator implements IPopulate {
               world.setBlock(pos, END_STONE_BRICKS, 2);
             }
           } else if (outerShell && inTunnel) {
-            // Tunnel openings through outer shell: air
+
             world.setBlock(pos, AIR, 2);
           } else if (insideInner) {
-            // Interior of inner cube: air with end rods
+
             if (dx == 0 && dz == 0 && (dy == innerHalf - 2 || dy == -(innerHalf - 2))) {
               world.setBlock(pos, END_ROD, 2);
             } else if (dy == 0 && dz == 0 && (dx == innerHalf - 2 || dx == -(innerHalf - 2))) {
@@ -164,7 +162,7 @@ public class TesseractChambersPopulator implements IPopulate {
               world.setBlock(pos, AIR, 2);
             }
           } else if (innerShell && !inTunnel) {
-            // Inner shell: purpur with pillar accents on edges
+
             boolean isEdge = (Math.abs(dx) == innerHalf && Math.abs(dy) == innerHalf)
                 || (Math.abs(dy) == innerHalf && Math.abs(dz) == innerHalf)
                 || (Math.abs(dx) == innerHalf && Math.abs(dz) == innerHalf);
@@ -174,17 +172,16 @@ public class TesseractChambersPopulator implements IPopulate {
               world.setBlock(pos, PURPUR_BLOCK, 2);
             }
           } else if (inTunnel) {
-            // Tunnel: air
+
             world.setBlock(pos, AIR, 2);
           } else {
-            // Space between inner and outer cubes: air
+
             world.setBlock(pos, AIR, 2);
           }
         }
       }
     }
 
-    // Corner decorations: chorus plants in the 8 corners between inner and outer
     int cornerOffset = (outerHalf + innerHalf) / 2;
     for (int sx = -1; sx <= 1; sx += 2) {
       for (int sy = -1; sy <= 1; sy += 2) {

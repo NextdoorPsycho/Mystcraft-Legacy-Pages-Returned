@@ -6,6 +6,9 @@ import net.minecraft.nbt.NbtUtils;
 
 import java.lang.reflect.Method;
 
+/**
+ * Compatibility helpers for NBT helpers whose signatures differ between mapped runtimes.
+ */
 public final class NbtCompat {
 
   private static final Method READ_BLOCK_POS_KEY =

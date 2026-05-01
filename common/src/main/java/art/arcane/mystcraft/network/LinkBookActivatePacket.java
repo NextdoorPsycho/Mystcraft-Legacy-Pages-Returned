@@ -8,8 +8,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Packet sent from client to server to activate a linking book.
- * Sent when the player clicks the "Link" button in the book GUI.
+ * Packet sent from client to server to activate a linking book. Sent when the
+ * player clicks the "Link" button in the book GUI.
  */
 public class LinkBookActivatePacket {
 
@@ -35,12 +35,9 @@ public class LinkBookActivatePacket {
 
       ItemStack heldItem = player.getItemInHand(packet.hand);
 
-      // Handle linkbook activation
       if (heldItem.getItem() instanceof LinkbookItem linkbook) {
         linkbook.activate(heldItem, player.level(), player);
-      }
-      // Handle agebook activation - call activate() directly
-      else if (heldItem.getItem() instanceof AgebookItem agebook) {
+      } else if (heldItem.getItem() instanceof AgebookItem agebook) {
         agebook.activate(heldItem, player.level(), player);
       }
     });

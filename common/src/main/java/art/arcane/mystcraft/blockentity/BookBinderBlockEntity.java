@@ -11,11 +11,11 @@ import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -23,7 +23,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,11 +32,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Block entity for the Book Binder.
- * Used to create descriptive books and linkbooks from pages.
+ * Block entity for the Book Binder. Used to create descriptive books and
+ * linkbooks from pages.
  * <p>
- * Has a cover slot for leather and stores a list of pages
- * that will be bound into the book.
+ * Has a cover slot for leather and stores a list of pages that will be bound
+ * into the book.
  */
 public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuProvider {
 
@@ -71,16 +70,14 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
   }
 
   /**
-   * Checks if a stack is valid as a book cover.
-   * Valid items are configured in MystcraftConfig.bookBinderCoverItems.
-   * For folders, they must be empty.
+   * Checks if a stack is valid as a book cover. Valid items are configured in
+   * MystcraftConfig.bookBinderCoverItems. For folders, they must be empty.
    */
   public static boolean isValidCover(ItemStack stack) {
     if (stack.isEmpty()) {
       return false;
     }
 
-    // Check if item is in the configured list
     ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
     List<String> validItems = MystcraftConfig.bookBinderCoverItems.get();
 
@@ -91,7 +88,6 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
       return false;
     }
 
-    // Special case: folders must be empty
     if (stack.getItem() instanceof FolderItem) {
       return FolderItem.isEmpty(stack);
     }
@@ -219,18 +215,15 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
       return ItemStack.EMPTY;
     }
 
-    // Check page limit
     int maxSymbols = MystcraftConfig.maxSymbolsPerBook.get();
     if (maxSymbols >= 0 && pages.size() >= maxSymbols) {
       return stack;
     }
 
-    // Only accept pages
     if (!(stack.getItem() instanceof art.arcane.mystcraft.item.PageItem)) {
       return stack;
     }
 
-    // Insert pages one at a time
     while (stack.getCount() > 0) {
       if (maxSymbols >= 0 && pages.size() >= maxSymbols) {
         break;
@@ -258,13 +251,13 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
 
     List<ItemStack> folderPages = FolderItem.getPages(folder);
     if (folderPages.isEmpty()) {
-      // Empty folder - collect pages into it
+
       for (ItemStack page : pages) {
         FolderItem.addPage(folder, page);
       }
       pages.clear();
     } else {
-      // Non-empty folder - insert pages from it
+
       for (ItemStack page : folderPages) {
         if (!page.isEmpty()) {
           ItemStack remainder = insertPage(page, index);
@@ -273,7 +266,7 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
           }
         }
       }
-      // Clear the folder
+
       FolderItem.clearPages(folder);
     }
 
@@ -300,23 +293,23 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
    * Checks if a book can be built with current contents.
    */
   public boolean canBuildItem() {
-    // Need a valid cover
+
     if (!isValidCover(getCoverStack())) {
       return false;
     }
-    // Need at least one page
+
     if (pages.isEmpty()) {
       return false;
     }
-    // First page must be a link panel
+
     if (!Page.isLinkPanel(pages.get(0))) {
       return false;
     }
-    // Need a title
+
     if (pendingTitle == null || pendingTitle.isEmpty()) {
       return false;
     }
-    // No other pages can be link panels
+
     for (int i = 1; i < pages.size(); i++) {
       if (Page.isLinkPanel(pages.get(i))) {
         return false;
@@ -345,16 +338,13 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
     }
 
     if (output.getItem() instanceof AgebookItem) {
-      // Capture cover item id BEFORE we shrink/clear the cover stack so the
-      // procedural book texture factory can pick the right cover palette.
+
       ItemStack cover = getCoverStack();
       ResourceLocation coverId = cover.isEmpty() ? null
           : BuiltInRegistries.ITEM.getKey(cover.getItem());
 
-      // Create the agebook with pages
       AgebookItem.create(output, player, new ArrayList<>(pages), pendingTitle);
 
-      // Persist cover material into the agebook's LinkOptions tag.
       if (coverId != null) {
         LinkOptions opts = LinkOptions.fromItemStack(output);
         if (opts == null) {
@@ -365,11 +355,9 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
         opts.toItemStack(output);
       }
 
-      // Clear the pages
       pages.clear();
       pendingTitle = null;
 
-      // Consume one cover
       cover.shrink(1);
       if (cover.isEmpty()) {
         inventory.setItem(COVER_SLOT, ItemStack.EMPTY);
@@ -388,19 +376,15 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
   public List<ItemStack> getDrops() {
     List<ItemStack> drops = new ArrayList<>();
 
-    // Add cover if present
     ItemStack cover = getCoverStack();
     if (!cover.isEmpty()) {
       drops.add(cover.copy());
     }
 
-    // Add all pages
     drops.addAll(pages);
 
     return drops;
   }
-
-  // MenuProvider implementation
 
   @Override
   @NotNull

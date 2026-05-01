@@ -10,8 +10,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Packet sent from server to client to display custom explosion effects.
- * Allows for colored or modified explosion visuals without actual block damage.
+ * Packet sent from server to client to display custom explosion effects. Allows
+ * for colored or modified explosion visuals without actual block damage.
  */
 public record ExplosionPacket(
     double x, double y, double z,
@@ -76,7 +76,7 @@ public record ExplosionPacket(
         return soundEvent;
       }
     } catch (ReflectiveOperationException ignored) {
-      // Fall through to null for older/newer mappings.
+
     }
     return null;
   }
@@ -88,17 +88,17 @@ public record ExplosionPacket(
     switch (packet.type) {
       case NORMAL -> spawnNormalExplosion(level, pos, particleCount);
       case METEOR -> spawnMeteorExplosion(level, pos, particleCount);
-      case DECAY -> spawnDecayExplosion(level, pos, particleCount, packet.color);
+      case DECAY ->
+          spawnDecayExplosion(level, pos, particleCount, packet.color);
       case INSTABILITY -> spawnInstabilityExplosion(level, pos, particleCount);
       case SILENT -> spawnNormalExplosion(level, pos, particleCount);
     }
   }
 
   private static void spawnNormalExplosion(Level level, Vec3 pos, int count) {
-    // Large smoke cloud
+
     level.addParticle(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
 
-    // Surrounding smoke and flame
     for (int i = 0; i < count; i++) {
       double offsetX = (level.random.nextDouble() - 0.5) * 2.0;
       double offsetY = (level.random.nextDouble() - 0.5) * 2.0;
@@ -117,10 +117,9 @@ public record ExplosionPacket(
   }
 
   private static void spawnMeteorExplosion(Level level, Vec3 pos, int count) {
-    // Core explosion
+
     level.addParticle(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
 
-    // Heavy fire particles
     for (int i = 0; i < count * 2; i++) {
       double offsetX = (level.random.nextDouble() - 0.5) * 3.0;
       double offsetY = level.random.nextDouble() * 2.0;
@@ -137,7 +136,6 @@ public record ExplosionPacket(
       }
     }
 
-    // Smoke plume
     for (int i = 0; i < count; i++) {
       double offsetX = (level.random.nextDouble() - 0.5) * 2.0;
       double offsetZ = (level.random.nextDouble() - 0.5) * 2.0;
@@ -149,13 +147,12 @@ public record ExplosionPacket(
   }
 
   private static void spawnDecayExplosion(Level level, Vec3 pos, int count, int color) {
-    // Purple/dark explosion effect
+
     for (int i = 0; i < count; i++) {
       double offsetX = (level.random.nextDouble() - 0.5) * 2.0;
       double offsetY = (level.random.nextDouble() - 0.5) * 2.0;
       double offsetZ = (level.random.nextDouble() - 0.5) * 2.0;
 
-      // Use portal particles for that otherworldly decay feel
       level.addParticle(ParticleTypes.PORTAL,
           pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ,
           offsetX * 0.5, offsetY * 0.5, offsetZ * 0.5);
@@ -167,7 +164,6 @@ public record ExplosionPacket(
       }
     }
 
-    // Dark smoke
     for (int i = 0; i < count / 2; i++) {
       double offsetX = (level.random.nextDouble() - 0.5) * 1.5;
       double offsetZ = (level.random.nextDouble() - 0.5) * 1.5;
@@ -179,7 +175,7 @@ public record ExplosionPacket(
   }
 
   private static void spawnInstabilityExplosion(Level level, Vec3 pos, int count) {
-    // Chaotic red-tinted explosion
+
     level.addParticle(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
 
     for (int i = 0; i < count; i++) {
@@ -187,7 +183,6 @@ public record ExplosionPacket(
       double offsetY = (level.random.nextDouble() - 0.5) * 3.0;
       double offsetZ = (level.random.nextDouble() - 0.5) * 3.0;
 
-      // Mix of angry particles
       if (level.random.nextFloat() < 0.4f) {
         level.addParticle(ParticleTypes.ANGRY_VILLAGER,
             pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ,
@@ -205,7 +200,6 @@ public record ExplosionPacket(
       }
     }
 
-    // Occasional sparks
     for (int i = 0; i < count / 3; i++) {
       double angle = level.random.nextDouble() * Math.PI * 2;
       double speed = 0.2 + level.random.nextDouble() * 0.3;
@@ -245,10 +239,10 @@ public record ExplosionPacket(
   }
 
   public enum ExplosionType {
-    NORMAL,      // Standard explosion particles
-    METEOR,      // Fiery impact with more fire particles
-    DECAY,       // Purple/dark particles
-    INSTABILITY, // Red-tinted chaotic particles
-    SILENT       // Visual only, no sound
+    NORMAL,
+    METEOR,
+    DECAY,
+    INSTABILITY,
+    SILENT
   }
 }

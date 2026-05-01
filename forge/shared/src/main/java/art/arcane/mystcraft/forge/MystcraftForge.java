@@ -45,11 +45,8 @@ public class MystcraftForge {
 
     Mystcraft.LOGGER.info("[Mystcraft] Forge initialization starting...");
 
-    // Register Forge config
     ForgeMystcraftConfig.register();
 
-    // Use the new centralized registration system
-    // This calls: initialize(modEventBus) -> register() -> populateCommonRegistries()
     ModRegistrations.registerAll(modEventBus);
 
     modEventBus.addListener(this::commonSetup);
@@ -68,6 +65,20 @@ public class MystcraftForge {
     Mystcraft.LOGGER.info("[Mystcraft] Forge registration complete");
   }
 
+  private static net.minecraft.world.level.block.Block resolveShortGrass() {
+    try {
+      return (net.minecraft.world.level.block.Block) net.minecraft.world.level.block.Blocks.class.getField("SHORT_GRASS").get(null);
+    } catch (ReflectiveOperationException ignored) {
+
+    }
+    try {
+      return (net.minecraft.world.level.block.Block) net.minecraft.world.level.block.Blocks.class.getField("GRASS").get(null);
+    } catch (ReflectiveOperationException ignored) {
+
+    }
+    return net.minecraft.world.level.block.Blocks.GRASS_BLOCK;
+  }
+
   private void registerGameTests(net.minecraftforge.event.RegisterGameTestsEvent event) {
     Mystcraft.LOGGER.info("[Mystcraft] Registering GameTests");
     try {
@@ -83,9 +94,7 @@ public class MystcraftForge {
   }
 
   private void commonSetup(FMLCommonSetupEvent event) {
-    // Never force dev-mode globally during normal gameplay.
-    // In large modpacks this enables strict startup validation and can crash clients with
-    // "Your game data is foobar" on otherwise non-fatal resource warnings.
+
     if (Boolean.getBoolean("mystcraft.enableGameTestIdeMode")) {
       SharedConstants.IS_RUNNING_IN_IDE = true;
       Mystcraft.LOGGER.info("[Mystcraft] Enabled IS_RUNNING_IN_IDE via -Dmystcraft.enableGameTestIdeMode=true");
@@ -242,7 +251,7 @@ public class MystcraftForge {
 
     @SubscribeEvent
     public static void onRegisterBlockColors(net.minecraftforge.client.event.RegisterColorHandlersEvent.Block event) {
-      // Custom grass color handler with multi-color noise support
+
       net.minecraft.client.color.block.BlockColor grassColor = (state, level, pos, tintIndex) -> {
         if (level == null || pos == null) {
           return net.minecraft.world.level.GrassColor.getDefaultColor();
@@ -261,7 +270,6 @@ public class MystcraftForge {
         return net.minecraft.client.renderer.BiomeColors.getAverageGrassColor(level, pos);
       };
 
-      // Custom foliage color handler
       net.minecraft.client.color.block.BlockColor foliageColor = (state, level, pos, tintIndex) -> {
         if (level == null || pos == null) {
           return net.minecraft.world.level.FoliageColor.getDefaultColor();
@@ -278,7 +286,6 @@ public class MystcraftForge {
         return net.minecraft.client.renderer.BiomeColors.getAverageFoliageColor(level, pos);
       };
 
-      // Custom water color handler
       net.minecraft.client.color.block.BlockColor waterColor = (state, level, pos, tintIndex) -> {
         if (level == null || pos == null) {
           return 0x3F76E4;
@@ -295,26 +302,33 @@ public class MystcraftForge {
         return net.minecraft.client.renderer.BiomeColors.getAverageWaterColor(level, pos);
       };
 
-      // Register for grass blocks
       event.register(grassColor,
           net.minecraft.world.level.block.Blocks.GRASS_BLOCK, resolveShortGrass(), net.minecraft.world.level.block.Blocks.FERN,
           net.minecraft.world.level.block.Blocks.LARGE_FERN, net.minecraft.world.level.block.Blocks.POTTED_FERN, net.minecraft.world.level.block.Blocks.TALL_GRASS);
 
-      // Register for foliage blocks
       event.register(foliageColor,
           net.minecraft.world.level.block.Blocks.OAK_LEAVES, net.minecraft.world.level.block.Blocks.SPRUCE_LEAVES, net.minecraft.world.level.block.Blocks.BIRCH_LEAVES,
           net.minecraft.world.level.block.Blocks.JUNGLE_LEAVES, net.minecraft.world.level.block.Blocks.ACACIA_LEAVES, net.minecraft.world.level.block.Blocks.DARK_OAK_LEAVES,
           net.minecraft.world.level.block.Blocks.MANGROVE_LEAVES, net.minecraft.world.level.block.Blocks.VINE);
 
-      // Register for water
       event.register(waterColor, net.minecraft.world.level.block.Blocks.WATER, net.minecraft.world.level.block.Blocks.WATER_CAULDRON);
 
-      // Portal color handler
       net.minecraft.client.color.block.BlockColor portalColor = (state, blockAndTintGetter, pos, tintIndex) -> {
-        if (pos == null) {
+        // BE-direct lookup. Every cell of a lit portal carries a stamped
+        // colour from PortalUtils.firePortal (see §6.6 in the v2 plan).
+        // No level lookup, no BFS, no client-cache races. If the BE is
+        // missing for any reason (chunk loading, pre-v2 portal on disk),
+        // fall back to the BookReceptacle BFS so legacy portals still
+        // tint sensibly until the next ignition.
+        if (pos == null || blockAndTintGetter == null) {
           return 0x4488FF;
         }
+        net.minecraft.world.level.block.entity.BlockEntity portalBe = blockAndTintGetter.getBlockEntity(pos);
+        if (portalBe instanceof art.arcane.mystcraft.blockentity.LinkPortalBlockEntity portalBE) {
+          return portalBE.getPortalColor();
+        }
 
+        // Legacy fallback (pre-v2 portals stored without a BE).
         net.minecraft.world.level.Level clientLevel = net.minecraft.client.Minecraft.getInstance().level;
         if (clientLevel != null) {
           net.minecraft.world.level.block.entity.BlockEntity be = art.arcane.mystcraft.portal.PortalUtils.findReceptacle(clientLevel, pos);
@@ -333,11 +347,10 @@ public class MystcraftForge {
 
     @SubscribeEvent
     public static void onRegisterItemColors(net.minecraftforge.client.event.RegisterColorHandlersEvent.Item event) {
-      // Guidebook and ink bucket colors
+
       event.register((stack, tintIndex) -> 0xFF303030, ModItems.GUIDEBOOK.get());
       event.register((stack, tintIndex) -> tintIndex == 1 ? 0xFF1A1A1A : 0xFFFFFFFF, ModItems.INK_BUCKET.get());
 
-      // Item colors for grass/foliage blocks in inventory
       net.minecraft.client.color.item.ItemColor grassItemColor = (stack, tintIndex) -> {
         int ageUID = art.arcane.mystcraft.client.AgeColorUtils.getCurrentAgeUID();
         if (ageUID >= 0) {
@@ -382,20 +395,6 @@ public class MystcraftForge {
       event.registerReloadListener(art.arcane.mystcraft.client.gui.procedural.ProceduralUiReload.instance());
       Mystcraft.LOGGER.info("Registered procedural UI reload listener");
     }
-  }
-
-  private static net.minecraft.world.level.block.Block resolveShortGrass() {
-    try {
-      return (net.minecraft.world.level.block.Block) net.minecraft.world.level.block.Blocks.class.getField("SHORT_GRASS").get(null);
-    } catch (ReflectiveOperationException ignored) {
-      // Older versions use GRASS.
-    }
-    try {
-      return (net.minecraft.world.level.block.Block) net.minecraft.world.level.block.Blocks.class.getField("GRASS").get(null);
-    } catch (ReflectiveOperationException ignored) {
-      // Fallback below.
-    }
-    return net.minecraft.world.level.block.Blocks.GRASS_BLOCK;
   }
 
 }

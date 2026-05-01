@@ -6,8 +6,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 
 /**
- * Packet sent from server to client to sync server configuration.
- * Ensures clients have consistent gameplay settings with the server.
+ * Packet sent from server to client to sync server configuration. Ensures
+ * clients have consistent gameplay settings with the server.
  */
 public record ConfigSyncPacket(CompoundTag configData) {
 
@@ -38,24 +38,20 @@ public record ConfigSyncPacket(CompoundTag configData) {
   public static ConfigSyncPacket create() {
     CompoundTag config = new CompoundTag();
 
-    // General settings
     config.putBoolean("allowWorldGen", true);
     config.putBoolean("allowInstabilityEffects", true);
     config.putBoolean("allowLinking", true);
-    config.putInt("maxAgesPerPlayer", -1); // -1 = unlimited
+    config.putInt("maxAgesPerPlayer", -1);
     config.putInt("maxPagesPerBooster", 3);
     config.putFloat("instabilityMultiplier", 1.0f);
 
-    // Writing settings
     config.putBoolean("requireInk", true);
     config.putBoolean("consumePages", true);
 
-    // Linking settings
     config.putBoolean("allowIntraLinking", true);
     config.putBoolean("generatePlatforms", true);
     config.putInt("linkCooldownTicks", 100);
 
-    // Decay settings
     config.putFloat("decaySpreadRate", 1.0f);
     config.putBoolean("decayAffectsOverworld", false);
 
@@ -80,7 +76,6 @@ public record ConfigSyncPacket(CompoundTag configData) {
       config = new CompoundTag();
     }
 
-    // Convenience getters
     public static boolean allowWorldGen() {
       return config.getBoolean("allowWorldGen");
     }

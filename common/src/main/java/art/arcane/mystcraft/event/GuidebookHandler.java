@@ -26,7 +26,6 @@ public class GuidebookHandler {
     GuidebookData data = GuidebookData.get(server);
     if (data.hasReceived(player.getUUID())) return;
 
-    // Create and give the guidebook
     ItemStack guidebook = new ItemStack(ModItems.GUIDEBOOK.get());
     if (!player.getInventory().add(guidebook)) {
       player.drop(guidebook, false);

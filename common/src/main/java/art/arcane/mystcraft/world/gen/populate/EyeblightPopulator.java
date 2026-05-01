@@ -13,10 +13,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
 /**
  * Eyeblight populator that generates clusters of "watching" eye formations
  * embedded in the ground, staring upward. Eyes are flat circular structures
- * with concentric rings of obsidian/blackstone, black concrete, a colored
- * iris, and a glowing pupil center. Surrounding decorations include sculk
- * veins and occasional sculk sensors.
- * Simple single-chunk populator.
+ * with concentric rings of obsidian/blackstone, black concrete, a colored iris,
+ * and a glowing pupil center. Surrounding decorations include sculk veins and
+ * occasional sculk sensors. Simple single-chunk populator.
  */
 public class EyeblightPopulator implements IPopulate {
 
@@ -36,10 +35,6 @@ public class EyeblightPopulator implements IPopulate {
     this.count = PopulatorConfig.getInt(params, "count", DEFAULT_COUNT);
   }
 
-  /**
-   * Position-deterministic hash. Same position always produces the same value
-   * regardless of which chunk is being populated.
-   */
   private static long positionHash(long seed, int x, int y, int z) {
     long h = seed;
     h ^= (long) x * 73856093L;
@@ -73,18 +68,16 @@ public class EyeblightPopulator implements IPopulate {
         continue;
       }
 
-      // Size variant: 40% small (3x3), 40% medium (5x5), 20% large (7x7)
       int sizeRoll = random.nextInt(100);
       int radius;
       if (sizeRoll < 40) {
-        radius = 1; // 3x3
+        radius = 1;
       } else if (sizeRoll < 80) {
-        radius = 2; // 5x5
+        radius = 2;
       } else {
-        radius = 3; // 7x7
+        radius = 3;
       }
 
-      // Material choices for this eye
       boolean useWarpedIris = random.nextBoolean();
       boolean useShroomlightPupil = random.nextBoolean();
 
@@ -96,13 +89,11 @@ public class EyeblightPopulator implements IPopulate {
           : Blocks.SEA_LANTERN.defaultBlockState();
       BlockState middleBlock = Blocks.BLACK_CONCRETE.defaultBlockState();
 
-      // Ring radius thresholds (distance from center)
       double outerRadius = radius;
       double middleRadius = radius * 0.75;
       double irisRadius = radius * 0.5;
       double innerRadius = radius * 0.2;
 
-      // Build the eye structure
       for (int dx = -radius; dx <= radius; dx++) {
         for (int dz = -radius; dz <= radius; dz++) {
           double dist = Math.sqrt((double) dx * dx + (double) dz * dz);
@@ -119,19 +110,18 @@ public class EyeblightPopulator implements IPopulate {
             continue;
           }
 
-          // Determine which ring this block falls in
           BlockState blockToPlace;
           if (dist <= innerRadius) {
-            // Pupil center
+
             blockToPlace = pupilBlock;
           } else if (dist <= irisRadius) {
-            // Iris
+
             blockToPlace = irisBlock;
           } else if (dist <= middleRadius) {
-            // Middle ring: black concrete
+
             blockToPlace = middleBlock;
           } else {
-            // Outer ring: obsidian or blackstone alternating by position hash
+
             long ringHash = positionHash(seed, bx, surfaceY, bz);
             boolean useObsidian = (ringHash & 1L) == 0;
             blockToPlace = useObsidian
@@ -139,14 +129,12 @@ public class EyeblightPopulator implements IPopulate {
                 : Blocks.BLACKSTONE.defaultBlockState();
           }
 
-          // Replace terrain block with eye material
           BlockState existing = world.getBlockState(eyePos);
           if (existing.isSolid() || existing.is(BlockTags.DIRT) || existing.is(Blocks.GRASS_BLOCK)
               || existing.is(Blocks.SAND) || existing.is(Blocks.GRAVEL)) {
             world.setBlock(eyePos, blockToPlace, 2);
           }
 
-          // Shallow bowl deformation: dig 1-2 blocks below near the center
           if (dist <= middleRadius) {
             int bowlDepth = dist <= innerRadius ? 2 : 1;
             for (int depth = 1; depth <= bowlDepth; depth++) {
@@ -162,7 +150,6 @@ public class EyeblightPopulator implements IPopulate {
         }
       }
 
-      // Decorations: sculk_vein radiating outward from eye edge (3-5 positions)
       int vineCount = 3 + random.nextInt(3);
       for (int v = 0; v < vineCount; v++) {
         double angle = random.nextDouble() * Math.PI * 2.0;
@@ -177,7 +164,6 @@ public class EyeblightPopulator implements IPopulate {
         }
       }
 
-      // Decorations: occasional sculk_sensor (1-2 per eye)
       int sensorCount = 1 + random.nextInt(2);
       for (int s = 0; s < sensorCount; s++) {
         double angle = random.nextDouble() * Math.PI * 2.0;

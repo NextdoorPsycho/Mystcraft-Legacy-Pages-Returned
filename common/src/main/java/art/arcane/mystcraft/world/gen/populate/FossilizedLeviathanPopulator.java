@@ -11,11 +11,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Generates the fossilized skeleton of a colossal creature partially buried
- * in the terrain. A long curving spine of bone blocks (40-100 blocks),
- * ribcage arches every 5-7 blocks, a skull at one end with hollow eye
- * sockets, and a tapering tail at the other. Soul fire accents.
- * Whatever this was, it was enormous. And ancient.
+ * Generates the fossilized skeleton of a colossal creature partially buried in
+ * the terrain. A long curving spine of bone blocks (40-100 blocks), ribcage
+ * arches every 5-7 blocks, a skull at one end with hollow eye sockets, and a
+ * tapering tail at the other. Soul fire accents. Whatever this was, it was
+ * enormous. And ancient.
  */
 public class FossilizedLeviathanPopulator implements IPopulate {
 
@@ -88,23 +88,21 @@ public class FossilizedLeviathanPopulator implements IPopulate {
   }
 
   private void generateLeviathan(WorldGenLevel world, BlockPos chunkPos,
-                                  int startX, int surfaceY, int startZ,
-                                  int length, double angle, int buryDepth) {
+                                 int startX, int surfaceY, int startZ,
+                                 int length, double angle, int buryDepth) {
     double dx = Math.cos(angle);
     double dz = Math.sin(angle);
     int ribInterval = 5 + (int) (hashFloat(positionHash(seed, startX, surfaceY, startZ)) * 3);
     int ribCounter = 0;
 
-    // Skull at the start (first 8-12 blocks)
     int skullLength = 8 + (int) (hashFloat(positionHash(seed ^ 0x5C11L, startX, surfaceY, startZ)) * 5);
 
     for (int step = 0; step < length; step++) {
       int bx = startX + (int) Math.round(dx * step);
       int bz = startZ + (int) Math.round(dz * step);
 
-      // Gentle vertical undulation
       double undulation = Math.sin(step * 0.08) * 3.0;
-      // Gentle horizontal curve
+
       double curve = Math.sin(step * 0.04) * 5.0;
       bx += (int) Math.round(-dz * curve);
       bz += (int) Math.round(dx * curve);
@@ -112,23 +110,20 @@ public class FossilizedLeviathanPopulator implements IPopulate {
       int localSurfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz) - 1;
       int spineY = localSurfaceY - buryDepth + (int) undulation;
 
-      // Progress along the body (0=skull, 1=tail)
       double progress = (double) step / length;
 
-      // Spine width tapers toward tail
       int spineWidth;
       if (progress < 0.1) {
-        // Skull zone: wider
+
         spineWidth = 3;
       } else if (progress < 0.7) {
-        // Body: normal
+
         spineWidth = 2;
       } else {
-        // Tail: tapers to 1
+
         spineWidth = Math.max(1, (int) (2 * (1.0 - (progress - 0.7) / 0.3)));
       }
 
-      // Place spine vertebrae
       for (int sw = -spineWidth / 2; sw <= spineWidth / 2; sw++) {
         int spX = bx + (int) Math.round(-dz * sw);
         int spZ = bz + (int) Math.round(dx * sw);
@@ -136,7 +131,7 @@ public class FossilizedLeviathanPopulator implements IPopulate {
         if (isInWritableArea(spinePos, chunkPos)) {
           placeBone(world, spinePos);
         }
-        // Vertebrae bump every 2 blocks
+
         if (step % 2 == 0) {
           BlockPos bumpPos = new BlockPos(spX, spineY + 1, spZ);
           if (isInWritableArea(bumpPos, chunkPos)) {
@@ -145,26 +140,23 @@ public class FossilizedLeviathanPopulator implements IPopulate {
         }
       }
 
-      // Skull zone: larger structure
       if (step < skullLength) {
         generateSkullSection(world, chunkPos, bx, spineY, bz, step, skullLength, dx, dz);
       }
 
-      // Ribcage section (20%-70% of body)
       if (progress >= 0.15 && progress <= 0.70) {
         ribCounter++;
         if (ribCounter >= ribInterval) {
           ribCounter = 0;
-          // Rib height scales with body section
+
           int ribHeight = 6 + (int) (4 * (1.0 - Math.abs(progress - 0.4) / 0.3));
           generateRib(world, chunkPos, bx, spineY, bz, ribHeight, dx, dz);
         }
       }
 
-      // Soul sand/soul fire patches near spine
       long decorHash = positionHash(seed ^ 0xDE03L, bx, spineY, bz);
       if (hashFloat(decorHash) < 0.06f) {
-        // Place soul sand below surface near spine
+
         for (int sdx = -2; sdx <= 2; sdx++) {
           for (int sdz = -2; sdz <= 2; sdz++) {
             if (sdx * sdx + sdz * sdz > 4) continue;
@@ -176,7 +168,7 @@ public class FossilizedLeviathanPopulator implements IPopulate {
               BlockState existing = world.getBlockState(soulPos);
               if (existing.isSolid() && !existing.is(Blocks.BONE_BLOCK)) {
                 world.setBlock(soulPos, SOUL_SAND, 2);
-                // Soul fire on top
+
                 BlockPos firePos = soulPos.above();
                 if (isInWritableArea(firePos, chunkPos) && world.getBlockState(firePos).isAir()) {
                   long fireHash = positionHash(seed, sx, sy + 1, sz);
@@ -193,10 +185,10 @@ public class FossilizedLeviathanPopulator implements IPopulate {
   }
 
   private void generateSkullSection(WorldGenLevel world, BlockPos chunkPos,
-                                     int bx, int spineY, int bz,
-                                     int step, int skullLength,
-                                     double dx, double dz) {
-    // Skull tapers from 5 wide at front to 3 wide at neck
+                                    int bx, int spineY, int bz,
+                                    int step, int skullLength,
+                                    double dx, double dz) {
+
     double skullProgress = (double) step / skullLength;
     int skullWidth = (int) (5 - 2 * skullProgress);
     int skullHeight = (int) (6 - 2 * skullProgress);
@@ -210,14 +202,13 @@ public class FossilizedLeviathanPopulator implements IPopulate {
           continue;
         }
 
-        // Hollow interior for larger skulls
         boolean isShell = Math.abs(sw) == skullWidth / 2
             || sh == 0 || sh == skullHeight - 1;
 
         if (isShell) {
           placeBone(world, skullPos);
         } else if (sh == skullHeight - 2 && step <= 2) {
-          // Eye sockets at front of skull
+
           if (sw == -1 || sw == 1) {
             world.setBlock(skullPos, COAL, 2);
           } else {
@@ -229,13 +220,12 @@ public class FossilizedLeviathanPopulator implements IPopulate {
       }
     }
 
-    // Jaw bone below spine at skull front
     if (step < skullLength / 2) {
       BlockPos jawPos = new BlockPos(bx, spineY - 1, bz);
       if (isInWritableArea(jawPos, chunkPos)) {
         placeBone(world, jawPos);
       }
-      // Teeth: calcite blocks at the very front
+
       if (step <= 2) {
         for (int tw = -skullWidth / 2; tw <= skullWidth / 2; tw += 2) {
           int tx = bx + (int) Math.round(-dz * tw);
@@ -250,12 +240,12 @@ public class FossilizedLeviathanPopulator implements IPopulate {
   }
 
   private void generateRib(WorldGenLevel world, BlockPos chunkPos,
-                            int bx, int spineY, int bz,
-                            int ribHeight, double dx, double dz) {
-    // Two ribs, one on each side of spine
+                           int bx, int spineY, int bz,
+                           int ribHeight, double dx, double dz) {
+
     for (int side = -1; side <= 1; side += 2) {
       for (int r = 0; r <= ribHeight; r++) {
-        // Parabolic arch shape
+
         double normalizedR = (double) r / ribHeight;
         double archWidth = ribHeight * 0.6 * Math.sqrt(1.0 - normalizedR * normalizedR);
 

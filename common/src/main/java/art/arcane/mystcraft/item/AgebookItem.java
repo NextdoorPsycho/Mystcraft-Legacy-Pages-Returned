@@ -43,9 +43,9 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The Descriptive Book (Agebook) item.
- * Contains the complete description of an Age and allows travel to it.
- * Ages are created when the book is first used with a link panel.
+ * The Descriptive Book (Agebook) item. Contains the complete description of an
+ * Age and allows travel to it. Ages are created when the book is first used
+ * with a link panel.
  */
 public class AgebookItem extends Item implements TooltipCompat {
 
@@ -143,17 +143,16 @@ public class AgebookItem extends Item implements TooltipCompat {
   public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
     ItemStack stack = player.getItemInHand(hand);
 
-    // Always open GUI on client (linking happens via packet from Link button)
     if (level.isClientSide) {
       art.arcane.mystcraft.client.screen.BookScreen.open(stack);
     }
 
-    return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+    return InteractionResultHolder.consume(stack);
   }
 
   /**
-   * Activates the book, potentially creating a new Age.
-   * Called from packet handler when player clicks Link button in GUI.
+   * Activates the book, potentially creating a new Age. Called from packet
+   * handler when player clicks Link button in GUI.
    */
   public void activate(ItemStack stack, Level level, Entity entity) {
     if (!(entity instanceof Player player)) {
@@ -173,33 +172,27 @@ public class AgebookItem extends Item implements TooltipCompat {
     Integer dimId = LinkOptions.getDimensionUID(ItemStackNbt.getTag(stack));
 
     if (dimId == null) {
-      // This is a new book - check if it has a link panel
+
       List<ItemStack> pages = getPageList(stack);
       if (!pages.isEmpty() && Page.isLinkPanel(pages.get(0))) {
-        // Create a new Age dimension
+
         createAge(stack, serverLevel, serverPlayer);
       }
-      // Silent in chat; logged to console in createAge/linkToAge.
+
     } else {
-      // Existing Age - perform linking
+
       linkToAge(stack, serverLevel, serverPlayer);
     }
   }
 
-  /**
-   * Creates a new Age dimension for this Agebook.
-   */
   private void createAge(ItemStack stack, ServerLevel level, ServerPlayer player) {
     Mystcraft.LOGGER.info("Creating age for player {}", player.getGameProfile().getName());
 
-    // Extract symbols from pages
     List<ItemStack> pages = getPageList(stack);
     List<IAgeSymbol> symbols = extractSymbols(pages);
 
-    // Generate a seed from the player's position and time
     long seed = System.currentTimeMillis() ^ player.blockPosition().asLong();
 
-    // Build the Age using the grammar system
     AgeBuilder builder = new AgeBuilder(symbols, seed);
     AgeDirectorImpl director = builder.build();
     if (MystcraftConfig.microDimensionsEnabled.get() && !director.isPersonalPocket()) {
@@ -210,14 +203,11 @@ public class AgebookItem extends Item implements TooltipCompat {
       );
     }
 
-    // Allocate a new age UID
     AgeManager ageManager = AgeManager.get(level);
     int ageUID = ageManager.allocateUID();
 
-    // Generate a UUID for this age
     java.util.UUID ageUUID = java.util.UUID.randomUUID();
 
-    // Create the dimension with director configuration
     ServerLevel ageLevel = AgeDimensionFactory.createAgeDimension(
         level.getServer(), ageUID, ageUUID, director);
 
@@ -226,11 +216,9 @@ public class AgebookItem extends Item implements TooltipCompat {
       return;
     }
 
-    // Register the age with AgeManager so it can be found later
     ResourceLocation dimLoc = new ResourceLocation("mystcraft", "mystcraft_age_" + ageUID);
     ageManager.registerAge(ageUID, dimLoc, ageUUID);
 
-    // Initialize the AgeData
     AgeData ageData = AgeData.get(ageLevel);
     ageData.setAgeUID(ageUID);
     ageData.setAgeUUID(ageUUID);
@@ -240,22 +228,14 @@ public class AgebookItem extends Item implements TooltipCompat {
     }
     ageData.setPages(pages);
 
-    // Copy ALL configuration from director (including instability)
     ageData.copyFromDirector(director);
 
-    // Force sync Age data to the player BEFORE they teleport
-    // This ensures colors, instability, and other visual data is available on the client
     AgeDataSyncHandler.syncAgeDataToPlayer(player, ageLevel);
 
-    // Find a proper spawn position using the terrain heightmap.
-    // getSharedSpawnPos() returns a generic default (0,64,0) which may not
-    // correspond to actual terrain. Instead, force the spawn chunk to generate
-    // and use the heightmap to find the real surface.
     BlockPos spawn = findAgeSpawnPosition(ageLevel);
     ageData.setSpawn(spawn.getX(), spawn.getY(), spawn.getZ());
     AgeDimensionFactory.applyMicroDimensionBorder(ageLevel, ageData);
 
-    // Update the book with the Age's dimension ID and spawn
     CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
     LinkOptions.setDimensionUID(tag, ageUID);
     LinkOptions.setSpawn(tag, spawn);
@@ -269,31 +249,14 @@ public class AgebookItem extends Item implements TooltipCompat {
       Mystcraft.LOGGER.info("Created age uid={} player={}", ageUID, player.getGameProfile().getName());
     }
 
-    // Link to the newly created Age
     linkToAge(stack, level, player);
   }
 
-  /**
-   * Finds a proper spawn position in a newly created Age.
-   * Forces the spawn chunk to generate, then uses the heightmap to find
-   * the actual terrain surface.
-   */
   private BlockPos findAgeSpawnPosition(ServerLevel ageLevel) {
-    // Use (8, 8) as spawn coords - center of the spawn chunk.
-    // This matters for void Ages where the platform is at chunk center.
+
     int spawnX = 8;
     int spawnZ = 8;
 
-    // IMPORTANT: Do NOT force synchronous chunk generation here.
-    // Calling ageLevel.getChunk(x, z, ChunkStatus.FULL, true) on the server thread
-    // will DEADLOCK because chunk generation schedules tasks that need the server
-    // thread to complete, but the server thread is blocked waiting for chunk gen.
-    //
-    // Instead, estimate the spawn Y from the director/terrain type.
-    // LinkingManager.findSafeY will do actual terrain validation when the player links,
-    // at which point the chunk gets generated as part of the teleport process.
-
-    // Try to get terrain info from the chunk generator
     if (ageLevel.getChunkSource().getGenerator() instanceof AgeChunkGenerator ageGen) {
       AgeDirectorImpl director = ageGen.getDirector();
       if (director != null) {
@@ -301,10 +264,10 @@ public class AgebookItem extends Item implements TooltipCompat {
         int spawnY;
 
         if ("void".equals(terrainType)) {
-          // Void terrain has a platform at Y=65 (placed at Y=64, spawn on top)
+
           spawnY = 65;
         } else if ("flat".equals(terrainType)) {
-          // Flat terrain goes up to director's ground level
+
           int gl = director.getAverageGroundLevel();
           spawnY = (gl > 0) ? gl + 1 : 65;
         } else if ("nether".equals(terrainType)) {
@@ -312,11 +275,7 @@ public class AgebookItem extends Item implements TooltipCompat {
         } else if ("end".equals(terrainType)) {
           spawnY = 65;
         } else {
-          // Normal/amplified terrain - use vanilla overworld ground level.
-          // Do NOT trust director.getAverageGroundLevel() here because
-          // symbol processing order can leave it at invalid values
-          // (e.g., terrain_end sets ground=-20, then terrain_normal
-          // overrides the type but doesn't reset the ground level).
+
           spawnY = 65;
         }
 
@@ -327,19 +286,15 @@ public class AgebookItem extends Item implements TooltipCompat {
       }
     }
 
-    // Fallback if no director available
     art.arcane.mystcraft.Mystcraft.LOGGER.info("[AgebookItem] findAgeSpawnPosition: no director, using fallback Y=65");
     return new BlockPos(spawnX, 65, spawnZ);
   }
 
-  /**
-   * Extracts IAgeSymbol objects from a list of pages.
-   */
   private List<IAgeSymbol> extractSymbols(List<ItemStack> pages) {
     List<IAgeSymbol> symbols = new ArrayList<>();
     for (ItemStack page : pages) {
       if (Page.isLinkPanel(page)) {
-        continue; // Link panels are not symbols
+        continue;
       }
       ResourceLocation symbolId = Page.getSymbol(page);
       if (symbolId != null) {
@@ -352,9 +307,6 @@ public class AgebookItem extends Item implements TooltipCompat {
     return symbols;
   }
 
-  /**
-   * Links the player to the Age described in this book.
-   */
   private void linkToAge(ItemStack stack, ServerLevel level, ServerPlayer player) {
     CompoundTag linkData = ItemStackNbt.getTag(stack);
     if (linkData == null) {
@@ -367,7 +319,6 @@ public class AgebookItem extends Item implements TooltipCompat {
       return;
     }
 
-    // Perform the link
     LinkingManager.LinkResult result = LinkingManager.performLink(player, linkData);
 
     if (result != LinkingManager.LinkResult.SUCCESS) {
@@ -476,11 +427,9 @@ public class AgebookItem extends Item implements TooltipCompat {
    */
   @Override
   public boolean isFoil(@NotNull ItemStack stack) {
-    // Show foil if the book has an Age (dimension) linked
+
     return ItemStackNbt.getTag(stack) != null && LinkOptions.getDimensionUID(ItemStackNbt.getTag(stack)) != null;
   }
-
-  // --- Custom Entity on Q-Drop ---
 
   /**
    * Forge: Q-dropped agebooks should spawn as LinkbookEntity, not ItemEntity.
@@ -491,7 +440,8 @@ public class AgebookItem extends Item implements TooltipCompat {
   }
 
   /**
-   * Creates a LinkbookEntity when Q-dropped so the book renders open on the ground.
+   * Creates a LinkbookEntity when Q-dropped so the book renders open on the
+   * ground.
    */
   @Nullable
   public Entity createEntity(Level level, Entity location, @NotNull ItemStack stack) {

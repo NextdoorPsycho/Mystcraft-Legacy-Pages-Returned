@@ -1,5 +1,7 @@
 {
-  "items": ["minecraft:echo_shard"],
+  "items": [
+    "minecraft:echo_shard"
+  ],
   "amount_per_item": 1.0,
   "category_weights": {
     "feature_large": 0.15

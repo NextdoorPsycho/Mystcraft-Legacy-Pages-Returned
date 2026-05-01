@@ -45,7 +45,8 @@ import java.util.Map;
  * }</pre>
  * <p>
  * The loader is invoked from
- * {@link art.arcane.mystcraft.datapack.affinity.MystcraftAffinityReloadListener}
+ * {@link
+ * art.arcane.mystcraft.datapack.affinity.MystcraftAffinityReloadListener}
  * during the standard datapack reload pipeline.
  */
 public final class AffinityDatapackLoader {
@@ -114,9 +115,7 @@ public final class AffinityDatapackLoader {
         if (itemId == null) continue;
         Item item = BuiltInRegistries.ITEM.get(itemId);
         if (item == null || item == BuiltInRegistries.ITEM.get(BuiltInRegistries.ITEM.getDefaultKey())) {
-          // BuiltInRegistries#get returns minecraft:air for missing — we want
-          // to silently skip those so other modpacks don't blow up if a mod
-          // referenced in JSON isn't present.
+
           if (item == null) continue;
         }
         InkAffinity.register(item, entry);

@@ -1,14 +1,16 @@
 package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
+import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.network.OpenLecternBookPacket;
+import art.arcane.mystcraft.portal.PortalUtils;
 import art.arcane.mystcraft.registry.ModBlocks;
-import art.arcane.mystcraft.util.BlockInteractionCompat;
 import art.arcane.mystcraft.util.CodecCompat;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -57,14 +59,10 @@ import org.jetbrains.annotations.Nullable;
  *   <li>Holding a Linkbook/Agebook on an empty receptacle → places it (firing the portal).</li>
  * </ul>
  */
-public class BookReceptacleBlock extends BaseEntityBlock implements BlockInteractionCompat {
+public class BookReceptacleBlock extends BaseEntityBlock {
 
-  public static final MapCodec<BookReceptacleBlock> CODEC = CodecCompat.simpleCodec(BookReceptacleBlock::new);
   public static final DirectionProperty FACING = BlockStateProperties.FACING;
-
-  // Per-face platform shapes — a 6-thick slab on the side touching the Crystal.
-  // The slab sits on the face OPPOSITE to FACING, since FACING points away from
-  // the Crystal.
+  public static final MapCodec<BookReceptacleBlock> CODEC = CodecCompat.simpleCodec(BookReceptacleBlock::new);
   private static final VoxelShape SHAPE_UP = Block.box(0, 0, 0, 16, 6, 16);
   private static final VoxelShape SHAPE_NORTH = Block.box(0, 0, 10, 16, 16, 16);
   private static final VoxelShape SHAPE_SOUTH = Block.box(0, 0, 0, 16, 16, 6);
@@ -93,7 +91,7 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
       case SOUTH -> SHAPE_SOUTH;
       case WEST -> SHAPE_WEST;
       case EAST -> SHAPE_EAST;
-      default -> SHAPE_UP; // DOWN is rejected at placement; defensive fallback
+      default -> SHAPE_UP;
     };
   }
 
@@ -107,12 +105,12 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
   public BlockState getStateForPlacement(BlockPlaceContext context) {
     Direction facing = context.getClickedFace();
     if (facing == Direction.DOWN) {
-      return null; // Ceiling-mount disallowed
+      return null;
     }
     BlockPos placedAt = context.getClickedPos();
     BlockPos supportPos = placedAt.relative(facing.getOpposite());
     if (!context.getLevel().getBlockState(supportPos).is(ModBlocks.CRYSTAL.get())) {
-      return null; // Must mount on a Crystal
+      return null;
     }
     return defaultBlockState().setValue(FACING, facing);
   }
@@ -159,6 +157,7 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
     return null;
   }
 
+  @Override
   @NotNull
   public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
                                InteractionHand hand, BlockHitResult hit) {
@@ -169,9 +168,16 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
 
     ItemStack held = player.getItemInHand(hand);
 
-    // --- Receptacle has a book ---
+    if (!level.isClientSide) {
+      art.arcane.mystcraft.Mystcraft.LOGGER.info(
+          "[Receptacle.use] pos={} sneak={} hasBook={} held={} validActivator={}",
+          pos, player.isShiftKeyDown(), receptacle.hasBook(),
+          held.isEmpty() ? "<empty>" : net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(held.getItem()),
+          BookReceptacleBlockEntity.isValidPortalActivator(held));
+    }
+
     if (receptacle.hasBook()) {
-      // Sneak + empty hand → take the book back (also shuts the portal down)
+
       if (player.isShiftKeyDown() && held.isEmpty()) {
         if (!level.isClientSide) {
           ItemStack book = receptacle.takeBook();
@@ -181,8 +187,7 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
       }
-      // Empty hand → open the book. Server sends the actual screen-open packet
-      // so the client receives an up-to-date book ItemStack with full NBT.
+
       if (held.isEmpty()) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
           MystcraftNetwork.sendToPlayer(new OpenLecternBookPacket(pos, receptacle.getBook()), serverPlayer);
@@ -192,7 +197,6 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
       return InteractionResult.PASS;
     }
 
-    // --- Empty receptacle: try to insert a book to fire the portal ---
     if (BookReceptacleBlockEntity.isValidPortalActivator(held)) {
       if (!level.isClientSide) {
         ItemStack inserted = held.copy();
@@ -201,6 +205,14 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
         if (!player.getAbilities().instabuild) {
           held.shrink(1);
         }
+      }
+      return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    if (held.getItem() instanceof AgebookItem) {
+      if (!level.isClientSide) {
+        art.arcane.mystcraft.util.PlayerMessages.send(player,
+            Component.translatable("mystcraft.portal.agebook_no_link_panel"), true);
       }
       return InteractionResult.sidedSuccess(level.isClientSide);
     }
@@ -215,6 +227,10 @@ public class BookReceptacleBlock extends BaseEntityBlock implements BlockInterac
         receptacle.dropContents();
         level.updateNeighbourForOutputSignal(pos, this);
       }
+      // Always tear down. A portal lit by this receptacle has no other owner;
+      // lingering portal blocks confuse pathfinding and stale crystals stay
+      // glowing. Safe to call when no portal is currently lit.
+      PortalUtils.shutdownPortal(level, pos);
       super.onRemove(state, level, pos, newState, isMoving);
     }
   }

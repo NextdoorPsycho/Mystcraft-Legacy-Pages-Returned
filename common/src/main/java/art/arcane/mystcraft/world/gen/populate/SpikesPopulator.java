@@ -13,9 +13,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Spikes populator that generates ice-spike style formations.
- * Used when the Spikes symbol is applied to an age.
- * Generates tall pointed spikes rising from the ground.
+ * Spikes populator that generates ice-spike style formations. Used when the
+ * Spikes symbol is applied to an age. Generates tall pointed spikes rising from
+ * the ground.
  */
 public class SpikesPopulator implements IPopulate {
 
@@ -23,7 +23,7 @@ public class SpikesPopulator implements IPopulate {
   private static final int DEFAULT_MIN_HEIGHT = 10;
   private static final int DEFAULT_MAX_HEIGHT = 30;
   private static final float DEFAULT_COLD_TEMPERATURE = 0.15f;
-  // ~8% of chunks spawn a spike
+
   private static final float DEFAULT_SPAWN_CHANCE = 0.08f;
   private final long seed;
   private final int spikesPerChunk;
@@ -60,16 +60,13 @@ public class SpikesPopulator implements IPopulate {
       int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
       BlockPos spikePos = new BlockPos(x, y, z);
 
-      // Check if valid location for spike
       if (!canSupportSpike(world, spikePos)) {
         continue;
       }
 
-      // Sample biome to determine spike material
       Holder<Biome> biomeHolder = world.getBiome(spikePos);
       float temperature = biomeHolder.value().getBaseTemperature();
 
-      // Generate spike
       generateSpike(world, random, spikePos, temperature, chunkPos);
     }
   }
@@ -80,34 +77,28 @@ public class SpikesPopulator implements IPopulate {
   }
 
   private void generateSpike(WorldGenLevel world, RandomSource random, BlockPos basePos, float temperature, BlockPos chunkPos) {
-    // Choose spike material based on biome temperature
+
     BlockState spikeBlock = temperature < coldTemperature
         ? Blocks.PACKED_ICE.defaultBlockState()
         : Blocks.STONE.defaultBlockState();
 
     int height = minHeight + random.nextInt(maxHeight - minHeight + 1);
 
-    // Generate tapering spike
     for (int y = 0; y < height; y++) {
       float progress = (float) y / height;
 
-      // Radius decreases as we go up (tapering effect)
-      // Start with radius 2-3 at base, taper to point
       int baseRadius = 2 + random.nextInt(2);
       int radius = (int) Math.max(0, baseRadius * (1.0f - progress));
 
-      // Add some variation to the taper for a more natural look
       if (progress > 0.7f) {
-        // Sharp point at top
+
         radius = (int) (radius * (1.0f - (progress - 0.7f) / 0.3f));
       }
 
-      // Place blocks in a circular pattern
       for (int dx = -radius; dx <= radius; dx++) {
         for (int dz = -radius; dz <= radius; dz++) {
           double distance = Math.sqrt(dx * dx + dz * dz);
 
-          // Circular cross-section with some irregularity
           if (distance <= radius + random.nextFloat() * 0.5) {
             BlockPos spikeBlockPos = basePos.offset(dx, y, dz);
 
@@ -115,7 +106,6 @@ public class SpikesPopulator implements IPopulate {
               continue;
             }
 
-            // Only place if air or replaceable
             BlockState existing = world.getBlockState(spikeBlockPos);
             if (existing.isAir() || existing.is(BlockTags.LEAVES) ||
                 existing.is(Blocks.SNOW) || existing.is(Blocks.SNOW_BLOCK)) {
@@ -125,9 +115,8 @@ public class SpikesPopulator implements IPopulate {
         }
       }
 
-      // Add some crystalline features for ice spikes
       if (spikeBlock.is(Blocks.PACKED_ICE) && y > height / 2 && random.nextInt(4) == 0) {
-        // Occasionally add small ice protrusions
+
         int direction = random.nextInt(4);
         int dx = (direction == 0) ? 1 : (direction == 1) ? -1 : 0;
         int dz = (direction == 2) ? 1 : (direction == 3) ? -1 : 0;
@@ -139,7 +128,6 @@ public class SpikesPopulator implements IPopulate {
       }
     }
 
-    // Add tip block at the very top
     if (height > 0) {
       BlockPos tipPos = basePos.above(height);
       if (isInWritableArea(tipPos, chunkPos) && world.getBlockState(tipPos).isAir()) {

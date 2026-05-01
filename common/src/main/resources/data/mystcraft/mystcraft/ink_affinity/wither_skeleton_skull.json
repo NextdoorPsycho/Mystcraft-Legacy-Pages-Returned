@@ -1,5 +1,7 @@
 {
-  "items": ["minecraft:wither_skeleton_skull"],
+  "items": [
+    "minecraft:wither_skeleton_skull"
+  ],
   "amount_per_item": 1.0,
   "tier_bonus": 2,
   "symbol_weights": {

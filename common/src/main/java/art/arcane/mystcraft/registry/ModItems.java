@@ -5,8 +5,8 @@ import net.minecraft.world.item.Item;
 import java.util.function.Supplier;
 
 /**
- * Common accessor for registered items.
- * Platform modules populate these suppliers during initialization.
+ * Common accessor for registered items. Platform modules populate these
+ * suppliers during initialization.
  */
 public final class ModItems {
 

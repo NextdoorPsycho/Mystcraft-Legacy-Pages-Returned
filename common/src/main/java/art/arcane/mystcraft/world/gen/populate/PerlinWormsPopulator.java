@@ -12,10 +12,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.Random;
 
 /**
- * Perlin Worms populator that carves sinuous 3D tunnels through terrain.
- * Unlike tendrils which build outward, worms carve inward using 3D Perlin noise
- * to steer their heading, producing smooth, continuously curving tunnels that
- * feel organic and interconnected.
+ * Perlin Worms populator that carves sinuous 3D tunnels through terrain. Unlike
+ * tendrils which build outward, worms carve inward using 3D Perlin noise to
+ * steer their heading, producing smooth, continuously curving tunnels that feel
+ * organic and interconnected.
  * <p>
  * Uses the neighbor-seed pattern for cross-chunk deterministic generation.
  */
@@ -25,10 +25,9 @@ public class PerlinWormsPopulator implements IPopulate {
   private static final int DEFAULT_MIN_LENGTH = 80;
   private static final int DEFAULT_MAX_LENGTH = 220;
   private static final float DEFAULT_SPAWN_CHANCE = 0.35f;
-  // Worms can drift far: heading changes smoothly so max lateral drift is bounded
-  // by segment count * max turn rate. 220 segments * ~1.5 blocks lateral = ~330 blocks = ~21 chunks
+
   private static final int DEFAULT_NEIGHBOR_RANGE = 20;
-  // Noise frequency controls how quickly the worm changes direction
+
   private static final double DEFAULT_NOISE_FREQUENCY = 0.03;
   private static final int DEFAULT_MIN_RADIUS = 3;
   private static final int DEFAULT_MAX_RADIUS = 6;
@@ -45,7 +44,7 @@ public class PerlinWormsPopulator implements IPopulate {
   private final float leavesFloorChance;
   private final Integer minStartYOverride;
   private final Integer maxStartYOverride;
-  // Permutation table for Perlin noise (fixed, deterministic)
+
   private final int[] perm;
 
   public PerlinWormsPopulator(long seed) {
@@ -119,16 +118,13 @@ public class PerlinWormsPopulator implements IPopulate {
           int startZ = neighborMinZ + chunkRand.nextInt(16);
           int length = minLength + chunkRand.nextInt(maxLength - minLength + 1);
 
-          // Worm type determines behavior
           int wormType = chunkRand.nextInt(4);
           int baseRadius = minRadius + chunkRand.nextInt(maxRadius - minRadius + 1);
           boolean leavesFloor = chunkRand.nextFloat() < leavesFloorChance;
 
-          // Initial heading angles (yaw and pitch in radians)
           double initialYaw = chunkRand.nextDouble() * Math.PI * 2.0;
           double initialPitch = (chunkRand.nextDouble() - 0.5) * 0.6;
 
-          // Noise offset so each worm samples different noise space
           double noiseOffsetX = chunkRand.nextDouble() * 1000.0;
           double noiseOffsetY = chunkRand.nextDouble() * 1000.0;
           double noiseOffsetZ = chunkRand.nextDouble() * 1000.0;
@@ -149,15 +145,13 @@ public class PerlinWormsPopulator implements IPopulate {
     return seed ^ ((long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + 0xA3F_91DL);
   }
 
-  // --- Perlin Noise Implementation ---
-
   private void generateWorm(WorldGenLevel world, long pathSeed,
                             int startX, int startZ, int length,
                             int wormType, int baseRadius, boolean leavesFloor,
                             double initialYaw, double initialPitch,
                             double noiseOffX, double noiseOffY, double noiseOffZ,
                             int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
-    // Deterministic start Y from path seed
+
     Random yRand = new Random(pathSeed ^ 0xB4E_7C02L);
     int startY;
     if (minStartYOverride != null && maxStartYOverride != null) {
@@ -166,10 +160,10 @@ public class PerlinWormsPopulator implements IPopulate {
       startY = minY + yRand.nextInt(Math.max(1, maxY - minY + 1));
     } else {
       switch (wormType) {
-        case 0 -> startY = 20 + yRand.nextInt(30);  // Deep worm (20-49)
-        case 1 -> startY = 40 + yRand.nextInt(40);  // Mid worm (40-79)
-        case 2 -> startY = 10 + yRand.nextInt(50);  // Full-range worm (10-59)
-        default -> startY = 50 + yRand.nextInt(30);  // Shallow worm (50-79)
+        case 0 -> startY = 20 + yRand.nextInt(30);
+        case 1 -> startY = 40 + yRand.nextInt(40);
+        case 2 -> startY = 10 + yRand.nextInt(50);
+        default -> startY = 50 + yRand.nextInt(30);
       }
     }
 
@@ -182,7 +176,6 @@ public class PerlinWormsPopulator implements IPopulate {
     for (int segment = 0; segment < length; segment++) {
       double progress = (double) segment / length;
 
-      // Sample 3D Perlin noise at the worm's current position to steer heading
       double noiseX = (currentX * noiseFrequency) + noiseOffX;
       double noiseY = (currentY * noiseFrequency) + noiseOffY;
       double noiseZ = (currentZ * noiseFrequency) + noiseOffZ;
@@ -192,17 +185,14 @@ public class PerlinWormsPopulator implements IPopulate {
 
       yaw += yawDelta;
 
-      // Clamp pitch to prevent worms from going too vertical
       pitch += pitchDelta;
       pitch = Math.max(-0.5, Math.min(0.5, pitch));
 
-      // Move forward along the heading
       double speed = 1.2 + 0.3 * Math.sin(segment * 0.15);
       currentX += Math.cos(yaw) * Math.cos(pitch) * speed;
       currentY += Math.sin(pitch) * speed;
       currentZ += Math.sin(yaw) * Math.cos(pitch) * speed;
 
-      // Keep Y in bounds
       if (currentY < -60) {
         pitch = Math.abs(pitch);
         currentY = -60;
@@ -212,11 +202,9 @@ public class PerlinWormsPopulator implements IPopulate {
         currentY = 100;
       }
 
-      // Radius varies along the worm: wider in the middle, tapers at ends
       double taperFactor = 1.0 - Math.pow(2.0 * progress - 1.0, 4);
       int radius = (int) Math.max(1, Math.round(baseRadius * (0.5 + 0.5 * taperFactor)));
 
-      // Occasional widening for chambers
       long chamberHash = positionHash(pathSeed, (int) currentX, (int) currentY, (int) currentZ);
       if ((chamberHash & 0xF) == 0) {
         radius += 3 + (int) ((chamberHash >>> 4) & 0x3);
@@ -226,7 +214,6 @@ public class PerlinWormsPopulator implements IPopulate {
       int centerBy = (int) Math.floor(currentY);
       int centerBz = (int) Math.floor(currentZ);
 
-      // Carve a sphere at each segment position
       double radiusSq = (double) radius * radius;
       for (int dx = -radius; dx <= radius; dx++) {
         for (int dy = -radius; dy <= radius; dy++) {
@@ -244,16 +231,15 @@ public class PerlinWormsPopulator implements IPopulate {
               continue;
             }
 
-            // Leave floor blocks for walkability
             if (leavesFloor && dy == -radius && distSq > radiusSq * 0.5) {
               continue;
             }
 
             BlockPos pos = new BlockPos(bx, by, bz);
             if (shouldCarve(world, pos)) {
-              // Bottom of tunnel gets a different treatment
+
               if (leavesFloor && dy == -radius + 1) {
-                // Flatten the floor slightly
+
                 continue;
               }
               world.setBlock(pos, getCarveResult(world, pos, by), 2);
@@ -262,7 +248,6 @@ public class PerlinWormsPopulator implements IPopulate {
         }
       }
 
-      // Position-deterministic decorations along the tunnel walls
       long decorHash = positionHash(pathSeed ^ 0xDE_C0L, centerBx, centerBy, centerBz);
       if ((decorHash & 0xF) == 0 && segment > 5 && segment < length - 5) {
         placeDecoration(world, centerBx, centerBy, centerBz, radius, decorHash,
@@ -276,7 +261,7 @@ public class PerlinWormsPopulator implements IPopulate {
     if (state.isAir() || state.is(Blocks.BEDROCK)) {
       return false;
     }
-    // Carve through solid natural terrain
+
     return state.is(Blocks.STONE) ||
         state.is(Blocks.DEEPSLATE) ||
         state.is(Blocks.COBBLED_DEEPSLATE) ||
@@ -301,7 +286,7 @@ public class PerlinWormsPopulator implements IPopulate {
   }
 
   private BlockState getCarveResult(WorldGenLevel world, BlockPos pos, int y) {
-    // Below sea level, fill with water; otherwise air
+
     if (y < world.getSeaLevel()) {
       return Blocks.WATER.defaultBlockState();
     }
@@ -313,7 +298,6 @@ public class PerlinWormsPopulator implements IPopulate {
     int decorType = (int) ((hash >> 4) & 0x7);
     int dir = (int) ((hash >> 7) & 0x3);
 
-    // Place decoration on tunnel walls
     int dx = (dir == 0) ? radius + 1 : (dir == 1) ? -(radius + 1) : 0;
     int dz = (dir == 2) ? radius + 1 : (dir == 3) ? -(radius + 1) : 0;
     int bx = cx + dx;

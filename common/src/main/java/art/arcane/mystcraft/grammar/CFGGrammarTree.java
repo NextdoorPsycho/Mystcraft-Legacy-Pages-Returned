@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Builds derivation trees from grammar rules.
- * Used to parse user-written symbols and fill in missing elements.
+ * Builds derivation trees from grammar rules. Used to parse user-written
+ * symbols and fill in missing elements.
  */
 public class CFGGrammarTree {
 
@@ -35,7 +35,6 @@ public class CFGGrammarTree {
   public void parseTerminals(List<ResourceLocation> terminals, Random rand) {
     this.terminals = Collections.unmodifiableList(new ArrayList<>(terminals));
 
-    // Process terminals in reverse order (right to left)
     for (int i = terminals.size(); i > 0; i--) {
       ResourceLocation terminal = terminals.get(i - 1);
       buildSubtree(new GrammarNode(terminal, i - 1), rand);
@@ -54,13 +53,11 @@ public class CFGGrammarTree {
       out.addAll(terminals);
     }
 
-    // Reset unexplored list
     unexplored.clear();
     if (root.selected == null) {
       unexplored.add(root);
     }
 
-    // Expand nodes that have only one possible rule
     for (int i = 0; i < unexplored.size(); i++) {
       List<CFGRule> rules = CFGGrammarGenerator.getAllRules(unexplored.get(i).token);
       if (rules != null && rules.size() == 1) {
@@ -68,7 +65,6 @@ public class CFGGrammarTree {
       }
     }
 
-    // Connect all subroots to the main tree
     List<GrammarNode> failedSubs = new ArrayList<>();
     while (!subroots.isEmpty()) {
       if (unexplored.isEmpty()) {
@@ -82,12 +78,10 @@ public class CFGGrammarTree {
     }
     subroots = failedSubs;
 
-    // Determine insertion locations
     Map<Integer, List<ResourceLocation>> insertLeft = new HashMap<>();
     Map<Integer, List<ResourceLocation>> insertRight = new HashMap<>();
     getInsertions(root, insertLeft, insertRight);
 
-    // Insert tokens into the list, expanding non-terminals
     for (int i = out.size() + 1; i > 0; i--) {
       List<ResourceLocation> products = insertRight.get(i - 1);
       if (products != null) {
@@ -107,9 +101,6 @@ public class CFGGrammarTree {
     return out;
   }
 
-  /**
-   * Recursively collects insertion points for unexpanded nodes.
-   */
   private void getInsertions(GrammarNode node,
                              Map<Integer, List<ResourceLocation>> insertLeft,
                              Map<Integer, List<ResourceLocation>> insertRight) {
@@ -132,11 +123,8 @@ public class CFGGrammarTree {
     }
   }
 
-  /**
-   * Builds a subtree from the provided node.
-   */
   private void buildSubtree(GrammarNode subroot, Random rand) {
-    // Try to connect to existing unexplored nodes
+
     for (GrammarNode node : unexplored) {
       List<CFGRule> path = getShortestPath(subroot, node, rand);
       if (path != null) {
@@ -148,11 +136,10 @@ public class CFGGrammarTree {
       }
     }
 
-    // Reverse expand as long as there's only one producing rule
     List<CFGRule> rules = CFGGrammarGenerator.getParentRules(subroot.token);
     while (rules != null && rules.size() == 1) {
       if (rules.get(0).parent().equals(root.token)) {
-        break; // Don't expand to root prematurely
+        break;
       }
       subroot = reverseExpand(subroot, rules.get(0));
       rules = CFGGrammarGenerator.getParentRules(subroot.token);
@@ -162,9 +149,6 @@ public class CFGGrammarTree {
     addUnexploredNodes(subroot);
   }
 
-  /**
-   * Gets the shortest path between two nodes.
-   */
   private List<CFGRule> getShortestPath(GrammarNode subroot, GrammarNode node, Random rand) {
     List<List<CFGRule>> paths = CFGGrammarGenerator.getShortestPaths(subroot.token, node.token);
     if (paths == null || paths.isEmpty()) {
@@ -173,9 +157,6 @@ public class CFGGrammarTree {
     return WeightedItemSelector.getRandomItem(rand, paths);
   }
 
-  /**
-   * Attempts to connect a subtree to the main tree using shortest paths.
-   */
   private boolean connectSubtreeShortest(GrammarNode subroot, Random rand) {
     List<CFGRule> rules = CFGGrammarGenerator.getParentRules(subroot.token);
     if (rules == null || rules.isEmpty()) {
@@ -183,13 +164,12 @@ public class CFGGrammarTree {
     }
 
     for (GrammarNode node : unexplored) {
-      // Check for direct match
+
       if (node.token.equals(subroot.token)) {
         replaceNodeWithTree(node, subroot);
         return true;
       }
 
-      // Check for direct connection via rules
       List<CFGRule> options = new ArrayList<>();
       for (CFGRule rule : rules) {
         if (node.token.equals(rule.parent())) {
@@ -202,7 +182,6 @@ public class CFGGrammarTree {
         return true;
       }
 
-      // Check for path via shortest path algorithm
       List<CFGRule> path = getShortestPath(subroot, node, rand);
       if (path != null) {
         for (CFGRule rule : path) {
@@ -216,9 +195,6 @@ public class CFGGrammarTree {
     return false;
   }
 
-  /**
-   * Checks if a token already exists in a tree (loop detection).
-   */
   private boolean checkForLoop(ResourceLocation parent, GrammarNode subroot) {
     Queue<GrammarNode> nodes = new LinkedList<>();
     nodes.add(subroot);
@@ -234,9 +210,6 @@ public class CFGGrammarTree {
     return false;
   }
 
-  /**
-   * Replaces a node with a subtree.
-   */
   private void replaceNodeWithTree(GrammarNode node, GrammarNode subroot) {
     unexplored.remove(node);
     node.selected = subroot.selected;
@@ -249,9 +222,6 @@ public class CFGGrammarTree {
     addUnexploredNodes(node);
   }
 
-  /**
-   * Adds unexplored children of a subtree to the unexplored list.
-   */
   private void addUnexploredNodes(GrammarNode subroot) {
     Queue<GrammarNode> nodes = new LinkedList<>();
     nodes.add(subroot);
@@ -268,9 +238,6 @@ public class CFGGrammarTree {
     }
   }
 
-  /**
-   * Expands a node using a rule, adding produced tokens as children.
-   */
   private void expandUnexploredNode(int index, CFGRule rule) {
     GrammarNode node = unexplored.remove(index);
     node.selected = rule;
@@ -284,9 +251,6 @@ public class CFGGrammarTree {
     }
   }
 
-  /**
-   * Reverse expands a node by a rule, building the tree upward.
-   */
   private GrammarNode reverseExpand(GrammarNode subroot, CFGRule rule) {
     GrammarNode newRoot = new GrammarNode(rule.parent());
     newRoot.selected = rule;
@@ -332,9 +296,6 @@ public class CFGGrammarTree {
     }
   }
 
-  /**
-   * Represents a node in the grammar derivation tree.
-   */
   private static class GrammarNode {
     final ResourceLocation token;
     final boolean isTerminal;
@@ -344,7 +305,6 @@ public class CFGGrammarTree {
     Integer leftPos;
     Integer rightPos;
 
-    // Non-terminal node
     GrammarNode(ResourceLocation token) {
       this.token = token;
       this.leftPos = null;
@@ -352,7 +312,6 @@ public class CFGGrammarTree {
       this.isTerminal = false;
     }
 
-    // Terminal node with position
     GrammarNode(ResourceLocation token, int pos) {
       this.token = token;
       this.leftPos = pos;
@@ -363,7 +322,6 @@ public class CFGGrammarTree {
     Integer getLeftPosition() {
       if (leftPos != null) return leftPos;
 
-      // Check children
       for (GrammarNode child : children) {
         Integer pos = child.getLeftPosition();
         if (pos != null && (leftPos == null || leftPos > pos)) {
@@ -373,7 +331,6 @@ public class CFGGrammarTree {
 
       if (leftPos != null) return leftPos;
 
-      // Check siblings via parent
       if (parent != null) {
         for (int i = 0; i < parent.children.size(); i++) {
           if (parent.children.get(i).equals(this)) {
@@ -391,7 +348,6 @@ public class CFGGrammarTree {
     Integer getRightPosition() {
       if (rightPos != null) return rightPos;
 
-      // Check children
       for (GrammarNode child : children) {
         Integer pos = child.getRightPosition();
         if (pos != null && (rightPos == null || rightPos < pos)) {
@@ -401,7 +357,6 @@ public class CFGGrammarTree {
 
       if (rightPos != null) return rightPos;
 
-      // Check siblings via parent
       if (parent != null) {
         for (int i = parent.children.size() - 1; i >= 0; i--) {
           if (parent.children.get(i).equals(this)) {

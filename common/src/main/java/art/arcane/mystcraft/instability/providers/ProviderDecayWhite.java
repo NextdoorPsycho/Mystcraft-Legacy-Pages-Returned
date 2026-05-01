@@ -6,8 +6,8 @@ import art.arcane.mystcraft.block.DecayBlock;
 import art.arcane.mystcraft.instability.effects.EffectDecay;
 
 /**
- * Provider for white decay effects.
- * White decay spreads but doesn't deal damage - visually dramatic but safe.
+ * Provider for white decay effects. White decay spreads but doesn't deal damage
+ * - visually dramatic but safe.
  */
 public class ProviderDecayWhite implements IInstabilityProvider {
 

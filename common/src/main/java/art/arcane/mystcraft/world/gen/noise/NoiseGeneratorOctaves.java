@@ -52,7 +52,6 @@ public class NoiseGeneratorOctaves {
       double scaledY = yOffset * scale * yScale;
       double scaledZ = zOffset * scale * zScale;
 
-      // Get integer parts for wrapping
       long xLong = (long) Math.floor(scaledX);
       long zLong = (long) Math.floor(scaledZ);
       scaledX -= xLong;

@@ -5,8 +5,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
 /**
- * Forge 1.20.1 implementation of IComponentHelper.
- * Uses static factory methods on Component class.
+ * Forge 1.20.1 implementation of IComponentHelper. Uses static factory methods
+ * on Component class.
  */
 public class ForgeComponentHelper_1_20_1 implements IComponentHelper {
 

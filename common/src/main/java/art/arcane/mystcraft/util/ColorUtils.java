@@ -126,7 +126,6 @@ public final class ColorUtils {
       float g = getGreen(color) / 255.0f;
       float b = getBlue(color) / 255.0f;
 
-      // Apply time of day blending if requested
       if (provider.blendWithTimeOfDay() && level != null) {
         float timeOfDay = level.getTimeOfDay(partialTick);
         float dayFactor = calculateDayFactor(timeOfDay);
@@ -135,7 +134,6 @@ public final class ColorUtils {
         b *= dayFactor;
       }
 
-      // Apply weather blending if requested
       if (provider.blendWithWeather() && level != null) {
         float rainLevel = level.getRainLevel(partialTick);
         float thunderLevel = level.getThunderLevel(partialTick);
@@ -156,7 +154,6 @@ public final class ColorUtils {
       return -1;
     }
 
-    // Calculate weighted average
     float avgR = totalR / totalWeight;
     float avgG = totalG / totalWeight;
     float avgB = totalB / totalWeight;
@@ -215,7 +212,6 @@ public final class ColorUtils {
       return -1;
     }
 
-    // Calculate weighted average
     float avgR = totalR / totalWeight;
     float avgG = totalG / totalWeight;
     float avgB = totalB / totalWeight;
@@ -249,17 +245,16 @@ public final class ColorUtils {
   }
 
   /**
-   * Calculates a day factor (0-1) based on time of day.
-   * Returns higher values during day, lower during night.
+   * Calculates a day factor (0-1) based on time of day. Returns higher values
+   * during day, lower during night.
    *
    * @param timeOfDay The time of day (0-1, where 0.25 is noon)
    * @return Day factor from 0.2 (night) to 1.0 (day)
    */
   public static float calculateDayFactor(float timeOfDay) {
-    // Time 0 = sunrise, 0.25 = noon, 0.5 = sunset, 0.75 = midnight
-    // Convert to a factor where noon = 1.0 and midnight = 0.2
+
     float angle = timeOfDay * 2.0f * (float) Math.PI;
-    float factor = -Mth.cos(angle) * 0.5f + 0.5f; // 0 at midnight, 1 at noon
+    float factor = -Mth.cos(angle) * 0.5f + 0.5f;
     return Mth.clamp(factor * 0.8f + 0.2f, 0.2f, 1.0f);
   }
 

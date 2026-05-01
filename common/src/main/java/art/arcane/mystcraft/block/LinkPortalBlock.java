@@ -2,24 +2,32 @@ package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity;
+import art.arcane.mystcraft.blockentity.LinkPortalBlockEntity;
 import art.arcane.mystcraft.data.LinkFlags;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.LinkbookItem;
+import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.portal.PortalUtils;
 import art.arcane.mystcraft.registry.ModSounds;
+import art.arcane.mystcraft.util.CodecCompat;
 import art.arcane.mystcraft.util.ItemStackNbt;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -27,6 +35,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,13 +56,18 @@ import java.util.UUID;
  * no separate "pointer back" direction; teleport-side receptacle discovery is
  * done with a BFS through connected portal/crystal blocks.
  */
-public class LinkPortalBlock extends Block {
+public class LinkPortalBlock extends BaseEntityBlock {
 
   public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
+  public static final MapCodec<LinkPortalBlock> CODEC = CodecCompat.simpleCodec(LinkPortalBlock::new);
 
-  // Cooldown to prevent spam teleporting (entity UUID -> last teleport time)
-  private static final Map<UUID, Long> TELEPORT_COOLDOWNS = new HashMap<>();
-  private static final long COOLDOWN_TICKS = 100; // 5 seconds
+  // Per-(entity, portal-block) cooldowns. Keying by both prevents the
+  // "walk through one portal, then back through a different one" path from
+  // being silently swallowed because the player's UUID is on global
+  // cooldown. Pruned periodically.
+  private static final Map<UUID, Map<BlockPos, Long>> TELEPORT_COOLDOWNS = new HashMap<>();
+  private static final long COOLDOWN_TICKS = 100;
+  private static final int COOLDOWN_PRUNE_THRESHOLD = 256;
 
   public LinkPortalBlock(Properties properties) {
     super(properties);
@@ -63,6 +77,27 @@ public class LinkPortalBlock extends Block {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(AXIS);
+  }
+
+  protected MapCodec<? extends BaseEntityBlock> codec() {
+    return CODEC;
+  }
+
+  @Nullable
+  @Override
+  public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+    return new LinkPortalBlockEntity(pos, state);
+  }
+
+  /**
+   * Portal blocks render as solid (the texture is drawn by the block model),
+   * not the default INVISIBLE that {@link BaseEntityBlock} uses for blocks
+   * with custom BE-driven rendering. The BE here only stores data; rendering
+   * still uses the standard model pipeline.
+   */
+  @Override
+  public RenderShape getRenderShape(BlockState state) {
+    return RenderShape.MODEL;
   }
 
   /**
@@ -111,32 +146,40 @@ public class LinkPortalBlock extends Block {
       return;
     }
 
-    UUID entityId = entity.getUUID();
     long currentTime = level.getGameTime();
-    Long lastTeleport = TELEPORT_COOLDOWNS.get(entityId);
-    if (lastTeleport != null && currentTime - lastTeleport < COOLDOWN_TICKS) {
-      return; // Still in cooldown
+    if (isOnCooldown(entity, pos, currentTime)) {
+      return;
     }
 
     BookReceptacleBlockEntity receptacle = findReceptacle(level, pos);
     if (receptacle == null || !receptacle.hasBook()) {
-      // Frame validation is handled in neighborChanged + PortalUtils.validatePortal.
-      // Don't tear blocks down on contact — that cascades into a destroyed portal.
+
       return;
     }
 
     ItemStack book = receptacle.getBook();
 
-    // Activate brand-new Agebook on first contact (matches legacy behavior:
-    // place book → walk through → Age created).
+    if (book.getItem() instanceof PersonalLinkBookItem personalBook
+        && entity instanceof ServerPlayer) {
+      setCooldown(entity, pos, currentTime);
+      level.playSound(null, pos, ModSounds.LINKING_PORTAL.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
+      personalBook.activate(book, level, entity);
+      return;
+    }
+
     if (book.getItem() instanceof AgebookItem agebookItem
         && LinkOptions.getDimensionUID(ItemStackNbt.getTag(book)) == null
-        && entity instanceof ServerPlayer) {
+        && entity instanceof ServerPlayer serverPlayer) {
       agebookItem.activate(book, level, entity);
       if (LinkOptions.getDimensionUID(ItemStackNbt.getTag(book)) == null) {
-        return; // Activation failed (e.g., missing link panel)
+
+        art.arcane.mystcraft.util.PlayerMessages.send(serverPlayer,
+            Component.translatable("mystcraft.portal.agebook_no_link_panel"), true);
+        return;
       }
-      TELEPORT_COOLDOWNS.put(entityId, currentTime);
+      art.arcane.mystcraft.util.PlayerMessages.send(serverPlayer,
+          Component.translatable("mystcraft.portal.agebook_age_created"), true);
+      setCooldown(entity, pos, currentTime);
       return;
     }
 
@@ -145,35 +188,85 @@ public class LinkPortalBlock extends Block {
       return;
     }
 
-    TELEPORT_COOLDOWNS.put(entityId, currentTime);
+    setCooldown(entity, pos, currentTime);
 
     level.playSound(null, pos, ModSounds.LINKING_PORTAL.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
 
-    // Apply portal-specific flag overrides without mutating the source book.
     CompoundTag portalLinkData = linkData.copy();
     LinkOptions.setFlag(portalLinkData, LinkFlags.MAINTAIN_MOMENTUM, true);
     LinkOptions.setFlag(portalLinkData, LinkFlags.GENERATE_PLATFORM, false);
+    LinkOptions.setSpawnYaw(portalLinkData, entity.getYRot());
 
     LinkingManager.LinkResult result = LinkingManager.performLink(entity, portalLinkData);
 
     if (result != LinkingManager.LinkResult.SUCCESS) {
       Mystcraft.LOGGER.warn("[Portal] Link failed at {}: {}", pos, result);
       if (entity instanceof ServerPlayer player) {
-        player.displayClientMessage(
-            net.minecraft.network.chat.Component.translatable("mystcraft.portal.link_failed", result.name()),
+        art.arcane.mystcraft.util.PlayerMessages.send(player,
+            Component.translatable("mystcraft.portal.link_failed", result.name()),
             true);
       }
     }
 
-    // Periodically prune stale cooldown entries.
     if (currentTime % 1200 == 0) {
-      TELEPORT_COOLDOWNS.entrySet().removeIf(e -> currentTime - e.getValue() > COOLDOWN_TICKS * 2);
+      pruneCooldowns(currentTime);
     }
   }
 
-  /**
-   * Extracts link data from a book item.
-   */
+  private static boolean isOnCooldown(Entity entity, BlockPos portalBlockPos, long now) {
+    Map<BlockPos, Long> perEntity = TELEPORT_COOLDOWNS.get(entity.getUUID());
+    if (perEntity == null) {
+      return false;
+    }
+    Long last = perEntity.get(portalBlockPos);
+    return last != null && (now - last) < COOLDOWN_TICKS;
+  }
+
+  private static void setCooldown(Entity entity, BlockPos portalBlockPos, long now) {
+    TELEPORT_COOLDOWNS
+        .computeIfAbsent(entity.getUUID(), k -> new HashMap<>())
+        .put(portalBlockPos.immutable(), now);
+    if (TELEPORT_COOLDOWNS.size() > COOLDOWN_PRUNE_THRESHOLD) {
+      pruneCooldowns(now);
+    }
+  }
+
+  private static void pruneCooldowns(long now) {
+    long stale = COOLDOWN_TICKS * 2;
+    TELEPORT_COOLDOWNS.values().forEach(perEntity ->
+        perEntity.entrySet().removeIf(e -> now - e.getValue() > stale));
+    TELEPORT_COOLDOWNS.entrySet().removeIf(e -> e.getValue().isEmpty());
+  }
+
+  // ---------------------------------------------------------------------------
+  // Test-only hooks for the gametest harness. The cooldown map is a static
+  // {@code Map<UUID, Map<BlockPos,Long>>} that lets us prove the per-portal
+  // keying (Phase 2.5) without standing up a real ServerPlayer in two
+  // dimensions. Production code must NEVER call these.
+  // ---------------------------------------------------------------------------
+  public static void clearCooldownsForTest() {
+    TELEPORT_COOLDOWNS.clear();
+  }
+
+  public static void setCooldownForTest(UUID id, BlockPos portalBlockPos, long now) {
+    TELEPORT_COOLDOWNS
+        .computeIfAbsent(id, k -> new HashMap<>())
+        .put(portalBlockPos.immutable(), now);
+  }
+
+  public static boolean isOnCooldownForTest(UUID id, BlockPos portalBlockPos, long now) {
+    Map<BlockPos, Long> perEntity = TELEPORT_COOLDOWNS.get(id);
+    if (perEntity == null) {
+      return false;
+    }
+    Long last = perEntity.get(portalBlockPos);
+    return last != null && (now - last) < COOLDOWN_TICKS;
+  }
+
+  public static long cooldownTicksForTest() {
+    return COOLDOWN_TICKS;
+  }
+
   private CompoundTag getLinkData(ItemStack book) {
     if (book.isEmpty() || ItemStackNbt.getTag(book) == null) {
       return null;
@@ -184,11 +277,18 @@ public class LinkPortalBlock extends Block {
     return null;
   }
 
-  /**
-   * Locates the controlling receptacle via PortalUtils' BFS — robust against
-   * arbitrary frame shapes and reorderings.
-   */
   private BookReceptacleBlockEntity findReceptacle(Level level, BlockPos pos) {
+    // BE-fast path: every v2 portal cell stamps its receptacle pointer at
+    // fire time. Avoid the structure BFS unless the BE has no pointer
+    // (pre-v2 saved worlds, manual /setblock placements, or stale portal
+    // cells from a partial teardown).
+    if (level.getBlockEntity(pos) instanceof LinkPortalBlockEntity portalBE) {
+      BlockPos rp = portalBE.getReceptaclePos();
+      if (rp != null
+          && level.getBlockEntity(rp) instanceof BookReceptacleBlockEntity recBE) {
+        return recBE;
+      }
+    }
     if (PortalUtils.findReceptacle(level, pos) instanceof BookReceptacleBlockEntity receptacle) {
       return receptacle;
     }
@@ -199,9 +299,10 @@ public class LinkPortalBlock extends Block {
   public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
                               BlockPos neighborPos, boolean movedByPiston) {
     if (level.isClientSide) return;
-    // Only validate when an actual neighbor changes externally (frame block broken,
-    // receptacle removed, etc.). Portal creation uses UPDATE_NONE so this is not
-    // re-entered during fillPortalBlocks().
-    PortalUtils.validatePortal(level, pos);
+    // BE-pointer-driven validation: O(1) receptacle lookup and a hasBook()
+    // check. The legacy {@link PortalUtils#validatePortal} BFS is still
+    // available as the fallback for pre-v2 portal cells; new portals never
+    // hit it.
+    PortalUtils.maybeShutdownIfOrphaned(level, pos);
   }
 }

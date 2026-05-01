@@ -8,12 +8,12 @@ import art.arcane.mystcraft.command.MystcraftCommands;
 import art.arcane.mystcraft.datapack.grammar.MystcraftGrammarReloadListener;
 import art.arcane.mystcraft.datapack.symbol.MystcraftSymbolReloadListener;
 import art.arcane.mystcraft.event.*;
+import art.arcane.mystcraft.forge.MystcraftForgeRegistries;
 import art.arcane.mystcraft.instability.InstabilityManager;
 import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_20_1;
 import art.arcane.mystcraft.network.SymbolSyncPacket;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
 import art.arcane.mystcraft.platform.services.IEventHelper;
-import art.arcane.mystcraft.forge.MystcraftForgeRegistries;
 import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.util.MystcraftLecternHelper;
 import art.arcane.mystcraft.villager.ArchivistTradeListings;
@@ -67,8 +67,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Consolidated event handler for all Forge events (1.20.1 version).
- * Registers events manually instead of using @Mod.EventBusSubscriber annotations.
+ * Consolidated event handler for all Forge events (1.20.1 version). Registers
+ * events manually instead of using @Mod.EventBusSubscriber annotations.
  */
 public class ForgeEventHelper_1_20_1 implements IEventHelper {
 
@@ -108,8 +108,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     MinecraftForge.EVENT_BUS.addListener(this::onVillagerTrades);
   }
 
-  // ==================== Command Registration ====================
-
   @Override
   public void registerClientEvents() {
     if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -121,32 +119,24 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     }
   }
 
-  // ==================== Reload Listeners ====================
-
   @Override
   public void registerCommonEvents() {
-    // Player events
+
     MinecraftForge.EVENT_BUS.addListener(this::onPlayerDeath);
     MinecraftForge.EVENT_BUS.addListener(this::onPlayerRespawn);
     MinecraftForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
     MinecraftForge.EVENT_BUS.addListener(this::onPlayerChangeDimension);
 
-    // Entity events
     MinecraftForge.EVENT_BUS.addListener(this::onLivingAttack);
     MinecraftForge.EVENT_BUS.addListener(this::onEntityJoinLevel);
 
-    // Block interaction events
     MinecraftForge.EVENT_BUS.addListener(this::onRightClickBlock);
   }
-
-  // ==================== Level Tick Events ====================
 
   @Override
   public void fireLevelLoadEvent(ServerLevel level) {
     MinecraftForge.EVENT_BUS.post(new LevelEvent.Load(level));
   }
-
-  // ==================== Player Death/Respawn Events ====================
 
   private void onRegisterCommands(RegisterCommandsEvent event) {
     MystcraftCommands.registerCommands(event.getDispatcher());
@@ -157,8 +147,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     event.addListener(new MystcraftSymbolReloadListener());
     event.addListener(new art.arcane.mystcraft.datapack.affinity.MystcraftAffinityReloadListener());
   }
-
-  // ==================== Client Networking Sync ====================
 
   private void onClientLoggedIn(ClientPlayerNetworkEvent.LoggingIn event) {
     PocketHeadClientSync.requestSend();
@@ -173,16 +161,12 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     PocketHeadClientSync.tick();
   }
 
-  // ==================== Player Login/Dimension Change Events ====================
-
   private void onLevelTick(TickEvent.LevelTickEvent event) {
     if (event.phase != TickEvent.Phase.END) return;
     if (!(event.level instanceof ServerLevel serverLevel)) return;
 
-    // Age effects (weather, ambient, etc.)
     AgeEffectsHandler.onLevelTick(serverLevel);
 
-    // Instability effects
     InstabilityManager.onLevelTick(serverLevel);
 
     PersonalPocketEscapeHandler.tickProxyCleanup(serverLevel);
@@ -191,23 +175,21 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
   private void onPlayerDeath(LivingDeathEvent event) {
     if (event.getEntity() instanceof ServerPlayer player) {
       if (player.level() instanceof ServerLevel serverLevel) {
-        // Personal pocket escape
+
         if (PersonalPocketEscapeHandler.handleDeath(player, event.getSource())) {
           event.setCanceled(true);
           return;
         }
-        // Age return on death
+
         if (AgeReturnHandler.handleDeath(player, event.getSource())) {
           event.setCanceled(true);
           return;
         }
-        // Normal death handling
+
         AgeDeathHandler.onPlayerDeath(player, event.getSource(), serverLevel);
       }
     }
   }
-
-  // ==================== Living Attack Event ====================
 
   private void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
     if (event.getEntity() instanceof ServerPlayer player) {
@@ -218,24 +200,18 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     }
   }
 
-  // ==================== Entity Join Level Event ====================
-
   private void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
     if (event.getEntity() instanceof ServerPlayer player) {
-      // Guidebook delivery
+
       GuidebookHandler.onPlayerLoggedIn(player);
 
-      // Age data sync
       AgeDataSyncHandler.onPlayerLoggedIn(player);
       PersonalPocketEscapeHandler.syncProxyForPlayer(player);
 
-      // Symbol sync
       ForgeMystcraftNetwork_1_20_1.sendToPlayer(new SymbolSyncPacket(), player);
       Mystcraft.LOGGER.debug("Sent symbol sync packet to player {}", player.getName().getString());
     }
   }
-
-  // ==================== Village Structure Injection ====================
 
   private void onPlayerChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
     if (event.getEntity() instanceof ServerPlayer player) {
@@ -328,8 +304,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     }
   }
 
-  // ==================== Archivist Trades ====================
-
   private void onVillagerTrades(VillagerTradesEvent event) {
     if (event.getType() != MystcraftForgeRegistries.ARCHIVIST.get()) {
       return;
@@ -337,7 +311,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
 
     Mystcraft.LOGGER.debug("[Mystcraft] Registering Archivist trades");
 
-    // Level 1 trades (Novice)
     List<VillagerTrades.ItemListing> level1 = event.getTrades().get(1);
     level1.add(new BasicItemListing(
         new ItemStack(Items.EMERALD, 2),
@@ -356,7 +329,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     ));
     level1.add(new ArchivistTradeListings.RankedSymbolTrade(1, 2, 5));
 
-    // Level 2 trades (Apprentice)
     List<VillagerTrades.ItemListing> level2 = event.getTrades().get(2);
     level2.add(new BasicItemListing(
         new ItemStack(Items.EMERALD, 5),
@@ -371,7 +343,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     level2.add(new ArchivistTradeListings.RankedSymbolTrade(1, 2, 8));
     level2.add(new ArchivistTradeListings.RankedSymbolTrade(2, 1, 10));
 
-    // Level 3 trades (Journeyman)
     List<VillagerTrades.ItemListing> level3 = event.getTrades().get(3);
     level3.add(new BasicItemListing(
         new ItemStack(Items.EMERALD, 12),
@@ -386,7 +357,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     level3.add(new ArchivistTradeListings.RankedSymbolTrade(2, 2, 12));
     level3.add(new ArchivistTradeListings.RankedSymbolTrade(3, 1, 15));
 
-    // Level 4 trades (Expert)
     List<VillagerTrades.ItemListing> level4 = event.getTrades().get(4);
     level4.add(new BasicItemListing(
         new ItemStack(Items.EMERALD, 20),
@@ -396,7 +366,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     level4.add(new ArchivistTradeListings.RankedSymbolTrade(3, 2, 18));
     level4.add(new ArchivistTradeListings.RankedSymbolTrade(4, 1, 20));
 
-    // Level 5 trades (Master)
     List<VillagerTrades.ItemListing> level5 = event.getTrades().get(5);
     level5.add(new ArchivistTradeListings.SymbolPageTrade(1, 25));
     level5.add(new ArchivistTradeListings.RankedSymbolTrade(4, 1, 25));
@@ -409,14 +378,11 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     level5.add(new ArchivistTradeListings.CategorySymbolTrade(SymbolCategory.BIOME, 1, 18));
   }
 
-  // ==================== Block Interaction Events ====================
-
   private void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
     Level level = event.getLevel();
     BlockPos pos = event.getPos();
     BlockState state = level.getBlockState(pos);
 
-    // Only handle vanilla lecterns
     if (!(state.getBlock() instanceof LecternBlock)) {
       return;
     }
@@ -426,7 +392,7 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     var result = MystcraftLecternHelper.handleLecternInteraction(
         level, pos, state, event.getEntity(), event.getHand(),
         (lectern, book, pageCount) -> {
-          // Direct field access via access transformer
+
           lectern.book = book;
           lectern.pageCount = pageCount;
           Mystcraft.LOGGER.debug("[LecternHandler] Set book on lectern successfully");
@@ -438,8 +404,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
       event.setCancellationResult(result.result);
     }
   }
-
-  // ==================== Client Fog Events ====================
 
   private void onComputeFogColor(ViewportEvent.ComputeFogColor event) {
     int ageUID = AgeColorUtils.getCurrentAgeUID();
@@ -456,7 +420,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
       event.setBlue(b);
     }
 
-    // Apply lighting type modifications
     String lightingType = ClientAgeDataCache.getLightingType(ageUID);
     switch (lightingType) {
       case "bright" -> {
@@ -471,7 +434,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
       }
     }
 
-    // Log once per age for fog pipeline tracing
     if (LOGGED_FOG_AGES.add(ageUID)) {
       Mystcraft.LOGGER.info("[FogRender] Age {}: fogColor=0x{}, lighting={}, applied R={} G={} B={}",
           ageUID,

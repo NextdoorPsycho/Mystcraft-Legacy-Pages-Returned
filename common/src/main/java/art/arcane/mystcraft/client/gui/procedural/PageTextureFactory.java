@@ -11,13 +11,13 @@ import org.jetbrains.annotations.NotNull;
  * Generates per-page parchment textures used for thumbnail page rendering on
  * the writing desk and the inside-of-book pages on the {@code BookScreen}.
  * <p>
- * The generated image is laid out as a 256x256 sheet with the parchment
- * fill living in the legacy {156, 0, 30, 40} sub-region so existing draw
- * code in {@link art.arcane.mystcraft.client.render.PageRenderHelper} blits
- * unchanged after swapping the texture id.
+ * The generated image is laid out as a 256x256 sheet with the parchment fill
+ * living in the legacy {156, 0, 30, 40} sub-region so existing draw code in
+ * {@link art.arcane.mystcraft.client.render.PageRenderHelper} blits unchanged
+ * after swapping the texture id.
  * <p>
- * Parchment style (color, ruling density, ink-stain near the spine) responds
- * to the page's:
+ * Parchment style (color, ruling density, ink-stain near the spine) responds to
+ * the page's:
  * <ul>
  *   <li>Type: blank vs. symbol vs. link panel</li>
  *   <li>Recorded ink tint (from {@link Page#getInkTint(ItemStack)})</li>
@@ -29,7 +29,9 @@ public final class PageTextureFactory {
   public static final int TEX_WIDTH = 256;
   public static final int TEX_HEIGHT = 256;
 
-  /** Sub-region matching the legacy {@code bookui_pagel.png} background slot. */
+  /**
+   * Sub-region matching the legacy {@code bookui_pagel.png} background slot.
+   */
   public static final int SUB_U = 156;
   public static final int SUB_V = 0;
   public static final int SUB_W = 30;
@@ -40,14 +42,16 @@ public final class PageTextureFactory {
   private PageTextureFactory() {
   }
 
-  /** Reset cache (resource pack reload). */
+  /**
+   * Reset cache (resource pack reload).
+   */
   public static void reset() {
     CACHE.clear();
   }
 
   /**
-   * Returns a {@link ResourceLocation} for a parchment background sized for
-   * the legacy {@code bookui_pagel.png} sub-region. Caches by page kind so
+   * Returns a {@link ResourceLocation} for a parchment background sized for the
+   * legacy {@code bookui_pagel.png} sub-region. Caches by page kind so
    * thumbnail rendering on the writing desk doesn't allocate per-page.
    */
   @NotNull
@@ -72,9 +76,6 @@ public final class PageTextureFactory {
     return new PageInfo("blank", -1, false);
   }
 
-  private record PageInfo(String kind, int tint, boolean affinity) {
-  }
-
   private static void render(NativeImage image, String kind, int tint, boolean affinity) {
     fillTransparent(image);
 
@@ -90,7 +91,6 @@ public final class PageTextureFactory {
 
     fillRect(image, x0, y0, w, h, parchment);
 
-    // Subtle horizontal ruled lines
     int ruleSpacing = 4;
     for (int ly = y0 + 4; ly < y0 + h - 3; ly += ruleSpacing) {
       for (int lx = x0 + 2; lx < x0 + w - 2; lx++) {
@@ -100,18 +100,15 @@ public final class PageTextureFactory {
       }
     }
 
-    // Edge bevel (1px highlight + 1px shadow)
     drawRectOutline(image, x0, y0, w, h, edgeColor);
 
-    // Spine-side shadow (left edge)
     for (int sy = y0; sy < y0 + h; sy++) {
       safeSet(image, x0, sy, spineShade);
     }
 
-    // Link panel: ink-tint splash near the spine
     if ("linkpanel".equals(kind)) {
       int ink = (tint == -1 || tint == 0) ? 0xFF101010 : (0xFF000000 | (tint & 0xFFFFFF));
-      // Vertical ink-tinted strip 4px wide at the spine
+
       for (int sy = y0 + 1; sy < y0 + h - 1; sy++) {
         for (int sx = x0 + 1; sx < x0 + 5; sx++) {
           int alpha = (sx == x0 + 1) ? 0xFF : Math.max(0x40, 0xC0 - (sx - x0) * 30);
@@ -120,7 +117,6 @@ public final class PageTextureFactory {
         }
       }
 
-      // A small splash blob at center if affinity present
       if (affinity) {
         int blobX = x0 + w / 2;
         int blobY = y0 + h / 2;
@@ -134,13 +130,11 @@ public final class PageTextureFactory {
       }
     }
 
-    // Symbol page: a hint of the symbol cell border
     if ("symbol".equals(kind)) {
       int frame = 0xFF8C6E3A;
       drawRectOutline(image, x0 + 3, y0 + 3, w - 6, h - 6, frame);
     }
 
-    // Empty page: extra fade
     if ("empty".equals(kind)) {
       for (int sy = y0; sy < y0 + h; sy++) {
         for (int sx = x0; sx < x0 + w; sx++) {
@@ -151,8 +145,6 @@ public final class PageTextureFactory {
       }
     }
   }
-
-  // -------------- low-level helpers ----------------------------------------
 
   private static void fillTransparent(NativeImage image) {
     for (int y = 0; y < image.getHeight(); y++) {
@@ -183,14 +175,11 @@ public final class PageTextureFactory {
   }
 
   private static void safeSet(NativeImage image, int x, int y, int argb) {
-    if (x < 0 || y < 0 || x >= image.getWidth() || y >= image.getHeight()) return;
+    if (x < 0 || y < 0 || x >= image.getWidth() || y >= image.getHeight())
+      return;
     setPixel(image, x, y, argb);
   }
 
-  /**
-   * Stores an ARGB color into the image, converting to the ABGR layout
-   * NativeImage uses internally.
-   */
   private static void setPixel(NativeImage image, int x, int y, int argb) {
     int a = (argb >>> 24) & 0xFF;
     int r = (argb >>> 16) & 0xFF;
@@ -201,12 +190,16 @@ public final class PageTextureFactory {
   }
 
   private static int readPixel(NativeImage image, int x, int y) {
-    if (x < 0 || y < 0 || x >= image.getWidth() || y >= image.getHeight()) return 0;
+    if (x < 0 || y < 0 || x >= image.getWidth() || y >= image.getHeight())
+      return 0;
     int abgr = image.getPixelRGBA(x, y);
     int a = (abgr >>> 24) & 0xFF;
     int b = (abgr >>> 16) & 0xFF;
     int g = (abgr >>> 8) & 0xFF;
     int r = abgr & 0xFF;
     return (a << 24) | (r << 16) | (g << 8) | b;
+  }
+
+  private record PageInfo(String kind, int tint, boolean affinity) {
   }
 }

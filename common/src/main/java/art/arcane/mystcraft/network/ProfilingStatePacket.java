@@ -5,10 +5,12 @@ import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.network.FriendlyByteBuf;
 
 /**
- * Packet sent from server to client to sync profiling/debug state.
- * Used to enable or disable client-side debugging features.
+ * Packet sent from server to client to sync profiling/debug state. Used to
+ * enable or disable client-side debugging features.
  */
-public record ProfilingStatePacket(boolean profilingEnabled, boolean debugOverlayEnabled, boolean verboseLogging) {
+public record ProfilingStatePacket(boolean profilingEnabled,
+                                   boolean debugOverlayEnabled,
+                                   boolean verboseLogging) {
 
   public static void encode(ProfilingStatePacket packet, FriendlyByteBuf buf) {
     buf.writeBoolean(packet.profilingEnabled);
@@ -48,7 +50,6 @@ public record ProfilingStatePacket(boolean profilingEnabled, boolean debugOverla
     private static boolean debugOverlayEnabled = false;
     private static boolean verboseLogging = false;
 
-    // Profiling metrics
     private static long lastTickTime = 0;
     private static long averageTickTime = 0;
     private static int tickCount = 0;
@@ -86,14 +87,12 @@ public record ProfilingStatePacket(boolean profilingEnabled, boolean debugOverla
       lastTickTime = nanos;
       tickCount++;
 
-      // Rolling average
       if (tickCount == 1) {
         averageTickTime = nanos;
       } else {
         averageTickTime = (averageTickTime * (tickCount - 1) + nanos) / tickCount;
       }
 
-      // Reset periodically to avoid overflow
       if (tickCount > 1000) {
         tickCount = 100;
       }

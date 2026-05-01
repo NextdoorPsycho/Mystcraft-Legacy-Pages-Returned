@@ -4,12 +4,12 @@ import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.util.MerchantOfferCompat;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import art.arcane.mystcraft.util.MerchantOfferCompat;
 import net.minecraft.world.item.trading.MerchantOffer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +19,8 @@ import java.util.List;
 
 /**
  * Common trade listing implementations for the Archivist villager profession.
- * These implement vanilla VillagerTrades.ItemListing and can be used across all platforms.
+ * These implement vanilla VillagerTrades.ItemListing and can be used across all
+ * platforms.
  */
 public final class ArchivistTradeListings {
 

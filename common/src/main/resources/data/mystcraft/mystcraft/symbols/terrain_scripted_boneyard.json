@@ -28,7 +28,13 @@
                   "op": "abs",
                   "input": {
                     "op": "sin",
-                    "input": { "op": "mul", "a": { "var": "x" }, "b": 0.08 }
+                    "input": {
+                      "op": "mul",
+                      "a": {
+                        "var": "x"
+                      },
+                      "b": 0.08
+                    }
                   }
                 }
               },
@@ -39,7 +45,13 @@
                   "op": "abs",
                   "input": {
                     "op": "sin",
-                    "input": { "op": "mul", "a": { "var": "z" }, "b": 0.06 }
+                    "input": {
+                      "op": "mul",
+                      "a": {
+                        "var": "z"
+                      },
+                      "b": 0.06
+                    }
                   }
                 }
               }
@@ -51,7 +63,13 @@
                 "op": "div",
                 "a": {
                   "op": "abs",
-                  "input": { "op": "sub", "a": { "var": "y" }, "b": 80 }
+                  "input": {
+                    "op": "sub",
+                    "a": {
+                      "var": "y"
+                    },
+                    "b": 80
+                  }
                 },
                 "b": 45
               }
@@ -59,7 +77,12 @@
           },
           "b": {
             "op": "mul",
-            "a": { "op": "noise3", "scale": 0.06, "octaves": 2, "seed": 1551 },
+            "a": {
+              "op": "noise3",
+              "scale": 0.06,
+              "octaves": 2,
+              "seed": 1551
+            },
             "b": 0.8
           }
         }

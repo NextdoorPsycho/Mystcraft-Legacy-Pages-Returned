@@ -6,22 +6,20 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 
 /**
- * Nether-style terrain generator that creates a ceiling/floor with open caves in between.
- * Uses cosine-based vertical modulation to create the characteristic nether shape.
+ * Nether-style terrain generator that creates a ceiling/floor with open caves
+ * in between. Uses cosine-based vertical modulation to create the
+ * characteristic nether shape.
  */
 public class TerrainGeneratorNether extends TerrainGeneratorBase {
 
-  // Noise generators
   protected NoiseGeneratorOctaves noiseGen1;
   protected NoiseGeneratorOctaves noiseGen2;
   protected NoiseGeneratorOctaves noiseGen3;
 
-  // Noise data arrays
   protected double[] noiseData1;
   protected double[] noiseData2;
   protected double[] noiseData3;
 
-  // Pre-calculated vertical envelope
   protected double[] verticalEnvelope;
 
   public TerrainGeneratorNether(AgeDirector controller, long seed) {
@@ -34,7 +32,6 @@ public class TerrainGeneratorNether extends TerrainGeneratorBase {
     this.noiseGen2 = new NoiseGeneratorOctaves(random, 16);
     this.noiseGen3 = new NoiseGeneratorOctaves(random, 8);
 
-    // Pre-calculate vertical envelope for nether-style terrain
     initializeVerticalEnvelope();
   }
 
@@ -43,16 +40,14 @@ public class TerrainGeneratorNether extends TerrainGeneratorBase {
     verticalEnvelope = new double[height];
 
     for (int y = 0; y < height; y++) {
-      // Cosine wave creates multiple layers
+
       verticalEnvelope[y] = Math.cos((y * Math.PI * 6.0D) / height) * 2.0D;
 
-      // Distance from center
       double distFromCenter = y;
       if (y > height / 2) {
         distFromCenter = height - 1 - y;
       }
 
-      // Sharp falloff near top/bottom to create ceiling and floor
       if (distFromCenter < 4.0D) {
         distFromCenter = 4.0D - distFromCenter;
         verticalEnvelope[y] -= distFromCenter * distFromCenter * distFromCenter * 10.0D;
@@ -67,7 +62,6 @@ public class TerrainGeneratorNether extends TerrainGeneratorBase {
       field = new double[xSize * ySize * zSize];
     }
 
-    // Generate noise with higher frequency for nether-like caves
     double cfactor1 = 684.412D;
     double cfactor2 = 2053.236D;
 
@@ -83,7 +77,7 @@ public class TerrainGeneratorNether extends TerrainGeneratorBase {
     for (int gridX = 0; gridX < xSize; gridX++) {
       for (int gridZ = 0; gridZ < zSize; gridZ++) {
         for (int gridY = 0; gridY < ySize; gridY++) {
-          // Blend the two noise sources
+
           double noise1 = noiseData1[noiseIndex] / 512.0D;
           double noise2 = noiseData2[noiseIndex] / 512.0D;
           double blend = (noiseData3[noiseIndex] / 10.0D + 1.0D) / 2.0D;
@@ -97,7 +91,6 @@ public class TerrainGeneratorNether extends TerrainGeneratorBase {
             density = noise1 + (noise2 - noise1) * blend;
           }
 
-          // Apply vertical envelope to create ceiling/floor structure
           density -= verticalEnvelope[gridY];
 
           field[noiseIndex] = density;

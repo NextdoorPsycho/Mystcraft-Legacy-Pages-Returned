@@ -6,8 +6,7 @@ import art.arcane.mystcraft.block.DecayBlock;
 import art.arcane.mystcraft.instability.effects.EffectDecay;
 
 /**
- * Provider for red decay effects.
- * Red decay spreads and deals high damage.
+ * Provider for red decay effects. Red decay spreads and deals high damage.
  */
 public class ProviderDecayRed implements IInstabilityProvider {
 

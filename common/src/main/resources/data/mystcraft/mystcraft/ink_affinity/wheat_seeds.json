@@ -1,6 +1,10 @@
 {
-  "items": ["minecraft:wheat_seeds"],
-  "tags": ["forge:seeds"],
+  "items": [
+    "minecraft:wheat_seeds"
+  ],
+  "tags": [
+    "forge:seeds"
+  ],
   "amount_per_item": 0.4,
   "tier_bonus": 0,
   "symbol_weights": {

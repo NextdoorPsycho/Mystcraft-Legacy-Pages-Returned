@@ -35,11 +35,9 @@ public class MystGuiFluidTank extends MystGuiElement {
     int amount = amountProvider.get();
     int capacity = capacityProvider.get();
 
-    // Draw tank background
     graphics.fill(x, y, x + width, y + height, 0xFF202020);
     graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, 0xFF101010);
 
-    // Draw fluid fill
     if (capacity > 0 && amount > 0) {
       int fillHeight = (amount * (height - 2)) / capacity;
       fillHeight = Math.min(fillHeight, height - 2);
@@ -47,7 +45,6 @@ public class MystGuiFluidTank extends MystGuiElement {
       graphics.fill(x + 1, fillY, x + width - 1, y + height - 1, fluidColor);
     }
 
-    // Draw tank border
     graphics.fill(x, y, x + width, y + 1, 0xFF404040);
     graphics.fill(x, y + height - 1, x + width, y + height, 0xFF404040);
     graphics.fill(x, y, x + 1, y + height, 0xFF404040);

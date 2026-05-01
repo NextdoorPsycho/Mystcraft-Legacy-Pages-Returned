@@ -61,7 +61,6 @@ public class MystGuiToggleButton extends MystGuiElement {
     boolean state = getState();
     boolean hovered = contains(mouseX, mouseY);
 
-    // Background color based on state
     int bgColor;
     if (color != null) {
       int baseColor = color.getRGB() & 0x00FFFFFF;
@@ -74,18 +73,15 @@ public class MystGuiToggleButton extends MystGuiElement {
       bgColor = brighten(bgColor);
     }
 
-    // Draw button
     graphics.fill(x, y, x + width, y + height, 0xFF000000);
     graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, bgColor);
 
-    // Draw border
     int borderColor = state ? 0xFF8080FF : 0xFF606060;
     graphics.fill(x, y, x + width, y + 1, borderColor);
     graphics.fill(x, y + height - 1, x + width, y + height, borderColor);
     graphics.fill(x, y, x + 1, y + height, borderColor);
     graphics.fill(x + width - 1, y, x + width, y + height, borderColor);
 
-    // Draw text centered
     if (!text.isEmpty()) {
       int textWidth = mc.font.width(text);
       int textX = x + (width - textWidth) / 2;

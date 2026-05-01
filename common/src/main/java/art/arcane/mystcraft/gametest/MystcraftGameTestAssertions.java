@@ -4,39 +4,37 @@ import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.api.world.AgeDirector;
+import art.arcane.mystcraft.client.gui.procedural.BookItemTextureFactory;
+import art.arcane.mystcraft.client.gui.procedural.BookTextureFactory;
 import art.arcane.mystcraft.client.gui.procedural.ProceduralUiReload;
-import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory;
-import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolMotif;
-import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolPageTextureFactory;
-import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolPalette;
-import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolSeed;
+import art.arcane.mystcraft.client.gui.procedural.symbol.*;
 import art.arcane.mystcraft.client.render.DrawableWordManager;
 import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.data.InkAffinity;
 import art.arcane.mystcraft.data.InkBlend;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.datapack.symbol.SymbolDisplay;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModEntities;
 import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+/**
+ * Shared assertions for the cross-loader GameTest suites.
+ */
 public final class MystcraftGameTestAssertions {
 
   private MystcraftGameTestAssertions() {
@@ -70,8 +68,8 @@ public final class MystcraftGameTestAssertions {
     String msg = t.getMessage();
     if (msg != null
         && (msg.contains("Cannot load class")
-            || msg.contains("in environment type")
-            || msg.contains("Attempted to load class"))) {
+        || msg.contains("in environment type")
+        || msg.contains("Attempted to load class"))) {
       return true;
     }
     Throwable cause = t.getCause();
@@ -180,10 +178,6 @@ public final class MystcraftGameTestAssertions {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Procedural UI / Ink Affinity assertions
-  // ---------------------------------------------------------------------------
-
   /**
    * Verifies that {@link InkBlend} can serialise its full state to NBT and
    * round-trip back without loss. This is the contract that ink mixers and
@@ -252,10 +246,10 @@ public final class MystcraftGameTestAssertions {
 
   /**
    * Verifies that for every cover item configured in
-   * {@link MystcraftConfig#bookBinderCoverItems}, the cover NBT can be
-   * written via {@link LinkOptions#setCoverItemId} and read back via
-   * {@link LinkOptions#getCoverItemId}. This is the bridge the procedural
-   * Book texture factory uses to pick a cover palette.
+   * {@link MystcraftConfig#bookBinderCoverItems}, the cover NBT can be written
+   * via {@link LinkOptions#setCoverItemId} and read back via
+   * {@link LinkOptions#getCoverItemId}. This is the bridge the procedural Book
+   * texture factory uses to pick a cover palette.
    */
   public static void assertBookCoverNbtRoundTripsForEachCover() {
     List<String> covers = MystcraftConfig.bookBinderCoverItems.get();
@@ -275,17 +269,14 @@ public final class MystcraftGameTestAssertions {
       if (!parsed.equals(rl)) {
         throw new IllegalStateException("Cover NBT did not round-trip for " + id + " (got " + parsed + ")");
       }
-      // Also verify the registry entry exists so we never bind a cover item
-      // the player can't actually obtain.
+
       Item item = BuiltInRegistries.ITEM.get(rl);
       if (item == Items.AIR && !"mystcraft:folder".equals(id)) {
-        // mystcraft:folder is registered later than this assertion may run
-        // during cold-start ordering; only require non-air for vanilla items.
+
         throw new IllegalStateException("Configured cover item is not registered: " + id);
       }
     }
 
-    // Round-trip null clears the field.
     CompoundTag tag = LinkOptions.setCoverItemId(new CompoundTag(), new ResourceLocation("minecraft", "leather"));
     if (LinkOptions.getCoverItemId(tag) == null) {
       throw new IllegalStateException("Cover NBT did not persist after set");
@@ -297,27 +288,25 @@ public final class MystcraftGameTestAssertions {
   }
 
   /**
-   * Verifies that {@link SymbolRegistry#getRandomWeightedWithAffinity}
-   * actually shifts the distribution toward symbols favored by the supplied
-   * blend. Registers a strong test affinity in {@link InkAffinity}, runs
-   * {@code N} rolls with the affinity blend and {@code N} rolls with no
-   * blend, and asserts the affinity rolls produce at least {@code 1.5x}
-   * more hits on the favored symbol than the baseline.
+   * Verifies that {@link SymbolRegistry#getRandomWeightedWithAffinity} actually
+   * shifts the distribution toward symbols favored by the supplied blend.
+   * Registers a strong test affinity in {@link InkAffinity}, runs {@code N}
+   * rolls with the affinity blend and {@code N} rolls with no blend, and
+   * asserts the affinity rolls produce at least {@code 1.5x} more hits on the
+   * favored symbol than the baseline.
    * <p>
    * Uses a fixed-seed {@link RandomSource} so the test is deterministic.
    */
   public static void assertInkAffinityBiasesSymbolRoll() {
     ResourceLocation favored = new ResourceLocation(Mystcraft.MOD_ID, "dense_ores");
     if (!SymbolRegistry.contains(favored)) {
-      // If for some reason the symbol isn't loaded, treat the test as a no-op.
-      // The 'core' suite already verifies the symbol set is loaded.
+
       return;
     }
 
-    // Build an affinity blend with strong symbol-level bias.
     InkBlend blend = new InkBlend();
     Map<ResourceLocation, Float> symbols = new HashMap<>();
-    symbols.put(favored, InkBlend.WEIGHT_CAP); // saturated
+    symbols.put(favored, InkBlend.WEIGHT_CAP);
     InkAffinity.Entry strong = new InkAffinity.Entry(1.0f, 0, symbols, Map.of(), Map.of(), Map.of());
     blend.add(strong, 1);
 
@@ -349,10 +338,6 @@ public final class MystcraftGameTestAssertions {
     double rateBlend = favoredHitsWithBlend / (double) totalRolledWithBlend;
     double rateBaseline = favoredHitsBaseline / (double) totalRolledBaseline;
 
-    // Affinity blend should produce strictly more hits on the favored symbol
-    // than the baseline, and noticeably so. We require at least a 1.5x rate
-    // ratio (well within statistical reach for 1000 rolls and a 5x weight
-    // multiplier on a single symbol).
     if (favoredHitsWithBlend <= favoredHitsBaseline) {
       throw new IllegalStateException("Affinity blend did not increase hits on " + favored
           + ": withBlend=" + favoredHitsWithBlend + " baseline=" + favoredHitsBaseline);
@@ -362,10 +347,6 @@ public final class MystcraftGameTestAssertions {
           + " rateBlend=" + rateBlend + " rateBaseline=" + rateBaseline);
     }
 
-    // Also verify tier bonus lifts the rank cap. Construct a blend with a
-    // +1 tier bonus and confirm rolls above DEFAULT_AFFINITY_RANK_CAP are
-    // reachable. We just need to confirm the cap math runs without crashing
-    // and that the call accepts a blend with non-zero tierBonus.
     InkBlend tierBlend = new InkBlend();
     InkAffinity.Entry tierBoost = new InkAffinity.Entry(1.0f, 1, Map.of(), Map.of(), Map.of(), Map.of());
     tierBlend.add(tierBoost, 1);
@@ -379,9 +360,9 @@ public final class MystcraftGameTestAssertions {
   }
 
   /**
-   * Verifies the procedural-symbol glyph pipeline is deterministic, which
-   * is the property the page-renderer relies on so wikis, screenshots,
-   * and saved worlds stay visually consistent across runs.
+   * Verifies the procedural-symbol glyph pipeline is deterministic, which is
+   * the property the page-renderer relies on so wikis, screenshots, and saved
+   * worlds stay visually consistent across runs.
    * <p>
    * Three layers are checked, with progressively stronger requirements:
    * <ol>
@@ -406,9 +387,7 @@ public final class MystcraftGameTestAssertions {
    * the seed.
    */
   public static void assertSymbolGlyphIsDeterministic() {
-    // ---------------------------------------------------------------
-    // Layer 1: SymbolSeed.derive must be deterministic and collision-resistant.
-    // ---------------------------------------------------------------
+
     ResourceLocation desert = new ResourceLocation(Mystcraft.MOD_ID, "biome_desert");
     ResourceLocation forest = new ResourceLocation(Mystcraft.MOD_ID, "biome_forest");
     int s1 = SymbolSeed.derive(desert, "Desert", 0);
@@ -435,9 +414,6 @@ public final class MystcraftGameTestAssertions {
       throw new IllegalStateException("SymbolSeed.derive collided across salt values (0 vs 1)");
     }
 
-    // ---------------------------------------------------------------
-    // Layer 2: Curated D'ni vocabulary must be stable + case-insensitive.
-    // ---------------------------------------------------------------
     DrawableWordManager.initialize();
     Integer fireSeedLower = DrawableWordManager.getCuratedSeed("fire");
     Integer fireSeedMixed = DrawableWordManager.getCuratedSeed("Fire");
@@ -463,10 +439,6 @@ public final class MystcraftGameTestAssertions {
       throw new IllegalStateException("DrawableWordManager.getCuratedColor not stable + case-insensitive for 'fire'");
     }
 
-    // ---------------------------------------------------------------
-    // Layer 3: Pixel determinism. Wrapped in a broad catch so dedicated
-    // test runtimes without LWJGL natives still pass on layers 1+2.
-    // ---------------------------------------------------------------
     try {
       assertGlyphPixelDeterminism(desert, forest);
     } catch (LinkageError | RuntimeException e) {
@@ -474,32 +446,22 @@ public final class MystcraftGameTestAssertions {
         if (e instanceof RuntimeException re) throw re;
         throw (LinkageError) e;
       }
-      // blaze3d / LWJGL not available (covers NoClassDefFoundError +
-      // UnsatisfiedLinkError on Forge, and Fabric's RuntimeException-based
-      // env guard); layers 1+2 already validate determinism.
+
       Mystcraft.LOGGER.info("[ProceduralUiTest] Pixel determinism layer deferred (no GL runtime): {}",
           e.toString());
     }
   }
 
-  /**
-   * Pixel layer of {@link #assertSymbolGlyphIsDeterministic}. Split into
-   * its own method so {@code NoClassDefFoundError}s on
-   * {@link com.mojang.blaze3d.platform.NativeImage} bind to the call
-   * site (the try/catch in the parent) rather than poisoning the parent
-   * method's class-load.
-   */
   private static void assertGlyphPixelDeterminism(@org.jetbrains.annotations.NotNull ResourceLocation desert,
                                                   @org.jetbrains.annotations.NotNull ResourceLocation forest) {
     IAgeSymbol biomeDesert = SymbolRegistry.get(desert);
     if (biomeDesert == null) {
-      // Symbol not loaded; layers 1+2 already validate determinism.
+
       return;
     }
     SymbolPalette.Entry palette = SymbolPalette.get(biomeDesert.getCategory());
     int size = SymbolGlyphFactory.GLYPH_SIZE;
 
-    // 3a. Cache hit — same call returns the same NativeImage reference.
     SymbolGlyphFactory.reset();
     com.mojang.blaze3d.platform.NativeImage img1 = SymbolGlyphFactory.glyph(biomeDesert, "Desert", palette);
     com.mojang.blaze3d.platform.NativeImage img1Cached = SymbolGlyphFactory.glyph(biomeDesert, "Desert", palette);
@@ -507,7 +469,6 @@ public final class MystcraftGameTestAssertions {
       throw new IllegalStateException("SymbolGlyphFactory cache returned different reference for identical inputs");
     }
 
-    // 3b. After reset, fresh render produces pixel-identical content.
     int[] snapshot = new int[size * size];
     for (int y = 0; y < size; y++) {
       for (int x = 0; x < size; x++) {
@@ -527,7 +488,6 @@ public final class MystcraftGameTestAssertions {
       }
     }
 
-    // 3c. Distinct symbols must produce distinct pixel content.
     IAgeSymbol biomeForest = SymbolRegistry.get(forest);
     if (biomeForest != null) {
       SymbolPalette.Entry forestPalette = SymbolPalette.get(biomeForest.getCategory());
@@ -548,15 +508,13 @@ public final class MystcraftGameTestAssertions {
       }
     }
 
-    // Leave the cache empty for subsequent tests / runtime use.
     SymbolGlyphFactory.reset();
   }
 
   /**
-   * Verifies that {@link SymbolMotif#defaultFor(SymbolCategory)} returns
-   * the spec'd motif for every {@link SymbolCategory} (plan §5.3.2) and
-   * that motif rendering is deterministic + produces distinct outputs
-   * across categories.
+   * Verifies that {@link SymbolMotif#defaultFor(SymbolCategory)} returns the
+   * spec'd motif for every {@link SymbolCategory} (plan §5.3.2) and that motif
+   * rendering is deterministic + produces distinct outputs across categories.
    * <p>
    * Two layers, like {@link #assertSymbolGlyphIsDeterministic}:
    * <ol>
@@ -575,9 +533,7 @@ public final class MystcraftGameTestAssertions {
    * </ol>
    */
   public static void assertMotifDispatchPerCategory() {
-    // ---------------------------------------------------------------
-    // Layer 1: dispatch table.
-    // ---------------------------------------------------------------
+
     Map<SymbolCategory, SymbolMotif> expected = new EnumMap<>(SymbolCategory.class);
     expected.put(SymbolCategory.TERRAIN, SymbolMotif.HORIZON);
     expected.put(SymbolCategory.BIOME_CONTROLLER, SymbolMotif.COMPASS);
@@ -615,9 +571,6 @@ public final class MystcraftGameTestAssertions {
       throw new IllegalStateException("SymbolMotif.defaultFor(null) must fall back to DIAMOND");
     }
 
-    // ---------------------------------------------------------------
-    // Layer 2: pixel render + cross-category distinctness.
-    // ---------------------------------------------------------------
     DrawableWordManager.initialize();
     try {
       assertMotifPixelDispatch();
@@ -631,13 +584,6 @@ public final class MystcraftGameTestAssertions {
     }
   }
 
-  /**
-   * Pixel layer of {@link #assertMotifDispatchPerCategory}. Split out so
-   * a {@code NoClassDefFoundError} on
-   * {@link com.mojang.blaze3d.platform.NativeImage} binds to the call
-   * site (the try/catch in the parent) rather than the parent's class
-   * load.
-   */
   private static void assertMotifPixelDispatch() {
     Map<SymbolCategory, Long> hashByCategory = new EnumMap<>(SymbolCategory.class);
     Map<SymbolCategory, IAgeSymbol> sampleByCategory = new EnumMap<>(SymbolCategory.class);
@@ -647,7 +593,7 @@ public final class MystcraftGameTestAssertions {
       sampleByCategory.put(cat, sample);
       long hash = renderMotifAndHashPixels(sample);
       hashByCategory.put(cat, hash);
-      // Determinism: same symbol, second render → same hash.
+
       long hash2 = renderMotifAndHashPixels(sample);
       if (hash != hash2) {
         throw new IllegalStateException("Motif rendering for " + sample.getRegistryName()
@@ -656,7 +602,7 @@ public final class MystcraftGameTestAssertions {
       }
     }
     if (hashByCategory.isEmpty()) {
-      // Symbol registry unavailable — Layer 1 already validated dispatch.
+
       return;
     }
     long uniqueHashes = hashByCategory.values().stream().distinct().count();
@@ -669,11 +615,6 @@ public final class MystcraftGameTestAssertions {
     }
   }
 
-  /**
-   * Iterates the symbol registry deterministically (sorted by registry
-   * name) and returns the first symbol whose category matches {@code cat}.
-   * Returns {@code null} if no symbol with that category is loaded.
-   */
   @org.jetbrains.annotations.Nullable
   private static IAgeSymbol pickFirstSymbolOfCategory(@org.jetbrains.annotations.NotNull SymbolCategory cat) {
     java.util.List<IAgeSymbol> sorted = new ArrayList<>(SymbolRegistry.getAll());
@@ -687,11 +628,6 @@ public final class MystcraftGameTestAssertions {
     return null;
   }
 
-  /**
-   * Renders {@code symbol}'s motif into a fresh 128×128 NativeImage and
-   * returns an FNV-1a 64-bit hash of every pixel. The image is closed
-   * before returning so the cache remains uninflated.
-   */
   private static long renderMotifAndHashPixels(@org.jetbrains.annotations.NotNull IAgeSymbol symbol) {
     SymbolPalette.Entry palette = SymbolPalette.get(symbol.getCategory());
     SymbolMotif motif = palette.defaultMotif();
@@ -703,8 +639,6 @@ public final class MystcraftGameTestAssertions {
     try {
       img.fillRect(0, 0, size, size, 0);
 
-      // Build the glyph list inline (mirrors SymbolMotif#collectGlyphs but
-      // without exposing it as public API).
       java.util.List<com.mojang.blaze3d.platform.NativeImage> glyphs = new ArrayList<>(4);
       String[] poem = symbol.getPoem();
       if (poem == null || poem.length == 0) {
@@ -718,7 +652,6 @@ public final class MystcraftGameTestAssertions {
       int seed = SymbolSeed.derive(symbol.getRegistryName(), motif.getName(), motif.ordinal());
       motif.layout(img, 0, 0, size, size, glyphs, palette, seed);
 
-      // FNV-1a 64-bit over every pixel.
       long hash = 0xCBF29CE484222325L;
       long prime = 0x100000001B3L;
       for (int y = 0; y < size; y++) {
@@ -735,10 +668,11 @@ public final class MystcraftGameTestAssertions {
   }
 
   /**
-   * Asserts {@link art.arcane.mystcraft.client.gui.procedural.symbol.SymbolFlourish}
-   * produces a strictly monotonic visual progression across card ranks
-   * 1..5: each higher rank renders <em>strictly more</em> non-transparent
-   * pixels than the previous rank. Two layers:
+   * Asserts
+   * {@link art.arcane.mystcraft.client.gui.procedural.symbol.SymbolFlourish}
+   * produces a strictly monotonic visual progression across card ranks 1..5:
+   * each higher rank renders <em>strictly more</em> non-transparent pixels than
+   * the previous rank. Two layers:
    *
    * <ol>
    *   <li><b>Treatment monotonicity.</b> {@code SymbolFlourish.forRank(1..5)}
@@ -751,7 +685,7 @@ public final class MystcraftGameTestAssertions {
    *       greater than the previous. Skipped when GL natives are
    *       unavailable.</li>
    * </ol>
-   *
+   * <p>
    * The sample symbol is forced to {@code instabilityCost == 0} via the
    * wrapper so the warning halo doesn't pollute the comparison — the
    * halo is an independent treatment validated separately by
@@ -759,7 +693,7 @@ public final class MystcraftGameTestAssertions {
    * because of the wrapper.
    */
   public static void assertSymbolRankProgression() {
-    // Layer 1: treatment monotonicity (no GL required).
+
     int[] weights = new int[5];
     for (int rank = 1; rank <= 5; rank++) {
       art.arcane.mystcraft.client.gui.procedural.symbol.SymbolFlourish.Treatment t =
@@ -777,7 +711,6 @@ public final class MystcraftGameTestAssertions {
       }
     }
 
-    // Layer 2: pixel monotonicity (requires GL natives).
     DrawableWordManager.initialize();
     try {
       assertSymbolRankPixelProgression();
@@ -791,12 +724,6 @@ public final class MystcraftGameTestAssertions {
     }
   }
 
-  /**
-   * Pixel layer of {@link #assertSymbolRankProgression}. Split out so a
-   * {@code NoClassDefFoundError} on
-   * {@link com.mojang.blaze3d.platform.NativeImage} binds to the call
-   * site rather than the parent's class load.
-   */
   private static void assertSymbolRankPixelProgression() {
     IAgeSymbol sample = pickStableSymbolForRankTest();
     if (sample == null) {
@@ -819,13 +746,6 @@ public final class MystcraftGameTestAssertions {
     }
   }
 
-  /**
-   * Scores a flourish treatment by feature count. A higher score means a
-   * denser visual — used by Layer 1 to validate monotonicity without
-   * needing pixel-perfect rendering. Border styles are weighted heavier
-   * than corner ornaments because borders trace the entire rectangle
-   * perimeter (~512 px) while corner ornaments touch only ~50 px.
-   */
   private static int scoreTreatment(
       @org.jetbrains.annotations.NotNull
       art.arcane.mystcraft.client.gui.procedural.symbol.SymbolFlourish.Treatment t) {
@@ -850,12 +770,6 @@ public final class MystcraftGameTestAssertions {
     return score;
   }
 
-  /**
-   * Picks the first symbol (deterministic order) whose
-   * {@code instabilityCost == 0} so the warning halo doesn't pollute
-   * pixel counts in the rank progression test. Falls back to {@code null}
-   * if no such symbol is loaded.
-   */
   @org.jetbrains.annotations.Nullable
   private static IAgeSymbol pickStableSymbolForRankTest() {
     java.util.List<IAgeSymbol> sorted = new ArrayList<>(SymbolRegistry.getAll());
@@ -871,13 +785,6 @@ public final class MystcraftGameTestAssertions {
     return null;
   }
 
-  /**
-   * Renders the page composition for {@code symbol} with each rank
-   * 1..5, returning the per-rank non-transparent pixel count. Uses
-   * {@link SymbolPageTextureFactory#composeSymbolPageImage} which
-   * bypasses the cache, so the test can sweep ranks without polluting
-   * production state.
-   */
   private static int[] renderRankPixelCounts(@org.jetbrains.annotations.NotNull IAgeSymbol symbol) {
     int[] counts = new int[5];
     for (int rank = 1; rank <= 5; rank++) {
@@ -889,7 +796,7 @@ public final class MystcraftGameTestAssertions {
         int h = img.getHeight();
         for (int y = 0; y < h; y++) {
           for (int x = 0; x < w; x++) {
-            // NativeImage stores ABGR on little-endian; alpha is the high byte.
+
             int p = img.getPixelRGBA(x, y);
             int alpha = (p >>> 24) & 0xFF;
             if (alpha != 0) nonTransparent++;
@@ -918,23 +825,19 @@ public final class MystcraftGameTestAssertions {
    * </ol>
    */
   public static void assertProceduralUiReloadFlushesSymbolCaches() {
-    // ---------------------------------------------------------------
-    // Layer 1: cache contract (never needs LWJGL).
-    // ---------------------------------------------------------------
+
     DrawableWordManager.initialize();
 
     int beforeReloadSize;
     try {
       IAgeSymbol sample = pickFirstSymbolOfCategory(SymbolCategory.BIOME);
       if (sample == null) {
-        // Symbol registry unavailable — collapse to a smoke test that
-        // reload doesn't throw.
+
         ProceduralUiReload.reloadAll();
         return;
       }
       SymbolPalette.Entry palette = SymbolPalette.get(sample.getCategory());
-      // Single fetch — the cache owns the NativeImage's lifetime, so
-      // we deliberately don't try-with-resources or close it.
+
       SymbolGlyphFactory.glyph(sample, "Stone", palette);
       beforeReloadSize = SymbolGlyphFactory.cacheSize();
       if (beforeReloadSize == 0) {
@@ -946,10 +849,7 @@ public final class MystcraftGameTestAssertions {
         if (e instanceof RuntimeException re) throw re;
         throw (LinkageError) e;
       }
-      // Pre-warm needs LWJGL (NativeImage) AND ProceduralUiReload.reloadAll
-      // itself references client-only classes via PageTextureFactory /
-      // BookTextureFactory. Both layers are unverifiable on a dedicated
-      // server runtime; layer 1's contract reduces to a no-op skip.
+
       Mystcraft.LOGGER.info("[ProceduralUiTest] Reload test deferred (no GL runtime): {}",
           e.toString());
       return;
@@ -963,9 +863,6 @@ public final class MystcraftGameTestAssertions {
               + "before=" + beforeReloadSize + ", after=" + afterReloadSize);
     }
 
-    // ---------------------------------------------------------------
-    // Layer 2: pixel identity (requires GL natives).
-    // ---------------------------------------------------------------
     try {
       assertReloadPreservesPixelIdentity();
     } catch (LinkageError | RuntimeException e) {
@@ -978,12 +875,6 @@ public final class MystcraftGameTestAssertions {
     }
   }
 
-  /**
-   * Pixel layer of {@link #assertProceduralUiReloadFlushesSymbolCaches}.
-   * Renders a glyph, captures its hash, reloads, renders the same glyph
-   * again, asserts the hash matches. Split out so a {@code LinkageError}
-   * binds to the call site rather than the parent class load.
-   */
   private static void assertReloadPreservesPixelIdentity() {
     IAgeSymbol sample = pickFirstSymbolOfCategory(SymbolCategory.BIOME);
     if (sample == null) return;
@@ -1004,11 +895,6 @@ public final class MystcraftGameTestAssertions {
     }
   }
 
-  /**
-   * Renders a single glyph tile and returns an FNV-1a 64-bit hash of
-   * its pixels. The tile is left in the cache so the caller can verify
-   * cache-size invariants.
-   */
   private static long hashGlyph(@org.jetbrains.annotations.NotNull IAgeSymbol symbol,
                                 @org.jetbrains.annotations.Nullable String word,
                                 @org.jetbrains.annotations.NotNull SymbolPalette.Entry palette) {
@@ -1027,34 +913,65 @@ public final class MystcraftGameTestAssertions {
     return hash;
   }
 
-  /**
-   * Returns a wrapper around {@code base} whose {@link IAgeSymbol#getCardRank()}
-   * always returns {@code rank}. All other behaviour delegates to {@code base}.
-   * The wrapper also forces {@code instabilityCost == 0} so the warning
-   * halo is suppressed regardless of the wrapped symbol's true cost.
-   */
   @org.jetbrains.annotations.NotNull
   private static IAgeSymbol withCardRank(@org.jetbrains.annotations.NotNull IAgeSymbol base, int rank) {
     return new IAgeSymbol() {
-      @Override public ResourceLocation getRegistryName() { return base.getRegistryName(); }
-      @Override public SymbolCategory getCategory() { return base.getCategory(); }
-      @Override public void registerLogic(AgeDirector director, long seed) {
+      @Override
+      public ResourceLocation getRegistryName() {
+        return base.getRegistryName();
+      }
+
+      @Override
+      public SymbolCategory getCategory() {
+        return base.getCategory();
+      }
+
+      @Override
+      public void registerLogic(AgeDirector director, long seed) {
         base.registerLogic(director, seed);
       }
-      @Override public String getLocalizedName() { return base.getLocalizedName(); }
-      @Override public int instabilityModifier(int count) { return base.instabilityModifier(count); }
-      @Override public float getInstabilityCost() { return 0.0f; }
-      @Override public Integer getCardRank() { return rank; }
-      @Override public String[] getPoem() { return base.getPoem(); }
-      @Override public boolean allowInRandomGeneration() { return base.allowInRandomGeneration(); }
-      @Override public boolean canDuplicate() { return base.canDuplicate(); }
+
+      @Override
+      public String getLocalizedName() {
+        return base.getLocalizedName();
+      }
+
+      @Override
+      public int instabilityModifier(int count) {
+        return base.instabilityModifier(count);
+      }
+
+      @Override
+      public float getInstabilityCost() {
+        return 0.0f;
+      }
+
+      @Override
+      public Integer getCardRank() {
+        return rank;
+      }
+
+      @Override
+      public String[] getPoem() {
+        return base.getPoem();
+      }
+
+      @Override
+      public boolean allowInRandomGeneration() {
+        return base.allowInRandomGeneration();
+      }
+
+      @Override
+      public boolean canDuplicate() {
+        return base.canDuplicate();
+      }
     };
   }
 
   /**
    * Asserts that datapack {@link SymbolDisplay} overrides flow all the way
-   * through {@link SymbolPageTextureFactory#drawSymbolMotifFor} to the
-   * rendered pixels. Three layers, like the other procedural-UI tests:
+   * through {@link SymbolPageTextureFactory#drawSymbolMotifFor} to the rendered
+   * pixels. Three layers, like the other procedural-UI tests:
    *
    * <ol>
    *   <li><b>JSON parser (always runs)</b> — feed
@@ -1077,9 +994,7 @@ public final class MystcraftGameTestAssertions {
    * </ol>
    */
   public static void assertSymbolDisplayOverrideApplied() {
-    // ---------------------------------------------------------------
-    // Layer 1: JSON parser round-trip.
-    // ---------------------------------------------------------------
+
     String json = "{"
         + "\"motif\":\"compass\","
         + "\"palette_override\":{"
@@ -1117,7 +1032,7 @@ public final class MystcraftGameTestAssertions {
       throw new IllegalStateException("Glyph seed for 'Fire' did not parse to 0xCAFEBABE: 0x"
           + (fireSeed == null ? "null" : Integer.toHexString(fireSeed)));
     }
-    // Empty block collapses to null.
+
     SymbolDisplay empty = SymbolDisplay.fromJson(
         new ResourceLocation("mystcraft", "test/empty"),
         JsonParser.parseString("{}").getAsJsonObject());
@@ -1125,12 +1040,9 @@ public final class MystcraftGameTestAssertions {
       throw new IllegalStateException("SymbolDisplay.fromJson({}) should collapse to null, got " + empty);
     }
 
-    // ---------------------------------------------------------------
-    // Layer 2: API contract — IAgeSymbol.getDisplay() default + override.
-    // ---------------------------------------------------------------
     IAgeSymbol base = pickFirstSymbolOfCategory(SymbolCategory.BIOME);
     if (base == null) {
-      // No registry available — Layer 1 already validated the parser.
+
       return;
     }
     if (base.getDisplay() != null) {
@@ -1144,9 +1056,6 @@ public final class MystcraftGameTestAssertions {
       throw new IllegalStateException("withDisplay wrapper did not propagate display block");
     }
 
-    // ---------------------------------------------------------------
-    // Layer 3: pixel layer (requires GL natives).
-    // ---------------------------------------------------------------
     DrawableWordManager.initialize();
     try {
       assertSymbolDisplayPixelOverride(base);
@@ -1160,16 +1069,8 @@ public final class MystcraftGameTestAssertions {
     }
   }
 
-  /**
-   * Pixel layer of {@link #assertSymbolDisplayOverrideApplied}. Renders
-   * {@code base} four ways and asserts every pair produces a distinct
-   * hash. Split out so a {@code NoClassDefFoundError} on
-   * {@link com.mojang.blaze3d.platform.NativeImage} binds to the call
-   * site rather than the parent class load.
-   */
   private static void assertSymbolDisplayPixelOverride(@org.jetbrains.annotations.NotNull IAgeSymbol base) {
-    // The base symbol is BIOME → defaults to WREATH motif. Forcing it
-    // to COMPASS, then STAR_FIELD, exercises the motif lookup path.
+
     SymbolDisplay compass = new SymbolDisplay("compass", null, java.util.Collections.emptyMap());
     SymbolDisplay starField = new SymbolDisplay("star_field", null, java.util.Collections.emptyMap());
     SymbolDisplay accentOverride = new SymbolDisplay(
@@ -1182,7 +1083,6 @@ public final class MystcraftGameTestAssertions {
     long hashStarField = renderDisplayAndHashPixels(base, starField);
     long hashAccent = renderDisplayAndHashPixels(base, accentOverride);
 
-    // Determinism: re-render the default, must match.
     long hashDefault2 = renderDisplayAndHashPixels(base, null);
     if (hashDefault != hashDefault2) {
       throw new IllegalStateException("Display override render not deterministic for default render: 0x"
@@ -1202,12 +1102,6 @@ public final class MystcraftGameTestAssertions {
     }
   }
 
-  /**
-   * Renders {@code base} (optionally wrapped in a {@code display} override)
-   * via {@link SymbolPageTextureFactory#composeSymbolPageImage} and
-   * returns an FNV-1a 64-bit hash of the resulting pixels. The image is
-   * closed before returning so the cache stays uninflated.
-   */
   private static long renderDisplayAndHashPixels(@org.jetbrains.annotations.NotNull IAgeSymbol base,
                                                  @org.jetbrains.annotations.Nullable SymbolDisplay display) {
     IAgeSymbol target = display != null ? withDisplay(base, display) : base;
@@ -1228,36 +1122,71 @@ public final class MystcraftGameTestAssertions {
     }
   }
 
-  /**
-   * Returns a wrapper around {@code base} whose {@link IAgeSymbol#getDisplay()}
-   * returns the supplied override. All other behaviour delegates to
-   * {@code base}, including registry name + category, so the only
-   * variable in pixel comparisons is the {@code display} block.
-   */
   @org.jetbrains.annotations.NotNull
   private static IAgeSymbol withDisplay(@org.jetbrains.annotations.NotNull IAgeSymbol base,
                                         @org.jetbrains.annotations.NotNull SymbolDisplay display) {
     return new IAgeSymbol() {
-      @Override public ResourceLocation getRegistryName() { return base.getRegistryName(); }
-      @Override public SymbolCategory getCategory() { return base.getCategory(); }
-      @Override public void registerLogic(AgeDirector director, long seed) {
+      @Override
+      public ResourceLocation getRegistryName() {
+        return base.getRegistryName();
+      }
+
+      @Override
+      public SymbolCategory getCategory() {
+        return base.getCategory();
+      }
+
+      @Override
+      public void registerLogic(AgeDirector director, long seed) {
         base.registerLogic(director, seed);
       }
-      @Override public String getLocalizedName() { return base.getLocalizedName(); }
-      @Override public int instabilityModifier(int count) { return base.instabilityModifier(count); }
-      @Override public float getInstabilityCost() { return 0.0f; }
-      @Override public Integer getCardRank() { return base.getCardRank(); }
-      @Override public String[] getPoem() { return base.getPoem(); }
-      @Override public boolean allowInRandomGeneration() { return base.allowInRandomGeneration(); }
-      @Override public boolean canDuplicate() { return base.canDuplicate(); }
-      @Override public SymbolDisplay getDisplay() { return display; }
+
+      @Override
+      public String getLocalizedName() {
+        return base.getLocalizedName();
+      }
+
+      @Override
+      public int instabilityModifier(int count) {
+        return base.instabilityModifier(count);
+      }
+
+      @Override
+      public float getInstabilityCost() {
+        return 0.0f;
+      }
+
+      @Override
+      public Integer getCardRank() {
+        return base.getCardRank();
+      }
+
+      @Override
+      public String[] getPoem() {
+        return base.getPoem();
+      }
+
+      @Override
+      public boolean allowInRandomGeneration() {
+        return base.allowInRandomGeneration();
+      }
+
+      @Override
+      public boolean canDuplicate() {
+        return base.canDuplicate();
+      }
+
+      @Override
+      public SymbolDisplay getDisplay() {
+        return display;
+      }
     };
   }
 
   /**
-   * Asserts that {@link SymbolGlyphFactory#warmBlocking()} actually
-   * pre-warms the glyph cache and completes within a soft regression
-   * window. Combined Phase 5 task 5.6 (perf) + 5.7 (correctness):
+   * Asserts that {@link SymbolGlyphFactory#warmBlocking()} actually pre-warms
+   * the glyph cache and completes within a soft regression window. Combined
+   * Phase 5 task 5.6 (perf) + 5.7 (correctness):
    *
    * <ol>
    *   <li>Cache is reset to a clean baseline.</li>
@@ -1323,26 +1252,128 @@ public final class MystcraftGameTestAssertions {
           "warmBlocking returned zero entries — pre-warm did not run");
     }
 
-    // The warm loop pre-warms (symbol × poem-word) pairs and stops
-    // when CACHE_CAPACITY is hit. Either ratio is acceptable; we
-    // just want some reasonable population relative to the registry
-    // size to catch a regression where (e.g.) the loop short-circuits.
     if (finalSize < symbolCount) {
       throw new IllegalStateException(
           "warmBlocking populated only " + finalSize
               + " tiles, expected at least one tile per symbol (" + symbolCount + ")");
     }
 
-    // Soft regression ceiling. Real target is ~600 ms on a 16-core
-    // dev laptop; CI runners are often 2-4 cores so we give them
-    // generous headroom. A breach here means a real regression — the
-    // pipeline used to be O(n) per tile and is now somehow O(n²) or
-    // worse.
     final long ceilingMs = 30_000L;
     if (durationMs > ceilingMs) {
       throw new IllegalStateException(
           "warmBlocking took " + durationMs + " ms (ceiling " + ceilingMs
               + " ms) — likely a perf regression in the pre-warm loop");
     }
+  }
+
+  /**
+   * Verifies that {@link art.arcane.mystcraft.item.GuidebookItem} and
+   * {@link art.arcane.mystcraft.item.LinkbookUnlinkedItem} both participate in
+   * the procedural book-cover pipeline introduced for the linked Linkbook,
+   * Personal Linkbook, and Agebook items.
+   *
+   * <p>The test validates two layers, mirroring the architecture used by the
+   * other {@code procedural_ui} tests:
+   * <ol>
+   *   <li><b>Layer 1 (logical):</b> {@link BookTextureFactory#detectKind}
+   *       must return {@code BookKind.GUIDEBOOK} for a stack of
+   *       {@link art.arcane.mystcraft.registry.ModItems#GUIDEBOOK} and
+   *       {@code BookKind.LINKBOOK_UNLINKED} for a stack of
+   *       {@link art.arcane.mystcraft.registry.ModItems#LINKBOOK_UNLINKED}.
+   *       This contract holds even on a dedicated-server runtime.</li>
+   *   <li><b>Layer 2 (rendering):</b> Both
+   *       {@link BookTextureFactory#getCoverTexture(ItemStack, BookTextureFactory.BookKind)}
+   *       and {@link BookItemTextureFactory#getItemTexture(ItemStack)} must
+   *       return non-null {@link ResourceLocation}s, AND those locations
+   *       must differ between the two new kinds (proves the cache keys
+   *       distinguish them, which in turn proves their palettes/emblems
+   *       diverge). On a server-only runtime this layer defers cleanly
+   *       because the factories load {@code com.mojang.blaze3d.platform.NativeImage}.</li>
+   * </ol>
+   */
+  public static void assertGuidebookAndUnlinkedBookKindsRender() {
+
+    Item guidebookItem = ModItems.GUIDEBOOK == null ? null : ModItems.GUIDEBOOK.get();
+    Item unlinkedItem = ModItems.LINKBOOK_UNLINKED == null ? null : ModItems.LINKBOOK_UNLINKED.get();
+    if (guidebookItem == null || guidebookItem == Items.AIR) {
+      throw new IllegalStateException(
+          "ModItems.GUIDEBOOK is not registered — the Art-of-Writing item is missing");
+    }
+    if (unlinkedItem == null || unlinkedItem == Items.AIR) {
+      throw new IllegalStateException(
+          "ModItems.LINKBOOK_UNLINKED is not registered — the Linkbook (Unlinked) item is missing");
+    }
+
+    ItemStack guideStack = new ItemStack(guidebookItem);
+    ItemStack unlinkedStack = new ItemStack(unlinkedItem);
+
+    BookTextureFactory.BookKind guideKind = BookTextureFactory.detectKind(guideStack);
+    BookTextureFactory.BookKind unlinkedKind = BookTextureFactory.detectKind(unlinkedStack);
+    if (guideKind != BookTextureFactory.BookKind.GUIDEBOOK) {
+      throw new IllegalStateException(
+          "BookTextureFactory.detectKind(guidebook) returned " + guideKind
+              + " — expected GUIDEBOOK");
+    }
+    if (unlinkedKind != BookTextureFactory.BookKind.LINKBOOK_UNLINKED) {
+      throw new IllegalStateException(
+          "BookTextureFactory.detectKind(linkbook_unlinked) returned " + unlinkedKind
+              + " — expected LINKBOOK_UNLINKED");
+    }
+
+    try {
+      assertGuidebookAndUnlinkedBookKindsRenderPixels(guideStack, unlinkedStack);
+    } catch (LinkageError | RuntimeException e) {
+      if (!isClientOnlyClassLoadFailure(e)) {
+        if (e instanceof RuntimeException re) throw re;
+        throw (LinkageError) e;
+      }
+      Mystcraft.LOGGER.info(
+          "[ProceduralUiTest] Guidebook + unlinked-book render layer deferred (no GL runtime): {}",
+          e.toString());
+    }
+  }
+
+  private static void assertGuidebookAndUnlinkedBookKindsRenderPixels(
+      @org.jetbrains.annotations.NotNull ItemStack guideStack,
+      @org.jetbrains.annotations.NotNull ItemStack unlinkedStack) {
+
+    ResourceLocation guideCover = BookTextureFactory.getCoverTexture(
+        guideStack, BookTextureFactory.BookKind.GUIDEBOOK);
+    ResourceLocation unlinkedCover = BookTextureFactory.getCoverTexture(
+        unlinkedStack, BookTextureFactory.BookKind.LINKBOOK_UNLINKED);
+    if (guideCover == null) {
+      throw new IllegalStateException(
+          "BookTextureFactory.getCoverTexture(GUIDEBOOK) returned null");
+    }
+    if (unlinkedCover == null) {
+      throw new IllegalStateException(
+          "BookTextureFactory.getCoverTexture(LINKBOOK_UNLINKED) returned null");
+    }
+    if (guideCover.equals(unlinkedCover)) {
+      throw new IllegalStateException(
+          "GUIDEBOOK and LINKBOOK_UNLINKED produce the same cover ResourceLocation ("
+              + guideCover + ") — the new BookKinds must be distinguished by cache key");
+    }
+
+    ResourceLocation guideIcon = BookItemTextureFactory.getItemTexture(guideStack);
+    ResourceLocation unlinkedIcon = BookItemTextureFactory.getItemTexture(unlinkedStack);
+    if (guideIcon == null) {
+      throw new IllegalStateException(
+          "BookItemTextureFactory.getItemTexture(guidebook) returned null");
+    }
+    if (unlinkedIcon == null) {
+      throw new IllegalStateException(
+          "BookItemTextureFactory.getItemTexture(linkbook_unlinked) returned null");
+    }
+    if (guideIcon.equals(unlinkedIcon)) {
+      throw new IllegalStateException(
+          "GUIDEBOOK and LINKBOOK_UNLINKED produce the same item-icon ResourceLocation ("
+              + guideIcon + ") — the new BookKinds must yield distinct item icons");
+    }
+
+    Mystcraft.LOGGER.info(
+        "[ProceduralUiTest] Guidebook covers: cover={} icon={}; "
+            + "Unlinked: cover={} icon={}",
+        guideCover, guideIcon, unlinkedCover, unlinkedIcon);
   }
 }

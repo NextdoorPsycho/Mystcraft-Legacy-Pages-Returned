@@ -37,6 +37,14 @@ public class PersonalPocketProxyRenderer extends EntityRenderer<PersonalPocketPr
     this.shadowRadius = 0.5F;
   }
 
+  private static PlayerInfo getPlayerInfo(UUID ownerId) {
+    Minecraft minecraft = Minecraft.getInstance();
+    if (minecraft.getConnection() == null) {
+      return null;
+    }
+    return minecraft.getConnection().getPlayerInfo(ownerId);
+  }
+
   @Override
   public void render(@NotNull PersonalPocketProxyEntity entity, float entityYaw, float partialTick,
                      @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
@@ -87,13 +95,5 @@ public class PersonalPocketProxyRenderer extends EntityRenderer<PersonalPocketPr
       return slimModel;
     }
     return "slim".equals(DefaultPlayerSkin.getSkinModelName(ownerProfile.getId())) ? slimModel : defaultModel;
-  }
-
-  private static PlayerInfo getPlayerInfo(UUID ownerId) {
-    Minecraft minecraft = Minecraft.getInstance();
-    if (minecraft.getConnection() == null) {
-      return null;
-    }
-    return minecraft.getConnection().getPlayerInfo(ownerId);
   }
 }

@@ -13,8 +13,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Forge 1.20.1 implementation of IVersionHelper.
- * Uses the older SavedData API without DataFixTypes.
+ * Forge 1.20.1 implementation of IVersionHelper. Uses the older SavedData API
+ * without DataFixTypes.
  */
 public class ForgeVersionHelper_1_20_1 implements IVersionHelper {
 
@@ -31,19 +31,19 @@ public class ForgeVersionHelper_1_20_1 implements IVersionHelper {
       Function<CompoundTag, T> loader,
       String name
   ) {
-    // 1.20.1 uses the older API: computeIfAbsent(Function<CompoundTag, T>, Supplier<T>, String)
+
     return level.getDataStorage().computeIfAbsent(loader, constructor, name);
   }
 
   @Override
   public boolean usesNewScrollAPI() {
-    // 1.20.1 uses 3-parameter mouseScrolled(mouseX, mouseY, scrollDelta)
+
     return false;
   }
 
   @Override
   public boolean usesNewRenderBackgroundAPI() {
-    // 1.20.1 uses 1-parameter renderBackground(graphics)
+
     return false;
   }
 

@@ -1,9 +1,9 @@
 package art.arcane.mystcraft.guidebook;
 
 /**
- * Represents a single page in the Mystcraft Guidebook.
- * Pages contain a title and text content that can be formatted
- * with stability indicators (+/-) for color coding.
+ * Represents a single page in the Mystcraft Guidebook. Pages contain a title
+ * and text content that can be formatted with stability indicators (+/-) for
+ * color coding.
  */
 public class GuidebookPage {
 

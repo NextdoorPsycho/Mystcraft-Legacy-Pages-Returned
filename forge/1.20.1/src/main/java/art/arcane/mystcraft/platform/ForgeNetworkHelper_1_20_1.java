@@ -5,14 +5,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
 /**
- * Forge 1.20.1 networking helper.
- * Forge networking is handled by ForgeMystcraftNetwork_1_20_1. This stub delegates to it.
+ * Forge 1.20.1 networking helper. Forge networking is handled by
+ * ForgeMystcraftNetwork_1_20_1. This stub delegates to it.
  */
 public class ForgeNetworkHelper_1_20_1 implements INetworkHelper {
 
   @Override
   public void register() {
-    // Forge networking is registered in ForgeMystcraftNetwork_1_20_1.register()
+
   }
 
   @Override

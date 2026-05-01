@@ -19,27 +19,24 @@ import java.util.Map;
  * before falling back to a name-derived seed for novel words.
  * <p>
  * <b>Why pin?</b> Curated words like "Fire", "Water", "Forest" have
- * canonical visual identities in the original Mystcraft. Pinning the
- * seed keeps that identity stable across runs while letting unknown
- * words remain procedurally generated.
+ * canonical visual identities in the original Mystcraft. Pinning the seed keeps
+ * that identity stable across runs while letting unknown words remain
+ * procedurally generated.
  * <p>
  * <b>How seeds were chosen</b>: each curated word's seed is the FNV-1a
  * hash of its name XOR a fixed nonce ({@link #SEED_NONCE}). The hash is
- * deterministic, has no special meaning, and avoids collisions for the
- * 90+ words below. Colours were hand-picked per theme.
+ * deterministic, has no special meaning, and avoids collisions for the 90+
+ * words below. Colours were hand-picked per theme.
  */
 public class DrawableWordManager {
 
-  /** Fixed nonce mixed into every seed pin. Bumping this rotates every word's look. */
   private static final int SEED_NONCE = 0x7E5E3C01;
 
   private static final Map<String, DrawableWord> WORDS = new HashMap<>();
 
-  // ---------------------------------------------------------------------
-  // Public API
-  // ---------------------------------------------------------------------
-
-  /** Unmodifiable view of every registered word. */
+  /**
+   * Unmodifiable view of every registered word.
+   */
   public static Map<String, DrawableWord> getWords() {
     return Collections.unmodifiableMap(WORDS);
   }
@@ -57,14 +54,16 @@ public class DrawableWordManager {
   }
 
   /**
-   * Convenience overload — derives the seed from the word name (FNV-1a XOR nonce).
-   * Use this when you only want to pin the colour.
+   * Convenience overload — derives the seed from the word name (FNV-1a XOR
+   * nonce). Use this when you only want to pin the colour.
    */
   public static void registerWord(@NotNull String name, int color) {
     registerWord(name, color, deriveSeed(name));
   }
 
-  /** Backwards-compatible wrapper kept for any external (third-party) caller. */
+  /**
+   * Backwards-compatible wrapper kept for any external (third-party) caller.
+   */
   public static void registerWord(@NotNull String name, @Nullable DrawableWord word) {
     if (word == null || name.isEmpty()) return;
     WORDS.putIfAbsent(name.toLowerCase(Locale.ROOT), word);
@@ -74,8 +73,8 @@ public class DrawableWordManager {
    * Returns the {@link DrawableWord} for {@code name}.
    * <p>
    * If the word isn't curated, a fallback {@link DrawableWord} with a
-   * name-derived seed (no colour pin) is created and cached so the same
-   * unknown word always renders identically.
+   * name-derived seed (no colour pin) is created and cached so the same unknown
+   * word always renders identically.
    */
   @NotNull
   public static DrawableWord getDrawableWord(@Nullable String name) {
@@ -86,8 +85,8 @@ public class DrawableWordManager {
   }
 
   /**
-   * Returns the curated seed pin for {@code word}, or {@code null} if
-   * the word isn't in the curated vocabulary.
+   * Returns the curated seed pin for {@code word}, or {@code null} if the word
+   * isn't in the curated vocabulary.
    * <p>
    * Used by {@code SymbolGlyphFactory} to honour pinned identities.
    */
@@ -101,8 +100,8 @@ public class DrawableWordManager {
   }
 
   /**
-   * Returns the curated thematic colour pin for {@code word}, or
-   * {@code null} if the word isn't pinned.
+   * Returns the curated thematic colour pin for {@code word}, or {@code null}
+   * if the word isn't pinned.
    */
   @Nullable
   public static Integer getCuratedColor(@Nullable String word) {
@@ -111,26 +110,23 @@ public class DrawableWordManager {
     return w == null ? null : w.pinnedColor();
   }
 
-  /** Resets the curated vocabulary — used by tests and resource-pack reloads. */
+  /**
+   * Resets the curated vocabulary — used by tests and resource-pack reloads.
+   */
   public static void reset() {
     WORDS.clear();
   }
 
-  // ---------------------------------------------------------------------
-  // Curated D'ni vocabulary
-  // ---------------------------------------------------------------------
-
   /**
-   * Initialises built-in D'ni words. Called from the loader-specific
-   * client setup ({@code MystcraftFabricClient}, {@code MystcraftForge}).
+   * Initialises built-in D'ni words. Called from the loader-specific client
+   * setup ({@code MystcraftFabricClient}, {@code MystcraftForge}).
    * <p>
-   * Each entry pins a <em>thematic colour</em>; the seed is derived from
-   * the name unless overridden. Colours are hand-picked, not procedural.
+   * Each entry pins a <em>thematic colour</em>; the seed is derived from the
+   * name unless overridden. Colours are hand-picked, not procedural.
    */
   public static void initialize() {
     if (!WORDS.isEmpty()) return;
 
-    // ---------------- Structural / abstract --------------------------
     registerWord("system", 0xC0B6A8);
     registerWord("motion", 0xD9A86C);
     registerWord("cycle", 0x8C9AAA);
@@ -146,7 +142,6 @@ public class DrawableWordManager {
     registerWord("matter", 0x7C5C44);
     registerWord("void", 0x12101A);
 
-    // ---------------- Nature / element -------------------------------
     registerWord("terrain", 0x8E7A5A);
     registerWord("sky", 0x6FA4D9);
     registerWord("water", 0x2E6FA8);
@@ -161,13 +156,11 @@ public class DrawableWordManager {
     registerWord("dark", 0x1A1820);
     registerWord("color", 0xB3779E);
 
-    // ---------------- Sensory / signal -------------------------------
     registerWord("image", 0xA8B6C2);
     registerWord("stimulate", 0xD49C49);
     registerWord("reflect", 0x9CB7C9);
     registerWord("radiate", 0xE6A847);
 
-    // ---------------- Weather ----------------------------------------
     registerWord("weather", 0x808FA0);
     registerWord("storm", 0x4A4F5C);
     registerWord("rain", 0x6F94B3);
@@ -177,7 +170,6 @@ public class DrawableWordManager {
     registerWord("lightning", 0xF2E27A);
     registerWord("thunder", 0x6A5A8C);
 
-    // ---------------- Biome ------------------------------------------
     registerWord("biome", 0x7A8C5E);
     registerWord("forest", 0x3E6B2C);
     registerWord("desert", 0xC9A368);
@@ -189,7 +181,6 @@ public class DrawableWordManager {
     registerWord("tundra", 0xB8C9CF);
     registerWord("cave", 0x3A2F26);
 
-    // ---------------- Modifier ---------------------------------------
     registerWord("large", 0xC2B7A0);
     registerWord("small", 0xA89F8C);
     registerWord("dense", 0x4D4633);
@@ -201,7 +192,6 @@ public class DrawableWordManager {
     registerWord("normal", 0xB0A88C);
     registerWord("extreme", 0xC2452D);
 
-    // ---------------- Structure --------------------------------------
     registerWord("village", 0xC0935A);
     registerWord("ruin", 0x7A6A52);
     registerWord("portal", 0x6F4E91);
@@ -209,7 +199,6 @@ public class DrawableWordManager {
     registerWord("dungeon", 0x3A2F2C);
     registerWord("library", 0x8C5E33);
 
-    // ---------------- Colour names (heraldic) ------------------------
     registerWord("red", 0xC2452D);
     registerWord("blue", 0x2E6FA8);
     registerWord("green", 0x4F8C3A);
@@ -223,7 +212,6 @@ public class DrawableWordManager {
     registerWord("pink", 0xD58FB3);
     registerWord("cyan", 0x4FA8B3);
 
-    // ---------------- Abstract concepts ------------------------------
     registerWord("random", 0xA8809C);
     registerWord("gradient", 0xCC9F6D);
     registerWord("standard", 0xB0A88C);
@@ -231,15 +219,9 @@ public class DrawableWordManager {
     registerWord("instability", 0x6E2C2C);
     registerWord("stability", 0x4D7A8C);
 
-    // ---------------- Misc / easter ----------------------------------
     registerWord("easter", 0xE5C9F0);
   }
 
-  // ---------------------------------------------------------------------
-  // Internals
-  // ---------------------------------------------------------------------
-
-  /** FNV-1a 32-bit hash XOR a fixed nonce. Deterministic across JVMs. */
   private static int deriveSeed(@NotNull String name) {
     int h = 0x811C9DC5;
     String key = name.toLowerCase(Locale.ROOT);

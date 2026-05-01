@@ -12,15 +12,14 @@ import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.level.Level;
 
 /**
- * A lightning bolt with customizable color.
- * Used for instability effects and special age features.
+ * A lightning bolt with customizable color. Used for instability effects and
+ * special age features.
  */
 public class ColoredLightningEntity extends LightningBolt {
 
   private static final EntityDataAccessor<Integer> DATA_COLOR =
       SynchedEntityData.defineId(ColoredLightningEntity.class, EntityDataSerializers.INT);
 
-  // Default color: grayish-blue
   private static final int DEFAULT_COLOR = packColor(0.45f, 0.45f, 0.5f);
 
   public ColoredLightningEntity(EntityType<? extends LightningBolt> entityType, Level level) {
@@ -33,9 +32,6 @@ public class ColoredLightningEntity extends LightningBolt {
     this.setVisualOnly(visualOnly);
   }
 
-  /**
-   * Packs RGB floats (0.0-1.0) into a single integer.
-   */
   private static int packColor(float red, float green, float blue) {
     int r = (int) (red * 255) & 0xFF;
     int g = (int) (green * 255) & 0xFF;

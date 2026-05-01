@@ -9,7 +9,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface PacketContext {
   /**
-   * Returns the player that sent/received the packet. May be null on server for client-sent packets.
+   * Returns the player that sent/received the packet. May be null on server for
+   * client-sent packets.
    */
   @Nullable
   Player getPlayer();

@@ -9,8 +9,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
 
 /**
- * Packet sent from server to client to sync Mystcraft book data in a vanilla lectern.
- * This is needed because vanilla's LecternBlockEntity doesn't sync non-vanilla books.
+ * Packet sent from server to client to sync Mystcraft book data in a vanilla
+ * lectern. This is needed because vanilla's LecternBlockEntity doesn't sync
+ * non-vanilla books.
  */
 public record LecternBookSyncPacket(BlockPos pos, ItemStack book) {
 

@@ -5,7 +5,8 @@ import art.arcane.mystcraft.api.instability.InstabilityDirector;
 import art.arcane.mystcraft.instability.effects.EffectExtraTicks;
 
 /**
- * Provider for extra random tick effects (accelerated crop growth, fire spread).
+ * Provider for extra random tick effects (accelerated crop growth, fire
+ * spread).
  */
 public class ProviderExtraTicks implements IInstabilityProvider {
 

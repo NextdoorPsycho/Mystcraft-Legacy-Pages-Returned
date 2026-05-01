@@ -11,6 +11,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Map;
 import java.util.function.Supplier;
 
+/**
+ * Registers Mystcraft entity names with the vanilla 1.20.1 datafixer schema so old saves can load.
+ */
 @Mixin(V3328.class)
 public abstract class DataFixerSchemaMixin {
 

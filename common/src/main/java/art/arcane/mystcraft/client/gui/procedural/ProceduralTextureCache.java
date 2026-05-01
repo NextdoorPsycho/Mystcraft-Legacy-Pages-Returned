@@ -19,11 +19,11 @@ import java.util.function.Consumer;
  * <p>
  * Generators are keyed by an arbitrary string hash (typically derived from the
  * data the texture depends on, e.g. cover item + page count + ink tint). When
- * an entry is evicted its {@link DynamicTexture} is released so its VRAM can
- * be reclaimed.
+ * an entry is evicted its {@link DynamicTexture} is released so its VRAM can be
+ * reclaimed.
  * <p>
- * Capacity is configurable but defaults to 64 — at 256x256 RGBA each texture
- * is ~256 KB, so 64 entries cap VRAM use at ~16 MB.
+ * Capacity is configurable but defaults to 64 — at 256x256 RGBA each texture is
+ * ~256 KB, so 64 entries cap VRAM use at ~16 MB.
  */
 public final class ProceduralTextureCache {
 
@@ -53,6 +53,40 @@ public final class ProceduralTextureCache {
     };
   }
 
+  private static TextureManager textureManager() {
+    return Minecraft.getInstance().getTextureManager();
+  }
+
+  private static void releaseTexture(ResourceLocation loc) {
+    try {
+      textureManager().release(loc);
+    } catch (Exception e) {
+
+      Mystcraft.LOGGER.debug("[ProceduralTextureCache] release({}) failed: {}", loc, e.toString());
+    }
+  }
+
+  private static String sanitize(@NotNull String raw) {
+    StringBuilder sb = new StringBuilder(raw.length());
+    String lower = raw.toLowerCase(Locale.ROOT);
+    for (int i = 0; i < lower.length(); i++) {
+      char c = lower.charAt(i);
+      if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '/' || c == '.' || c == '-') {
+        sb.append(c);
+      } else {
+        sb.append('_');
+      }
+    }
+    return sb.toString();
+  }
+
+  /**
+   * Convenience: returns the namespace used for registered textures.
+   */
+  public static String namespace() {
+    return NAMESPACE;
+  }
+
   /**
    * Looks up or generates the texture for the given key.
    * <p>
@@ -67,7 +101,7 @@ public final class ProceduralTextureCache {
    * @param height    image height in pixels
    * @param generator callback that draws into the supplied image
    * @return the {@link ResourceLocation} that can be passed to
-   *         {@link net.minecraft.client.gui.GuiGraphics#blit}
+   * {@link net.minecraft.client.gui.GuiGraphics#blit}
    */
   public synchronized ResourceLocation getOrCreate(@NotNull String key, int width, int height,
                                                    @NotNull Consumer<NativeImage> generator) {
@@ -92,8 +126,8 @@ public final class ProceduralTextureCache {
   }
 
   /**
-   * Clears every cached texture and releases its GPU resources.
-   * Call this on resource pack reloads.
+   * Clears every cached texture and releases its GPU resources. Call this on
+   * resource pack reloads.
    */
   public synchronized void clear() {
     for (Iterator<Map.Entry<String, ResourceLocation>> it = cache.entrySet().iterator(); it.hasNext(); ) {
@@ -118,43 +152,5 @@ public final class ProceduralTextureCache {
     if (removed != null) {
       releaseTexture(removed);
     }
-  }
-
-  private static TextureManager textureManager() {
-    return Minecraft.getInstance().getTextureManager();
-  }
-
-  private static void releaseTexture(ResourceLocation loc) {
-    try {
-      textureManager().release(loc);
-    } catch (Exception e) {
-      // TextureManager#release can throw if the GL context isn't ready; log and continue.
-      Mystcraft.LOGGER.debug("[ProceduralTextureCache] release({}) failed: {}", loc, e.toString());
-    }
-  }
-
-  /**
-   * Sanitises a string into a valid resource path: lowercase ASCII alphanumerics,
-   * underscores, and slashes only.
-   */
-  private static String sanitize(@NotNull String raw) {
-    StringBuilder sb = new StringBuilder(raw.length());
-    String lower = raw.toLowerCase(Locale.ROOT);
-    for (int i = 0; i < lower.length(); i++) {
-      char c = lower.charAt(i);
-      if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '/' || c == '.' || c == '-') {
-        sb.append(c);
-      } else {
-        sb.append('_');
-      }
-    }
-    return sb.toString();
-  }
-
-  /**
-   * Convenience: returns the namespace used for registered textures.
-   */
-  public static String namespace() {
-    return NAMESPACE;
   }
 }

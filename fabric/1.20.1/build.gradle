@@ -14,7 +14,6 @@ java {
     withSourcesJar()
 }
 
-// Force Java 17 for all run tasks (client, server, gametest)
 tasks.withType(JavaExec).configureEach {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(17)
@@ -62,7 +61,6 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version_1_20_1}"
     compileOnly project(':common')
 
-    // TOML config library (same as Forge uses)
     implementation "com.electronwill.night-config:core:3.6.7"
     implementation "com.electronwill.night-config:toml:3.6.7"
     include "com.electronwill.night-config:core:3.6.7"
@@ -71,14 +69,13 @@ dependencies {
 
 tasks.named('compileJava', JavaCompile) {
     source(project(':common').sourceSets.main.allSource.matching {
-        // Fabric registers tests through the loader-specific wrapper, but the
-        // shared scenario runner/assertions live in common.
+
         exclude '**/gametest/MystcraftGameTests.java'
-        // Use 1.20.1-specific advancement triggers
+
         exclude '**/advancements/EnterMystDimensionSafeTrigger.java'
         exclude '**/advancements/EnterMystDimensionQuinnTrigger.java'
         exclude '**/advancements/WritingDeskWriteTrigger.java'
-        // Platform-specific packet implementations (use access widener for direct field access)
+
         exclude '**/network/LecternBookSyncPacket.java'
     })
     source(fileTree("${rootDir}/fabric/shared/src/main/java"))
@@ -87,7 +84,7 @@ tasks.named('compileJava', JavaCompile) {
 
 tasks.named('processResources', ProcessResources) {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    // Common resources first, then own resources to override
+
     from project(':common').sourceSets.main.resources
     from sourceSets.main.resources
 

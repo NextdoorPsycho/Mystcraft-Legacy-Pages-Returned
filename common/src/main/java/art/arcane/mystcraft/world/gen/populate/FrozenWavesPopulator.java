@@ -11,10 +11,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Generates terrain formations shaped like ocean waves frozen mid-crash.
- * Made of ice, packed ice, and blue ice with powder snow spray at the
- * crest. Sea lanterns embedded inside create an eerie inner glow.
- * The waves curl forward as if time stopped in the middle of a storm.
+ * Generates terrain formations shaped like ocean waves frozen mid-crash. Made
+ * of ice, packed ice, and blue ice with powder snow spray at the crest. Sea
+ * lanterns embedded inside create an eerie inner glow. The waves curl forward
+ * as if time stopped in the middle of a storm.
  */
 public class FrozenWavesPopulator implements IPopulate {
 
@@ -89,49 +89,44 @@ public class FrozenWavesPopulator implements IPopulate {
   }
 
   private void generateWave(WorldGenLevel world, BlockPos chunkPos,
-                             int startX, int surfaceY, int startZ,
-                             int waveHeight, int waveLength, double angle) {
+                            int startX, int surfaceY, int startZ,
+                            int waveHeight, int waveLength, double angle) {
     double dx = Math.cos(angle);
     double dz = Math.sin(angle);
-    // Cross direction (the wave "breaks" in this direction)
+
     double crossX = -dz;
     double crossZ = dx;
 
-    int thickness = 4 + waveHeight / 6; // Thicker for taller waves
+    int thickness = 4 + waveHeight / 6;
 
     for (int step = 0; step < waveLength; step++) {
       int bx = startX + (int) Math.round(dx * step);
       int bz = startZ + (int) Math.round(dz * step);
 
-      // Wave height varies along length (peaks in center)
       double lengthProgress = (double) step / waveLength;
       double heightMultiplier = Math.sin(lengthProgress * Math.PI);
       int localWaveHeight = (int) (waveHeight * heightMultiplier);
       if (localWaveHeight < 3) continue;
 
-      // Build the wave cross-section at this step
-      // The wave profile is: rises steeply on back, curls forward at top
       for (int crossStep = -2; crossStep < thickness; crossStep++) {
         int wx = bx + (int) Math.round(crossX * crossStep);
         int wz = bz + (int) Math.round(crossZ * crossStep);
 
-        // Cross profile: the wave shape
         double crossProgress = (double) (crossStep + 2) / (thickness + 2);
         int columnHeight;
 
         if (crossProgress < 0.3) {
-          // Back of wave: steep rise
+
           columnHeight = (int) (localWaveHeight * crossProgress / 0.3);
         } else if (crossProgress < 0.7) {
-          // Top of wave: full height
+
           columnHeight = localWaveHeight;
         } else {
-          // Curl/crest: curves forward and down
+
           double curlProgress = (crossProgress - 0.7) / 0.3;
           columnHeight = (int) (localWaveHeight * (1.0 - curlProgress * 0.6));
         }
 
-        // The curl overhang: at the top of the crest, blocks extend forward
         int overhangStart = -1;
         if (crossProgress > 0.6) {
           overhangStart = (int) (localWaveHeight * 0.7);
@@ -142,30 +137,28 @@ public class FrozenWavesPopulator implements IPopulate {
           BlockPos pos = new BlockPos(wx, wy, wz);
           if (!isInWritableArea(pos, chunkPos)) continue;
 
-          // Pick ice material based on position
           long blockHash = positionHash(seed, wx, wy, wz);
           float roll = hashFloat(blockHash);
           BlockState material;
 
           if (roll < 0.02f) {
-            material = SEA_LANTERN; // Inner glow
+            material = SEA_LANTERN;
           } else if (roll < 0.05f) {
             material = PRISMARINE;
           } else if (dy < columnHeight * 0.3) {
-            // Base: blue ice (dense, ancient)
+
             material = BLUE_ICE;
           } else if (dy < columnHeight * 0.7) {
-            // Middle: packed ice
+
             material = roll < 0.6f ? PACKED_ICE : BLUE_ICE;
           } else {
-            // Top: regular ice (translucent, thinner)
+
             material = roll < 0.5f ? ICE : PACKED_ICE;
           }
 
           world.setBlock(pos, material, 2);
         }
 
-        // Overhang curl blocks
         if (overhangStart >= 0 && crossProgress > 0.7) {
           double curlAngle = (crossProgress - 0.7) / 0.3 * Math.PI * 0.6;
           int curlOffsetY = (int) (Math.cos(curlAngle) * localWaveHeight * 0.3);
@@ -184,7 +177,6 @@ public class FrozenWavesPopulator implements IPopulate {
         }
       }
 
-      // Spray at the crest: powder snow and snow blocks
       if (lengthProgress > 0.2 && lengthProgress < 0.8) {
         int sprayCount = 2 + (int) (hashFloat(positionHash(seed ^ 0x5B4AL, bx, 0, bz)) * 4);
         for (int s = 0; s < sprayCount; s++) {

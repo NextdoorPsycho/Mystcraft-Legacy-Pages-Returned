@@ -17,8 +17,8 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Renderer for the Linkbook entity (dropped book in world).
- * Uses the vanilla BookModel to render an open book on the ground.
+ * Renderer for the Linkbook entity (dropped book in world). Uses the vanilla
+ * BookModel to render an open book on the ground.
  */
 public class LinkbookEntityRenderer extends EntityRenderer<LinkbookEntity> {
 
@@ -45,29 +45,23 @@ public class LinkbookEntityRenderer extends EntityRenderer<LinkbookEntity> {
 
     poseStack.pushPose();
 
-    // Slight vertical offset so the book sits on top of the ground plane
     poseStack.translate(0, 0.0625, 0);
 
-    // Lay the book flat on the ground, facing the entity direction
     poseStack.mulPose(Axis.YN.rotationDegrees(entityYaw + 90));
     poseStack.mulPose(Axis.ZP.rotationDegrees(90));
 
-    poseStack.scale(0.8f, 0.8f, 0.8f); // Book display scale
+    poseStack.scale(0.8f, 0.8f, 0.8f);
 
-    // Fully open state
     bookModel.setupAnim(0, 0, 0, 1.2f);
 
-    // Choose texture based on book type
     ResourceLocation texture = (book.getItem() instanceof AgebookItem)
         ? AGEBOOK_TEXTURE
         : LINKBOOK_TEXTURE;
 
-    // Render the book model
     VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entitySolid(texture));
     bookModel.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY,
         1.0f, 1.0f, 1.0f, 1.0f);
 
-    // Render hurt overlay if entity is damaged (red tint)
     if (entity.hurtTime > 0) {
       VertexConsumer hurtConsumer = bufferSource.getBuffer(RenderType.entityTranslucent(texture));
       bookModel.render(poseStack, hurtConsumer, packedLight, OverlayTexture.pack(0, true),

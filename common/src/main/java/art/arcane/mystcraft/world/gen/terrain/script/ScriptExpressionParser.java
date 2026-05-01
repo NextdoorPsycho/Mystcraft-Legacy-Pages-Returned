@@ -357,7 +357,8 @@ public final class ScriptExpressionParser {
     }
   }
 
-  private record CellResult(long cellX, long cellZ, double centerX, double centerZ) {
+  private record CellResult(long cellX, long cellZ, double centerX,
+                            double centerZ) {
     static CellResult from(CellMode mode, double x, double z, double size) {
       if (mode == CellMode.HEX) {
         return hexCell(x, z, size);

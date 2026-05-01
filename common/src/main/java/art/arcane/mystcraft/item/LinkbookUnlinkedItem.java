@@ -22,8 +22,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * A blank linkbook that converts to a linked linkbook at the current position on right-click.
- * Only converts when exactly 1 is held. Transfers link panel properties to the new book.
+ * A blank linkbook that converts to a linked linkbook at the current position
+ * on right-click. Only converts when exactly 1 is held. Transfers link panel
+ * properties to the new book.
  */
 public class LinkbookUnlinkedItem extends Item implements TooltipCompat {
 
@@ -45,7 +46,7 @@ public class LinkbookUnlinkedItem extends Item implements TooltipCompat {
   }
 
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
-    // Show link panel properties in tooltip
+
     if (ItemStackNbt.getTag(stack) != null) {
       Page.getTooltip(stack, tooltip);
     }
@@ -56,12 +57,10 @@ public class LinkbookUnlinkedItem extends Item implements TooltipCompat {
   public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
     ItemStack inHand = player.getItemInHand(hand);
 
-    // Only convert if on server and holding exactly 1
     if (level.isClientSide || inHand.getCount() > 1) {
       return InteractionResultHolder.pass(inHand);
     }
 
-    // Create a new linked linkbook
     ItemStack linkBook = new ItemStack(ModItems.LINKBOOK.get());
 
     initializeLinkbook(linkBook, level, player);
@@ -72,30 +71,21 @@ public class LinkbookUnlinkedItem extends Item implements TooltipCompat {
     return InteractionResultHolder.pass(linkBook);
   }
 
-  /**
-   * Initializes a linkbook with the player's current position and dimension.
-   */
   private void initializeLinkbook(ItemStack linkBook, Level level, Player player) {
     CompoundTag tag = new CompoundTag();
 
-    // Set spawn position to player's current position
     LinkOptions.setSpawn(tag, player.blockPosition());
     LinkOptions.setSpawnYaw(tag, player.getYRot());
 
-    // Set dimension UID
     int dimId = LinkingManager.getDimensionUID(level);
     LinkOptions.setDimensionUID(tag, dimId);
 
-    // Set a default display name based on dimension
     String dimName = getDimensionDisplayName(level);
     LinkOptions.setDisplayName(tag, dimName);
 
     ItemStackNbt.setTag(linkBook, tag);
   }
 
-  /**
-   * Gets a display name for the dimension.
-   */
   private String getDimensionDisplayName(Level level) {
     ResourceKey<Level> dimension = level.dimension();
     if (dimension == Level.OVERWORLD) {
@@ -105,11 +95,9 @@ public class LinkbookUnlinkedItem extends Item implements TooltipCompat {
     } else if (dimension == Level.END) {
       return "The End";
     }
-    // For custom dimensions, use the path
+
     return dimension.location().getPath();
   }
-
-  // --- Custom Entity on Q-Drop ---
 
   public boolean hasCustomEntity(@NotNull ItemStack stack) {
     return true;

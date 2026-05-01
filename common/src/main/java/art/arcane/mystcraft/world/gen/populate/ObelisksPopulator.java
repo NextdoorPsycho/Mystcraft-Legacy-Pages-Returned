@@ -11,10 +11,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Obelisks populator that generates tall narrow monoliths jutting from the ground.
- * Four-sided tapering pillars made of deepslate variants with obsidian accents,
- * crying_obsidian tear streaks, and redstone_block rune dots.
- * Single-chunk populator (max width ~7 blocks, no neighbor-seed pattern needed).
+ * Obelisks populator that generates tall narrow monoliths jutting from the
+ * ground. Four-sided tapering pillars made of deepslate variants with obsidian
+ * accents, crying_obsidian tear streaks, and redstone_block rune dots.
+ * Single-chunk populator (max width ~7 blocks, no neighbor-seed pattern
+ * needed).
  */
 public class ObelisksPopulator implements IPopulate {
 
@@ -50,9 +51,6 @@ public class ObelisksPopulator implements IPopulate {
     this.maxBaseWidth = Math.max(this.minBaseWidth, PopulatorConfig.getInt(params, "max_base_width", DEFAULT_MAX_BASE_WIDTH));
   }
 
-  /**
-   * Position-deterministic hash for per-block decisions (tear streaks, runes, cap style).
-   */
   private static long positionHash(long seed, int x, int y, int z) {
     long h = seed;
     h ^= (long) x * 73856093L;
@@ -77,7 +75,6 @@ public class ObelisksPopulator implements IPopulate {
         continue;
       }
 
-      // Verify ground is solid and not leaves
       BlockState ground = world.getBlockState(new BlockPos(x, surfaceY, z));
       if (!ground.isSolid() || ground.is(BlockTags.LEAVES)) {
         continue;
@@ -91,11 +88,10 @@ public class ObelisksPopulator implements IPopulate {
   }
 
   private void generateObelisk(WorldGenLevel world, BlockPos chunkPos,
-                                int centerX, int surfaceY, int centerZ,
-                                int height, int baseWidth) {
+                               int centerX, int surfaceY, int centerZ,
+                               int height, int baseWidth) {
     int startY = surfaceY - DEFAULT_BURY_DEPTH;
 
-    // Determine cap style from position hash
     long capHash = positionHash(seed, centerX, surfaceY, centerZ);
     int capRoll = (int) ((capHash >>> 16) & 0xFF) % 100;
     CapStyle capStyle;
@@ -107,7 +103,6 @@ public class ObelisksPopulator implements IPopulate {
       capStyle = CapStyle.POINTED;
     }
 
-    // Determine base material from position hash
     long matHash = positionHash(seed ^ 0x4D4154L, centerX, surfaceY, centerZ);
     BlockState baseMaterial = getBaseMaterial((int) ((matHash >>> 8) & 0xFF) % 3);
 
@@ -117,7 +112,6 @@ public class ObelisksPopulator implements IPopulate {
       int y = startY + dy;
       float progress = (float) dy / totalHeight;
 
-      // Linear taper from baseWidth at bottom to 1 at top
       int halfWidth = (int) Math.round(((float) baseWidth / 2.0f) * (1.0f - progress));
       if (halfWidth < 0) {
         halfWidth = 0;
@@ -133,7 +127,6 @@ public class ObelisksPopulator implements IPopulate {
             continue;
           }
 
-          // Choose block based on position hash
           long blockHash = positionHash(seed, bx, y, bz);
           float blockRoll = ((blockHash >>> 16) & 0xFFFFL) / (float) 0xFFFFL;
 
@@ -143,7 +136,7 @@ public class ObelisksPopulator implements IPopulate {
           } else if (blockRoll < RUNE_DOT_CHANCE + TEAR_STREAK_CHANCE) {
             blockToPlace = Blocks.CRYING_OBSIDIAN.defaultBlockState();
           } else {
-            // Mix base material with obsidian accents
+
             long accentHash = positionHash(seed ^ 0xACC37L, bx, y, bz);
             float accentRoll = ((accentHash >>> 16) & 0xFFFFL) / (float) 0xFFFFL;
             if (accentRoll < 0.15f) {
@@ -158,19 +151,17 @@ public class ObelisksPopulator implements IPopulate {
       }
     }
 
-    // Generate cap
     int topY = startY + totalHeight;
     generateCap(world, chunkPos, centerX, topY, centerZ, baseWidth, capStyle);
   }
 
   private void generateCap(WorldGenLevel world, BlockPos chunkPos,
-                            int centerX, int topY, int centerZ,
-                            int baseWidth, CapStyle style) {
-    // The width at the top of the main pillar body is ~1 block
-    // Caps add extra layers above that
+                           int centerX, int topY, int centerZ,
+                           int baseWidth, CapStyle style) {
+
     switch (style) {
       case FLAT:
-        // Simple flat cap: 1 layer slightly wider than the tip
+
         for (int dx = -1; dx <= 1; dx++) {
           for (int dz = -1; dz <= 1; dz++) {
             BlockPos pos = new BlockPos(centerX + dx, topY, centerZ + dz);
@@ -184,7 +175,7 @@ public class ObelisksPopulator implements IPopulate {
         break;
 
       case INVERTED_PYRAMID:
-        // Stair-step outward going up: 3 layers, each wider
+
         for (int layer = 0; layer < 3; layer++) {
           int halfWidth = 1 + layer;
           for (int dx = -halfWidth; dx <= halfWidth; dx++) {
@@ -201,7 +192,7 @@ public class ObelisksPopulator implements IPopulate {
         break;
 
       case POINTED:
-        // Single pointed block above the tip
+
         BlockPos pointPos = new BlockPos(centerX, topY, centerZ);
         if (isInWritableArea(pointPos, chunkPos)) {
           world.setBlock(pointPos, Blocks.OBSIDIAN.defaultBlockState(), 2);

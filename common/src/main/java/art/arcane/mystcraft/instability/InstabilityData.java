@@ -24,26 +24,18 @@ public final class InstabilityData {
   }
 
   /**
-   * Initializes all default instability data.
-   * Call this during mod initialization.
+   * Initializes all default instability data. Call this during mod
+   * initialization.
    */
   public static void initialize() {
     LOGGER.info("Initializing Mystcraft instability data");
 
-    // Register deck costs
     InstabilityProviderRegistry.setDeckCost("basic", DeckCost.BASIC);
     InstabilityProviderRegistry.setDeckCost("harsh", DeckCost.HARSH);
     InstabilityProviderRegistry.setDeckCost("destructive", DeckCost.DESTRUCTIVE);
     InstabilityProviderRegistry.setDeckCost("eating", DeckCost.EATING);
     InstabilityProviderRegistry.setDeckCost("death", DeckCost.DEATH);
 
-    // Register potion effect providers.
-    // ALL potions live in the "eating" deck (cost 50) so they never appear
-    // below instability 50. Each type has 1 card. The deck shuffle gives each
-    // Age a unique characteristic set (1-2 potions at 50, more as instability rises).
-    // Global variants are death-tier only.
-
-    // Blindness
     ProviderContainer.create("blindness",
         new InstabilityProvider(true, EffectPotion.class, false, MobEffects.BLINDNESS, 60),
         Stability.BLINDNESS).add("eating", 1);
@@ -51,7 +43,6 @@ public final class InstabilityData {
         new InstabilityProvider(true, EffectPotion.class, true, MobEffects.BLINDNESS, 60),
         Stability.BLINDNESS_GLOBAL).add("death", 1);
 
-    // Fatigue
     ProviderContainer.create("fatigue",
         new InstabilityProvider(true, EffectPotion.class, false, MobEffects.DIG_SLOWDOWN, 80),
         Stability.FATIGUE).add("eating", 1);
@@ -59,7 +50,6 @@ public final class InstabilityData {
         new InstabilityProvider(true, EffectPotion.class, true, MobEffects.DIG_SLOWDOWN, 80),
         Stability.FATIGUE_GLOBAL).add("death", 1);
 
-    // Hunger
     ProviderContainer.create("hunger",
         new InstabilityProvider(true, EffectPotion.class, false, MobEffects.HUNGER, 80),
         Stability.HUNGER).add("eating", 1);
@@ -67,7 +57,6 @@ public final class InstabilityData {
         new InstabilityProvider(true, EffectPotion.class, true, MobEffects.HUNGER, 80),
         Stability.HUNGER_GLOBAL).add("death", 1);
 
-    // Nausea
     ProviderContainer.create("nausea",
         new InstabilityProvider(true, EffectPotion.class, false, MobEffects.CONFUSION, 60),
         Stability.NAUSEA).add("eating", 1);
@@ -75,7 +64,6 @@ public final class InstabilityData {
         new InstabilityProvider(true, EffectPotion.class, true, MobEffects.CONFUSION, 60),
         Stability.NAUSEA_GLOBAL).add("death", 1);
 
-    // Poison
     ProviderContainer.create("poison",
         new InstabilityProvider(true, EffectPotion.class, false, MobEffects.POISON, 80),
         Stability.POISON).add("eating", 1);
@@ -83,7 +71,6 @@ public final class InstabilityData {
         new InstabilityProvider(true, EffectPotion.class, true, MobEffects.POISON, 80),
         Stability.POISON_GLOBAL).add("death", 1);
 
-    // Slowness
     ProviderContainer.create("slow",
         new InstabilityProvider(true, EffectPotion.class, false, MobEffects.MOVEMENT_SLOWDOWN, 80),
         Stability.SLOW).add("eating", 1);
@@ -91,7 +78,6 @@ public final class InstabilityData {
         new InstabilityProvider(true, EffectPotion.class, true, MobEffects.MOVEMENT_SLOWDOWN, 80),
         Stability.SLOW_GLOBAL).add("death", 1);
 
-    // Weakness
     ProviderContainer.create("weakness",
         new InstabilityProvider(true, EffectPotion.class, false, MobEffects.WEAKNESS, 80),
         Stability.WEAKNESS).add("eating", 1);
@@ -99,7 +85,6 @@ public final class InstabilityData {
         new InstabilityProvider(true, EffectPotion.class, true, MobEffects.WEAKNESS, 80),
         Stability.WEAKNESS_GLOBAL).add("death", 1);
 
-    // Wither
     ProviderContainer.create("wither",
         new InstabilityProvider(true, EffectPotion.class, false, MobEffects.WITHER, 30),
         Stability.WITHER).add("eating", 1);
@@ -107,7 +92,6 @@ public final class InstabilityData {
         new InstabilityProvider(true, EffectPotion.class, true, MobEffects.WITHER, 30),
         Stability.WITHER_GLOBAL).add("death", 1);
 
-    // Positive effects (chaotic boons -- also eating tier, shuffled in with negatives)
     ProviderContainer.create("speed",
         new InstabilityProvider(true, EffectPotion.class, false, MobEffects.MOVEMENT_SPEED, 600),
         Stability.HUNGER).add("eating", 1);
@@ -130,7 +114,6 @@ public final class InstabilityData {
         new InstabilityProvider(true, EffectPotion.class, false, MobEffects.NIGHT_VISION, 1200),
         Stability.BLINDNESS).add("eating", 1);
 
-    // Enemy buffs (eating tier)
     ProviderContainer.create("enemyregen,g",
         new InstabilityProvider(true, EffectPotionEnemy.class, true, MobEffects.REGENERATION, 200),
         Stability.ENEMY_REGEN_GLOBAL).add("eating", 1);
@@ -138,7 +121,6 @@ public final class InstabilityData {
         new InstabilityProvider(true, EffectPotionEnemy.class, true, MobEffects.DAMAGE_RESISTANCE, 200),
         Stability.ENEMY_RESIST_GLOBAL).add("eating", 1);
 
-    // Environmental effects
     ProviderContainer.create("burning",
         new ProviderScorched(),
         Stability.BURNING).add("harsh", 3);
@@ -147,7 +129,6 @@ public final class InstabilityData {
         new InstabilityProvider(false, EffectCrumble.class),
         Stability.CRUMBLE).add("destructive", 10);
 
-    // Decay providers
     ProviderContainer.create("decayblue",
         new ProviderDecayBlue(),
         Stability.DECAY_BLUE).add("eating", 4).add("death", 1);
@@ -161,22 +142,18 @@ public final class InstabilityData {
         new ProviderDecayWhite(),
         Stability.DECAY_WHITE).add("eating", 2).add("death", 5);
 
-    // Black decay
     ProviderContainer.create("decayblack",
         new ProviderDecayBlack(),
         Stability.DECAY_BLACK).add("eating", 3).add("death", 4);
 
-    // Erosion
     ProviderContainer.create("erosion",
         new ProviderErosion(),
         Stability.EROSION).add("destructive", 8).add("eating", 4);
 
-    // Extra ticks
     ProviderContainer.create("extraticks",
         new ProviderExtraTicks(),
         Stability.EXTRA_TICKS).add("harsh", 5).add("destructive", 4);
 
-    // Destructive effects
     ProviderContainer.create("explosions",
         new ProviderExplosion(),
         Stability.EXPLOSIONS).add("destructive", 8);
@@ -207,9 +184,7 @@ public final class InstabilityData {
    * Provider activation costs - instability required for each effect
    */
   public static final class Stability {
-    // Potion effects: high cost so only 1-2 types are active per Age at low instability.
-    // At instability 20 in basic deck: budget draws ~2 potion cards.
-    // At instability 50: ~5 cards. The deck shuffle gives each Age a unique set.
+
     public static final int BLINDNESS = 12;
     public static final int BLINDNESS_GLOBAL = 20;
     public static final int FATIGUE = 10;
@@ -228,11 +203,9 @@ public final class InstabilityData {
     public static final int WITHER = 15;
     public static final int WITHER_GLOBAL = 25;
 
-    // Enemy buffs
     public static final int ENEMY_REGEN_GLOBAL = 10;
     public static final int ENEMY_RESIST_GLOBAL = 10;
 
-    // Environmental/destructive effects: staged 40 -> 80
     public static final int DECAY_BLUE = 40;
     public static final int DECAY_PURPLE = 40;
     public static final int DECAY_RED = 40;
@@ -269,8 +242,8 @@ public final class InstabilityData {
   public static final class Symbol {
     public static final int ACCELERATED = 1000;
     public static final int BRIGHT = 500;
-    public static final int CHARGED = -500;      // Bonus (reduces instability)
-    public static final int METEORS = -1000;     // Using meteor symbol means intentional
+    public static final int CHARGED = -500;
+    public static final int METEORS = -1000;
     public static final int EXPLOSION = -500;
     public static final int SCORCHED = -500;
     public static final int DUMMY_FEATURE_LARGE = 0;
@@ -278,9 +251,6 @@ public final class InstabilityData {
     public static final int DUMMY_FEATURE_SMALL = 2000;
   }
 
-  /**
-   * Helper class for registering providers with deck placements.
-   */
   private static class ProviderContainer {
     private final String identifier;
     private final boolean registered;

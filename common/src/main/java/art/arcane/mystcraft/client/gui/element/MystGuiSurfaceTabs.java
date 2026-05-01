@@ -11,7 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Tab interface for page collections (folders/portfolios) on the side of the Writing Desk.
+ * Tab interface for page collections (folders/portfolios) on the side of the
+ * Writing Desk.
  */
 public class MystGuiSurfaceTabs extends MystGuiElement {
 
@@ -51,7 +52,6 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
 
     int tabY = guiTop;
 
-    // Themed accents (fall back to legacy colors for unknown keys).
     int dark = GuiTheme.color("panel_border_dark");
     int activeBg = GuiTheme.color("accent_link");
     int activeInner = ProceduralUI.lighten(activeBg, 1.18f);
@@ -62,7 +62,6 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
     int arrowOn = textOn;
     int arrowOff = 0xFF666666;
 
-    // Up arrow
     int upArrowColor = topSlot > 0 ? arrowOn : arrowOff;
     if (activeSlot < topSlot) {
       upArrowColor = activeBg | 0xFF000000;
@@ -71,7 +70,6 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
     ProceduralUI.drawChevron(graphics, guiLeft + TAB_WIDTH / 2 - 3, tabY + 2, 5, ProceduralUI.ChevronDir.UP, upArrowColor);
     tabY += ARROW_HEIGHT;
 
-    // Render tabs
     for (int i = 0; i < TAB_COUNT; i++) {
       int slot = topSlot + i;
       boolean isActive = (slot == activeSlot);
@@ -81,16 +79,14 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
       graphics.fill(guiLeft, tabY, guiLeft + TAB_WIDTH, tabY + TAB_HEIGHT, bg);
       graphics.fill(guiLeft + 1, tabY + 1, guiLeft + TAB_WIDTH - 1, tabY + TAB_HEIGHT - 1, inner);
 
-      // Slot number
       graphics.drawString(mc.font, String.valueOf(slot), guiLeft + 4, tabY + 3, textOn);
 
-      // Item name if present
       ItemStack stack = handler.getItemInSlot(slot);
       if (!stack.isEmpty()) {
         String name = stack.getHoverName().getString();
         int maxWidth = TAB_WIDTH - 8;
         if (mc.font.width(name) > maxWidth) {
-          // Truncate with ellipsis
+
           while (mc.font.width(name + "...") > maxWidth && name.length() > 0) {
             name = name.substring(0, name.length() - 1);
           }
@@ -98,14 +94,12 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
         }
         graphics.drawString(mc.font, name, guiLeft + 4, tabY + TAB_HEIGHT - 12, textOff);
 
-        // Render item icon
         graphics.renderItem(stack, guiLeft + TAB_WIDTH - 20, tabY + 8);
       }
 
       tabY += TAB_HEIGHT;
     }
 
-    // Down arrow
     int downArrowColor = topSlot < maxTabs - TAB_COUNT ? arrowOn : arrowOff;
     if (activeSlot >= topSlot + TAB_COUNT) {
       downArrowColor = activeBg | 0xFF000000;
@@ -122,7 +116,6 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
 
     int tabY = guiTop;
 
-    // Check up arrow
     if (mouseX >= guiLeft && mouseX < guiLeft + TAB_WIDTH &&
         mouseY >= tabY && mouseY < tabY + ARROW_HEIGHT) {
       cycleTabUp();
@@ -130,7 +123,6 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
     }
     tabY += ARROW_HEIGHT;
 
-    // Check tabs
     for (int i = 0; i < TAB_COUNT; i++) {
       int slot = topSlot + i;
       if (mouseX >= guiLeft && mouseX < guiLeft + TAB_WIDTH &&
@@ -141,7 +133,6 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
       tabY += TAB_HEIGHT;
     }
 
-    // Check down arrow
     if (mouseX >= guiLeft && mouseX < guiLeft + TAB_WIDTH &&
         mouseY >= tabY && mouseY < tabY + ARROW_HEIGHT) {
       cycleTabDown();
@@ -153,11 +144,11 @@ public class MystGuiSurfaceTabs extends MystGuiElement {
 
   @Override
   protected boolean onKeyPressed(int keyCode, int scanCode, int modifiers) {
-    // W/Up = cycle up, S/Down = cycle down
-    if (keyCode == 265 || keyCode == 87) { // Up or W
+
+    if (keyCode == 265 || keyCode == 87) {
       cycleTabUp();
       return true;
-    } else if (keyCode == 264 || keyCode == 83) { // Down or S
+    } else if (keyCode == 264 || keyCode == 83) {
       cycleTabDown();
       return true;
     }

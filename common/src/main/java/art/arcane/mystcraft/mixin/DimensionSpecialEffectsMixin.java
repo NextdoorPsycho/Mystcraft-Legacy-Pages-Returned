@@ -14,7 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Injects AgeDimensionSpecialEffects into the dimension effects map (1.20.1).
- * All Mystcraft Ages use "effects": "mystcraft:age" in their dimension type JSON.
+ * All Mystcraft Ages use "effects": "mystcraft:age" in their dimension type
+ * JSON.
  */
 @Mixin(DimensionSpecialEffects.class)
 public class DimensionSpecialEffectsMixin {

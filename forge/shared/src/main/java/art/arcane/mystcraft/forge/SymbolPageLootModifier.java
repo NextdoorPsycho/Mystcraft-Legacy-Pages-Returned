@@ -43,7 +43,7 @@ public class SymbolPageLootModifier extends LootModifier {
 
   @Override
   protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-    // Check if page loot is enabled
+
     if (!MystcraftConfig.enablePageLoot.get()) {
       return generatedLoot;
     }
@@ -52,7 +52,6 @@ public class SymbolPageLootModifier extends LootModifier {
       return generatedLoot;
     }
 
-    // Determine how many pages to add
     int pageCount = minPages + context.getRandom().nextInt(maxPages - minPages + 1);
 
     for (int i = 0; i < pageCount; i++) {

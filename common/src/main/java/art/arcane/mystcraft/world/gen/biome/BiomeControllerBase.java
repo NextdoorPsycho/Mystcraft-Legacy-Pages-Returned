@@ -30,8 +30,8 @@ public abstract class BiomeControllerBase implements IBiomeController {
   }
 
   /**
-   * Resolves a diverse set of fallback biomes from the registry.
-   * Used when a controller is created with an empty biome list.
+   * Resolves a diverse set of fallback biomes from the registry. Used when a
+   * controller is created with an empty biome list.
    */
   protected static List<Holder<Biome>> getDefaultBiomeSet() {
     List<Holder<Biome>> defaults = new ArrayList<>();
@@ -87,14 +87,13 @@ public abstract class BiomeControllerBase implements IBiomeController {
 
   @Override
   public List<Holder<Biome>> getValidSpawnBiomes() {
-    // By default, all biomes in this controller are valid for spawning
+
     return Collections.unmodifiableList(biomes);
   }
 
   @Override
   public void cleanupCache() {
-    // Default implementation does nothing
-    // Subclasses with caching can override this
+
   }
 
   @Override

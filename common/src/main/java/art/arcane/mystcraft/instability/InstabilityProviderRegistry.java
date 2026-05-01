@@ -13,16 +13,13 @@ public final class InstabilityProviderRegistry {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(InstabilityProviderRegistry.class);
 
-  // Provider storage
   private static final Map<String, IInstabilityProvider> providers = new HashMap<>();
   private static final Map<String, Integer> cardCosts = new HashMap<>();
   private static final Map<String, Integer> cardCounts = new HashMap<>();
 
-  // Deck storage
   private static final Map<String, List<String>> deckCards = new HashMap<>();
   private static final Map<String, Integer> deckCosts = new HashMap<>();
 
-  // Tracking
   private static final Set<String> erroredProviders = new HashSet<>();
   private static final Set<String> warnedProviders = new HashSet<>();
   private static int smallestCost = 500;
@@ -63,7 +60,8 @@ public final class InstabilityProviderRegistry {
    * Unregisters an instability provider.
    *
    * @param identifier The provider identifier
-   * @param provider   The provider to unregister (must match currently registered)
+   * @param provider   The provider to unregister (must match currently
+   *                   registered)
    */
   public static void unregisterProvider(String identifier, IInstabilityProvider provider) {
     if (providers.get(identifier) == provider) {
@@ -161,7 +159,6 @@ public final class InstabilityProviderRegistry {
         continue;
       }
 
-      // Track card counts
       cardCounts.merge(card, 1, Integer::sum);
       deck.add(card);
       newCards.add(card);

@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 public final class MystcraftConstants {
 
   private MystcraftConstants() {
-    // Utility class
+
   }
 
   /**

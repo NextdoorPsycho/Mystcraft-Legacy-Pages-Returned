@@ -1,8 +1,8 @@
 package art.arcane.mystcraft.api.instability;
 
 /**
- * Interface for managing instability effects in an Age.
- * Used by IInstabilityProvider to register effects.
+ * Interface for managing instability effects in an Age. Used by
+ * IInstabilityProvider to register effects.
  */
 public interface InstabilityDirector {
 

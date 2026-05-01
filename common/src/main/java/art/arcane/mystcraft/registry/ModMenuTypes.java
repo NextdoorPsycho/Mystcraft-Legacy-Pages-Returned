@@ -6,8 +6,8 @@ import net.minecraft.world.inventory.MenuType;
 import java.util.function.Supplier;
 
 /**
- * Common accessor for registered menu types.
- * Platform modules populate these suppliers during initialization.
+ * Common accessor for registered menu types. Platform modules populate these
+ * suppliers during initialization.
  */
 public final class ModMenuTypes {
 

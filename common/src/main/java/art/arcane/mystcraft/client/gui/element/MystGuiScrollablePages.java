@@ -34,7 +34,6 @@ public class MystGuiScrollablePages extends MystGuiElement {
     int guiLeft = getLeft();
     int guiTop = getTop();
 
-    // Draw background
     graphics.fill(guiLeft, guiTop, guiLeft + width, guiTop + height, 0x80000000);
 
     List<ItemStack> pages = handler != null ? handler.getPageList() : null;
@@ -45,12 +44,10 @@ public class MystGuiScrollablePages extends MystGuiElement {
     hoverIndex = -1;
     hoverTooltip.clear();
 
-    // Calculate how many pages fit
     int pagesPerRow = width / PAGE_SLOT_SIZE;
     int rowCount = (height + PAGE_SLOT_SIZE - 1) / PAGE_SLOT_SIZE;
     int visibleSlots = pagesPerRow * rowCount;
 
-    // Draw pages
     for (int i = 0; i < visibleSlots && (i + scrollOffset) < pages.size(); i++) {
       int pageIndex = i + scrollOffset;
       ItemStack page = pages.get(pageIndex);
@@ -60,32 +57,29 @@ public class MystGuiScrollablePages extends MystGuiElement {
       int x = guiLeft + col * PAGE_SLOT_SIZE + 1;
       int y = guiTop + row * PAGE_SLOT_SIZE + 1;
 
-      // Draw slot background
       graphics.fill(x, y, x + PAGE_ICON_SIZE, y + PAGE_ICON_SIZE, 0xFF2D2D2D);
 
       if (!page.isEmpty()) {
-        // Draw page item
+
         graphics.renderItem(page, x, y);
 
-        // Check if first position needs link panel warning
         if (pageIndex == 0 && !Page.isLinkPanel(page)) {
-          // Red tint for missing link panel
+
           graphics.fill(x - 1, y - 1, x + PAGE_ICON_SIZE + 1, y, 0xFFFF0000);
           graphics.fill(x - 1, y + PAGE_ICON_SIZE, x + PAGE_ICON_SIZE + 1, y + PAGE_ICON_SIZE + 1, 0xFFFF0000);
           graphics.fill(x - 1, y, x, y + PAGE_ICON_SIZE, 0xFFFF0000);
           graphics.fill(x + PAGE_ICON_SIZE, y, x + PAGE_ICON_SIZE + 1, y + PAGE_ICON_SIZE, 0xFFFF0000);
         }
 
-        // Check hover
         if (mouseX >= x && mouseX < x + PAGE_ICON_SIZE &&
             mouseY >= y && mouseY < y + PAGE_ICON_SIZE) {
           hoverIndex = pageIndex;
           updateHoverTooltip(page);
-          // Draw highlight
+
           graphics.fill(x, y, x + PAGE_ICON_SIZE, y + PAGE_ICON_SIZE, 0x40FFFFFF);
         }
       } else {
-        // Check hover on empty slot
+
         if (mouseX >= x && mouseX < x + PAGE_ICON_SIZE &&
             mouseY >= y && mouseY < y + PAGE_ICON_SIZE) {
           hoverIndex = pageIndex;
@@ -93,7 +87,6 @@ public class MystGuiScrollablePages extends MystGuiElement {
       }
     }
 
-    // Draw scrollbar if needed
     int totalSlots = pages.size();
     int maxScroll = Math.max(0, totalSlots - visibleSlots);
     if (maxScroll > 0) {
@@ -141,12 +134,12 @@ public class MystGuiScrollablePages extends MystGuiElement {
     ItemStack held = handler.getHeldItem();
 
     if (!held.isEmpty()) {
-      // Insert at hover index or end
+
       int insertIndex = hoverIndex >= 0 ? hoverIndex : pages.size();
       handler.onItemPlace(insertIndex, button == 1);
       return true;
     } else if (hoverIndex >= 0 && hoverIndex < pages.size()) {
-      // Remove from hover index
+
       handler.onItemRemove(hoverIndex);
       return true;
     }

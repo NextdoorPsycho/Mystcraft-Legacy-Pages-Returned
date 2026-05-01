@@ -15,8 +15,8 @@ import java.util.Random;
  * Spheres populator that generates floating or embedded spherical formations.
  * Uses the neighbor-seed pattern for multi-chunk structures: each chunk
  * deterministically checks nearby chunk seeds for sphere origins and only
- * places the portion that falls within its own 16x16 boundary.
- * This avoids cross-chunk writes and prevents deadlocks during worldgen.
+ * places the portion that falls within its own 16x16 boundary. This avoids
+ * cross-chunk writes and prevents deadlocks during worldgen.
  */
 public class SpheresPopulator implements IPopulate {
 
@@ -24,12 +24,11 @@ public class SpheresPopulator implements IPopulate {
   private static final int DEFAULT_MIN_RADIUS = 5;
   private static final int DEFAULT_MAX_RADIUS = 15;
   private static final float DEFAULT_FLOATING_CHANCE = 0.4f;
-  // ~3% of chunks spawn a sphere (~1 per 33 chunks)
+
   private static final float DEFAULT_SPAWN_CHANCE = 0.03f;
   private static final int CRACK_MIN_PLANES = 2;
   private static final int CRACK_MAX_PLANES = 4;
-  // How many neighbor chunks to scan in each direction.
-  // Worst case: center at position 15 + radius 15 = 30 blocks = 2 chunks away.
+
   private static final int DEFAULT_NEIGHBOR_RANGE = 2;
   private static final int DEFAULT_MIN_BASE_Y = 40;
   private static final int DEFAULT_MAX_BASE_Y = 99;
@@ -59,10 +58,6 @@ public class SpheresPopulator implements IPopulate {
     this.maxBaseY = Math.max(this.minBaseY, PopulatorConfig.getInt(params, "max_base_y", DEFAULT_MAX_BASE_Y));
   }
 
-  /**
-   * Position-deterministic hash for irregularity. Same position always gets the same value
-   * regardless of which chunk is being populated.
-   */
   private static long positionHash(long seed, int x, int y, int z) {
     long h = seed;
     h ^= (long) x * 73856093L;
@@ -104,10 +99,9 @@ public class SpheresPopulator implements IPopulate {
     int chunkMinZ = thisChunkZ << 4;
     int chunkMaxZ = chunkMinZ + 15;
 
-    // Scan this chunk and all neighbors that could have spheres overlapping us
     for (int ncx = thisChunkX - neighborRange; ncx <= thisChunkX + neighborRange; ncx++) {
       for (int ncz = thisChunkZ - neighborRange; ncz <= thisChunkZ + neighborRange; ncz++) {
-        // Deterministic seed per neighbor chunk (independent of visit order)
+
         long chunkSeed = getChunkSeed(ncx, ncz);
         Random chunkRand = new Random(chunkSeed);
 
@@ -115,14 +109,11 @@ public class SpheresPopulator implements IPopulate {
         int neighborMinZ = ncz << 4;
 
         for (int i = 0; i < spheresPerChunk; i++) {
-          // Deterministic spawn chance - skip most chunks
+
           if (chunkRand.nextFloat() >= spawnChance) {
             continue;
           }
 
-          // Compute ALL sphere parameters deterministically BEFORE any skip checks.
-          // Every chunkRand call must happen regardless of whether this sphere
-          // overlaps our chunk, so subsequent spheres stay in sync.
           int cx = neighborMinX + chunkRand.nextInt(16);
           int cz = neighborMinZ + chunkRand.nextInt(16);
           boolean floating = chunkRand.nextFloat() < floatingChance;
@@ -131,29 +122,20 @@ public class SpheresPopulator implements IPopulate {
           BlockState oreCoreBlock = getOreCoreBlock(chunkRand);
           BlockState innerLayerBlock = getInnerLayerBlock(chunkRand);
 
-          // Y offset random - consume regardless of skip
           int yOffset = floating ? (30 + chunkRand.nextInt(70)) : chunkRand.nextInt(20);
 
-          // Irregularity sub-seed - consume regardless of skip
           long irregSeed = chunkRand.nextLong();
 
-          // Decoration sub-seed - consume regardless of skip
           long decorSubSeed = chunkRand.nextLong();
 
-          // Shape selection - consume regardless of skip
           SphereShape shape = pickSphereShape(chunkRand);
           long shapeSeed = chunkRand.nextLong();
 
-          // Quick AABB check: can this sphere overlap our chunk at all?
           if (cx + radius < chunkMinX || cx - radius > chunkMaxX ||
               cz + radius < chunkMinZ || cz - radius > chunkMaxZ) {
             continue;
           }
 
-          // Derive Y deterministically from the sphere's own seed so all chunks
-          // agree on the same center. Reading the heightmap at a neighbor chunk's
-          // coordinates can return wrong values if that chunk isn't generated yet,
-          // causing half-spheres at chunk borders.
           int baseRange = Math.max(1, maxBaseY - minBaseY + 1);
           int baseY = minBaseY + (int) ((irregSeed & 0x7FL) % baseRange);
           int y = floating ? (baseY + 40 + yOffset) : baseY;
@@ -168,9 +150,6 @@ public class SpheresPopulator implements IPopulate {
     }
   }
 
-  /**
-   * Deterministic per-chunk seed based on world seed and chunk coordinates.
-   */
   private long getChunkSeed(int chunkX, int chunkZ) {
     return seed ^ ((long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + 0x5943E5L);
   }
@@ -195,7 +174,6 @@ public class SpheresPopulator implements IPopulate {
       crackPlanes = new CrackPlanes(shapeSeed, radius);
     }
 
-    // Only iterate over the intersection of the sphere's AABB and the current chunk
     int startX = Math.max(-radius, chunkMinX - center.getX());
     int endX = Math.min(radius, chunkMaxX - center.getX());
     int startZ = Math.max(-radius, chunkMinZ - center.getZ());
@@ -206,7 +184,6 @@ public class SpheresPopulator implements IPopulate {
         for (int dz = startZ; dz <= endZ; dz++) {
           double distSq = dx * dx + dy * dy + dz * dz;
 
-          // Position-deterministic irregularity
           int bx = center.getX() + dx;
           int by = center.getY() + dy;
           int bz = center.getZ() + dz;
@@ -243,7 +220,6 @@ public class SpheresPopulator implements IPopulate {
       }
     }
 
-    // Decorations for floating spheres
     if (floating) {
       addFloatingSphereDecorations(world, decorSubSeed, center, radius,
           chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);
@@ -350,8 +326,6 @@ public class SpheresPopulator implements IPopulate {
       int dy = (int) (Math.sin(elevation) * (radius + 1));
       int dz = (int) (Math.sin(angle) * Math.cos(elevation) * (radius + 1));
 
-      // Consume random calls unconditionally to keep decorRand in sync
-      // across all chunks visiting this sphere
       int chance = decorRand.nextInt(4);
       boolean useGlowstone = decorRand.nextBoolean();
 

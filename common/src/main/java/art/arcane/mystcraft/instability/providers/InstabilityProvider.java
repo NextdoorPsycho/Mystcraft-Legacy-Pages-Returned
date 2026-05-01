@@ -12,8 +12,8 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 /**
- * Generic instability provider that creates effects via reflection.
- * This allows flexible effect instantiation with custom arguments.
+ * Generic instability provider that creates effects via reflection. This allows
+ * flexible effect instantiation with custom arguments.
  */
 public class InstabilityProvider implements IInstabilityProvider {
 
@@ -27,7 +27,8 @@ public class InstabilityProvider implements IInstabilityProvider {
   /**
    * Creates a provider that instantiates effects via reflection.
    *
-   * @param useLevel        If true, level is passed as first constructor argument
+   * @param useLevel        If true, level is passed as first constructor
+   *                        argument
    * @param effectClass     The effect class to instantiate
    * @param constructorArgs Arguments to pass to the constructor
    */
@@ -41,7 +42,6 @@ public class InstabilityProvider implements IInstabilityProvider {
     }
     this.constructorArgs = resolvedArgs;
 
-    // Build constructor argument types
     Class<?>[] argTypes = new Class<?>[resolvedArgs.length + (useLevel ? 1 : 0)];
     if (useLevel) {
       argTypes[0] = int.class;
@@ -51,7 +51,6 @@ public class InstabilityProvider implements IInstabilityProvider {
       int index = i + (useLevel ? 1 : 0);
       Class<?> argClass = resolvedArgs[i].getClass();
 
-      // Handle special cases for primitive wrappers
       if (argClass == Integer.class) {
         argTypes[index] = int.class;
       } else if (argClass == Boolean.class) {
@@ -63,7 +62,7 @@ public class InstabilityProvider implements IInstabilityProvider {
       } else if (argClass == Long.class) {
         argTypes[index] = long.class;
       } else if (MobEffect.class.isAssignableFrom(argClass)) {
-        // MobEffect subclasses should match MobEffect parameter
+
         argTypes[index] = MobEffect.class;
       } else {
         argTypes[index] = argClass;
@@ -102,13 +101,12 @@ public class InstabilityProvider implements IInstabilityProvider {
     try {
       Object[] args = constructorArgs;
       if (useLevel) {
-        // Prepend level to arguments
+
         args = new Object[constructorArgs.length + 1];
         args[0] = level;
         System.arraycopy(constructorArgs, 0, args, 1, constructorArgs.length);
       }
 
-      // Create effects based on level
       int count = useLevel ? 1 : level;
       for (int i = 0; i < count; i++) {
         IEnvironmentalEffect effect = constructor.newInstance(args);

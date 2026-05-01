@@ -17,13 +17,13 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Builds an Age configuration from symbols using the CFG grammar system.
- * This is the main entry point for creating Ages from page collections.
+ * Builds an Age configuration from symbols using the CFG grammar system. This
+ * is the main entry point for creating Ages from page collections.
  * <p>
- * Uses the full Context-Free Grammar tree expansion,
- * ensuring diverse and vibrant ages with proper symbol expansion.
- * Post-build fallbacks apply ore variation, timescale shifts,
- * environment effects, and color palettes to fill gaps.
+ * Uses the full Context-Free Grammar tree expansion, ensuring diverse and
+ * vibrant ages with proper symbol expansion. Post-build fallbacks apply ore
+ * variation, timescale shifts, environment effects, and color palettes to fill
+ * gaps.
  */
 public class AgeBuilder {
 
@@ -71,12 +71,11 @@ public class AgeBuilder {
       "caves", "ravines", "dripstone_caves", "lush_caves",
       "deep_dark", "deep_lakes", "perlin_worms"
   );
-  // Stack-based modifier categories are inherently repeatable (push operations)
+
   private static final Set<SymbolCategory> STACKABLE_CATEGORIES = Set.of(
       SymbolCategory.COLOR, SymbolCategory.ANGLE, SymbolCategory.PHASE, SymbolCategory.LENGTH
   );
 
-  // --- Biome/Terrain classification for coherence filtering ---
   private static final float TERRAIN_BLOCK_CHANGE_CHANCE = 0.50f;
   private static final Block[] OVERWORLD_BLOCKS = {
       Blocks.GRANITE, Blocks.DIORITE, Blocks.ANDESITE,
@@ -134,9 +133,9 @@ public class AgeBuilder {
       Blocks.WHITE_CONCRETE, Blocks.LIGHT_GRAY_CONCRETE,
       Blocks.SANDSTONE
   };
-  // Chance that a random/incomplete age gets extra ore generation
+
   private static final float ORE_BOOST_CHANCE = 0.30f;
-  // Chance that a random/incomplete age gets an ore disabled
+
   private static final float ORE_DISABLE_CHANCE = 0.15f;
   private static final String[] EXTRA_ORE_SYMBOLS = {
       "extra_coal_ore", "extra_iron_ore", "extra_copper_ore",
@@ -148,24 +147,24 @@ public class AgeBuilder {
       "no_gold_ore", "no_redstone_ore", "no_diamond_ore",
       "no_lapis_ore", "no_emerald_ore"
   };
-  // Chance that a random age gets a non-default timescale
+
   private static final float TIMESCALE_CHANGE_CHANCE = 0.30f;
   private static final String[] TIMESCALE_SYMBOLS = {
       "env_longer_days", "env_shorter_days", "env_slow_time", "env_static_time"
   };
-  // Weights: longer days is most common, static time is rarest
+
   private static final int[] TIMESCALE_WEIGHTS = {40, 30, 20, 10};
-  // Chance that a random age with high instability gets an environment effect
+
   private static final float ENV_EFFECT_CHANCE = 0.20f;
-  // Higher instability increases the chance of getting an environment effect
+
   private static final float ENV_EFFECT_INSTABILITY_THRESHOLD = 10.0f;
   private static final String[] ENV_EFFECT_SYMBOLS = {
       "env_accelerated", "env_meteors", "env_lightning",
       "env_scorched", "env_explosions"
   };
-  // Weights: accelerated is most common, explosions rarest
+
   private static final int[] ENV_EFFECT_WEIGHTS = {35, 20, 25, 15, 5};
-  // Feature injection: 25% chance to add 1-2 random features
+
   private static final float FEATURE_INJECTION_CHANCE = 0.25f;
   private static final String[] INJECTABLE_FEATURES = {
       "tendrils", "vertical_tendrils", "spheres", "spikes",
@@ -173,14 +172,14 @@ public class AgeBuilder {
       "bonefields", "meat_pillars", "shattered_grid",
       "eyeblight", "inverted_trees", "corrupted_columns"
   };
-  // Biome chaos: 15% chance to inject nether/end biomes into overworld
+
   private static final float BIOME_CHAOS_CHANCE = 0.15f;
   private static final String[] CHAOS_BIOMES = {
       "biome_nether_wastes", "biome_soul_sand_valley", "biome_crimson_forest",
       "biome_warped_forest", "biome_basalt_deltas",
       "biome_the_end", "biome_end_midlands", "biome_end_highlands"
   };
-  // Color palette variety
+
   private static final float MONOCHROME_CHANCE = 0.20f;
   private static final float INVERTED_PALETTE_CHANCE = 0.10f;
   private static final int[] DEFAULT_SKY_COLORS = {
@@ -248,9 +247,6 @@ public class AgeBuilder {
   private float instability;
   private int generatedCount;
 
-  // ===================================================================
-  // --- Terrain Block Bias ---
-  // ===================================================================
   private int missingSymbolCount;
 
   /**
@@ -261,7 +257,6 @@ public class AgeBuilder {
     this.seed = seed;
     this.providedCount = symbols.size();
 
-    // Perform CFG expansion, then enforce coherence
     expandSymbols();
     postProcessSymbols();
   }
@@ -304,10 +299,6 @@ public class AgeBuilder {
     return color == -1 ? "default" : String.format("#%06X", color & 0xFFFFFF);
   }
 
-  /**
-   * Performs CFG-based symbol expansion.
-   * Uses the grammar tree to expand provided symbols into a complete age specification.
-   */
   private void expandSymbols() {
     Random rand = new Random(seed);
 
@@ -362,9 +353,6 @@ public class AgeBuilder {
     LOGGER.debug("[AgeBuilder] Expanded symbols: {}", symbolList);
   }
 
-  /**
-   * Enforces coherence on the expanded symbol list.
-   */
   private void postProcessSymbols() {
     int beforeSize = expandedSymbols.size();
 
@@ -397,16 +385,6 @@ public class AgeBuilder {
     }
   }
 
-  // ===================================================================
-  // --- Ore Variation ---
-  // ===================================================================
-
-  /**
-   * Removes symbols with duplicate registry IDs, keeping the first occurrence.
-   * Symbols that return canDuplicate() == true are exempt from deduplication.
-   * Stack-based modifier categories (COLOR, ANGLE, PHASE, LENGTH) are always
-   * exempt since they push to a stack and repeats are intentional.
-   */
   private void removeDuplicates() {
     Set<ResourceLocation> seen = new HashSet<>();
     Iterator<IAgeSymbol> iterator = expandedSymbols.iterator();
@@ -422,9 +400,6 @@ public class AgeBuilder {
     }
   }
 
-  /**
-   * For singleton categories, keeps only the first symbol and removes subsequent duplicates.
-   */
   private void enforceSingletons() {
     Set<String> seenCategories = new HashSet<>();
     Iterator<IAgeSymbol> iterator = expandedSymbols.iterator();
@@ -441,19 +416,14 @@ public class AgeBuilder {
     }
   }
 
-  /**
-   * Removes ocean/river/beach biomes that the user did not explicitly include.
-   * Preserves at least one biome to avoid leaving the age with no biomes.
-   */
   private void filterRandomOceanBiomes() {
-    // 50% chance to skip ocean filtering entirely - allows wilder ages
+
     Random filterRand = new Random(seed ^ 0x0CEA4L);
     if (filterRand.nextFloat() < 0.5f) {
       LOGGER.debug("[AgeBuilder] Skipping ocean biome filter (chaos roll)");
       return;
     }
 
-    // Build set of user-provided biome paths
     Set<String> userBiomePaths = new HashSet<>();
     for (IAgeSymbol symbol : inputSymbols) {
       if (symbol.getCategory() == SymbolCategory.BIOME) {
@@ -461,7 +431,6 @@ public class AgeBuilder {
       }
     }
 
-    // Count non-ocean biomes to make sure we don't strip everything
     long nonOceanBiomeCount = expandedSymbols.stream()
         .filter(s -> s.getCategory() == SymbolCategory.BIOME)
         .filter(s -> !OCEAN_BIOME_PATHS.contains(s.getRegistryName().getPath()))
@@ -485,9 +454,6 @@ public class AgeBuilder {
     }
   }
 
-  /**
-   * Finds the terrain type string from the first TERRAIN symbol.
-   */
   private String findTerrainType() {
     for (IAgeSymbol symbol : expandedSymbols) {
       if (symbol.getCategory() == SymbolCategory.TERRAIN) {
@@ -500,9 +466,6 @@ public class AgeBuilder {
     return "normal";
   }
 
-  /**
-   * Ensures at least one biome is present for the terrain type.
-   */
   private void filterBiomesByTerrain(String terrainType) {
     if (hasBiome()) {
       return;
@@ -580,10 +543,6 @@ public class AgeBuilder {
     return false;
   }
 
-  // ===================================================================
-  // --- Timescale Variation ---
-  // ===================================================================
-
   private boolean hasBiome() {
     for (IAgeSymbol symbol : expandedSymbols) {
       if (symbol.getCategory() == SymbolCategory.BIOME) {
@@ -593,9 +552,6 @@ public class AgeBuilder {
     return false;
   }
 
-  /**
-   * Removes features incompatible with the terrain type.
-   */
   private void filterFeaturesByTerrain(String terrainType) {
     Set<String> incompatible;
     if (VOID_TERRAINS.contains(terrainType)) {
@@ -619,9 +575,6 @@ public class AgeBuilder {
     }
   }
 
-  /**
-   * Removes all structure symbols from void terrain.
-   */
   private void filterStructuresFromVoid() {
     Iterator<IAgeSymbol> iterator = expandedSymbols.iterator();
     while (iterator.hasNext()) {
@@ -636,9 +589,6 @@ public class AgeBuilder {
     }
   }
 
-  /**
-   * Removes sea modifier symbols when the terrain has no sea.
-   */
   private void removeSeaModifiers() {
     Iterator<IAgeSymbol> iterator = expandedSymbols.iterator();
     while (iterator.hasNext()) {
@@ -655,43 +605,31 @@ public class AgeBuilder {
     }
   }
 
-  // ===================================================================
-  // --- Environment Effect Fallback ---
-  // ===================================================================
-
-  /**
-   * Calculates instability based on symbols present.
-   */
   private float calculateInstability() {
     float total = 0.0f;
 
-    // Generated symbols add base instability
     total += generatedCount * 2.5f;
 
-    // Missing symbols add instability penalty
     total += missingSymbolCount * MISSING_SYMBOL_INSTABILITY;
 
-    // Each symbol contributes its own instability cost
     for (IAgeSymbol symbol : expandedSymbols) {
       total += symbol.getInstabilityCost();
     }
 
-    // Bonus for well-written Ages (low generated count)
     if (generatedCount == 0 && providedCount >= 5 && missingSymbolCount == 0) {
       total *= 0.8f;
     }
 
-    // Global instability reduction
     total *= 0.5f;
 
     return Math.max(0.0f, total);
   }
 
   /**
-   * Builds the Age director with all symbol logic applied.
-   * After symbol application, fallback systems fill in remaining gaps:
-   * terrain block bias, ore variation, timescale variation,
-   * environment effects, and default colors.
+   * Builds the Age director with all symbol logic applied. After symbol
+   * application, fallback systems fill in remaining gaps: terrain block bias,
+   * ore variation, timescale variation, environment effects, and default
+   * colors.
    */
   public AgeDirectorImpl build() {
     if (director != null) {
@@ -703,7 +641,6 @@ public class AgeBuilder {
     LOGGER.debug("Building Age with {} symbols (instability: {})",
         expandedSymbols.size(), instability);
 
-    // Apply each symbol's logic to the director
     Random symbolRand = new Random(seed);
     for (int i = 0; i < expandedSymbols.size(); i++) {
       IAgeSymbol symbol = expandedSymbols.get(i);
@@ -720,14 +657,13 @@ public class AgeBuilder {
 
     applyStarFissureDefault(director, symbolRand);
 
-    // --- Fallback pipeline (gated by completeness) ---
     float completenessRatio = expandedSymbols.isEmpty() ? 0.0f
         : 1.0f - (generatedCount / (float) expandedSymbols.size());
     LOGGER.debug("[AgeBuilder] Completeness ratio: {} ({} provided / {} total)",
         String.format("%.2f", completenessRatio), providedCount, expandedSymbols.size());
 
     if (completenessRatio < 0.8f) {
-      // Halve chances when completeness is 0.5-0.8, full rates below 0.5
+
       float fallbackScale = completenessRatio >= 0.5f ? 0.5f : 1.0f;
       applyTerrainBlockBias(director, symbolRand, fallbackScale);
       applyOreVariation(director, symbolRand, fallbackScale);
@@ -741,7 +677,6 @@ public class AgeBuilder {
       applyDefaultColors(director, symbolRand);
     }
 
-    // Log final director state
     LOGGER.debug("[AgeBuilder] Director state after all symbols applied:");
     LOGGER.debug("[AgeBuilder]   Terrain: type={}, groundLevel={}, seaLevel={}, hasSea={}",
         director.getTerrainType(), director.getAverageGroundLevel(),
@@ -771,7 +706,6 @@ public class AgeBuilder {
       }
     }
 
-    // Set the instability
     director.setInstability(instability);
 
     return director;
@@ -827,10 +761,6 @@ public class AgeBuilder {
     return expandedSymbols;
   }
 
-  // ===================================================================
-  // --- Default Color Palettes ---
-  // ===================================================================
-
   public List<IAgeSymbol> getInputSymbols() {
     return inputSymbols;
   }
@@ -855,9 +785,6 @@ public class AgeBuilder {
     return missingSymbolCount;
   }
 
-  /**
-   * Applies a terrain block bias during random generation.
-   */
   private void applyTerrainBlockBias(AgeDirectorImpl director, Random rand, float fallbackScale) {
     boolean hasExplicitBlock = false;
     for (IAgeSymbol symbol : expandedSymbols) {
@@ -890,13 +817,8 @@ public class AgeBuilder {
         chosen.getName().getString(), terrainType);
   }
 
-  /**
-   * Randomly adds ore boost or ore disable symbols when the grammar
-   * did not produce any explicit ore modifiers. Gives random ages
-   * distinct resource profiles.
-   */
   private void applyOreVariation(AgeDirectorImpl director, Random rand, float fallbackScale) {
-    // Check if any ore modifier was already provided
+
     boolean hasOreModifier = false;
     for (IAgeSymbol symbol : expandedSymbols) {
       String path = symbol.getRegistryName().getPath();
@@ -918,7 +840,6 @@ public class AgeBuilder {
       return;
     }
 
-    // Roll for ore boost (1-3 random extra ore symbols)
     if (rand.nextFloat() < ORE_BOOST_CHANCE * fallbackScale) {
       int boostCount = 1 + rand.nextInt(3);
       Set<Integer> pickedIndices = new HashSet<>();
@@ -936,7 +857,6 @@ public class AgeBuilder {
       }
     }
 
-    // Roll for ore disable (1 random ore disabled)
     if (rand.nextFloat() < ORE_DISABLE_CHANCE * fallbackScale) {
       int idx = rand.nextInt(DISABLE_ORE_SYMBOLS.length);
       IAgeSymbol disableSymbol = SymbolRegistry.get(
@@ -949,12 +869,8 @@ public class AgeBuilder {
     }
   }
 
-  /**
-   * Randomly applies a timescale variation when the grammar didn't produce one.
-   * Gives random ages distinct day/night cycle speeds.
-   */
   private void applyTimescaleVariation(AgeDirectorImpl director, Random rand, float fallbackScale) {
-    // Check if any timescale was already provided
+
     boolean hasTimescale = false;
     for (IAgeSymbol symbol : expandedSymbols) {
       String path = symbol.getRegistryName().getPath();
@@ -969,7 +885,6 @@ public class AgeBuilder {
       return;
     }
 
-    // Also skip if timescale was already set by some other mechanism
     if (director.getTimescale() != 1.0f) {
       return;
     }
@@ -978,7 +893,6 @@ public class AgeBuilder {
       return;
     }
 
-    // Weighted random selection
     int totalWeight = 0;
     for (int weight : TIMESCALE_WEIGHTS) {
       totalWeight += weight;
@@ -998,19 +912,14 @@ public class AgeBuilder {
         new ResourceLocation("mystcraft", TIMESCALE_SYMBOLS[selectedIdx]));
     if (timescaleSymbol != null) {
       timescaleSymbol.registerLogic(director, rand.nextLong());
-      // Reduced instability for fallback-applied timescale
+
       director.addInstability(timescaleSymbol.getInstabilityCost() * 0.3f);
       LOGGER.debug("[AgeBuilder] Applied timescale variation: {}", TIMESCALE_SYMBOLS[selectedIdx]);
     }
   }
 
-  /**
-   * For ages with high instability or random rolls, adds an environmental
-   * effect to create more dangerous dimensions. Unstable ages are more
-   * hostile by nature.
-   */
   private void applyEnvironmentEffects(AgeDirectorImpl director, Random rand, float fallbackScale) {
-    // Check if any env effect was already provided
+
     boolean hasEnvEffect = false;
     for (IAgeSymbol symbol : expandedSymbols) {
       String path = symbol.getRegistryName().getPath();
@@ -1024,7 +933,6 @@ public class AgeBuilder {
       return;
     }
 
-    // Higher instability makes env effects more likely
     float effectChance = ENV_EFFECT_CHANCE * fallbackScale;
     if (instability > ENV_EFFECT_INSTABILITY_THRESHOLD) {
       float instabilityBonus = (instability - ENV_EFFECT_INSTABILITY_THRESHOLD) * 0.005f;
@@ -1035,7 +943,6 @@ public class AgeBuilder {
       return;
     }
 
-    // Weighted random selection
     int totalWeight = 0;
     for (int weight : ENV_EFFECT_WEIGHTS) {
       totalWeight += weight;
@@ -1060,9 +967,6 @@ public class AgeBuilder {
     }
   }
 
-  /**
-   * Injects 1-2 random features when the grammar didn't already generate them.
-   */
   private void applyFeatureInjection(AgeDirectorImpl director, Random rand, float fallbackScale) {
     if (rand.nextFloat() >= FEATURE_INJECTION_CHANCE * fallbackScale) {
       return;
@@ -1097,9 +1001,6 @@ public class AgeBuilder {
     }
   }
 
-  /**
-   * Injects nether/end biomes into overworld terrain ages for truly alien dimensions.
-   */
   private void applyBiomeChaos(AgeDirectorImpl director, Random rand, float fallbackScale) {
     String terrainType = findTerrainType();
     if (NETHER_TERRAINS.contains(terrainType) || END_TERRAINS.contains(terrainType)
@@ -1124,20 +1025,15 @@ public class AgeBuilder {
     }
   }
 
-  /**
-   * Generates random colors for sky, fog, cloud, grass, foliage, water,
-   * sunset, night sky, and horizon when the grammar didn't produce color
-   * symbols. Each Age gets a unique visual signature.
-   */
   private void applyDefaultColors(AgeDirectorImpl director, Random rand) {
-    // Monochrome palette: pick a hue family and use it for everything
+
     if (rand.nextFloat() < MONOCHROME_CHANCE) {
       int[][] hueFamily = {
-          {0x4B0082, 0x6A0DAD, 0x9370DB, 0xB19CD9, 0xE6E6FA}, // Purple
-          {0x8B0000, 0xDC143C, 0xFF6347, 0xFFB6C1, 0xFFF0F5}, // Red/Rose
-          {0x006400, 0x228B22, 0x32CD32, 0x98FB98, 0xF0FFF0}, // Green
-          {0x00008B, 0x4169E1, 0x6495ED, 0xADD8E6, 0xF0F8FF}, // Blue
-          {0x8B4513, 0xD2691E, 0xDEB887, 0xFFDEAD, 0xFFF8DC}, // Brown/Amber
+          {0x4B0082, 0x6A0DAD, 0x9370DB, 0xB19CD9, 0xE6E6FA},
+          {0x8B0000, 0xDC143C, 0xFF6347, 0xFFB6C1, 0xFFF0F5},
+          {0x006400, 0x228B22, 0x32CD32, 0x98FB98, 0xF0FFF0},
+          {0x00008B, 0x4169E1, 0x6495ED, 0xADD8E6, 0xF0F8FF},
+          {0x8B4513, 0xD2691E, 0xDEB887, 0xFFDEAD, 0xFFF8DC},
       };
       int[] family = hueFamily[rand.nextInt(hueFamily.length)];
       if (director.getSkyColor() == -1 && !director.isSkyColorNatural()) {
@@ -1163,7 +1059,6 @@ public class AgeBuilder {
       return;
     }
 
-    // Inverted palette: dark sky, bright fog, unusual grass/foliage
     if (rand.nextFloat() < INVERTED_PALETTE_CHANCE) {
       if (director.getSkyColor() == -1 && !director.isSkyColorNatural()) {
         director.setSkyColor(0x0A0A2E);
@@ -1230,7 +1125,6 @@ public class AgeBuilder {
       LOGGER.debug("[AgeBuilder] Applied default water color: #{}", String.format("%06X", color));
     }
 
-    // Sunset color: 30% chance
     if (director.getSunsetColor() == -1 && rand.nextFloat() < 0.30f) {
       int color = DEFAULT_SUNSET_COLORS[rand.nextInt(DEFAULT_SUNSET_COLORS.length)];
       director.setSunsetColor(color);
@@ -1238,7 +1132,6 @@ public class AgeBuilder {
       LOGGER.debug("[AgeBuilder] Applied default sunset color: #{}", String.format("%06X", color));
     }
 
-    // Night sky color: 25% chance
     if (director.getNightSkyColor() == -1 && rand.nextFloat() < 0.25f) {
       int color = DEFAULT_NIGHT_SKY_COLORS[rand.nextInt(DEFAULT_NIGHT_SKY_COLORS.length)];
       director.setNightSkyColor(color);
@@ -1246,7 +1139,6 @@ public class AgeBuilder {
       LOGGER.debug("[AgeBuilder] Applied default night sky color: #{}", String.format("%06X", color));
     }
 
-    // Horizon color: 20% chance
     if (director.getHorizonColor() == -1 && !director.isHorizonColorNatural() && rand.nextFloat() < 0.20f) {
       int color = DEFAULT_HORIZON_COLORS[rand.nextInt(DEFAULT_HORIZON_COLORS.length)];
       director.setHorizonColor(color);

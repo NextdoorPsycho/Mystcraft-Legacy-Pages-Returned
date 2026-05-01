@@ -4,8 +4,8 @@ import art.arcane.mystcraft.api.world.AgeDirector;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Base interface for Age symbols.
- * Symbols define world properties for Ages (dimensions).
+ * Base interface for Age symbols. Symbols define world properties for Ages
+ * (dimensions).
  */
 public interface IAgeSymbol {
 
@@ -24,8 +24,8 @@ public interface IAgeSymbol {
   SymbolCategory getCategory();
 
   /**
-   * Registers this symbol's logic with the Age director.
-   * This is called when building an Age to apply the symbol's effects.
+   * Registers this symbol's logic with the Age director. This is called when
+   * building an Age to apply the symbol's effects.
    *
    * @param director The Age director to register logic with
    * @param seed     The world seed for deterministic generation
@@ -40,8 +40,8 @@ public interface IAgeSymbol {
   String getLocalizedName();
 
   /**
-   * Gets the instability modifier for this symbol.
-   * Higher values mean more instability.
+   * Gets the instability modifier for this symbol. Higher values mean more
+   * instability.
    *
    * @param count The number of times this symbol appears
    * @return The instability modifier
@@ -60,8 +60,8 @@ public interface IAgeSymbol {
   }
 
   /**
-   * Gets the card rank for this symbol (rarity tier).
-   * Higher ranks are rarer. Null means not found in loot.
+   * Gets the card rank for this symbol (rarity tier). Higher ranks are rarer.
+   * Null means not found in loot.
    *
    * @return The card rank, or null if not lootable
    */
@@ -84,8 +84,8 @@ public interface IAgeSymbol {
   }
 
   /**
-   * Whether this symbol can appear multiple times in an Age.
-   * Symbols that accumulate effects (like color targets) should return true.
+   * Whether this symbol can appear multiple times in an Age. Symbols that
+   * accumulate effects (like color targets) should return true.
    *
    * @return true if duplicates are allowed
    */
@@ -94,15 +94,14 @@ public interface IAgeSymbol {
   }
 
   /**
-   * Optional presentation override loaded from datapack JSON. When
-   * non-null, the procedural-symbol page renderer uses the supplied
-   * motif name, palette overlay, and per-word seed pins to compose a
-   * curated "hero" treatment instead of the auto-generated category
-   * default. Returning {@code null} (the default) keeps the symbol on
-   * the auto-generated path.
+   * Optional presentation override loaded from datapack JSON. When non-null,
+   * the procedural-symbol page renderer uses the supplied motif name, palette
+   * overlay, and per-word seed pins to compose a curated "hero" treatment
+   * instead of the auto-generated category default. Returning {@code null} (the
+   * default) keeps the symbol on the auto-generated path.
    *
    * @return the per-symbol presentation override, or {@code null} for
-   *         category-default rendering
+   * category-default rendering
    */
   default art.arcane.mystcraft.datapack.symbol.SymbolDisplay getDisplay() {
     return null;

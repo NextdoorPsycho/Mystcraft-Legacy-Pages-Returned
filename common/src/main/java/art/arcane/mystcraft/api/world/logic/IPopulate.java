@@ -10,23 +10,25 @@ import net.minecraft.world.level.block.state.BlockState;
  * Examples include trees, flowers, ores, and custom decorations.
  * <p>
  * Population happens during the FEATURES chunk status via
- * applyBiomeDecoration(), NOT after chunk loading. The WorldGenLevel
- * parameter is typically a WorldGenRegion which provides a limited view
- * of the world optimized for world generation.
+ * applyBiomeDecoration(), NOT after chunk loading. The WorldGenLevel parameter
+ * is typically a WorldGenRegion which provides a limited view of the world
+ * optimized for world generation.
  * <p>
- * Important: WorldGenLevel.setBlock() during worldgen does NOT trigger
- * lighting updates or neighbor chunk loads like ServerLevel.setBlock() does.
- * This is the proper way to place blocks during world generation.
+ * Important: WorldGenLevel.setBlock() during worldgen does NOT trigger lighting
+ * updates or neighbor chunk loads like ServerLevel.setBlock() does. This is the
+ * proper way to place blocks during world generation.
  */
 public interface IPopulate {
 
   /**
-   * Populates a chunk with decorations.
-   * Called during the FEATURES chunk status via applyBiomeDecoration().
+   * Populates a chunk with decorations. Called during the FEATURES chunk status
+   * via applyBiomeDecoration().
    *
-   * @param world    The world gen level (typically a WorldGenRegion during generation)
+   * @param world    The world gen level (typically a WorldGenRegion during
+   *                 generation)
    * @param random   The random source for this chunk
-   * @param chunkPos The position of the chunk being populated (block coordinates of chunk corner)
+   * @param chunkPos The position of the chunk being populated (block
+   *                 coordinates of chunk corner)
    */
   void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos);
 
@@ -39,8 +41,9 @@ public interface IPopulate {
 
   /**
    * Checks if a block position is within the writable area for the given chunk.
-   * The writable area extends 1 chunk (16 blocks) in each direction from the chunk boundaries,
-   * matching the WorldGenRegion's write radius for feature generation.
+   * The writable area extends 1 chunk (16 blocks) in each direction from the
+   * chunk boundaries, matching the WorldGenRegion's write radius for feature
+   * generation.
    *
    * @param pos      The position to check
    * @param chunkPos The chunk origin (block coordinates of chunk corner)
@@ -49,14 +52,15 @@ public interface IPopulate {
   default boolean isInWritableArea(BlockPos pos, BlockPos chunkPos) {
     int chunkMinX = chunkPos.getX();
     int chunkMinZ = chunkPos.getZ();
-    // Allow writing within the chunk and 1 chunk border in each direction
+
     return pos.getX() >= chunkMinX - 16 && pos.getX() < chunkMinX + 32 &&
         pos.getZ() >= chunkMinZ - 16 && pos.getZ() < chunkMinZ + 32;
   }
 
   /**
-   * Safely places a block only if the position is within the writable area.
-   * Use this instead of world.setBlock() in populators to avoid "far chunk" errors.
+   * Safely places a block only if the position is within the writable area. Use
+   * this instead of world.setBlock() in populators to avoid "far chunk"
+   * errors.
    *
    * @param world    The world gen level
    * @param pos      The position to place the block

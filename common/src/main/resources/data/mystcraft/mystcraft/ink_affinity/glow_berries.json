@@ -1,5 +1,7 @@
 {
-  "items": ["minecraft:glow_berries"],
+  "items": [
+    "minecraft:glow_berries"
+  ],
   "amount_per_item": 0.4,
   "tier_bonus": 0,
   "symbol_weights": {

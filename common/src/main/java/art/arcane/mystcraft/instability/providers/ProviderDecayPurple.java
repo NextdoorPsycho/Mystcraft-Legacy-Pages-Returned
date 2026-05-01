@@ -6,8 +6,8 @@ import art.arcane.mystcraft.block.DecayBlock;
 import art.arcane.mystcraft.instability.effects.EffectDecay;
 
 /**
- * Provider for purple decay effects.
- * Purple decay spreads and deals moderate damage.
+ * Provider for purple decay effects. Purple decay spreads and deals moderate
+ * damage.
  */
 public class ProviderDecayPurple implements IInstabilityProvider {
 

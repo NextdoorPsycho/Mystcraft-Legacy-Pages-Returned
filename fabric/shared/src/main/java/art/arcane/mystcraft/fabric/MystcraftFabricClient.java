@@ -5,6 +5,7 @@ import art.arcane.mystcraft.client.FabricAgeBlockColorHandler;
 import art.arcane.mystcraft.client.PocketHeadClientSync;
 import art.arcane.mystcraft.client.gui.procedural.ProceduralUiReload;
 import art.arcane.mystcraft.client.model.WritingDeskModel;
+import art.arcane.mystcraft.client.render.BookItemRendererBEWLR;
 import art.arcane.mystcraft.client.render.DrawableWordManager;
 import art.arcane.mystcraft.client.render.PageItemRendererBEWLR;
 import art.arcane.mystcraft.client.renderer.*;
@@ -22,8 +23,8 @@ import net.minecraft.server.packs.PackType;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
 
 /**
- * Fabric client entry point for Mystcraft 1.20.1.
- * Self-contained - does not pull from fabric/src.
+ * Fabric client entry point for Mystcraft 1.20.1. Self-contained - does not
+ * pull from fabric/src.
  */
 public class MystcraftFabricClient implements ClientModInitializer {
 
@@ -31,24 +32,18 @@ public class MystcraftFabricClient implements ClientModInitializer {
   public void onInitializeClient() {
     Mystcraft.LOGGER.info("[Mystcraft] Client setup (1.20.1)");
 
-    // Register client-side network receivers for S->C packets
     FabricMystcraftNetwork.registerClient();
 
-    // Client -> Server head palette sync (dev/offline-safe)
     ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> PocketHeadClientSync.requestSend());
     ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> PocketHeadClientSync.reset());
     ClientTickEvents.END_CLIENT_TICK.register(client -> PocketHeadClientSync.tick());
 
-    // Initialize client-side systems
     DrawableWordManager.initialize();
     PageItemRendererBEWLR.prewarmCache();
 
-    // Procedural UI: register reload listener so theme + dynamic textures
-    // are flushed when the player swaps resource packs (or hits F3+T).
     ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
         .registerReloadListener(new FabricReloadListeners.ProceduralUiReloadListener());
 
-    // Register menu screens
     ScreenRegistry.register(FabricRegistries.INK_MIXER_MENU.get(), InkMixerScreen::new);
     ScreenRegistry.register(FabricRegistries.BOOK_BINDER_MENU.get(), BookBinderScreen::new);
     ScreenRegistry.register(FabricRegistries.LINK_MODIFIER_MENU.get(), LinkModifierScreen::new);
@@ -56,22 +51,18 @@ public class MystcraftFabricClient implements ClientModInitializer {
     ScreenRegistry.register(FabricRegistries.FOLDER_MENU.get(), FolderScreen::new);
     ScreenRegistry.register(FabricRegistries.PORTFOLIO_MENU.get(), PortfolioScreen::new);
 
-    // Register block entity renderers
     BlockEntityRendererRegistry.register(FabricRegistries.STAR_FISSURE_BE.get(), StarFissureRenderer::new);
     BlockEntityRendererRegistry.register(FabricRegistries.WRITING_DESK_BE.get(), WritingDeskRenderer::new);
     BlockEntityRendererRegistry.register(FabricRegistries.BOOK_RECEPTACLE_BE.get(), BookReceptacleRenderer::new);
 
-    // Register entity renderers
     EntityRendererRegistry.register(FabricRegistries.LINKBOOK_ENTITY.get(), LinkbookEntityRenderer::new);
     EntityRendererRegistry.register(FabricRegistries.PERSONAL_POCKET_PROXY_ENTITY.get(), PersonalPocketProxyRenderer::new);
     EntityRendererRegistry.register(FabricRegistries.METEOR_ENTITY.get(), MeteorEntityRenderer::new);
     EntityRendererRegistry.register(FabricRegistries.FALLING_BLOCK_ENTITY.get(), MystcraftFallingBlockRenderer::new);
     EntityRendererRegistry.register(FabricRegistries.COLORED_LIGHTNING_ENTITY.get(), ColoredLightningRenderer::new);
 
-    // Register model layers
     EntityModelLayerRegistry.registerModelLayer(WritingDeskModel.LAYER_LOCATION, WritingDeskModel::createBodyLayer);
 
-    // Register item colors
     ColorProviderRegistry.ITEM.register(
         (stack, tintIndex) -> 0xFF303030,
         FabricRegistries.GUIDEBOOK.get());
@@ -79,24 +70,31 @@ public class MystcraftFabricClient implements ClientModInitializer {
         (stack, tintIndex) -> tintIndex == 1 ? 0xFF1A1A1A : 0xFFFFFFFF,
         FabricRegistries.INK_BUCKET.get());
 
-    // Register Mystcraft age-related block/item colors
     FabricAgeBlockColorHandler.register();
 
-    // Register fluid render handler for black ink
     FluidRenderHandlerRegistry.INSTANCE.register(
         FabricRegistries.BLACK_INK_SOURCE.get(),
         FabricRegistries.BLACK_INK_FLOWING.get(),
         new SimpleFluidRenderHandler(
             new ResourceLocation(Mystcraft.MOD_ID, "blocks/fluid"),
             new ResourceLocation(Mystcraft.MOD_ID, "blocks/fluid_flow"),
-            0xFF1A1A1A  // Dark gray/black tint
+            0xFF1A1A1A
         ));
 
-    // Register BEWLR for page item
     BuiltinItemRendererRegistry.INSTANCE.register(
         FabricRegistries.PAGE.get(),
         (stack, mode, poseStack, bufferSource, light, overlay) ->
             PageItemRendererBEWLR.getInstance().renderByItem(
                 stack, mode, poseStack, bufferSource, light, overlay));
+
+    var bookRenderer = (net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry.DynamicItemRenderer)
+        (stack, mode, poseStack, bufferSource, light, overlay) ->
+            BookItemRendererBEWLR.getInstance().renderByItem(
+                stack, mode, poseStack, bufferSource, light, overlay);
+    BuiltinItemRendererRegistry.INSTANCE.register(FabricRegistries.AGEBOOK.get(), bookRenderer);
+    BuiltinItemRendererRegistry.INSTANCE.register(FabricRegistries.LINKBOOK.get(), bookRenderer);
+    BuiltinItemRendererRegistry.INSTANCE.register(FabricRegistries.PERSONAL_LINK_BOOK.get(), bookRenderer);
+    BuiltinItemRendererRegistry.INSTANCE.register(FabricRegistries.LINKBOOK_UNLINKED.get(), bookRenderer);
+    BuiltinItemRendererRegistry.INSTANCE.register(FabricRegistries.GUIDEBOOK.get(), bookRenderer);
   }
 }

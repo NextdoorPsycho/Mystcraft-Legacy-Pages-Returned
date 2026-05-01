@@ -8,8 +8,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Manages instability bonuses and penalties for an Age.
- * Bonuses can modify the effective instability level.
+ * Manages instability bonuses and penalties for an Age. Bonuses can modify the
+ * effective instability level.
  */
 public class InstabilityBonusManager {
 
@@ -83,8 +83,8 @@ public class InstabilityBonusManager {
   }
 
   /**
-   * Gets the total bonus/penalty value.
-   * Positive = stability bonus, Negative = instability penalty.
+   * Gets the total bonus/penalty value. Positive = stability bonus, Negative =
+   * instability penalty.
    */
   public int getResult() {
     return total;
@@ -151,7 +151,8 @@ public class InstabilityBonusManager {
     String getName();
 
     /**
-     * Gets the current value (positive = bonus/stability, negative = penalty/instability).
+     * Gets the current value (positive = bonus/stability, negative =
+     * penalty/instability).
      */
     int getValue();
 

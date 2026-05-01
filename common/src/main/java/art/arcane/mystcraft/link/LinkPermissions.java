@@ -15,29 +15,23 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 /**
- * Manages linking permissions for Mystcraft dimensions.
- * Controls who can enter or depart from specific Ages.
+ * Manages linking permissions for Mystcraft dimensions. Controls who can enter
+ * or depart from specific Ages.
  */
 public class LinkPermissions extends SavedData {
 
   private static final String DATA_NAME = Mystcraft.MOD_ID + "_link_permissions";
 
-  // Age UID -> Set of player UUIDs who are BLOCKED from entry
   private final Map<Integer, Set<UUID>> entryBlacklist = new HashMap<>();
 
-  // Age UID -> Set of player UUIDs who are ALLOWED entry (whitelist mode)
   private final Map<Integer, Set<UUID>> entryWhitelist = new HashMap<>();
 
-  // Age UID -> true if using whitelist mode (only listed players can enter)
   private final Map<Integer, Boolean> whitelistMode = new HashMap<>();
 
-  // Age UID -> Set of player UUIDs who cannot DEPART from the age
   private final Map<Integer, Set<UUID>> departureBlocked = new HashMap<>();
 
-  // Age UID -> Owner UUID (owner always has full access)
   private final Map<Integer, UUID> ageOwners = new HashMap<>();
 
-  // Global admins who bypass all restrictions
   private final Set<UUID> globalAdmins = new HashSet<>();
 
   public LinkPermissions() {
@@ -50,7 +44,6 @@ public class LinkPermissions extends SavedData {
   public static LinkPermissions load(CompoundTag tag) {
     LinkPermissions permissions = new LinkPermissions();
 
-    // Load entry blacklist
     if (tag.contains("EntryBlacklist", Tag.TAG_COMPOUND)) {
       CompoundTag blacklist = tag.getCompound("EntryBlacklist");
       for (String key : blacklist.getAllKeys()) {
@@ -60,7 +53,6 @@ public class LinkPermissions extends SavedData {
       }
     }
 
-    // Load entry whitelist
     if (tag.contains("EntryWhitelist", Tag.TAG_COMPOUND)) {
       CompoundTag whitelist = tag.getCompound("EntryWhitelist");
       for (String key : whitelist.getAllKeys()) {
@@ -70,7 +62,6 @@ public class LinkPermissions extends SavedData {
       }
     }
 
-    // Load whitelist mode flags
     if (tag.contains("WhitelistMode", Tag.TAG_COMPOUND)) {
       CompoundTag modes = tag.getCompound("WhitelistMode");
       for (String key : modes.getAllKeys()) {
@@ -79,7 +70,6 @@ public class LinkPermissions extends SavedData {
       }
     }
 
-    // Load departure blocked
     if (tag.contains("DepartureBlocked", Tag.TAG_COMPOUND)) {
       CompoundTag blocked = tag.getCompound("DepartureBlocked");
       for (String key : blocked.getAllKeys()) {
@@ -89,7 +79,6 @@ public class LinkPermissions extends SavedData {
       }
     }
 
-    // Load age owners
     if (tag.contains("AgeOwners", Tag.TAG_COMPOUND)) {
       CompoundTag owners = tag.getCompound("AgeOwners");
       for (String key : owners.getAllKeys()) {
@@ -98,7 +87,6 @@ public class LinkPermissions extends SavedData {
       }
     }
 
-    // Load global admins
     if (tag.contains("GlobalAdmins", Tag.TAG_LIST)) {
       permissions.globalAdmins.addAll(loadUUIDSet(tag.getList("GlobalAdmins", Tag.TAG_STRING)));
     }
@@ -125,11 +113,9 @@ public class LinkPermissions extends SavedData {
     return list;
   }
 
-  // --- Permission Checks ---
-
   /**
-   * Gets the LinkPermissions for a server.
-   * Uses version-specific SavedData API through Services.VERSION.
+   * Gets the LinkPermissions for a server. Uses version-specific SavedData API
+   * through Services.VERSION.
    */
   public static LinkPermissions get(MinecraftServer server) {
     return Services.VERSION.computeSavedData(
@@ -141,42 +127,37 @@ public class LinkPermissions extends SavedData {
   }
 
   public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
-    // Save entry blacklist
+
     CompoundTag blacklist = new CompoundTag();
     for (Map.Entry<Integer, Set<UUID>> entry : entryBlacklist.entrySet()) {
       blacklist.put(String.valueOf(entry.getKey()), saveUUIDSet(entry.getValue()));
     }
     tag.put("EntryBlacklist", blacklist);
 
-    // Save entry whitelist
     CompoundTag whitelist = new CompoundTag();
     for (Map.Entry<Integer, Set<UUID>> entry : entryWhitelist.entrySet()) {
       whitelist.put(String.valueOf(entry.getKey()), saveUUIDSet(entry.getValue()));
     }
     tag.put("EntryWhitelist", whitelist);
 
-    // Save whitelist mode flags
     CompoundTag modes = new CompoundTag();
     for (Map.Entry<Integer, Boolean> entry : whitelistMode.entrySet()) {
       modes.putBoolean(String.valueOf(entry.getKey()), entry.getValue());
     }
     tag.put("WhitelistMode", modes);
 
-    // Save departure blocked
     CompoundTag blocked = new CompoundTag();
     for (Map.Entry<Integer, Set<UUID>> entry : departureBlocked.entrySet()) {
       blocked.put(String.valueOf(entry.getKey()), saveUUIDSet(entry.getValue()));
     }
     tag.put("DepartureBlocked", blocked);
 
-    // Save age owners
     CompoundTag owners = new CompoundTag();
     for (Map.Entry<Integer, UUID> entry : ageOwners.entrySet()) {
       owners.putString(String.valueOf(entry.getKey()), entry.getValue().toString());
     }
     tag.put("AgeOwners", owners);
 
-    // Save global admins
     tag.put("GlobalAdmins", saveUUIDSet(globalAdmins));
 
     return tag;
@@ -186,32 +167,27 @@ public class LinkPermissions extends SavedData {
     return save(tag);
   }
 
-  // --- Permission Management ---
-
   /**
    * Checks if a player can enter the specified Age.
    */
   public boolean canEnter(ServerPlayer player, int ageUID) {
     UUID playerId = player.getUUID();
 
-    // Global admins can always enter
     if (globalAdmins.contains(playerId)) {
       return true;
     }
 
-    // Owners can always enter their age
     UUID owner = ageOwners.get(ageUID);
     if (owner != null && owner.equals(playerId)) {
       return true;
     }
 
-    // Check if whitelist mode is enabled
     if (Boolean.TRUE.equals(whitelistMode.get(ageUID))) {
-      // Whitelist mode: only whitelisted players can enter
+
       Set<UUID> allowed = entryWhitelist.get(ageUID);
       return allowed != null && allowed.contains(playerId);
     } else {
-      // Blacklist mode: check if player is blocked
+
       Set<UUID> blocked = entryBlacklist.get(ageUID);
       return blocked == null || !blocked.contains(playerId);
     }
@@ -223,18 +199,15 @@ public class LinkPermissions extends SavedData {
   public boolean canDepart(ServerPlayer player, int ageUID) {
     UUID playerId = player.getUUID();
 
-    // Global admins can always depart
     if (globalAdmins.contains(playerId)) {
       return true;
     }
 
-    // Owners can always depart from their age
     UUID owner = ageOwners.get(ageUID);
     if (owner != null && owner.equals(playerId)) {
       return true;
     }
 
-    // Check departure block list
     Set<UUID> blocked = departureBlocked.get(ageUID);
     return blocked == null || !blocked.contains(playerId);
   }
@@ -358,8 +331,6 @@ public class LinkPermissions extends SavedData {
     globalAdmins.remove(player);
     setDirty();
   }
-
-  // --- Data Access ---
 
   /**
    * Checks if a player is a global admin.

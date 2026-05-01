@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Contains all content for the Mystcraft Guidebook.
- * Comprehensive reference covering every system in the mod.
+ * Contains all content for the Mystcraft Guidebook. Comprehensive reference
+ * covering every system in the mod.
  */
 public class GuidebookContent {
 
@@ -61,8 +61,6 @@ public class GuidebookContent {
     chapters.add(createDimensionTypes());
   }
 
-  // --- Chapter 1: Core Concepts ---
-
   private GuidebookChapter createCoreConcepts() {
     return GuidebookChapter.create("Core Concepts")
         .addPage("Ages",
@@ -86,8 +84,6 @@ public class GuidebookContent {
                 "specific coordinates. Both can be placed in Book Receptacles " +
                 "to create portal structures.");
   }
-
-  // --- Chapter 2: Items ---
 
   private GuidebookChapter createItems() {
     return GuidebookChapter.create("Items")
@@ -136,8 +132,6 @@ public class GuidebookContent {
                 "empty vanilla bucket as craft remainder.");
   }
 
-  // --- Chapter 3: Blocks ---
-
   private GuidebookChapter createBlocks() {
     return GuidebookChapter.create("Blocks")
         .addPage("Writing Desk",
@@ -161,11 +155,20 @@ public class GuidebookContent {
                 "intra-linking, relative, maintain momentum.")
         .addPage("Book Receptacle",
             "Mounts on any face of a Crystal Block (top or sides — not the " +
-                "bottom). Insert a Linkbook or Agebook to fire the portal " +
-                "frame; sneak + empty hand to retrieve the book and shut the " +
-                "portal down. Right-click with an empty hand to open the " +
-                "stored book. Emits a redstone signal of 15 while a book is " +
-                "present.")
+                "bottom). Insert a Linkbook, Personal Link Book, or " +
+                "Descriptive Book to fire the portal frame; sneak + empty " +
+                "hand to retrieve the book and shut the portal down. Right- " +
+                "click with an empty hand to open the stored book. Emits a " +
+                "redstone signal of 15 while a book is present.")
+        .addPage("Receptacle Portal Color",
+            "The portal tint changes with the book inserted:\n" +
+                "Linkbook: Bright Mystcraft blue\n" +
+                "Linked Descriptive Book: Destination Age sky color\n" +
+                "Personal Link Book: Violet\n" +
+                "Unwritten/blank Descriptive Book: Cool grey\n" +
+                "An unwritten Descriptive Book with a Link Panel on page 1 " +
+                "is also accepted — when first traversed, the Age is " +
+                "auto-written and the receptacle re-tints.")
         .addPage("Lectern",
             "Vanilla display stand for readable books. Open a linked book " +
                 "from the lectern GUI to use its link controls without adding " +
@@ -201,8 +204,6 @@ public class GuidebookContent {
                 "with Ink Bucket.");
   }
 
-  // --- Chapter 4: Entities ---
-
   private GuidebookChapter createEntities() {
     return GuidebookChapter.create("Entities")
         .addPage("Linkbook Entity",
@@ -222,8 +223,6 @@ public class GuidebookContent {
                 "Falling Block: Custom falling block for decay physics (0.98x0.98).\n\n" +
                 "Dummy: Utility/placeholder, no tracking/save/summon.");
   }
-
-  // --- Chapter 5: Symbol System ---
 
   private GuidebookChapter createSymbolSystem() {
     return GuidebookChapter.create("Symbol System")
@@ -255,8 +254,6 @@ public class GuidebookContent {
                 "SPECIAL: Unique effects\n\n" +
                 "Singleton = only one allowed per Age.");
   }
-
-  // --- Chapter 6: Terrain Symbols ---
 
   private GuidebookChapter createTerrainSymbols() {
     return GuidebookChapter.create("Terrain")
@@ -297,8 +294,6 @@ public class GuidebookContent {
                 "Ceiling above, no sky visible. Underground dimension type.");
   }
 
-  // --- Chapter 7: Biome Symbols ---
-
   private GuidebookChapter createBiomeSymbols() {
     return GuidebookChapter.create("Biomes")
         .addPage("Biome Controllers",
@@ -332,8 +327,6 @@ public class GuidebookContent {
                 "All instability 0.0, rank 1.");
   }
 
-  // --- Chapter 8: Weather Symbols ---
-
   private GuidebookChapter createWeatherSymbols() {
     return GuidebookChapter.create("Weather")
         .addPage("Weather Symbols",
@@ -356,8 +349,6 @@ public class GuidebookContent {
                 "changes at 0.01 per tick.");
   }
 
-  // --- Chapter 12: Lighting Symbols ---
-
   private GuidebookChapter createLightingSymbols() {
     return GuidebookChapter.create("Lighting")
         .addPage("Lighting Symbols",
@@ -372,8 +363,6 @@ public class GuidebookContent {
                 "50%/70%. Reduced ambient light makes navigation dangerous.\n" +
                 "Nether: Dim, consistent glow similar to the Nether dimension.");
   }
-
-  // --- Chapter 13: Feature Symbols ---
 
   private GuidebookChapter createFeatureSymbols() {
     return GuidebookChapter.create("Features")
@@ -409,8 +398,6 @@ public class GuidebookContent {
                 "actively stabilizes the Age. It generates the exit portal.");
   }
 
-  // --- Chapter 14: Structure Symbols ---
-
   private GuidebookChapter createStructureSymbols() {
     return GuidebookChapter.create("Structures")
         .addPage("Basic Structures",
@@ -442,8 +429,6 @@ public class GuidebookContent {
                 "contribute more instability to the Age. Balance " +
                 "carefully when writing.");
   }
-
-  // --- Chapter 15: Color System ---
 
   private GuidebookChapter createColorSystem() {
     return GuidebookChapter.create("Colors")
@@ -489,8 +474,6 @@ public class GuidebookContent {
                 "gradient_apply_sunset: Blends/applies");
   }
 
-  // --- Chapter 16: Modifier Symbols ---
-
   private GuidebookChapter createModifierSymbols() {
     return GuidebookChapter.create("Modifiers")
         .addPage("Direction Modifiers",
@@ -530,8 +513,6 @@ public class GuidebookContent {
                 "Star Fissure is highly stabilizing at -25.");
   }
 
-  // --- Chapter 17: Environment Symbols ---
-
   private GuidebookChapter createEnvironmentSymbols() {
     return GuidebookChapter.create("Environment")
         .addPage("Environment Effects",
@@ -549,8 +530,6 @@ public class GuidebookContent {
                 "Also Category: ENVIRONMENT. Affect the day/night " +
                 "cycle speed of the Age.");
   }
-
-  // --- Chapter 18: Ore/Fluid/Block Symbols ---
 
   private GuidebookChapter createOreFluidSymbols() {
     return GuidebookChapter.create("Ores & Fluids")
@@ -579,8 +558,6 @@ public class GuidebookContent {
                 "variants, and more. Each has appropriate instability " +
                 "based on the block's value.");
   }
-
-  // --- Chapter 19: Grammar Engine ---
 
   private GuidebookChapter createGrammarEngine() {
     return GuidebookChapter.create("Grammar")
@@ -638,8 +615,6 @@ public class GuidebookContent {
                 "Specify everything you can to minimize randomness " +
                 "and instability.");
   }
-
-  // --- Chapter 20: World Generation ---
 
   private GuidebookChapter createWorldGeneration() {
     return GuidebookChapter.create("World Gen")
@@ -707,8 +682,6 @@ public class GuidebookContent {
                 "subsurface placement based on biome type.");
   }
 
-  // --- Chapter 21: Instability System ---
-
   private GuidebookChapter createInstabilitySystem() {
     return GuidebookChapter.create("Instability")
         .addPage("Rating Tiers",
@@ -747,8 +720,6 @@ public class GuidebookContent {
                 "threshold) / range, 1.0))\n\n" +
                 "Effects scale from weak to devastating based on instability.");
   }
-
-  // --- Chapter 23: Instability Effects ---
 
   private GuidebookChapter createInstabilityEffects() {
     return GuidebookChapter.create("Effects")
@@ -817,8 +788,6 @@ public class GuidebookContent {
                 "in high-instability Ages.");
   }
 
-  // --- Chapter 24: Death System ---
-
   private GuidebookChapter createDeathSystem() {
     return GuidebookChapter.create("Death System")
         .addPage("Death Tracking",
@@ -839,8 +808,6 @@ public class GuidebookContent {
                 "Mining Fatigue: At 65+, 5-30s\n" +
                 "Darkness: At 80+, 3-10s");
   }
-
-  // --- Chapter 25: Linking and Portals ---
 
   private GuidebookChapter createLinkingPortals() {
     return GuidebookChapter.create("Linking")
@@ -875,6 +842,16 @@ public class GuidebookContent {
                 "4. PortalUtils flood-fills portal blocks\n" +
                 "5. Walk into portal to teleport\n" +
                 "6. Remove book to deactivate")
+        .addPage("Portal Book Types",
+            "Receptacle accepts:\n" +
+                "Linkbook (any) - travels to that link target\n" +
+                "Linked Descriptive Book - travels to that Age\n" +
+                "Personal Link Book - travels to your pocket dimension\n" +
+                "Unwritten Descriptive Book with a Link Panel on page 1 - " +
+                "the Age is auto-written when you first walk through; the " +
+                "book becomes a permanent link to that fresh Age. Books with " +
+                "no Link Panel are rejected and emit a chat warning so you " +
+                "know the receptacle won't fire.")
         .addPage("Link Permissions",
             "Ages support access control:\n\n" +
                 "Blacklist mode: Block specific players\n" +
@@ -882,8 +859,6 @@ public class GuidebookContent {
                 "Age owners: Full access to own Age\n" +
                 "Global admins: Bypass all restrictions");
   }
-
-  // --- Chapter 26: Archivist Villager ---
 
   private GuidebookChapter createArchivistVillager() {
     return GuidebookChapter.create("The Archivist")
@@ -921,8 +896,6 @@ public class GuidebookContent {
                 "spawn chance.");
   }
 
-  // --- Chapter 27: Structures and Loot ---
-
   private GuidebookChapter createStructuresLoot() {
     return GuidebookChapter.create("Loot")
         .addPage("Mystcraft Structures",
@@ -944,8 +917,6 @@ public class GuidebookContent {
                 "library chests with 25% chance.");
   }
 
-  // --- Chapter 28: Advancements ---
-
   private GuidebookChapter createAdvancements() {
     return GuidebookChapter.create("Advancements")
         .addPage("Custom Triggers",
@@ -961,8 +932,6 @@ public class GuidebookContent {
                 "linkbook.json - Obtaining a linkbook\n" +
                 "write.json - Writing at a writing desk");
   }
-
-  // --- Chapter 28: Commands ---
 
   private GuidebookChapter createCommands() {
     return GuidebookChapter.create("Commands")
@@ -991,8 +960,6 @@ public class GuidebookContent {
                 "regen [radius=1]: Regenerate chunks (perm 2)\n" +
                 "spawn meteor [scale=2]: Spawn meteor (perm 2)");
   }
-
-  // --- Chapter 31: Configuration ---
 
   private GuidebookChapter createConfiguration() {
     return GuidebookChapter.create("Configuration")
@@ -1027,8 +994,6 @@ public class GuidebookContent {
                 "chancePlayerEffect: 0.0001 (0.01%)");
   }
 
-  // --- Chapter 32: Age Presets ---
-
   private GuidebookChapter createAgePresets() {
     return GuidebookChapter.create("Presets")
         .addPage("Using Presets",
@@ -1055,8 +1020,6 @@ public class GuidebookContent {
                 "Pool categories: biomes, structures, ores, " +
                 "features, modifiers, gradients");
   }
-
-  // --- Chapter 33: Ink and Writing ---
 
   private GuidebookChapter createInkWriting() {
     return GuidebookChapter.create("Ink Effects")
@@ -1096,8 +1059,6 @@ public class GuidebookContent {
                 "Relative: Purple\n" +
                 "Following: Orange");
   }
-
-  // --- Chapter 31: Dimension Types ---
 
   private GuidebookChapter createDimensionTypes() {
     return GuidebookChapter.create("Dimensions")

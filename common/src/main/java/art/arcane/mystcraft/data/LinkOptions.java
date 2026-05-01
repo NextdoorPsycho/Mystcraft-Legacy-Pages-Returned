@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.data;
 
+import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -9,13 +10,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import art.arcane.mystcraft.util.ItemStackNbt;
 
 import java.util.UUID;
 
 /**
- * Utility class for reading and writing link data to/from NBT.
- * Handles dimension IDs, spawn positions, display names, and link flags.
+ * Utility class for reading and writing link data to/from NBT. Handles
+ * dimension IDs, spawn positions, display names, and link flags.
  */
 public class LinkOptions {
 
@@ -170,8 +170,6 @@ public class LinkOptions {
     return nbttagcompound;
   }
 
-  // Static utility methods
-
   /**
    * Gets the portal/link color.
    *
@@ -251,10 +249,6 @@ public class LinkOptions {
     }
     return false;
   }
-
-  // ---------------------------------------------------------------------------
-  // Cover material (added 2026-04 for content-aware book UI)
-  // ---------------------------------------------------------------------------
 
   /**
    * Records the resource id of the item used as the book cover at binding time.
@@ -379,8 +373,6 @@ public class LinkOptions {
     return getSpawn(data);
   }
 
-  // Dimension key methods
-
   public void setSpawn(@Nullable BlockPos spawn) {
     data = setSpawn(data, spawn);
   }
@@ -396,8 +388,6 @@ public class LinkOptions {
   public boolean getFlag(String flag) {
     return getFlag(data, flag);
   }
-
-  // Dead link methods
 
   public void setFlag(String flag, boolean value) {
     data = setFlag(data, flag, value);
@@ -418,8 +408,6 @@ public class LinkOptions {
   public ResourceKey<Level> getDimension() {
     return getDimension(data);
   }
-
-  // ItemStack methods
 
   /**
    * Sets the dimension ResourceKey.

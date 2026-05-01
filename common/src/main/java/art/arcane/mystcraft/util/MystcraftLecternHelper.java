@@ -20,18 +20,20 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.lang.reflect.Method;
 
-
 /**
  * Helper utilities for Mystcraft book integration with vanilla Lecterns.
  * Contains cross-platform logic for lectern interactions.
  */
 public final class MystcraftLecternHelper {
 
+  private static Method openForBlockMethod;
+
   private MystcraftLecternHelper() {
   }
 
   /**
-   * Checks if the given ItemStack is a Mystcraft book (LinkbookItem or AgebookItem).
+   * Checks if the given ItemStack is a Mystcraft book (LinkbookItem or
+   * AgebookItem).
    *
    * @param stack the ItemStack to check
    * @return true if the item is a Mystcraft book
@@ -43,12 +45,10 @@ public final class MystcraftLecternHelper {
     return stack.getItem() instanceof LinkbookItem || stack.getItem() instanceof AgebookItem;
   }
 
-  private static Method openForBlockMethod;
-
   /**
-   * Opens the book screen for a book placed on a vanilla Lectern.
-   * Must be called on the client side only.
-   * Uses reflection to avoid loading client classes on the server.
+   * Opens the book screen for a book placed on a vanilla Lectern. Must be
+   * called on the client side only. Uses reflection to avoid loading client
+   * classes on the server.
    *
    * @param book     the book ItemStack
    * @param blockPos the position of the block holding the book
@@ -66,22 +66,22 @@ public final class MystcraftLecternHelper {
   }
 
   /**
-   * Handles lectern interaction for Mystcraft books.
-   * This is the cross-platform logic called by platform-specific event handlers.
+   * Handles lectern interaction for Mystcraft books. This is the cross-platform
+   * logic called by platform-specific event handlers.
    *
    * @param level           the level
    * @param pos             the lectern position
    * @param state           the block state
    * @param player          the player
    * @param hand            the interaction hand
-   * @param bookFieldSetter a function to set the book and pageCount fields (platform-specific)
+   * @param bookFieldSetter a function to set the book and pageCount fields
+   *                        (platform-specific)
    * @return the interaction result
    */
   public static LecternInteractionResult handleLecternInteraction(
       Level level, BlockPos pos, BlockState state, Player player, InteractionHand hand,
       LecternBookSetter bookFieldSetter) {
 
-    // Only handle vanilla lecterns
     if (!(state.getBlock() instanceof LecternBlock)) {
       return LecternInteractionResult.pass();
     }
@@ -96,10 +96,9 @@ public final class MystcraftLecternHelper {
     Mystcraft.LOGGER.debug("[LecternHelper] bookOnLectern={}, isMystcraftBook={}, hasBook={}",
         bookOnLectern, isMystcraftBook(bookOnLectern), state.getValue(LecternBlock.HAS_BOOK));
 
-    // Handle Mystcraft book already on lectern (server knows about it)
     if (isMystcraftBook(bookOnLectern)) {
       if (player.isShiftKeyDown() && held.isEmpty()) {
-        // Shift + empty hand = pick up book
+
         if (!level.isClientSide) {
           player.setItemInHand(hand, bookOnLectern.copy());
           lectern.clearContent();
@@ -108,7 +107,6 @@ public final class MystcraftLecternHelper {
         return LecternInteractionResult.success(level.isClientSide);
       }
 
-      // Server: send packet to open book screen (includes book data for sync)
       if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
         Mystcraft.LOGGER.debug("[LecternHelper] Sending OpenLecternBookPacket to {} for pos={}", serverPlayer.getName().getString(), pos);
         MystcraftNetwork.sendToPlayer(new OpenLecternBookPacket(pos, bookOnLectern), serverPlayer);
@@ -116,29 +114,22 @@ public final class MystcraftLecternHelper {
       return LecternInteractionResult.success(level.isClientSide);
     }
 
-    // Client: HAS_BOOK is true but we don't see a valid book - likely a Mystcraft book that hasn't synced yet
-    // Consume the interaction; server will send OpenLecternBookPacket with the book data
     if (level.isClientSide && state.getValue(LecternBlock.HAS_BOOK) && bookOnLectern.isEmpty()) {
       return LecternInteractionResult.success(true);
     }
 
-    // Handle placing Mystcraft book on empty lectern
     if (!state.getValue(LecternBlock.HAS_BOOK) && isMystcraftBook(held)) {
       if (!level.isClientSide) {
         ItemStack bookCopy = held.copy();
         bookCopy.setCount(1);
 
-        // Use platform-specific setter to set the book field
         bookFieldSetter.setBook(lectern, bookCopy, 1);
 
-        // Mark dirty and update block state
         lectern.setChanged();
 
-        // Update block state to HAS_BOOK=true
         BlockState newState = state.setValue(LecternBlock.HAS_BOOK, true);
         level.setBlock(pos, newState, 3);
 
-        // Send custom packet to sync book data to clients
         if (level instanceof ServerLevel serverLevel) {
           MystcraftNetwork.sendToTrackingBlock(
               new LecternBookSyncPacket(pos, bookCopy),

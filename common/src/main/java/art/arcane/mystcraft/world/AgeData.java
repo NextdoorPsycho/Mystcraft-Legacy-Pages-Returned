@@ -16,8 +16,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 /**
- * Saved data for a Mystcraft Age (dimension).
- * Stores the age's pages, instability, authors, and other metadata.
+ * Saved data for a Mystcraft Age (dimension). Stores the age's pages,
+ * instability, authors, and other metadata.
  */
 public class AgeData extends SavedData {
 
@@ -35,7 +35,6 @@ public class AgeData extends SavedData {
   private static final String TAG_SPAWN_Y = "SpawnY";
   private static final String TAG_SPAWN_Z = "SpawnZ";
 
-  // Age Configuration Tags
   private static final String TAG_CONFIG = "AgeConfig";
   private static final String TAG_WEATHER_TYPE = "WeatherType";
   private static final String TAG_LIGHTING_TYPE = "LightingType";
@@ -81,7 +80,7 @@ public class AgeData extends SavedData {
   private final List<ItemStack> pages = new ArrayList<>();
   private final List<Integer> grassColors = new ArrayList<>();
   private final EnumMap<PocketHeadFace, List<String>> pocketHeadBlocks = new EnumMap<>(PocketHeadFace.class);
-  // Instability deck order storage (for persistence across sessions)
+
   private final Map<String, List<String>> deckOrders = new HashMap<>();
   private int ageUID;
   private UUID ageUUID;
@@ -90,7 +89,7 @@ public class AgeData extends SavedData {
   private long createdTime;
   private boolean spawnSet = false;
   private int spawnX, spawnY, spawnZ;
-  // Age Configuration (from AgeDirector)
+
   private String weatherType = "normal";
   private String lightingType = "normal";
   private String biomeController = "native";
@@ -143,8 +142,8 @@ public class AgeData extends SavedData {
   }
 
   /**
-   * Gets the AgeData for a level, creating it if necessary.
-   * Uses version-specific SavedData API through Services.VERSION.
+   * Gets the AgeData for a level, creating it if necessary. Uses
+   * version-specific SavedData API through Services.VERSION.
    */
   public static AgeData get(ServerLevel level) {
     return Services.VERSION.computeSavedData(
@@ -156,13 +155,13 @@ public class AgeData extends SavedData {
   }
 
   /**
-   * Gets the AgeData for a level, or null if it doesn't exist.
-   * Note: This creates the data if it doesn't exist in 1.20.1 since there's no separate "get" API.
+   * Gets the AgeData for a level, or null if it doesn't exist. Note: This
+   * creates the data if it doesn't exist in 1.20.1 since there's no separate
+   * "get" API.
    */
   @Nullable
   public static AgeData getIfPresent(ServerLevel level) {
-    // Use the computeSavedData method which works across versions
-    // Computes or loads the age data through the active platform helper.
+
     return Services.VERSION.computeSavedData(
         level,
         AgeData::new,
@@ -171,9 +170,6 @@ public class AgeData extends SavedData {
     );
   }
 
-  /**
-   * Loads the age data from NBT.
-   */
   private void loadFromTag(CompoundTag tag) {
     this.ageUID = tag.getInt(TAG_AGE_UID);
     if (tag.contains(TAG_AGE_UUID)) {
@@ -185,14 +181,12 @@ public class AgeData extends SavedData {
     this.instability = tag.getFloat(TAG_INSTABILITY);
     this.createdTime = tag.getLong(TAG_CREATED_TIME);
 
-    // Load authors
     this.authors.clear();
     ListTag authorsList = tag.getList(TAG_AUTHORS, Tag.TAG_STRING);
     for (int i = 0; i < authorsList.size(); i++) {
       this.authors.add(authorsList.getString(i));
     }
 
-    // Load pages
     this.pages.clear();
     ListTag pagesList = tag.getList(TAG_PAGES, Tag.TAG_COMPOUND);
     for (int i = 0; i < pagesList.size(); i++) {
@@ -202,7 +196,6 @@ public class AgeData extends SavedData {
       }
     }
 
-    // Load spawn
     this.spawnSet = tag.getBoolean(TAG_SPAWN_SET);
     if (this.spawnSet) {
       this.spawnX = tag.getInt(TAG_SPAWN_X);
@@ -210,7 +203,6 @@ public class AgeData extends SavedData {
       this.spawnZ = tag.getInt(TAG_SPAWN_Z);
     }
 
-    // Load age configuration
     if (tag.contains(TAG_CONFIG)) {
       CompoundTag config = tag.getCompound(TAG_CONFIG);
       this.weatherType = config.getString(TAG_WEATHER_TYPE);
@@ -258,7 +250,8 @@ public class AgeData extends SavedData {
       this.terrainMixMode = config.getString(TAG_TERRAIN_MIX_MODE);
       if (this.terrainMixMode.isEmpty()) this.terrainMixMode = "none";
       this.secondaryTerrainType = config.getString(TAG_SECONDARY_TERRAIN_TYPE);
-      if (this.secondaryTerrainType.isEmpty()) this.secondaryTerrainType = "none";
+      if (this.secondaryTerrainType.isEmpty())
+        this.secondaryTerrainType = "none";
       this.personalPocket = config.getBoolean(TAG_PERSONAL_POCKET);
       this.microDimensionsEnabled = config.getBoolean(TAG_MICRO_DIMENSIONS_ENABLED);
       this.microDimensionRadiusChunks = config.contains(TAG_MICRO_DIMENSION_RADIUS)
@@ -269,7 +262,6 @@ public class AgeData extends SavedData {
           : 1;
     }
 
-    // Load deck orders
     this.deckOrders.clear();
     if (tag.contains(TAG_DECK_ORDERS)) {
       CompoundTag decksTag = tag.getCompound(TAG_DECK_ORDERS);
@@ -283,7 +275,6 @@ public class AgeData extends SavedData {
       }
     }
 
-    // Load personal pocket head blocks
     pocketHeadBlocks.clear();
     if (tag.contains(TAG_POCKET_HEAD, Tag.TAG_COMPOUND)) {
       CompoundTag pocketTag = tag.getCompound(TAG_POCKET_HEAD);
@@ -313,14 +304,12 @@ public class AgeData extends SavedData {
     tag.putFloat(TAG_INSTABILITY, instability);
     tag.putLong(TAG_CREATED_TIME, createdTime);
 
-    // Save authors
     ListTag authorsList = new ListTag();
     for (String author : authors) {
       authorsList.add(net.minecraft.nbt.StringTag.valueOf(author));
     }
     tag.put(TAG_AUTHORS, authorsList);
 
-    // Save pages
     ListTag pagesList = new ListTag();
     for (ItemStack page : pages) {
       if (!page.isEmpty()) {
@@ -329,7 +318,6 @@ public class AgeData extends SavedData {
     }
     tag.put(TAG_PAGES, pagesList);
 
-    // Save spawn
     tag.putBoolean(TAG_SPAWN_SET, spawnSet);
     if (spawnSet) {
       tag.putInt(TAG_SPAWN_X, spawnX);
@@ -337,7 +325,6 @@ public class AgeData extends SavedData {
       tag.putInt(TAG_SPAWN_Z, spawnZ);
     }
 
-    // Save age configuration
     CompoundTag config = new CompoundTag();
     config.putString(TAG_WEATHER_TYPE, weatherType);
     config.putString(TAG_LIGHTING_TYPE, lightingType);
@@ -384,7 +371,6 @@ public class AgeData extends SavedData {
     config.putInt(TAG_MICRO_DIMENSION_EXTRA, microDimensionExtraChunks);
     tag.put(TAG_CONFIG, config);
 
-    // Save deck orders
     CompoundTag decksTag = new CompoundTag();
     for (Map.Entry<String, List<String>> entry : deckOrders.entrySet()) {
       ListTag cardsList = new ListTag();
@@ -424,8 +410,6 @@ public class AgeData extends SavedData {
   public int getAgeUID() {
     return ageUID;
   }
-
-  // Getters and setters
 
   public void setAgeUID(int ageUID) {
     this.ageUID = ageUID;
@@ -559,8 +543,6 @@ public class AgeData extends SavedData {
   public String getWeatherType() {
     return weatherType;
   }
-
-  // --- Age Configuration Getters ---
 
   public String getLightingType() {
     return lightingType;
@@ -718,8 +700,8 @@ public class AgeData extends SavedData {
   }
 
   /**
-   * Copies configuration from an AgeDirectorImpl.
-   * Call this after processing symbols to persist the Age configuration.
+   * Copies configuration from an AgeDirectorImpl. Call this after processing
+   * symbols to persist the Age configuration.
    */
   public void copyFromDirector(AgeDirectorImpl director) {
     this.weatherType = director.getWeatherType();
@@ -783,8 +765,6 @@ public class AgeData extends SavedData {
     setDirty();
   }
 
-  // --- Personal Pocket Head ---
-
   @Nullable
   public List<String> getPocketHeadBlocks(PocketHeadFace face) {
     List<String> blocks = pocketHeadBlocks.get(face);
@@ -806,8 +786,6 @@ public class AgeData extends SavedData {
     List<String> order = deckOrders.get(deckName);
     return order != null ? new ArrayList<>(order) : null;
   }
-
-  // --- Deck Order Methods ---
 
   /**
    * Saves the deck order for persistence.

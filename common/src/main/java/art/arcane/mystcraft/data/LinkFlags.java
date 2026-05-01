@@ -1,8 +1,7 @@
 package art.arcane.mystcraft.data;
 
 /**
- * Constants for link property flags.
- * These flags modify how linking behaves.
+ * Constants for link property flags. These flags modify how linking behaves.
  */
 public final class LinkFlags {
 
@@ -27,7 +26,8 @@ public final class LinkFlags {
    */
   public static final String DISARM = "disarm";
   /**
-   * Uses relative positioning - offset from book position applied to destination.
+   * Uses relative positioning - offset from book position applied to
+   * destination.
    */
   public static final String RELATIVE = "relative";
   /**

@@ -33,17 +33,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Block entity for the Writing Desk.
- * Used for writing symbols onto pages using ink.
+ * Block entity for the Writing Desk. Used for writing symbols onto pages using
+ * ink.
  * <p>
- * Main inventory slots:
- * 0 - Writing slot (book/page being written to)
- * 1 - Paper slot (paper supply)
- * 2 - Container in (ink bucket input)
- * 3 - Container out (empty bucket output)
+ * Main inventory slots: 0 - Writing slot (book/page being written to) 1 - Paper
+ * slot (paper supply) 2 - Container in (ink bucket input) 3 - Container out
+ * (empty bucket output)
  * <p>
- * Tab inventory:
- * 25 slots for notebooks, folders, portfolios
+ * Tab inventory: 25 slots for notebooks, folders, portfolios
  */
 public class WritingDeskBlockEntity extends MystcraftBlockEntity implements MenuProvider {
 
@@ -71,7 +68,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
         case SLOT_WRITING -> isWritableItem(stack);
         case SLOT_PAPER -> isBlankPage(stack);
         case SLOT_CONTAINER_IN -> isInkContainer(stack);
-        case SLOT_CONTAINER_OUT -> false; // Output only
+        case SLOT_CONTAINER_OUT -> false;
         default -> false;
       };
     }
@@ -127,15 +124,15 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
    */
   public static boolean isWritableItem(ItemStack stack) {
     if (stack.isEmpty()) return false;
-    // Can write to blank pages
+
     if (stack.getItem() instanceof PageItem && Page.isBlank(stack)) {
       return true;
     }
-    // Can write to agebooks (add pages)
+
     if (stack.getItem() instanceof AgebookItem) {
       return true;
     }
-    // Can write to normal linkbooks (add pages)
+
     return stack.getItem() instanceof LinkbookItem && !(stack.getItem() instanceof PersonalLinkBookItem);
   }
 
@@ -155,11 +152,11 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
    */
   public static boolean isInkContainer(ItemStack stack) {
     if (stack.isEmpty()) return false;
-    // Accept Mystcraft ink vials with ink
+
     if (stack.getItem() instanceof InkVialItem vial) {
       return vial.getInkAmount(stack) > 0;
     }
-    // Accept ink buckets
+
     return stack.is(ModTags.Items.INK_BUCKETS);
   }
 
@@ -290,16 +287,12 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     return getInkAmount() >= INK_COST;
   }
 
-  /**
-   * Uses ink for writing.
-   */
   private void useInk() {
     inkTank.drain(INK_COST);
   }
 
   /**
-   * Writes a symbol to the current writing item.
-   * Returns true if successful.
+   * Writes a symbol to the current writing item. Returns true if successful.
    */
   public boolean writeSymbol(@Nullable Player player, ResourceLocation symbol) {
     if (level == null || level.isClientSide) return false;
@@ -307,7 +300,6 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
 
     ItemStack writingItem = getWritingItem();
 
-    // If writing slot is empty but we have paper, create a blank page
     if (writingItem.isEmpty() && getPaperCount() > 0) {
       ItemStack page = Page.createPage();
       setWritingItem(page);
@@ -317,7 +309,6 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
 
     if (writingItem.isEmpty()) return false;
 
-    // Write to a blank page
     if (writingItem.getItem() instanceof PageItem && Page.isBlank(writingItem)) {
       Page.setSymbol(writingItem, symbol);
       useInk();
@@ -328,7 +319,6 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
       return true;
     }
 
-    // Write to an agebook (creates a new page and adds it)
     if (writingItem.getItem() instanceof AgebookItem agebookItem && getPaperCount() > 0) {
       ItemStack page = Page.createSymbolPage(symbol);
       agebookItem.addPages(writingItem, java.util.Collections.singletonList(page));
@@ -346,10 +336,10 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
 
   /**
    * Experimental writing — rolls a random symbol from {@link SymbolRegistry}
-   * using the desk ink tank's accumulated {@link InkBlend} affinity. When
-   * the tank carries no affinity this falls back to the plain weighted roll,
-   * so the workflow stays useful on vanilla ink. Returns the symbol that was
-   * written, or {@code null} if the desk could not write (no ink / no slot).
+   * using the desk ink tank's accumulated {@link InkBlend} affinity. When the
+   * tank carries no affinity this falls back to the plain weighted roll, so the
+   * workflow stays useful on vanilla ink. Returns the symbol that was written,
+   * or {@code null} if the desk could not write (no ink / no slot).
    */
   @Nullable
   public ResourceLocation writeSymbolExperimental(@Nullable Player player) {
@@ -377,20 +367,18 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
 
     if (containerIn.isEmpty()) return;
 
-    // Handle ink vials separately (they don't use fluid capabilities)
     if (containerIn.getItem() instanceof InkVialItem vial) {
       int vialInk = vial.getInkAmount(containerIn);
       int spaceInTank = INK_CAPACITY - getInkAmount();
       if (vialInk > 0 && spaceInTank > 0) {
-        // Each vial unit = 10 mB of fluid (100 vial units = 1000 mB = 1 bucket)
+
         int inkToTransfer = Math.min(vialInk * 10, spaceInTank);
-        int vialUnitsUsed = (inkToTransfer + 9) / 10; // Round up
-        inkToTransfer = vialUnitsUsed * 10; // Actual amount transferred
+        int vialUnitsUsed = (inkToTransfer + 9) / 10;
+        inkToTransfer = vialUnitsUsed * 10;
 
         inkTank.fill(inkToTransfer);
         vial.setInkAmount(containerIn, vialInk - vialUnitsUsed);
 
-        // If vial is empty, output empty glass bottle
         if (vial.getInkAmount(containerIn) <= 0) {
           ItemStack emptyBottle = new ItemStack(Items.GLASS_BOTTLE);
           if (containerOut.isEmpty()) {
@@ -400,17 +388,16 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
             containerOut.grow(1);
             containerIn.shrink(1);
           }
-          // If output is full, don't consume the vial
+
         }
       }
       return;
     }
 
-    // Handle ink buckets
     if (containerIn.is(ModTags.Items.INK_BUCKETS)) {
       int spaceInTank = INK_CAPACITY - getInkAmount();
       if (spaceInTank >= 1000) {
-        // Get the empty container (crafting remainder)
+
         ItemStack emptyContainer;
         if (containerIn.getItem().hasCraftingRemainingItem()) {
           emptyContainer = new ItemStack(containerIn.getItem().getCraftingRemainingItem());
@@ -418,7 +405,6 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
           emptyContainer = new ItemStack(Items.BUCKET);
         }
 
-        // Check if we can output the empty container
         if (containerOut.isEmpty()) {
           inkTank.fill(1000);
           mainInventory.setItem(SLOT_CONTAINER_OUT, emptyContainer);
@@ -503,7 +489,6 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
   public List<ItemStack> getDrops() {
     List<ItemStack> drops = new ArrayList<>();
 
-    // Main inventory
     for (int i = 0; i < mainInventory.getContainerSize(); i++) {
       ItemStack stack = mainInventory.getItem(i);
       if (!stack.isEmpty()) {
@@ -511,7 +496,6 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
       }
     }
 
-    // Tab inventory
     for (int i = 0; i < tabInventory.getContainerSize(); i++) {
       ItemStack stack = tabInventory.getItem(i);
       if (!stack.isEmpty()) {
@@ -521,8 +505,6 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
 
     return drops;
   }
-
-  // MenuProvider implementation
 
   @Override
   public Component getDisplayName() {
@@ -535,13 +517,11 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     return new WritingDeskMenu(containerId, playerInventory, this);
   }
 
-  // --- InkTank ---
-
   /**
    * Simple ink tank that tracks fluid amount without Forge fluid capabilities.
    * Optionally carries an {@link InkBlend} accumulated from themed ink sources
-   * (e.g. ink mixed at an Ink Mixer with diamond / nether star / etc. items)
-   * so {@link #writeSymbolExperimental} can roll affinity-biased symbols.
+   * (e.g. ink mixed at an Ink Mixer with diamond / nether star / etc. items) so
+   * {@link #writeSymbolExperimental} can roll affinity-biased symbols.
    */
   public static class InkTank {
     private static final String TAG_BLEND = "AffinityBlend";
@@ -577,7 +557,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     public int drain(int amount) {
       int drained = Math.min(amount, this.amount);
       this.amount -= drained;
-      // Draining all the ink also clears the affinity — themed ink is gone.
+
       if (this.amount <= 0) {
         this.blend = null;
       }
@@ -587,8 +567,8 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     /**
      * Read-only handle on the tank's affinity blend, or {@code null} if the
      * tank holds plain ink. Mutating the returned blend is permitted and will
-     * persist across saves; callers that don't intend to mutate should treat
-     * it as read-only.
+     * persist across saves; callers that don't intend to mutate should treat it
+     * as read-only.
      */
     @Nullable
     public InkBlend getBlend() {
@@ -596,9 +576,9 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     }
 
     /**
-     * Merges {@code other} into the tank's affinity blend (creating it on
-     * first call). Use this when transferring themed ink from an Ink Mixer
-     * or pouring a themed ink container in.
+     * Merges {@code other} into the tank's affinity blend (creating it on first
+     * call). Use this when transferring themed ink from an Ink Mixer or pouring
+     * a themed ink container in.
      */
     public void applyAffinity(@Nullable InkBlend other) {
       if (other == null || other.isEmpty()) return;
@@ -606,7 +586,9 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
       blend.merge(other);
     }
 
-    /** Wipes the tank's affinity (called when the tank is fully drained). */
+    /**
+     * Wipes the tank's affinity (called when the tank is fully drained).
+     */
     public void clearAffinity() {
       blend = null;
     }

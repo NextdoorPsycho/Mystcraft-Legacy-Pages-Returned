@@ -24,15 +24,27 @@
               "a": 60,
               "b": {
                 "op": "mul",
-                "a": { "op": "noise2", "scale": 0.008, "octaves": 4, "seed": 1717 },
+                "a": {
+                  "op": "noise2",
+                  "scale": 0.008,
+                  "octaves": 4,
+                  "seed": 1717
+                },
                 "b": 25
               }
             },
-            "b": { "var": "y" }
+            "b": {
+              "var": "y"
+            }
           },
           "b": {
             "op": "mul",
-            "a": { "op": "noise3", "scale": 0.025, "octaves": 4, "seed": 2828 },
+            "a": {
+              "op": "noise3",
+              "scale": 0.025,
+              "octaves": 4,
+              "seed": 2828
+            },
             "b": 20
           }
         }

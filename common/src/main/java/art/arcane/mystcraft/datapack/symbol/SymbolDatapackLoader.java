@@ -113,7 +113,7 @@ public final class SymbolDatapackLoader {
       String[] poem = isWater
           ? new String[]{"Terrain", "Water", "Flow", "Sea"}
           : (isLava ? new String[]{"Terrain", "Fire", "Flow", "Chaos"}
-          : new String[]{"Terrain", "Liquid", "Flow", "Strange"});
+             : new String[]{"Terrain", "Liquid", "Flow", "Strange"});
 
       String symbolPath = "sea_" + fluidId.getNamespace() + "_" + fluidId.getPath();
       ResourceLocation symbolId = SymbolRegistry.mystcraftId(symbolPath);

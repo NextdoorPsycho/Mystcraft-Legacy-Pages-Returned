@@ -30,12 +30,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Block entity for the Link Modifier.
- * Used to add modifier pages (link properties) to existing linkbooks.
+ * Block entity for the Link Modifier. Used to add modifier pages (link
+ * properties) to existing linkbooks.
  * <p>
- * Slots:
- * 0 - Book slot (linkbook to modify)
- * 1-4 - Modifier page slots
+ * Slots: 0 - Book slot (linkbook to modify) 1-4 - Modifier page slots
  */
 public class LinkModifierBlockEntity extends MystcraftBlockEntity implements MenuProvider {
 
@@ -71,6 +69,12 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
 
   public LinkModifierBlockEntity(BlockPos pos, BlockState blockState) {
     super(ModBlockEntities.LINK_MODIFIER.get(), pos, blockState);
+  }
+
+  private static boolean isModifiableLinkbook(ItemStack stack) {
+    return !stack.isEmpty()
+        && stack.getItem() instanceof LinkbookItem
+        && !(stack.getItem() instanceof PersonalLinkBookItem);
   }
 
   /**
@@ -139,8 +143,8 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
   }
 
   /**
-   * Checks if modification can be performed.
-   * Requires a book and at least one modifier page.
+   * Checks if modification can be performed. Requires a book and at least one
+   * modifier page.
    */
   public boolean canModify() {
     ItemStack book = getBook();
@@ -148,7 +152,6 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
       return false;
     }
 
-    // Check if there's at least one modifier page
     for (int i = SLOT_MODIFIER_START; i <= SLOT_MODIFIER_END; i++) {
       ItemStack page = inventory.getItem(i);
       if (!page.isEmpty() && Page.hasLinkProperties(page)) {
@@ -169,16 +172,15 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
 
     ItemStack book = getBook();
 
-    // Apply each modifier page's properties to the book
     for (int i = SLOT_MODIFIER_START; i <= SLOT_MODIFIER_END; i++) {
       ItemStack page = inventory.getItem(i);
       if (!page.isEmpty() && Page.hasLinkProperties(page)) {
-        // Get properties from page and add to book
+
         List<String> properties = Page.getLinkProperties(page);
         for (String property : properties) {
           Page.addLinkProperty(book, property);
         }
-        // Consume the page
+
         page.shrink(1);
       }
     }
@@ -293,7 +295,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
         long seed = Long.parseLong(seedStr);
         tag.putLong("Seed", seed);
       } catch (NumberFormatException ignored) {
-        // Invalid seed format
+
       }
     }
     ItemStackNbt.setTag(book, tag);
@@ -338,8 +340,6 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
     markForUpdate();
   }
 
-  // MenuProvider implementation
-
   @Override
   @NotNull
   public Component getDisplayName() {
@@ -349,11 +349,5 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
   @Override
   public AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
     return new LinkModifierMenu(containerId, playerInventory, this);
-  }
-
-  private static boolean isModifiableLinkbook(ItemStack stack) {
-    return !stack.isEmpty()
-        && stack.getItem() instanceof LinkbookItem
-        && !(stack.getItem() instanceof PersonalLinkBookItem);
   }
 }

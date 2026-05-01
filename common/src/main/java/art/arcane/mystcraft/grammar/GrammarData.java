@@ -4,8 +4,8 @@ import art.arcane.mystcraft.Mystcraft;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Constants for all grammar tokens used in the CFG system.
- * These tokens define the structure of Age generation rules.
+ * Constants for all grammar tokens used in the CFG system. These tokens define
+ * the structure of Age generation rules.
  */
 public final class GrammarData {
 
@@ -14,7 +14,6 @@ public final class GrammarData {
    */
   public static final ResourceLocation BIOME = asMyst("biome");
 
-  // Biome tokens
   /**
    * Generates a number of Biomes (minimum 1)
    */
@@ -28,7 +27,6 @@ public final class GrammarData {
    */
   public static final ResourceLocation LIGHTING = asMyst("lighting");
 
-  // Core controllers
   /**
    * Generates a Weather Controller
    */
@@ -42,13 +40,11 @@ public final class GrammarData {
    */
   public static final ResourceLocation VISUAL_EFFECT = asMyst("visual");
 
-  // Visual effects
   /**
    * Generates a small world feature
    */
   public static final ResourceLocation FEATURE_SMALL = asMyst("feature_small");
 
-  // Feature tokens
   /**
    * Generates a medium world feature
    */
@@ -62,13 +58,11 @@ public final class GrammarData {
    */
   public static final ResourceLocation EFFECT = asMyst("effect");
 
-  // World effects
   /**
    * Generates a Block Modifier which is a valid Terrain Block
    */
   public static final ResourceLocation BLOCK_TERRAIN = asMyst("block_terrain");
 
-  // Block category tokens
   /**
    * Generates a Block Modifier which is a valid Solid Block
    */
@@ -106,7 +100,6 @@ public final class GrammarData {
    */
   public static final ResourceLocation SUNSET_UNCOMMON = asMyst("sunset_uncommon");
 
-  // Sunset modifiers
   /**
    * Generates a Sunset modifier
    */
@@ -116,7 +109,6 @@ public final class GrammarData {
    */
   public static final ResourceLocation ANGLE_SEQ = asMyst("angle");
 
-  // Modifier sequence tokens
   /**
    * Generates a Period sequence
    */
@@ -138,7 +130,6 @@ public final class GrammarData {
    */
   public static final ResourceLocation ANGLE_BASIC = asMyst("angle_basic");
 
-  // Basic modifier tokens (singular values)
   /**
    * Generates a singular Period value
    */

@@ -9,8 +9,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
 
 /**
- * Packet sent from server to client to sync Mystcraft book data in a vanilla lectern.
- * This is needed because vanilla's LecternBlockEntity doesn't sync non-vanilla books.
+ * Packet sent from server to client to sync Mystcraft book data in a vanilla
+ * lectern. This is needed because vanilla's LecternBlockEntity doesn't sync
+ * non-vanilla books.
  * <p>
  * Fabric-specific implementation using direct field access via access widener.
  */
@@ -40,8 +41,8 @@ public record LecternBookSyncPacket(BlockPos pos, ItemStack book) {
   }
 
   /**
-   * Sets the book on a client-side lectern using direct field access.
-   * Access widener makes book and pageCount fields accessible.
+   * Sets the book on a client-side lectern using direct field access. Access
+   * widener makes book and pageCount fields accessible.
    */
   public static void setBookOnClient(LecternBlockEntity lectern, ItemStack book) {
     try {

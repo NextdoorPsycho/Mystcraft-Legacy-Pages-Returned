@@ -22,19 +22,20 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 
 /**
- * Witch hut populator that generates swamp huts on stilts.
- * Witch huts consist of a small spruce wood structure on oak wood supports
- * with a cauldron, crafting table, and flower pot inside.
+ * Witch hut populator that generates swamp huts on stilts. Witch huts consist
+ * of a small spruce wood structure on oak wood supports with a cauldron,
+ * crafting table, and flower pot inside.
  * <p>
  * Uses chunk boundary checking to prevent cascade loading - blocks outside the
- * current chunk are simply skipped rather than triggering neighbor chunk loads.
+ * current chunk are simply skipped rather than triggering neighbor chunk
+ * loads.
  */
 public class WitchHutsPopulator implements IPopulate {
 
   private static final int DEFAULT_RARITY = 32;
   private final long seed;
   private final int rarity;
-  // Chunk boundaries for current population
+
   private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
   public WitchHutsPopulator(long seed) {
@@ -48,7 +49,7 @@ public class WitchHutsPopulator implements IPopulate {
 
   @Override
   public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
-    // Set chunk boundaries for this population run
+
     int chunkX = chunkPos.getX() >> 4;
     int chunkZ = chunkPos.getZ() >> 4;
     chunkMinX = chunkX << 4;
@@ -80,17 +81,11 @@ public class WitchHutsPopulator implements IPopulate {
     generateWitchHut(world, random, surfacePos.below());
   }
 
-  /**
-   * Checks if a position is within the current chunk boundaries.
-   */
   private boolean isInChunk(BlockPos pos) {
     return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
         pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
   }
 
-  /**
-   * Safe setBlock that only places blocks within current chunk boundaries.
-   */
   private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
     if (isInChunk(pos)) {
       world.setBlock(pos, state, 2);
@@ -169,7 +164,6 @@ public class WitchHutsPopulator implements IPopulate {
       }
     }
 
-    // Only spawn witch if the floor position is in chunk
     if (isInChunk(floorPos)) {
       net.minecraft.server.level.ServerLevel serverLevel = world.getLevel();
       Witch witch = new Witch(EntityType.WITCH, serverLevel);

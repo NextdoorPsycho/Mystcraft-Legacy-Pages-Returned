@@ -16,8 +16,8 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Renderer for MystcraftFallingBlockEntity.
- * Similar to vanilla FallingBlockRenderer.
+ * Renderer for MystcraftFallingBlockEntity. Similar to vanilla
+ * FallingBlockRenderer.
  */
 public class MystcraftFallingBlockRenderer extends EntityRenderer<MystcraftFallingBlockEntity> {
 

@@ -11,11 +11,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Generates massive coral reef formations growing on dry land, towering
- * 15-40 blocks high. Made of living coral blocks (brain, tube, bubble,
- * fire, horn) with coral fans on surfaces and sea pickles for bioluminescence.
- * Upper portions have dead coral variants mixed in as the formations slowly
- * die in the air. A surreal ocean transplanted onto land.
+ * Generates massive coral reef formations growing on dry land, towering 15-40
+ * blocks high. Made of living coral blocks (brain, tube, bubble, fire, horn)
+ * with coral fans on surfaces and sea pickles for bioluminescence. Upper
+ * portions have dead coral variants mixed in as the formations slowly die in
+ * the air. A surreal ocean transplanted onto land.
  */
 public class LivingCoralTowersPopulator implements IPopulate {
 
@@ -97,7 +97,6 @@ public class LivingCoralTowersPopulator implements IPopulate {
       int towerHeight = MIN_HEIGHT + random.nextInt(MAX_HEIGHT - MIN_HEIGHT + 1);
       int baseRadius = MIN_BASE_RADIUS + random.nextInt(MAX_BASE_RADIUS - MIN_BASE_RADIUS + 1);
 
-      // Pick dominant coral type for this tower
       long coralSeed = positionHash(seed, x, surfaceY, z);
       int dominantCoral = (int) ((coralSeed >>> 8) & 0xFF) % LIVING_CORALS.length;
 
@@ -106,12 +105,12 @@ public class LivingCoralTowersPopulator implements IPopulate {
   }
 
   private void generateTower(WorldGenLevel world, BlockPos chunkPos,
-                              int cx, int surfaceY, int cz,
-                              int height, int baseRadius, int dominantCoral) {
-    // Main trunk: tapers from base to tip
+                             int cx, int surfaceY, int cz,
+                             int height, int baseRadius, int dominantCoral) {
+
     for (int dy = 0; dy < height; dy++) {
       double progress = (double) dy / height;
-      // Radius tapers: wide at base, narrow at top, with some bulging
+
       double bulge = Math.sin(progress * Math.PI * 2.5) * 0.3;
       int radius = Math.max(1, (int) ((baseRadius * (1.0 - progress * 0.7)) + bulge * baseRadius));
 
@@ -127,22 +126,20 @@ public class LivingCoralTowersPopulator implements IPopulate {
           BlockPos pos = new BlockPos(bx, by, bz);
           if (!isInWritableArea(pos, chunkPos)) continue;
 
-          // Pick coral type
           long blockHash = positionHash(seed, bx, by, bz);
           float roll = hashFloat(blockHash);
           int coralIdx = roll < 0.6f ? dominantCoral : ((int) ((blockHash >>> 24) & 0xFF) % LIVING_CORALS.length);
 
-          // Upper portions have dead coral mixed in
           boolean dead = false;
           if (progress > 0.5) {
-            float deathChance = (float) ((progress - 0.5) * 2.0); // 0 at 50%, 1 at 100%
+            float deathChance = (float) ((progress - 0.5) * 2.0);
             long deathHash = positionHash(seed ^ 0xDEADL, bx, by, bz);
             dead = hashFloat(deathHash) < deathChance;
           }
 
           BlockState coralBlock;
           if (roll < 0.03f) {
-            coralBlock = SEA_LANTERN; // Bioluminescent core
+            coralBlock = SEA_LANTERN;
           } else if (roll < 0.06f) {
             coralBlock = PRISMARINE;
           } else {
@@ -151,7 +148,6 @@ public class LivingCoralTowersPopulator implements IPopulate {
 
           world.setBlock(pos, coralBlock, 2);
 
-          // Sea pickles on top surface
           if (dy > 0 && dx * dx + dz * dz >= (radius - 1) * (radius - 1)) {
             BlockPos picklePos = pos.above();
             if (isInWritableArea(picklePos, chunkPos) && world.getBlockState(picklePos).isAir()) {
@@ -165,7 +161,6 @@ public class LivingCoralTowersPopulator implements IPopulate {
       }
     }
 
-    // Branches: smaller coral growths branching off the main trunk
     int branchCount = BRANCHES + (int) (hashFloat(positionHash(seed ^ 0xB4A4L, cx, surfaceY, cz)) * 3);
     for (int b = 0; b < branchCount; b++) {
       long branchSeed = positionHash(seed ^ 0xB4A4L, cx + b, surfaceY, cz + b);
@@ -181,7 +176,7 @@ public class LivingCoralTowersPopulator implements IPopulate {
         double t = (double) step / branchLength;
         int bx = cx + (int) Math.round(bDx * (baseRadius + step));
         int bz = cz + (int) Math.round(bDz * (baseRadius + step));
-        int by = branchStartY + (int) (step * 0.5); // Slight upward angle
+        int by = branchStartY + (int) (step * 0.5);
 
         int localRadius = Math.max(1, (int) (branchRadius * (1.0 - t)));
 
@@ -200,11 +195,11 @@ public class LivingCoralTowersPopulator implements IPopulate {
       }
     }
 
-    // Prismarine base ring
     for (int dx = -(baseRadius + 1); dx <= baseRadius + 1; dx++) {
       for (int dz = -(baseRadius + 1); dz <= baseRadius + 1; dz++) {
         int distSq = dx * dx + dz * dz;
-        if (distSq > (baseRadius + 1) * (baseRadius + 1) || distSq < baseRadius * baseRadius) continue;
+        if (distSq > (baseRadius + 1) * (baseRadius + 1) || distSq < baseRadius * baseRadius)
+          continue;
         BlockPos ringPos = new BlockPos(cx + dx, surfaceY, cz + dz);
         if (isInWritableArea(ringPos, chunkPos)) {
           world.setBlock(ringPos, PRISMARINE, 2);

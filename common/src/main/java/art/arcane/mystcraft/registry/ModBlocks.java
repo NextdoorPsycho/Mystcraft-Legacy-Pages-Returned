@@ -6,8 +6,8 @@ import net.minecraft.world.level.block.LiquidBlock;
 import java.util.function.Supplier;
 
 /**
- * Common accessor for registered blocks.
- * Platform modules populate these suppliers during initialization.
+ * Common accessor for registered blocks. Platform modules populate these
+ * suppliers during initialization.
  */
 public final class ModBlocks {
 

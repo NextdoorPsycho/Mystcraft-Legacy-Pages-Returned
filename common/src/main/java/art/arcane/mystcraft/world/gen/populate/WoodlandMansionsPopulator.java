@@ -20,19 +20,20 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 
 /**
- * Woodland mansion populator that generates large dark oak structures.
- * Mansions consist of a multi-floor structure with various rooms, staircases,
- * and spawns of vindicators and evokers.
+ * Woodland mansion populator that generates large dark oak structures. Mansions
+ * consist of a multi-floor structure with various rooms, staircases, and spawns
+ * of vindicators and evokers.
  * <p>
  * Uses chunk boundary checking to prevent cascade loading - blocks outside the
- * current chunk are simply skipped rather than triggering neighbor chunk loads.
+ * current chunk are simply skipped rather than triggering neighbor chunk
+ * loads.
  */
 public class WoodlandMansionsPopulator implements IPopulate {
 
   private static final int DEFAULT_RARITY = 64;
   private final long seed;
   private final int rarity;
-  // Chunk boundaries for current population
+
   private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
   public WoodlandMansionsPopulator(long seed) {
@@ -49,7 +50,6 @@ public class WoodlandMansionsPopulator implements IPopulate {
     int chunkX = chunkPos.getX() >> 4;
     int chunkZ = chunkPos.getZ() >> 4;
 
-    // Set chunk boundaries for this population run
     chunkMinX = chunkX << 4;
     chunkMaxX = chunkMinX + 15;
     chunkMinZ = chunkZ << 4;
@@ -75,18 +75,11 @@ public class WoodlandMansionsPopulator implements IPopulate {
     generateWoodlandMansion(world, random, surfacePos);
   }
 
-  /**
-   * Checks if a position is within the current chunk boundaries.
-   * This prevents cascade chunk loading when structures extend beyond chunk edges.
-   */
   private boolean isInChunk(BlockPos pos) {
     return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
         pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
   }
 
-  /**
-   * Safe setBlock that only places blocks within current chunk boundaries.
-   */
   private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
     if (isInChunk(pos)) {
       world.setBlock(pos, state, 2);

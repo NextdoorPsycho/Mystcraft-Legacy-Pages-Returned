@@ -1,5 +1,7 @@
 {
-  "items": ["minecraft:nether_star"],
+  "items": [
+    "minecraft:nether_star"
+  ],
   "amount_per_item": 1.0,
   "tier_bonus": 2,
   "symbol_weights": {

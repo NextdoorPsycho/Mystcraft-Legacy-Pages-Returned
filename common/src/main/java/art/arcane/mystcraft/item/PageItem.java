@@ -17,9 +17,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * The Page item.
- * Contains a single symbol that can be used in Age creation.
- * Can be blank, a link panel, or contain a symbol.
+ * The Page item. Contains a single symbol that can be used in Age creation. Can
+ * be blank, a link panel, or contain a symbol.
  */
 public class PageItem extends Item implements TooltipCompat {
 
@@ -56,7 +55,8 @@ public class PageItem extends Item implements TooltipCompat {
   }
 
   /**
-   * Link panels have an enchantment glint effect to make them visually distinct.
+   * Link panels have an enchantment glint effect to make them visually
+   * distinct.
    */
   @Override
   public boolean isFoil(@NotNull ItemStack stack) {

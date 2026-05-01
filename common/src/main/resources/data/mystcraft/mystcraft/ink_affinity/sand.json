@@ -1,6 +1,11 @@
 {
-  "items": ["minecraft:sand", "minecraft:red_sand"],
-  "tags": ["forge:sand"],
+  "items": [
+    "minecraft:sand",
+    "minecraft:red_sand"
+  ],
+  "tags": [
+    "forge:sand"
+  ],
   "amount_per_item": 0.4,
   "tier_bonus": 0,
   "symbol_weights": {

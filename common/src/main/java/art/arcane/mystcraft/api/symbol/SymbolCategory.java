@@ -1,8 +1,8 @@
 package art.arcane.mystcraft.api.symbol;
 
 /**
- * Categories for Age symbols.
- * Symbols in the same category are generally mutually exclusive.
+ * Categories for Age symbols. Symbols in the same category are generally
+ * mutually exclusive.
  */
 public enum SymbolCategory {
 
@@ -47,12 +47,14 @@ public enum SymbolCategory {
   ENVIRONMENT("environment"),
 
   /**
-   * Large terrain features (caves, ravines, floating islands, perlin worms, deep dark)
+   * Large terrain features (caves, ravines, floating islands, perlin worms,
+   * deep dark)
    */
   FEATURE_LARGE("feature_large"),
 
   /**
-   * Medium terrain features (lakes, huge trees, dense ores, spikes, spheres, tendrils)
+   * Medium terrain features (lakes, huge trees, dense ores, spikes, spheres,
+   * tendrils)
    */
   FEATURE_MEDIUM("feature_medium"),
 
@@ -103,8 +105,8 @@ public enum SymbolCategory {
   }
 
   /**
-   * Resolves a category from its string name (case-insensitive).
-   * Returns null if no category matches.
+   * Resolves a category from its string name (case-insensitive). Returns null
+   * if no category matches.
    */
   public static SymbolCategory fromName(String name) {
     if (name == null) return null;

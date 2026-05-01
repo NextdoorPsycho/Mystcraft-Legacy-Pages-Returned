@@ -8,8 +8,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 
 /**
- * Packet sent from server to client to display link effects.
- * Triggers particle effects at the specified position.
+ * Packet sent from server to client to display link effects. Triggers particle
+ * effects at the specified position.
  */
 public record LinkEffectPacket(BlockPos pos, LinkEffectType type) {
 
@@ -34,9 +34,6 @@ public record LinkEffectPacket(BlockPos pos, LinkEffectType type) {
     });
   }
 
-  /**
-   * Spawns link particles at the given position.
-   */
   private static void spawnLinkParticles(Level level, BlockPos pos, LinkEffectType type) {
     RandomSource random = level.random;
     double x = pos.getX() + 0.5;
@@ -45,7 +42,7 @@ public record LinkEffectPacket(BlockPos pos, LinkEffectType type) {
 
     switch (type) {
       case DEPARTURE -> {
-        // Spiral particles going up
+
         for (int i = 0; i < 20; i++) {
           double angle = (i / 20.0) * Math.PI * 4;
           double radius = 0.5 - (i / 40.0);
@@ -58,7 +55,7 @@ public record LinkEffectPacket(BlockPos pos, LinkEffectType type) {
         }
       }
       case ARRIVAL -> {
-        // Burst of particles
+
         for (int i = 0; i < 30; i++) {
           double dx = (random.nextDouble() - 0.5) * 2;
           double dy = (random.nextDouble() - 0.5) * 2;
@@ -69,7 +66,7 @@ public record LinkEffectPacket(BlockPos pos, LinkEffectType type) {
         }
       }
       case PORTAL_ACTIVE -> {
-        // Ambient portal particles
+
         for (int i = 0; i < 5; i++) {
           double px = x + (random.nextDouble() - 0.5) * 0.5;
           double py = y + (random.nextDouble() - 0.5) * 0.5;
@@ -82,7 +79,7 @@ public record LinkEffectPacket(BlockPos pos, LinkEffectType type) {
         }
       }
       case FOLLOWING -> {
-        // Ring of particles
+
         for (int i = 0; i < 16; i++) {
           double angle = (i / 16.0) * Math.PI * 2;
           double px = x + Math.cos(angle) * 1.5;
@@ -96,9 +93,9 @@ public record LinkEffectPacket(BlockPos pos, LinkEffectType type) {
   }
 
   public enum LinkEffectType {
-    DEPARTURE,      // Linking away from this position
-    ARRIVAL,        // Linking to this position
-    PORTAL_ACTIVE,  // Portal is active
-    FOLLOWING       // Following link effect
+    DEPARTURE,
+    ARRIVAL,
+    PORTAL_ACTIVE,
+    FOLLOWING
   }
 }

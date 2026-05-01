@@ -6,13 +6,14 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 
 /**
  * Interface for terrain alterations that modify terrain after base generation.
- * Examples include cave carving, ravine generation, and floating island creation.
+ * Examples include cave carving, ravine generation, and floating island
+ * creation.
  */
 public interface ITerrainAlteration {
 
   /**
-   * Alters the terrain in a chunk after base terrain generation.
-   * This is called after the terrain generator has filled the chunk with blocks.
+   * Alters the terrain in a chunk after base terrain generation. This is called
+   * after the terrain generator has filled the chunk with blocks.
    *
    * @param world  The server level (may be null during initial generation)
    * @param chunkX The chunk X coordinate
@@ -30,9 +31,8 @@ public interface ITerrainAlteration {
   String getType();
 
   /**
-   * Gets the priority for this alteration.
-   * Lower values run first. Default is 100.
-   * Caves typically run at 50, ravines at 60, floating islands at 200.
+   * Gets the priority for this alteration. Lower values run first. Default is
+   * 100. Caves typically run at 50, ravines at 60, floating islands at 200.
    *
    * @return The priority value
    */

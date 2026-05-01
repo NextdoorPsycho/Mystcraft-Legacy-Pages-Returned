@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * BiomeSource implementation that wraps an IBiomeController from the AgeDirector.
- * This allows the Mystcraft biome controller system to integrate with Minecraft's
- * chunk generation pipeline.
+ * BiomeSource implementation that wraps an IBiomeController from the
+ * AgeDirector. This allows the Mystcraft biome controller system to integrate
+ * with Minecraft's chunk generation pipeline.
  */
 public class AgeBiomeSource extends BiomeSource {
 
@@ -40,15 +40,14 @@ public class AgeBiomeSource extends BiomeSource {
   private List<Holder<Biome>> cachedBiomes;
 
   /**
-   * Creates an AgeBiomeSource from an existing biome controller.
-   * This is the primary constructor used when creating a new Age.
+   * Creates an AgeBiomeSource from an existing biome controller. This is the
+   * primary constructor used when creating a new Age.
    */
   public AgeBiomeSource(IBiomeController controller, long seed) {
     this.biomeController = controller;
     this.seed = seed;
     this.controllerType = controller != null ? controller.getType() : "native";
 
-    // Extract biome IDs for serialization
     this.biomeIds = new ArrayList<>();
     if (controller != null) {
       for (Holder<Biome> biome : controller.getBiomes()) {
@@ -56,10 +55,8 @@ public class AgeBiomeSource extends BiomeSource {
       }
     }
 
-    // Cache the biomes list
     this.cachedBiomes = controller != null ? new ArrayList<>(controller.getBiomes()) : new ArrayList<>();
 
-    // If no biomes registered, add plains as fallback
     if (cachedBiomes.isEmpty()) {
       MinecraftServer server = Mystcraft.getCurrentServer();
       if (server != null) {
@@ -73,8 +70,8 @@ public class AgeBiomeSource extends BiomeSource {
   }
 
   /**
-   * Reconstruction constructor for codec deserialization.
-   * Recreates the biome controller from saved data.
+   * Reconstruction constructor for codec deserialization. Recreates the biome
+   * controller from saved data.
    */
   public AgeBiomeSource(long seed, String controllerType, List<ResourceLocation> biomeIds) {
     this.seed = seed;
@@ -82,7 +79,6 @@ public class AgeBiomeSource extends BiomeSource {
     this.biomeIds = new ArrayList<>(biomeIds);
     this.cachedBiomes = new ArrayList<>();
 
-    // Reconstruct biome holders from IDs
     MinecraftServer server = Mystcraft.getCurrentServer();
     if (server != null) {
       server.registryAccess().registry(Registries.BIOME).ifPresent(registry -> {
@@ -93,7 +89,6 @@ public class AgeBiomeSource extends BiomeSource {
       });
     }
 
-    // If biomes couldn't be loaded, add plains as fallback
     if (cachedBiomes.isEmpty() && server != null) {
       server.registryAccess().registry(Registries.BIOME).ifPresent(registry -> {
         Holder<Biome> plains = registry.getHolderOrThrow(Biomes.PLAINS);
@@ -101,13 +96,9 @@ public class AgeBiomeSource extends BiomeSource {
       });
     }
 
-    // Reconstruct the biome controller
     reconstructController();
   }
 
-  /**
-   * Reconstructs the biome controller from saved data.
-   */
   private void reconstructController() {
     if (cachedBiomes.isEmpty()) {
       Mystcraft.LOGGER.warn("Cannot reconstruct biome controller: no biomes available");
@@ -146,7 +137,7 @@ public class AgeBiomeSource extends BiomeSource {
         this.biomeController = new BiomeControllerShuffle(cachedBiomes, seed);
         break;
       default:
-        // Default to medium noise
+
         this.biomeController = new BiomeControllerNoise(cachedBiomes, seed, BiomeControllerNoise.Scale.MEDIUM);
         break;
     }
@@ -167,7 +158,7 @@ public class AgeBiomeSource extends BiomeSource {
 
   @Override
   public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ, Climate.Sampler sampler) {
-    // Convert quart coordinates to block coordinates
+
     int blockX = quartX << 2;
     int blockZ = quartZ << 2;
 
@@ -178,12 +169,10 @@ public class AgeBiomeSource extends BiomeSource {
       }
     }
 
-    // Fallback to first biome in list or plains
     if (!cachedBiomes.isEmpty()) {
       return cachedBiomes.get(0);
     }
 
-    // Last resort fallback - get plains from registry
     MinecraftServer server = Mystcraft.getCurrentServer();
     if (server != null) {
       return server.registryAccess()

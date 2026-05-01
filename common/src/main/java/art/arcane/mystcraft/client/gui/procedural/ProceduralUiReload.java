@@ -20,12 +20,13 @@ import java.util.Set;
  * <p>
  * Registers itself as a {@link ResourceManagerReloadListener} on
  * {@link net.minecraft.server.packs.PackType#CLIENT_RESOURCES} via the
- * platform-specific entry points (Fabric: {@code ResourceManagerHelper.get(...)
- * .registerReloadListener}, Forge:
+ * platform-specific entry points (Fabric:
+ * {@code ResourceManagerHelper.get(...) .registerReloadListener}, Forge:
  * {@code RegisterClientReloadListenersEvent#registerReloadListener}).
  * <p>
- * Subsystems register themselves through {@link #registerCache(ProceduralTextureCache)}
- * so a single hook flushes them all in a deterministic order.
+ * Subsystems register themselves through
+ * {@link #registerCache(ProceduralTextureCache)} so a single hook flushes them
+ * all in a deterministic order.
  */
 public final class ProceduralUiReload implements ResourceManagerReloadListener {
 
@@ -80,14 +81,16 @@ public final class ProceduralUiReload implements ResourceManagerReloadListener {
       Mystcraft.LOGGER.warn("[ProceduralUiReload] BookTextureFactory.reset failed: {}", e.toString());
     }
     try {
+      BookItemTextureFactory.reset();
+    } catch (Exception e) {
+      Mystcraft.LOGGER.warn("[ProceduralUiReload] BookItemTextureFactory.reset failed: {}", e.toString());
+    }
+    try {
       PageTextureFactory.reset();
     } catch (Exception e) {
       Mystcraft.LOGGER.warn("[ProceduralUiReload] PageTextureFactory.reset failed: {}", e.toString());
     }
-    // Procedural symbol-page caches (added in plan §5 task 5.4). These
-    // hold composed page textures, motif sub-textures, and individual
-    // glyph tiles — all of which must invalidate when the resource pack
-    // changes the symbol palette overrides or fonts.
+
     try {
       SymbolPageTextureFactory.reset();
     } catch (Exception e) {

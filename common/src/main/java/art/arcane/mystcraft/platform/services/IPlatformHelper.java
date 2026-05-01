@@ -8,7 +8,9 @@ import net.minecraft.world.level.material.FlowingFluid;
 
 import java.util.function.Consumer;
 
-// Provides basic platform information
+/**
+ * Platform service for loader-specific lifecycle hooks and registry objects that common code uses.
+ */
 public interface IPlatformHelper {
 
   /**
@@ -22,7 +24,8 @@ public interface IPlatformHelper {
   boolean isModLoaded(String modId);
 
   /**
-   * Returns true if the current environment is a development (non-production) environment.
+   * Returns true if the current environment is a development (non-production)
+   * environment.
    */
   boolean isDevelopmentEnvironment();
 

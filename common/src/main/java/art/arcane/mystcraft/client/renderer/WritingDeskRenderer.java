@@ -23,8 +23,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Renderer for the Writing Desk block entity.
- * Uses the entity model and texture from the original implementation.
+ * Renderer for the Writing Desk block entity. Uses the entity model and texture
+ * from the original implementation.
  */
 public class WritingDeskRenderer implements BlockEntityRenderer<WritingDeskBlockEntity> {
 
@@ -43,7 +43,6 @@ public class WritingDeskRenderer implements BlockEntityRenderer<WritingDeskBlock
 
     BlockState state = blockEntity.getBlockState();
 
-    // Only render from the main block (not top, not foot)
     if (state.getValue(WritingDeskBlock.IS_TOP) || state.getValue(WritingDeskBlock.IS_FOOT)) {
       return;
     }
@@ -51,15 +50,11 @@ public class WritingDeskRenderer implements BlockEntityRenderer<WritingDeskBlock
     Direction facing = state.getValue(WritingDeskBlock.FACING);
     int horizontalIndex = facing.get2DDataValue();
 
-    // Calculate maximum light level to avoid dark shading on rotated model
-    // Entity rendering applies diffuse shading based on normals, but with complex
-    // rotations the normals can point in unexpected directions causing shadow-like darkening.
-    // Use full sky light to minimize this effect while still respecting block light.
     Level level = blockEntity.getLevel();
     BlockPos pos = blockEntity.getBlockPos();
     int combinedLight;
     if (level != null) {
-      // Get light from both main position and above
+
       BlockPos topPos = pos.above();
       int blockLight = Math.max(
           level.getBrightness(LightLayer.BLOCK, pos),
@@ -74,10 +69,8 @@ public class WritingDeskRenderer implements BlockEntityRenderer<WritingDeskBlock
       combinedLight = LightTexture.FULL_BRIGHT;
     }
 
-    // Render the desk model
     poseStack.pushPose();
 
-    // Position and transform like the original
     poseStack.translate(0.5, 1.5, 0.5);
     poseStack.mulPose(Axis.XP.rotationDegrees(90));
     poseStack.mulPose(Axis.YP.rotationDegrees(90));
@@ -89,7 +82,6 @@ public class WritingDeskRenderer implements BlockEntityRenderer<WritingDeskBlock
 
     poseStack.popPose();
 
-    // Render item on desk
     ItemStack writingItem = blockEntity.getWritingItem();
     if (!writingItem.isEmpty()) {
       renderDisplayItem(poseStack, bufferSource, writingItem, facing, combinedLight, packedOverlay, blockEntity);
@@ -100,10 +92,8 @@ public class WritingDeskRenderer implements BlockEntityRenderer<WritingDeskBlock
                                  Direction facing, int light, int overlay, WritingDeskBlockEntity blockEntity) {
     poseStack.pushPose();
 
-    // Position on desk surface
     poseStack.translate(0.5, 1.1, 0.5);
 
-    // Rotate to face based on desk facing
     float rotation = switch (facing) {
       case NORTH -> 0;
       case SOUTH -> 180;
@@ -113,7 +103,6 @@ public class WritingDeskRenderer implements BlockEntityRenderer<WritingDeskBlock
     };
     poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
 
-    // Tilt slightly
     poseStack.mulPose(Axis.XP.rotationDegrees(-22.5f));
 
     poseStack.scale(0.5f, 0.5f, 0.5f);
@@ -131,30 +120,26 @@ public class WritingDeskRenderer implements BlockEntityRenderer<WritingDeskBlock
 
   @Override
   public boolean shouldRenderOffScreen(@NotNull WritingDeskBlockEntity blockEntity) {
-    // Always render when in range - the desk is a multi-block structure
-    // and we need to render even when the base block position is off-screen
+
     return true;
   }
 
   public net.minecraft.world.phys.AABB getRenderBoundingBox(@NotNull WritingDeskBlockEntity blockEntity) {
-    // Expand the render bounding box to cover the full 2x2 multi-block structure
-    // Must account for facing direction since the foot extends in different directions
+
     BlockPos pos = blockEntity.getBlockPos();
     BlockState state = blockEntity.getBlockState();
     Direction facing = state.getValue(WritingDeskBlock.FACING);
 
-    // Calculate bounds based on facing direction
-    // The foot extends to the "left" of the facing direction
     int minX = pos.getX();
     int maxX = pos.getX() + 1;
     int minZ = pos.getZ();
     int maxZ = pos.getZ() + 1;
 
     switch (facing) {
-      case SOUTH -> maxX = pos.getX() + 2; // foot to EAST
-      case WEST -> maxZ = pos.getZ() + 2;  // foot to SOUTH
-      case NORTH -> minX = pos.getX() - 1; // foot to WEST
-      case EAST -> minZ = pos.getZ() - 1;  // foot to NORTH
+      case SOUTH -> maxX = pos.getX() + 2;
+      case WEST -> maxZ = pos.getZ() + 2;
+      case NORTH -> minX = pos.getX() - 1;
+      case EAST -> minZ = pos.getZ() - 1;
     }
 
     return new net.minecraft.world.phys.AABB(

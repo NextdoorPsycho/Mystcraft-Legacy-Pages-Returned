@@ -1,27 +1,26 @@
 package art.arcane.mystcraft.item;
 
+import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.TooltipCompat;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import art.arcane.mystcraft.util.ItemStackNbt;
-import art.arcane.mystcraft.util.TooltipCompat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 /**
- * The Ink Vial item.
- * Contains ink for use in writing desks.
- * Can hold different colors of ink.
+ * The Ink Vial item. Contains ink for use in writing desks. Can hold different
+ * colors of ink.
  */
 public class InkVialItem extends Item implements TooltipCompat {
 
   public static final int MAX_INK = 100;
-  public static final int DEFAULT_COLOR = 0x000000; // Black
+  public static final int DEFAULT_COLOR = 0x000000;
   private static final String TAG_INK_AMOUNT = "InkAmount";
   private static final String TAG_INK_COLOR = "InkColor";
 
@@ -62,7 +61,7 @@ public class InkVialItem extends Item implements TooltipCompat {
    */
   public int getInkAmount(ItemStack stack) {
     if (ItemStackNbt.getTag(stack) == null) {
-      return MAX_INK; // Full by default when new
+      return MAX_INK;
     }
     CompoundTag tag = ItemStackNbt.getTag(stack);
     if (!tag.contains(TAG_INK_AMOUNT)) {

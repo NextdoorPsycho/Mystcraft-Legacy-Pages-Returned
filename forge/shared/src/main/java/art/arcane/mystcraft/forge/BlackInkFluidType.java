@@ -8,8 +8,8 @@ import net.minecraftforge.fluids.FluidType;
 import java.util.function.Consumer;
 
 /**
- * FluidType for Black Ink.
- * Defines the properties and appearance of the ink fluid.
+ * FluidType for Black Ink. Defines the properties and appearance of the ink
+ * fluid.
  */
 public class BlackInkFluidType extends FluidType {
 
@@ -50,7 +50,7 @@ public class BlackInkFluidType extends FluidType {
 
       @Override
       public int getTintColor() {
-        return 0xFF1A1A1A; // Dark gray/black tint
+        return 0xFF1A1A1A;
       }
     });
   }

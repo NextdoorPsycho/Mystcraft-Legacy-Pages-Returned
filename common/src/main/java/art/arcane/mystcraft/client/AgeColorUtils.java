@@ -6,6 +6,9 @@ import net.minecraft.core.BlockPos;
 
 import java.util.List;
 
+/**
+ * Resolves client-visible colors for Age-bound blocks and items from synced Age metadata.
+ */
 public final class AgeColorUtils {
 
   private AgeColorUtils() {
@@ -31,7 +34,7 @@ public final class AgeColorUtils {
   }
 
   public static int selectColorFromPalette(List<Integer> colors, BlockPos pos, int ageUID) {
-    double scale = 0.021; // ~48-block wavelength blobs
+    double scale = 0.021;
     double nx = pos.getX() * scale;
     double nz = pos.getZ() * scale;
     double noise = perlinNoise2D(nx, nz, ageUID);

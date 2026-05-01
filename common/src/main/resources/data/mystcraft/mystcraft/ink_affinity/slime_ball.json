@@ -1,6 +1,10 @@
 {
-  "items": ["minecraft:slime_ball"],
-  "tags": ["forge:slimeballs"],
+  "items": [
+    "minecraft:slime_ball"
+  ],
+  "tags": [
+    "forge:slimeballs"
+  ],
   "amount_per_item": 0.5,
   "tier_bonus": 0,
   "symbol_weights": {

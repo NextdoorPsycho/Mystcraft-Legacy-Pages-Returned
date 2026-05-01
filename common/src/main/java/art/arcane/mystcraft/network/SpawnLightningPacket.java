@@ -7,8 +7,8 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
 
 /**
- * Packet sent from server to client to spawn a colored lightning bolt.
- * Used to synchronize custom lightning entity creation with visual effects.
+ * Packet sent from server to client to spawn a colored lightning bolt. Used to
+ * synchronize custom lightning entity creation with visual effects.
  */
 public record SpawnLightningPacket(
     int entityId,
@@ -45,7 +45,6 @@ public record SpawnLightningPacket(
       Level level = (Level) ClientAccess.getClientLevel();
       if (level == null) return;
 
-      // Create the colored lightning entity on client
       ColoredLightningEntity lightning = new ColoredLightningEntity(
           ModEntities.COLORED_LIGHTNING.get(), level);
       lightning.setId(packet.entityId);

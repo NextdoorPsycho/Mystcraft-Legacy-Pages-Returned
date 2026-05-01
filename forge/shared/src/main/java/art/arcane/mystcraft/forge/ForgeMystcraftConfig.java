@@ -10,16 +10,16 @@ import java.util.List;
 /**
  * Configuration options for Mystcraft.
  * <p>
- * The instability system works like the original Mystcraft:
- * - Ages with missing or conflicting symbols accumulate instability points
- * - When instability exceeds certain thresholds, negative effects begin
- * - Higher instability means more frequent and severe effects
- * - Effects include decay spreading, block transmutation, lightning, meteors, and player debuffs
+ * The instability system works like the original Mystcraft: - Ages with missing
+ * or conflicting symbols accumulate instability points - When instability
+ * exceeds certain thresholds, negative effects begin - Higher instability means
+ * more frequent and severe effects - Effects include decay spreading, block
+ * transmutation, lightning, meteors, and player debuffs
  */
 public class ForgeMystcraftConfig {
 
   public static final ForgeConfigSpec COMMON_SPEC;
-  // General settings
+
   public static final ForgeConfigSpec.BooleanValue giveGuidebookOnFirstSpawn;
   public static final ForgeConfigSpec.IntValue maxSymbolsPerBook;
   public static final ForgeConfigSpec.BooleanValue deleteAgesOnStartup;
@@ -36,10 +36,10 @@ public class ForgeMystcraftConfig {
   public static final ForgeConfigSpec.BooleanValue droppedBooksBecomeLivingEntities;
   public static final ForgeConfigSpec.BooleanValue dropBooksOnRead;
   public static final ForgeConfigSpec.ConfigValue<List<? extends String>> disabledSymbols;
-  // Procedural UI / book-cover toggles
+
   public static final ForgeConfigSpec.BooleanValue proceduralUiEnabled;
   public static final ForgeConfigSpec.BooleanValue proceduralBookCoversEnabled;
-  // Personal pocket dimension settings
+
   public static final ForgeConfigSpec.IntValue pocketInnerHalfSizeXZ;
   public static final ForgeConfigSpec.IntValue pocketInnerHalfSizeY;
   public static final ForgeConfigSpec.IntValue pocketInnerThickness;
@@ -47,20 +47,20 @@ public class ForgeMystcraftConfig {
   public static final ForgeConfigSpec.IntValue pocketCenterY;
   public static final ForgeConfigSpec.ConfigValue<List<? extends String>> pocketInnerBlockPalette;
   public static final ForgeConfigSpec.ConfigValue<String> pocketOuterBlock;
-  // Instability settings
+
   public static final ForgeConfigSpec.BooleanValue instabilityEnabled;
   public static final ForgeConfigSpec.BooleanValue deathEffectsEnabled;
   public static final ForgeConfigSpec.BooleanValue allowUnstableAges;
   public static final ForgeConfigSpec.DoubleValue instabilityMultiplier;
   public static final ForgeConfigSpec.DoubleValue maxAllowedInstability;
-  // Instability thresholds (instability level required to trigger each effect tier)
+
   public static final ForgeConfigSpec.DoubleValue thresholdDecay;
   public static final ForgeConfigSpec.DoubleValue thresholdTransmute;
   public static final ForgeConfigSpec.DoubleValue thresholdLightning;
   public static final ForgeConfigSpec.DoubleValue thresholdMeteor;
   public static final ForgeConfigSpec.DoubleValue thresholdPoison;
   public static final ForgeConfigSpec.DoubleValue thresholdWither;
-  // Effect chances (base chance per tick, scaled by instability)
+
   public static final ForgeConfigSpec.DoubleValue chanceDecay;
   public static final ForgeConfigSpec.DoubleValue chanceTransmute;
   public static final ForgeConfigSpec.DoubleValue chanceLightning;
@@ -71,7 +71,6 @@ public class ForgeMystcraftConfig {
   static {
     COMMON_BUILDER.comment("Mystcraft Common Configuration");
 
-    // --- General ---
     COMMON_BUILDER.push("general");
 
     giveGuidebookOnFirstSpawn = COMMON_BUILDER
@@ -179,7 +178,7 @@ public class ForgeMystcraftConfig {
             "By default, ore block terrain symbols are disabled as they are overpowered."
         )
         .defineListAllowEmpty("disabledSymbols", List.of(
-            // Ore storage blocks
+
             "mystcraft:block_minecraft_coal_block",
             "mystcraft:block_minecraft_copper_block",
             "mystcraft:block_minecraft_diamond_block",
@@ -192,7 +191,7 @@ public class ForgeMystcraftConfig {
             "mystcraft:block_minecraft_raw_gold_block",
             "mystcraft:block_minecraft_raw_iron_block",
             "mystcraft:block_minecraft_redstone_block",
-            // Ancient debris
+
             "mystcraft:block_minecraft_ancient_debris"
         ), ForgeMystcraftConfig::isValidSymbolId);
 
@@ -218,7 +217,6 @@ public class ForgeMystcraftConfig {
 
     COMMON_BUILDER.pop();
 
-    // --- Personal Pocket Dimension ---
     COMMON_BUILDER.comment(
         "Personal Pocket Dimension Settings",
         "Configure the size and materials of personal pocket dimensions.",
@@ -294,7 +292,6 @@ public class ForgeMystcraftConfig {
 
     COMMON_BUILDER.pop();
 
-    // --- Instability ---
     COMMON_BUILDER.comment(
         "Instability Settings",
         "The instability system is core to Mystcraft's balance.",
@@ -337,7 +334,6 @@ public class ForgeMystcraftConfig {
 
     COMMON_BUILDER.pop();
 
-    // --- Instability Thresholds ---
     COMMON_BUILDER.comment(
         "Instability Thresholds",
         "The instability level required before each effect type begins.",
@@ -370,7 +366,6 @@ public class ForgeMystcraftConfig {
 
     COMMON_BUILDER.pop();
 
-    // --- Effect Chances ---
     COMMON_BUILDER.comment(
         "Effect Base Chances",
         "Base probability per tick for each effect type.",
@@ -404,8 +399,7 @@ public class ForgeMystcraftConfig {
   }
 
   /**
-   * Register the config with Forge.
-   * Call this from the mod constructor.
+   * Register the config with Forge. Call this from the mod constructor.
    */
   public static void register() {
     ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, COMMON_SPEC, "mystcraft-common.toml");

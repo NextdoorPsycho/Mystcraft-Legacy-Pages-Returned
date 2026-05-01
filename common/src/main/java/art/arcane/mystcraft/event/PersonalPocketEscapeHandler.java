@@ -28,8 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Handles player escape from personal pocket dimensions.
  * <p>
- * When players cross personal-pocket boundaries, they are teleported back to the spawn platform.
- * Death in the pocket also triggers teleportation back to the entry point.
+ * When players cross personal-pocket boundaries, they are teleported back to
+ * the spawn platform. Death in the pocket also triggers teleportation back to
+ * the entry point.
  */
 public final class PersonalPocketEscapeHandler {
 
@@ -40,7 +41,8 @@ public final class PersonalPocketEscapeHandler {
   }
 
   /**
-   * Handles death in personal pocket. Prevents actual death and teleports player back.
+   * Handles death in personal pocket. Prevents actual death and teleports
+   * player back.
    *
    * @return true if death was prevented, false if not in personal pocket
    */
@@ -55,8 +57,8 @@ public final class PersonalPocketEscapeHandler {
   }
 
   /**
-   * Checks if player has crossed any boundary of the personal pocket.
-   * Called every tick for players in personal pockets.
+   * Checks if player has crossed any boundary of the personal pocket. Called
+   * every tick for players in personal pockets.
    * <p>
    * Boundaries are driven by the configured personal-pocket dimensions.
    */
@@ -72,30 +74,22 @@ public final class PersonalPocketEscapeHandler {
     double y = player.getY();
     double z = player.getZ();
 
-    // Check horizontal boundaries (dimensional walls)
     if (PersonalPocketDimension.isOutsideBoundary(x, z)) {
       teleportToSpawn(player, level);
       return;
     }
 
-    // Check vertical boundaries (floor/ceiling)
     if (PersonalPocketDimension.isOutsideVerticalBoundary(y)) {
       teleportToSpawn(player, level);
     }
   }
 
-  /**
-   * Teleports player back to the pocket spawn platform.
-   * Used when crossing dimensional boundaries within the pocket.
-   */
   private static void teleportToSpawn(ServerPlayer player, ServerLevel pocketLevel) {
     BlockPos spawn = PersonalPocketDimension.getPocketSpawn();
 
-    // Reset player state
     player.setDeltaMovement(0.0, 0.0, 0.0);
     player.fallDistance = 0.0f;
 
-    // Teleport to spawn platform center
     ServerPlayerTeleport.teleport(
         player,
         pocketLevel,
@@ -106,12 +100,12 @@ public final class PersonalPocketEscapeHandler {
         player.getXRot()
     );
 
-    // Play linking sound to indicate boundary crossing
     pocketLevel.playSound(null, spawn, ModSounds.LINKING_LINK.get(), SoundSource.PLAYERS, 0.5f, 1.2f);
   }
 
   /**
-   * Records the origin body proxy before the player enters their personal pocket.
+   * Records the origin body proxy before the player enters their personal
+   * pocket.
    *
    * @return true when the proxy was spawned and stored
    */
@@ -211,7 +205,8 @@ public final class PersonalPocketEscapeHandler {
   }
 
   /**
-   * Rips the owner out of their personal pocket when the origin proxy is damaged.
+   * Rips the owner out of their personal pocket when the origin proxy is
+   * damaged.
    */
   public static boolean ripOwnerOutFromProxy(PersonalPocketProxyEntity proxy, DamageSource source) {
     if (!(proxy.level() instanceof ServerLevel level)) {
@@ -387,7 +382,6 @@ public final class PersonalPocketEscapeHandler {
       BlockPos spawn = LinkOptions.getSpawn(link);
       float linkYaw = LinkOptions.getSpawnYaw(link);
 
-      // Only use return link if it points to a different dimension (not back to this pocket)
       if (uid != null && spawn != null && uid != PersonalPocketDimension.getPersonalAgeUid(player.getUUID())) {
         ServerLevel found = LinkingManager.findDimensionByUID(server, uid);
         if (found != null) {
@@ -401,6 +395,7 @@ public final class PersonalPocketEscapeHandler {
     return new ReturnTarget(targetLevel, targetPos, yaw, pitch);
   }
 
-  private record ReturnTarget(ServerLevel level, BlockPos position, float yaw, float pitch) {
+  private record ReturnTarget(ServerLevel level, BlockPos position, float yaw,
+                              float pitch) {
   }
 }

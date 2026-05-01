@@ -5,8 +5,8 @@ import art.arcane.mystcraft.symbol.SymbolRegistry;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Public API for interacting with the Mystcraft mod.
- * Third-party mods should use this class to register symbols and query the registry.
+ * Public API for interacting with the Mystcraft mod. Third-party mods should
+ * use this class to register symbols and query the registry.
  * <p>
  * Symbol definitions are now data-driven and loaded from datapacks under
  * {@code data/<namespace>/mystcraft/symbols/*.json}. Mods that want to add new

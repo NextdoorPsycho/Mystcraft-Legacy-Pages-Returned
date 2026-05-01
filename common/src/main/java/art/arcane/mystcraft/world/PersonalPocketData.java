@@ -56,12 +56,24 @@ public class PersonalPocketData extends SavedData {
     );
   }
 
+  @Nullable
+  private static UUID parseUuid(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return UUID.fromString(value);
+    } catch (IllegalArgumentException ignored) {
+      return null;
+    }
+  }
+
   private void loadFromTag(CompoundTag tag) {
     returnLinks.clear();
     headBlocks.clear();
     activeProxies.clear();
     if (!tag.contains(TAG_RETURNS)) {
-      // continue to head blocks
+
     } else {
       ListTag list = tag.getList(TAG_RETURNS, Tag.TAG_COMPOUND);
       for (int i = 0; i < list.size(); i++) {
@@ -79,7 +91,7 @@ public class PersonalPocketData extends SavedData {
     }
 
     if (!tag.contains(TAG_HEADS)) {
-      // continue to proxies
+
     } else {
       ListTag headList = tag.getList(TAG_HEADS, Tag.TAG_COMPOUND);
       for (int i = 0; i < headList.size(); i++) {
@@ -249,19 +261,8 @@ public class PersonalPocketData extends SavedData {
     }
   }
 
-  @Nullable
-  private static UUID parseUuid(String value) {
-    if (value == null || value.isBlank()) {
-      return null;
-    }
-    try {
-      return UUID.fromString(value);
-    } catch (IllegalArgumentException ignored) {
-      return null;
-    }
-  }
-
-  public record ProxyState(String ownerName, int dimensionUid, BlockPos position, float yaw, float pitch,
+  public record ProxyState(String ownerName, int dimensionUid,
+                           BlockPos position, float yaw, float pitch,
                            UUID proxyId, CompoundTag returnLink) {
     public ProxyState {
       ownerName = ownerName == null ? "" : ownerName;

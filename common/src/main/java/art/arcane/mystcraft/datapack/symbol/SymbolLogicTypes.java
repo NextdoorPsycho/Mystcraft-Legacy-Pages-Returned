@@ -25,7 +25,6 @@ import java.util.function.BiConsumer;
  */
 public final class SymbolLogicTypes {
 
-  // Color palettes reused by color target symbols (legacy parity).
   private static final int[] VIBRANT_COLORS = {
       0x87CEEB, 0x98FB98, 0xFFB6C1, 0xDDA0DD, 0xF0E68C, 0xADD8E6, 0x90EE90, 0xFFDAB9,
       0xE6E6FA, 0xFFFACD, 0xB0E0E6, 0xE0FFFF, 0x7FFFD4, 0xFFE4B5, 0xFAFAD2, 0xD8BFD8,
@@ -133,7 +132,8 @@ public final class SymbolLogicTypes {
     SymbolLogicRegistry.register(new SimpleBooleanType(id, setter));
   }
 
-  private record SimpleStringType(ResourceLocation id, BiConsumer<AgeDirector, String> setter) implements SymbolLogicType {
+  private record SimpleStringType(ResourceLocation id,
+                                  BiConsumer<AgeDirector, String> setter) implements SymbolLogicType {
     private SimpleStringType(String id, BiConsumer<AgeDirector, String> setter) {
       this(new ResourceLocation(Mystcraft.MOD_ID, id), setter);
     }
@@ -145,7 +145,9 @@ public final class SymbolLogicTypes {
     }
   }
 
-  private record SimpleIntType(ResourceLocation id, BiConsumer<AgeDirector, Integer> setter, BiConsumer<AgeDirector, Boolean> naturalSetter) implements SymbolLogicType {
+  private record SimpleIntType(ResourceLocation id,
+                               BiConsumer<AgeDirector, Integer> setter,
+                               BiConsumer<AgeDirector, Boolean> naturalSetter) implements SymbolLogicType {
     private SimpleIntType(String id, BiConsumer<AgeDirector, Integer> setter,
                           BiConsumer<AgeDirector, Boolean> naturalSetter) {
       this(new ResourceLocation(Mystcraft.MOD_ID, id), setter, naturalSetter);
@@ -165,7 +167,8 @@ public final class SymbolLogicTypes {
     }
   }
 
-  private record SimpleFloatType(ResourceLocation id, BiConsumer<AgeDirector, Float> setter) implements SymbolLogicType {
+  private record SimpleFloatType(ResourceLocation id,
+                                 BiConsumer<AgeDirector, Float> setter) implements SymbolLogicType {
     private SimpleFloatType(String id, BiConsumer<AgeDirector, Float> setter) {
       this(new ResourceLocation(Mystcraft.MOD_ID, id), setter);
     }
@@ -177,7 +180,8 @@ public final class SymbolLogicTypes {
     }
   }
 
-  private record SimpleBooleanType(ResourceLocation id, BiConsumer<AgeDirector, Boolean> setter) implements SymbolLogicType {
+  private record SimpleBooleanType(ResourceLocation id,
+                                   BiConsumer<AgeDirector, Boolean> setter) implements SymbolLogicType {
     private SimpleBooleanType(String id, BiConsumer<AgeDirector, Boolean> setter) {
       this(new ResourceLocation(Mystcraft.MOD_ID, id), setter);
     }
@@ -223,7 +227,8 @@ public final class SymbolLogicTypes {
       switch (flag) {
         case "caves_enabled" -> director.setCavesEnabled(value);
         case "ravines_enabled" -> director.setRavinesEnabled(value);
-        case "floating_islands_enabled" -> director.setFloatingIslandsEnabled(value);
+        case "floating_islands_enabled" ->
+            director.setFloatingIslandsEnabled(value);
         case "skylands_enabled" -> director.setSkylandsEnabled(value);
         case "villages_enabled" -> director.setVillagesEnabled(value);
         case "dungeons_enabled" -> director.setDungeonsEnabled(value);
@@ -241,7 +246,8 @@ public final class SymbolLogicTypes {
         case "spikes_enabled" -> director.setSpikesEnabled(value);
         case "spheres_enabled" -> director.setSpheresEnabled(value);
         case "tendrils_enabled" -> director.setTendrilsEnabled(value);
-        case "vertical_tendrils_enabled" -> director.setVerticalTendrilsEnabled(value);
+        case "vertical_tendrils_enabled" ->
+            director.setVerticalTendrilsEnabled(value);
         case "perlin_worms_enabled" -> director.setPerlinWormsEnabled(value);
         case "crystals_enabled" -> director.setCrystalsEnabled(value);
         case "horizon_hidden" -> director.setHorizonHidden(value);
@@ -253,31 +259,45 @@ public final class SymbolLogicTypes {
         }
         case "explosions_enabled" -> director.setExplosionsEnabled(value);
         case "pvp_enabled" -> director.setPvPEnabled(value);
-        case "pillager_outposts_enabled" -> director.setPillagerOutpostsEnabled(value);
-        case "ruined_portals_enabled" -> director.setRuinedPortalsEnabled(value);
-        case "ancient_cities_enabled" -> director.setAncientCitiesEnabled(value);
+        case "pillager_outposts_enabled" ->
+            director.setPillagerOutpostsEnabled(value);
+        case "ruined_portals_enabled" ->
+            director.setRuinedPortalsEnabled(value);
+        case "ancient_cities_enabled" ->
+            director.setAncientCitiesEnabled(value);
         case "trail_ruins_enabled" -> director.setTrailRuinsEnabled(value);
-        case "ocean_monuments_enabled" -> director.setOceanMonumentsEnabled(value);
+        case "ocean_monuments_enabled" ->
+            director.setOceanMonumentsEnabled(value);
         case "witch_huts_enabled" -> director.setWitchHutsEnabled(value);
-        case "desert_temples_enabled" -> director.setDesertTemplesEnabled(value);
-        case "jungle_temples_enabled" -> director.setJungleTemplesEnabled(value);
-        case "woodland_mansions_enabled" -> director.setWoodlandMansionsEnabled(value);
+        case "desert_temples_enabled" ->
+            director.setDesertTemplesEnabled(value);
+        case "jungle_temples_enabled" ->
+            director.setJungleTemplesEnabled(value);
+        case "woodland_mansions_enabled" ->
+            director.setWoodlandMansionsEnabled(value);
         case "end_cities_enabled" -> director.setEndCitiesEnabled(value);
-        case "bastion_remnants_enabled" -> director.setBastionRemnantsEnabled(value);
+        case "bastion_remnants_enabled" ->
+            director.setBastionRemnantsEnabled(value);
         case "igloos_enabled" -> director.setIgloosEnabled(value);
         case "shipwrecks_enabled" -> director.setShipwrecksEnabled(value);
         case "ocean_ruins_enabled" -> director.setOceanRuinsEnabled(value);
-        case "buried_treasure_enabled" -> director.setBuriedTreasureEnabled(value);
-        case "nether_fossils_enabled" -> director.setNetherFossilsEnabled(value);
-        case "dripstone_caves_enabled" -> director.setDripstoneCavesEnabled(value);
+        case "buried_treasure_enabled" ->
+            director.setBuriedTreasureEnabled(value);
+        case "nether_fossils_enabled" ->
+            director.setNetherFossilsEnabled(value);
+        case "dripstone_caves_enabled" ->
+            director.setDripstoneCavesEnabled(value);
         case "lush_caves_enabled" -> director.setLushCavesEnabled(value);
         case "deep_dark_enabled" -> director.setDeepDarkEnabled(value);
         case "bonefields_enabled" -> director.setBonefieldsEnabled(value);
         case "meat_pillars_enabled" -> director.setMeatPillarsEnabled(value);
-        case "shattered_grid_enabled" -> director.setShatteredGridEnabled(value);
+        case "shattered_grid_enabled" ->
+            director.setShatteredGridEnabled(value);
         case "eyeblight_enabled" -> director.setEyeblightEnabled(value);
-        case "inverted_trees_enabled" -> director.setInvertedTreesEnabled(value);
-        case "corrupted_columns_enabled" -> director.setCorruptedColumnsEnabled(value);
+        case "inverted_trees_enabled" ->
+            director.setInvertedTreesEnabled(value);
+        case "corrupted_columns_enabled" ->
+            director.setCorruptedColumnsEnabled(value);
         default -> Mystcraft.LOGGER.warn("[SymbolLogic] Unknown flag {}", flag);
       }
     }
@@ -496,15 +516,21 @@ public final class SymbolLogicTypes {
         IBiomeController controller = switch (typeFinal) {
           case "single" -> new BiomeControllerSingle(biomes, seed);
           case "native" -> new BiomeControllerNative(seed);
-          case "tiny" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.TINY);
-          case "small" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.SMALL);
-          case "medium" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.MEDIUM);
-          case "large" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.LARGE);
-          case "huge" -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.HUGE);
+          case "tiny" ->
+              new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.TINY);
+          case "small" ->
+              new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.SMALL);
+          case "medium" ->
+              new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.MEDIUM);
+          case "large" ->
+              new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.LARGE);
+          case "huge" ->
+              new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.HUGE);
           case "tiled" -> new BiomeControllerTiled(biomes, seed);
           case "grid" -> new BiomeControllerGrid(biomes, seed);
           case "shuffle" -> new BiomeControllerShuffle(biomes, seed);
-          default -> new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.MEDIUM);
+          default ->
+              new BiomeControllerNoise(biomes, seed, BiomeControllerNoise.Scale.MEDIUM);
         };
         director.registerInterface(controller);
       };
@@ -709,7 +735,8 @@ public final class SymbolLogicTypes {
         case "horizon" -> director.setHorizonColor(color);
         case "sunset" -> director.setSunsetColor(color);
         case "night_sky" -> director.setNightSkyColor(color);
-        default -> Mystcraft.LOGGER.warn("[SymbolLogic] Unknown color target {}", target);
+        default ->
+            Mystcraft.LOGGER.warn("[SymbolLogic] Unknown color target {}", target);
       }
     }
   }

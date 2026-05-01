@@ -15,15 +15,16 @@ import net.minecraft.world.level.Level;
 import java.util.UUID;
 
 /**
- * Instability bonus that rewards players for surviving in an Age.
- * The longer a player survives in the Age, the more stability bonus they provide.
- * Death resets the bonus to zero.
+ * Instability bonus that rewards players for surviving in an Age. The longer a
+ * player survives in the Age, the more stability bonus they provide. Death
+ * resets the bonus to zero.
  * <p>
- * This is the inverse of PlayerKilledBonus - it rewards survival with stability.
+ * This is the inverse of PlayerKilledBonus - it rewards survival with
+ * stability.
  * <p>
- * Event registration is handled by the platform module. The common logic methods
- * (onPlayerDeath, onPlayerLogin, onPlayerLogout, onPlayerChangedDimension)
- * are called from platform-specific event handlers.
+ * Event registration is handled by the platform module. The common logic
+ * methods (onPlayerDeath, onPlayerLogin, onPlayerLogout,
+ * onPlayerChangedDimension) are called from platform-specific event handlers.
  */
 public class PlayerSurvivalBonus implements IInstabilityBonus {
 
@@ -42,8 +43,10 @@ public class PlayerSurvivalBonus implements IInstabilityBonus {
    * @param playerId    The player's UUID
    * @param playerName  The player's name
    * @param dimensionId The dimension ID of the Age
-   * @param maxBonus    Maximum stability bonus when player survives long enough
-   * @param growthRate  How fast the bonus grows per tick while player is in world
+   * @param maxBonus    Maximum stability bonus when player survives long
+   *                    enough
+   * @param growthRate  How fast the bonus grows per tick while player is in
+   *                    world
    */
   public PlayerSurvivalBonus(UUID playerId, String playerName, int dimensionId, int maxBonus, float growthRate) {
     this.playerId = playerId;
@@ -62,17 +65,17 @@ public class PlayerSurvivalBonus implements IInstabilityBonus {
 
   @Override
   public int getValue() {
-    // Return positive value (bonus = reduces instability)
+
     return (int) currentBonus;
   }
 
   @Override
   public void tick(ServerLevel level) {
     if (playerInWorld) {
-      // Increase bonus while player is in the world
+
       currentBonus = Math.min(maxBonus, currentBonus + growthRate);
     } else {
-      // Slowly decay bonus when player is not present (but slower than growth)
+
       currentBonus = Math.max(0, currentBonus - (growthRate * 0.1f));
     }
   }
@@ -81,12 +84,11 @@ public class PlayerSurvivalBonus implements IInstabilityBonus {
    * Called when a player dies. Should be invoked from platform event handlers.
    */
   public void onPlayerDeath(Player player) {
-    // Check if this is our tracked player
+
     if (!player.getUUID().equals(playerId)) {
       return;
     }
 
-    // Check if death occurred in our dimension
     if (!AgeDimensionFactory.isMystcraftAge(player.level().dimension())) {
       return;
     }
@@ -96,13 +98,13 @@ public class PlayerSurvivalBonus implements IInstabilityBonus {
       return;
     }
 
-    // Reset bonus on death
     currentBonus = 0;
     announceToAge(player.level(), "instability.bonus.survival.death", playerName);
   }
 
   /**
-   * Called when a player logs in. Should be invoked from platform event handlers.
+   * Called when a player logs in. Should be invoked from platform event
+   * handlers.
    */
   public void onPlayerLogin(ServerPlayer player) {
     if (!player.getUUID().equals(playerId)) {
@@ -121,7 +123,8 @@ public class PlayerSurvivalBonus implements IInstabilityBonus {
   }
 
   /**
-   * Called when a player logs out. Should be invoked from platform event handlers.
+   * Called when a player logs out. Should be invoked from platform event
+   * handlers.
    */
   public void onPlayerLogout(ServerPlayer player) {
     if (!player.getUUID().equals(playerId)) {
@@ -138,14 +141,14 @@ public class PlayerSurvivalBonus implements IInstabilityBonus {
   }
 
   /**
-   * Called when a player changes dimension. Should be invoked from platform event handlers.
+   * Called when a player changes dimension. Should be invoked from platform
+   * event handlers.
    */
   public void onPlayerChangedDimension(ServerPlayer player, ResourceKey<Level> from, ResourceKey<Level> to) {
     if (!player.getUUID().equals(playerId)) {
       return;
     }
 
-    // Check if leaving our dimension
     if (AgeDimensionFactory.isMystcraftAge(from)) {
       int fromAgeId = getAgeUIDFromKey(from);
       if (fromAgeId == dimensionId) {
@@ -154,7 +157,6 @@ public class PlayerSurvivalBonus implements IInstabilityBonus {
       }
     }
 
-    // Check if entering our dimension
     if (AgeDimensionFactory.isMystcraftAge(to)) {
       int toAgeId = getAgeUIDFromKey(to);
       if (toAgeId == dimensionId) {
@@ -178,18 +180,12 @@ public class PlayerSurvivalBonus implements IInstabilityBonus {
     return dimensionId;
   }
 
-  /**
-   * Gets the Age UID from a level.
-   */
   private int getAgeUID(Level level) {
     MinecraftServer server = Mystcraft.getCurrentServer();
     if (server == null) return -1;
     return AgeManager.get(server).getAgeUID(level.dimension());
   }
 
-  /**
-   * Gets the Age UID from a dimension key.
-   */
   private int getAgeUIDFromKey(ResourceKey<Level> key) {
     MinecraftServer server = Mystcraft.getCurrentServer();
     if (server == null) return -1;
@@ -216,6 +212,6 @@ public class PlayerSurvivalBonus implements IInstabilityBonus {
    * Cleans up this bonus tracker.
    */
   public void cleanup() {
-    // No event bus to unregister from in common - platform handles cleanup
+
   }
 }

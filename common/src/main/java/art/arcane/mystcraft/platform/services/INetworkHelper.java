@@ -4,8 +4,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
 /**
- * Abstracts platform-specific networking operations.
- * Implementations handle SimpleChannel (Forge), custom payloads (Fabric), etc.
+ * Abstracts platform-specific networking operations. Implementations handle
+ * SimpleChannel (Forge), custom payloads (Fabric), etc.
  */
 public interface INetworkHelper {
 

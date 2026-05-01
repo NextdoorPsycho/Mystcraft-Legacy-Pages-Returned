@@ -1,5 +1,7 @@
 {
-  "items": ["minecraft:rotten_flesh"],
+  "items": [
+    "minecraft:rotten_flesh"
+  ],
   "amount_per_item": 0.3,
   "tier_bonus": 0,
   "symbol_weights": {

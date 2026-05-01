@@ -1,5 +1,7 @@
 {
-  "items": ["minecraft:blaze_powder"],
+  "items": [
+    "minecraft:blaze_powder"
+  ],
   "amount_per_item": 1.0,
   "link_property_weights": {
     "disarm": 0.1,

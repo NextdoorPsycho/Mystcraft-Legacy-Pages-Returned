@@ -6,9 +6,9 @@ import art.arcane.mystcraft.platform.Services;
  * Centralized registration entry point for all Mystcraft content.
  * Platform-specific registration implementations call into this class.
  * <p>
- * This enables a single source of truth for what gets registered while
- * allowing platform-specific IRegistrationHelper implementations to
- * handle the actual registration mechanics.
+ * This enables a single source of truth for what gets registered while allowing
+ * platform-specific IRegistrationHelper implementations to handle the actual
+ * registration mechanics.
  */
 public final class ModRegistrations {
 
@@ -16,8 +16,8 @@ public final class ModRegistrations {
   }
 
   /**
-   * Initializes all registrations via the platform's registration helper.
-   * This should be called from the platform entry point after initialize().
+   * Initializes all registrations via the platform's registration helper. This
+   * should be called from the platform entry point after initialize().
    *
    * @param modEventBus The platform-specific event bus (IEventBus for Forge)
    */

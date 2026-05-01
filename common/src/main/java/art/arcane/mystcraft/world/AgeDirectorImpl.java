@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Implementation of AgeDirector that collects symbol configurations.
- * Used during Age creation to build world properties.
+ * Implementation of AgeDirector that collects symbol configurations. Used
+ * during Age creation to build world properties.
  */
 public class AgeDirectorImpl implements AgeDirector {
 
@@ -25,7 +25,7 @@ public class AgeDirectorImpl implements AgeDirector {
   private final List<Integer> grassColors = new ArrayList<>();
   private final Set<String> disabledOres = new HashSet<>();
   private final Map<String, Float> oreMultipliers = new HashMap<>();
-  // Modifier stacks
+
   private final Deque<Integer> colorStack = new ArrayDeque<>();
   private final Deque<Float> angleStack = new ArrayDeque<>();
   private final Deque<Float> lengthStack = new ArrayDeque<>();
@@ -38,7 +38,7 @@ public class AgeDirectorImpl implements AgeDirector {
   private final List<IDynamicColorProvider> dynamicColorProviders = new ArrayList<>();
   private final List<IStaticColorProvider> staticColorProviders = new ArrayList<>();
   private float instability = 0.0f;
-  // Terrain
+
   private String terrainType = "normal";
   private String terrainMixMode = "none";
   private String secondaryTerrainType = "none";
@@ -49,13 +49,13 @@ public class AgeDirectorImpl implements AgeDirector {
   private BlockState seaBlock = Blocks.WATER.defaultBlockState();
   private BlockState surfaceBlock = null;
   private BlockState subsurfaceBlock = null;
-  // Biomes
+
   private String biomeController = "native";
-  // Weather
+
   private String weatherType = "normal";
-  // Lighting
+
   private String lightingType = "normal";
-  // Colors (-1 means use default)
+
   private int skyColor = -1;
   private int fogColor = -1;
   private int foliageColor = -1;
@@ -70,25 +70,25 @@ public class AgeDirectorImpl implements AgeDirector {
   private boolean cloudColorNatural = false;
   private int horizonColor = -1;
   private boolean horizonColorNatural = false;
-  // Features
+
   private boolean cavesEnabled = true;
   private boolean ravinesEnabled = true;
   private boolean floatingIslandsEnabled = false;
   private boolean skylandsEnabled = false;
-  // Structures
+
   private boolean villagesEnabled = true;
   private boolean dungeonsEnabled = true;
   private boolean mineshaftsEnabled = true;
   private boolean strongholdsEnabled = true;
-  // Environment
+
   private boolean acceleratedEnabled = false;
   private float timescale = 1.0f;
   private boolean meteorsEnabled = false;
   private boolean lightningEnabled = false;
   private boolean scorchedEnabled = false;
-  // Ore control
+
   private boolean oresDisabled = false;
-  // Additional features/structures
+
   private boolean crystalsEnabled = false;
   private boolean deepLakesEnabled = true;
   private boolean denseOresEnabled = false;
@@ -115,7 +115,7 @@ public class AgeDirectorImpl implements AgeDirector {
   private boolean verticalTendrilsEnabled = false;
   private boolean perlinWormsEnabled = false;
   private boolean personalPocket = false;
-  // New structures (1.20+)
+
   private boolean pillagerOutpostsEnabled = false;
   private boolean ruinedPortalsEnabled = false;
   private boolean ancientCitiesEnabled = false;
@@ -132,20 +132,20 @@ public class AgeDirectorImpl implements AgeDirector {
   private boolean oceanRuinsEnabled = false;
   private boolean buriedTreasureEnabled = false;
   private boolean netherFossilsEnabled = false;
-  // Cave features
+
   private boolean dripstoneCavesEnabled = false;
   private boolean lushCavesEnabled = false;
   private boolean deepDarkEnabled = false;
-  // Gradient colors
+
   private int sunsetColor = -1;
-  // World heights
+
   private float cloudHeight = 192.0f;
   private float horizonHeight = 0.0f;
-  // Micro dimension settings (applied to newly created Ages only)
+
   private boolean microDimensionsEnabled = false;
   private int microDimensionRadiusChunks = 0;
   private int microDimensionExtraChunks = 1;
-  // Registered logic interfaces (for full world generation pipeline)
+
   private ITerrainGenerator terrainGenerator;
   private IBiomeController biomeControllerImpl;
   private ILightingController lightingControllerImpl;
@@ -177,8 +177,6 @@ public class AgeDirectorImpl implements AgeDirector {
   public float getInstability() {
     return instability;
   }
-
-  // --- Terrain ---
 
   /**
    * Sets the instability value directly.
@@ -309,8 +307,6 @@ public class AgeDirectorImpl implements AgeDirector {
     this.subsurfaceBlock = block;
   }
 
-  // --- Biomes ---
-
   @Override
   public String getBiomeController() {
     return biomeController;
@@ -331,8 +327,6 @@ public class AgeDirectorImpl implements AgeDirector {
     return biomes;
   }
 
-  // --- Weather ---
-
   @Override
   public String getWeatherType() {
     return weatherType;
@@ -343,8 +337,6 @@ public class AgeDirectorImpl implements AgeDirector {
     this.weatherType = type;
   }
 
-  // --- Lighting ---
-
   @Override
   public String getLightingType() {
     return lightingType;
@@ -354,8 +346,6 @@ public class AgeDirectorImpl implements AgeDirector {
   public void setLightingType(String type) {
     this.lightingType = type;
   }
-
-  // --- Colors ---
 
   @Override
   public int getSkyColor() {
@@ -517,8 +507,6 @@ public class AgeDirectorImpl implements AgeDirector {
     this.horizonColorNatural = natural;
   }
 
-  // --- Features ---
-
   @Override
   public void setCavesEnabled(boolean enabled) {
     this.cavesEnabled = enabled;
@@ -555,8 +543,6 @@ public class AgeDirectorImpl implements AgeDirector {
     return skylandsEnabled;
   }
 
-  // --- Structures ---
-
   @Override
   public void setVillagesEnabled(boolean enabled) {
     this.villagesEnabled = enabled;
@@ -592,8 +578,6 @@ public class AgeDirectorImpl implements AgeDirector {
   public boolean areStrongholdsEnabled() {
     return strongholdsEnabled;
   }
-
-  // --- Environment ---
 
   public boolean isAcceleratedEnabled() {
     return acceleratedEnabled;
@@ -640,8 +624,6 @@ public class AgeDirectorImpl implements AgeDirector {
   public void setScorchedEnabled(boolean enabled) {
     this.scorchedEnabled = enabled;
   }
-
-  // --- Additional Features ---
 
   @Override
   public void setCrystalsEnabled(boolean enabled) {
@@ -731,8 +713,6 @@ public class AgeDirectorImpl implements AgeDirector {
   public void setHorizonHidden(boolean hidden) {
     this.horizonHidden = hidden;
   }
-
-  // --- World Heights ---
 
   @Override
   public float getCloudHeight() {
@@ -826,13 +806,13 @@ public class AgeDirectorImpl implements AgeDirector {
     return shatteredGridEnabled;
   }
 
+  public boolean isEyeblightEnabled() {
+    return eyeblightEnabled;
+  }
+
   @Override
   public void setEyeblightEnabled(boolean enabled) {
     this.eyeblightEnabled = enabled;
-  }
-
-  public boolean isEyeblightEnabled() {
-    return eyeblightEnabled;
   }
 
   @Override
@@ -966,8 +946,6 @@ public class AgeDirectorImpl implements AgeDirector {
     this.personalPocket = personalPocket;
   }
 
-  // --- Modifiers ---
-
   @Override
   public void pushColor(int color) {
     colorStack.push(color);
@@ -1028,8 +1006,6 @@ public class AgeDirectorImpl implements AgeDirector {
   public Holder<Biome> popBiome() {
     return biomeStack.isEmpty() ? null : biomeStack.pop();
   }
-
-  // --- Additional Structures ---
 
   @Override
   public void setPillagerOutpostsEnabled(boolean enabled) {
@@ -1175,8 +1151,6 @@ public class AgeDirectorImpl implements AgeDirector {
     return netherFossilsEnabled;
   }
 
-  // --- Cave Features ---
-
   @Override
   public void setDripstoneCavesEnabled(boolean enabled) {
     this.dripstoneCavesEnabled = enabled;
@@ -1204,8 +1178,6 @@ public class AgeDirectorImpl implements AgeDirector {
     this.deepDarkEnabled = enabled;
   }
 
-  // --- Gradient Colors ---
-
   @Override
   public int getSunsetColor() {
     return sunsetColor;
@@ -1225,8 +1197,6 @@ public class AgeDirectorImpl implements AgeDirector {
   public int popGradient() {
     return gradientStack.isEmpty() ? -1 : gradientStack.pop();
   }
-
-  // --- Interface Registration ---
 
   @Override
   public void registerInterface(ITerrainGenerator generator) {
@@ -1360,12 +1330,10 @@ public class AgeDirectorImpl implements AgeDirector {
     return weatherControllerImpl;
   }
 
-  // --- Color Provider Registration ---
-
   @Override
   public void registerInterface(IDynamicColorProvider provider) {
     if (provider != null) {
-      // Check for duplicate identifiers
+
       String newId = provider.getIdentifier();
       boolean isDuplicate = dynamicColorProviders.stream()
           .anyMatch(existing -> existing.getIdentifier().equals(newId));
@@ -1379,7 +1347,7 @@ public class AgeDirectorImpl implements AgeDirector {
   @Override
   public void registerInterface(IStaticColorProvider provider) {
     if (provider != null) {
-      // Check for duplicate identifiers
+
       String newId = provider.getIdentifier();
       boolean isDuplicate = staticColorProviders.stream()
           .anyMatch(existing -> existing.getIdentifier().equals(newId));

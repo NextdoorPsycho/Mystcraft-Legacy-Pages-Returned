@@ -4,8 +4,7 @@ import art.arcane.mystcraft.api.world.logic.IWeatherController;
 import net.minecraft.server.level.ServerLevel;
 
 /**
- * Weather controller that prevents all weather.
- * Clear skies always.
+ * Weather controller that prevents all weather. Clear skies always.
  */
 public class WeatherControllerNever implements IWeatherController {
 
@@ -13,7 +12,7 @@ public class WeatherControllerNever implements IWeatherController {
 
   @Override
   public void updateWeather(ServerLevel level) {
-    // Force clear weather
+
     if (level.isRaining() || level.isThundering()) {
       level.setWeatherParameters(6000, 0, false, false);
     }

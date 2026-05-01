@@ -11,12 +11,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Generates smooth obsidian slabs jutting from the ground at impossible
- * angles. Flat slab shapes (wide but thin) that are 15-35 blocks tall,
- * 8-15 blocks wide, and 2-3 blocks thick, tilted at ~15-30 degrees.
- * Obsidian with crying obsidian accents and occasional amethyst veins.
- * Partially buried, giving the impression of something massive beneath
- * the surface. Deeply mysterious monolith-like structures.
+ * Generates smooth obsidian slabs jutting from the ground at impossible angles.
+ * Flat slab shapes (wide but thin) that are 15-35 blocks tall, 8-15 blocks
+ * wide, and 2-3 blocks thick, tilted at ~15-30 degrees. Obsidian with crying
+ * obsidian accents and occasional amethyst veins. Partially buried, giving the
+ * impression of something massive beneath the surface. Deeply mysterious
+ * monolith-like structures.
  */
 public class ObsidianMonolithsPopulator implements IPopulate {
 
@@ -86,7 +86,7 @@ public class ObsidianMonolithsPopulator implements IPopulate {
       int slabHeight = MIN_HEIGHT + random.nextInt(MAX_HEIGHT - MIN_HEIGHT + 1);
       int slabWidth = MIN_WIDTH + random.nextInt(MAX_WIDTH - MIN_WIDTH + 1);
       double facing = random.nextDouble() * Math.PI * 2.0;
-      // Tilt angle: 15-30 degrees from vertical
+
       double tiltAngle = (15.0 + random.nextDouble() * 15.0) * Math.PI / 180.0;
 
       generateMonolith(world, chunkPos, x, surfaceY, z,
@@ -95,29 +95,28 @@ public class ObsidianMonolithsPopulator implements IPopulate {
   }
 
   private void generateMonolith(WorldGenLevel world, BlockPos chunkPos,
-                                 int cx, int surfaceY, int cz,
-                                 int height, int width, double facing, double tilt) {
-    // The slab faces a direction (facing) and tilts toward it
+                                int cx, int surfaceY, int cz,
+                                int height, int width, double facing, double tilt) {
+
     double faceDx = Math.cos(facing);
     double faceDz = Math.sin(facing);
-    // Width direction (perpendicular to facing)
+
     double widthDx = -faceDz;
     double widthDz = faceDx;
 
     int halfWidth = width / 2;
     int startY = surfaceY - BURY_DEPTH;
 
-    // Whether this monolith has amethyst veins
     long veinSeed = positionHash(seed ^ 0xAE7L, cx, surfaceY, cz);
     boolean hasVeins = hashFloat(veinSeed) < 0.4f;
-    // Vein center position on the slab
+
     double veinCenterProgress = hashFloat(positionHash(veinSeed, 1, 0, 0));
     double veinCenterHeight = hashFloat(positionHash(veinSeed, 0, 1, 0));
 
     for (int dy = 0; dy < height + BURY_DEPTH; dy++) {
       for (int dw = -halfWidth; dw <= halfWidth; dw++) {
         for (int dt = 0; dt < SLAB_THICKNESS; dt++) {
-          // Apply tilt: as we go up, the slab shifts in the facing direction
+
           double tiltOffset = (dy - BURY_DEPTH) * Math.sin(tilt);
 
           double worldDx = widthDx * dw + faceDx * (dt + tiltOffset);
@@ -130,25 +129,22 @@ public class ObsidianMonolithsPopulator implements IPopulate {
           BlockPos pos = new BlockPos(bx, by, bz);
           if (!isInWritableArea(pos, chunkPos)) continue;
 
-          // Width taper: narrower at top
           double heightProgress = (double) dy / (height + BURY_DEPTH);
           double widthFactor = 1.0 - heightProgress * 0.3;
           if (Math.abs(dw) > halfWidth * widthFactor) continue;
 
-          // Pick material
           long blockHash = positionHash(seed, bx, by, bz);
           float roll = hashFloat(blockHash);
 
           BlockState material;
 
-          // Check if in vein zone
           if (hasVeins) {
             double veinDistW = Math.abs((double) dw / halfWidth - (veinCenterProgress * 2.0 - 1.0));
             double veinDistH = Math.abs(heightProgress - veinCenterHeight);
             double veinDist = Math.sqrt(veinDistW * veinDistW + veinDistH * veinDistH);
 
             if (veinDist < 0.2) {
-              // Core of vein
+
               if (roll < 0.3f) {
                 material = BUDDING_AMETHYST;
               } else {
@@ -157,7 +153,7 @@ public class ObsidianMonolithsPopulator implements IPopulate {
               world.setBlock(pos, material, 2);
               continue;
             } else if (veinDist < 0.35) {
-              // Edge of vein
+
               if (roll < 0.4f) {
                 material = AMETHYST;
                 world.setBlock(pos, material, 2);
@@ -166,11 +162,10 @@ public class ObsidianMonolithsPopulator implements IPopulate {
             }
           }
 
-          // Standard obsidian material
           if (roll < 0.12f) {
             material = CRYING_OBSIDIAN;
           } else if (roll < 0.15f && dt == 0) {
-            // Occasional tinted glass windows on the face
+
             material = TINTED_GLASS;
           } else {
             material = OBSIDIAN;
@@ -181,7 +176,6 @@ public class ObsidianMonolithsPopulator implements IPopulate {
       }
     }
 
-    // Base rubble: small obsidian blocks around the base
     for (int r = 0; r < 8; r++) {
       long rubbleHash = positionHash(seed ^ 0x4DBL, cx + r, surfaceY, cz + r);
       double rAngle = hashFloat(rubbleHash) * Math.PI * 2.0;

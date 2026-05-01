@@ -32,14 +32,21 @@
                 },
                 "b": {
                   "op": "mul",
-                  "a": { "op": "noise2", "scale": 0.02, "octaves": 3, "seed": 1199 },
+                  "a": {
+                    "op": "noise2",
+                    "scale": 0.02,
+                    "octaves": 3,
+                    "seed": 1199
+                  },
                   "b": 0.3
                 }
               },
               "b": 35
             }
           },
-          "b": { "var": "y" }
+          "b": {
+            "var": "y"
+          }
         }
       }
     },

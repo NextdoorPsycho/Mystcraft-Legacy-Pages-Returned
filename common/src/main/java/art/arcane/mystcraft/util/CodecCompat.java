@@ -7,6 +7,9 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import java.lang.reflect.Method;
 import java.util.function.Function;
 
+/**
+ * Compatibility accessors for block codecs across the supported Minecraft 1.20.1 runtime.
+ */
 public final class CodecCompat {
 
   private static final Method SIMPLE_CODEC =
@@ -27,5 +30,4 @@ public final class CodecCompat {
     }
   }
 
-  
 }

@@ -9,9 +9,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Programmatic builder for an archivist house structure.
- * Generates a 9x7x12 cobblestone building with bookshelves, lecterns, and a writing desk.
- * Used by VillageStructureHandler to build houses in villages.
+ * Programmatic builder for an archivist house structure. Generates a 9x7x12
+ * cobblestone building with bookshelves, lecterns, and a writing desk. Used by
+ * VillageStructureHandler to build houses in villages.
  */
 public final class ArchivistHouseStructurePiece {
 
@@ -31,7 +31,7 @@ public final class ArchivistHouseStructurePiece {
    * @param random Random source for variation
    */
   public static void build(ServerLevel level, BlockPos origin, Direction facing, RandomSource random) {
-    // Build relative to origin, with rotation handled by caller
+
     for (int x = 0; x < WIDTH; x++) {
       for (int z = 0; z < DEPTH; z++) {
         for (int y = -1; y < HEIGHT; y++) {
@@ -46,12 +46,11 @@ public final class ArchivistHouseStructurePiece {
   }
 
   private static BlockState getBlockAt(int x, int y, int z, RandomSource random) {
-    // Foundation
+
     if (y == -1) {
       return Blocks.COBBLESTONE.defaultBlockState();
     }
 
-    // Floor
     if (y == 0) {
       if (x >= 1 && x <= WIDTH - 2 && z >= 1 && z <= DEPTH - 2) {
         return Blocks.OAK_PLANKS.defaultBlockState();
@@ -59,61 +58,51 @@ public final class ArchivistHouseStructurePiece {
       return Blocks.COBBLESTONE.defaultBlockState();
     }
 
-    // Roof
     if (y == HEIGHT - 1) {
       return Blocks.OAK_PLANKS.defaultBlockState();
     }
 
     boolean isWall = x == 0 || x == WIDTH - 1 || z == 0 || z == DEPTH - 1;
 
-    // Door opening
     if (z == 0 && x == 4 && (y == 1 || y == 2)) {
       return Blocks.AIR.defaultBlockState();
     }
 
-    // Windows
     if (y == 2) {
-      if (z == 0 && (x == 2 || x == 6)) return Blocks.GLASS_PANE.defaultBlockState();
-      if ((x == 0 || x == WIDTH - 1) && (z == 4 || z == 8)) return Blocks.GLASS_PANE.defaultBlockState();
+      if (z == 0 && (x == 2 || x == 6))
+        return Blocks.GLASS_PANE.defaultBlockState();
+      if ((x == 0 || x == WIDTH - 1) && (z == 4 || z == 8))
+        return Blocks.GLASS_PANE.defaultBlockState();
     }
 
-    // Walls
     if (isWall) {
       return Blocks.COBBLESTONE.defaultBlockState();
     }
 
-    // Interior features (y == 1 or y == 2 in interior)
-    // Bookshelves along back wall
     if (z == DEPTH - 2 && x >= 1 && x <= WIDTH - 2 && (y == 1 || y == 2)) {
       return Blocks.BOOKSHELF.defaultBlockState();
     }
 
-    // Side bookshelves
     if ((x == 1 || x == WIDTH - 2) && (z == 3 || z == 5) && (y == 1 || y == 2)) {
       return Blocks.BOOKSHELF.defaultBlockState();
     }
 
-    // Lecterns
     if (y == 1 && (x == 3 || x == 5) && z == 6) {
       return Blocks.LECTERN.defaultBlockState();
     }
 
-    // Writing desk
     if (y == 1 && x == 4 && z == 9 && ModBlocks.WRITING_DESK != null) {
       return ModBlocks.WRITING_DESK.get().defaultBlockState();
     }
 
-    // Lanterns
     if (y == 3 && ((x == 3 && z == 3) || (x == 5 && z == 9))) {
       return Blocks.LANTERN.defaultBlockState();
     }
 
-    // Carpet runner
     if (y == 1 && x == 4 && z >= 2 && z <= 4) {
       return Blocks.RED_CARPET.defaultBlockState();
     }
 
-    // Interior air
     return Blocks.AIR.defaultBlockState();
   }
 }

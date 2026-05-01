@@ -12,8 +12,9 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 
 /**
  * Procedural floating island generator using coherent Perlin noise for organic,
- * geological landmass shapes. Supports multiple island morphologies: classic plateaus,
- * rocky spires, mushroom caps, eroded formations, layered mesas, and monoliths.
+ * geological landmass shapes. Supports multiple island morphologies: classic
+ * plateaus, rocky spires, mushroom caps, eroded formations, layered mesas, and
+ * monoliths.
  */
 public class MapGenFloatingIslands implements ITerrainAlteration {
 
@@ -88,11 +89,16 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
   private void generateIslandByStyle(ChunkAccess chunk, int chunkX, int chunkZ,
                                      long islandSeed, int centerX, int centerY, int centerZ) {
     switch (style) {
-      case SKYLANDS -> generateSkylands(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
-      case ARCHIPELAGO -> generateArchipelago(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
-      case SHARDS -> generateShards(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
-      case RUINS -> generateRuins(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
-      default -> generateClassic(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
+      case SKYLANDS ->
+          generateSkylands(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
+      case ARCHIPELAGO ->
+          generateArchipelago(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
+      case SHARDS ->
+          generateShards(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
+      case RUINS ->
+          generateRuins(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
+      default ->
+          generateClassic(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
     }
   }
 
@@ -100,22 +106,24 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
                               long islandSeed, IslandType type,
                               int centerX, int centerY, int centerZ) {
     switch (type) {
-      case CLASSIC -> generateClassic(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
-      case SPIRE -> generateSpire(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
-      case MUSHROOM -> generateMushroom(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
-      case ERODED -> generateEroded(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
-      case MESA -> generateMesa(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
-      case MONOLITH -> generateMonolith(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
+      case CLASSIC ->
+          generateClassic(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
+      case SPIRE ->
+          generateSpire(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
+      case MUSHROOM ->
+          generateMushroom(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
+      case ERODED ->
+          generateEroded(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
+      case MESA ->
+          generateMesa(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
+      case MONOLITH ->
+          generateMonolith(chunk, chunkX, chunkZ, islandSeed, centerX, centerY, centerZ);
     }
   }
-
-  // ========== NOISE FACTORY ==========
 
   private IslandNoise createIslandNoise(long islandSeed) {
     return new IslandNoise(islandSeed);
   }
-
-  // ========== CLASSIC ISLAND ==========
 
   private void generateClassic(ChunkAccess chunk, int chunkX, int chunkZ,
                                long islandSeed, int centerX, int centerY, int centerZ) {
@@ -150,7 +158,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         int worldZ = chunkZ * 16 + z;
         double zDist = (worldZ - centerZ) / (double) radiusZ;
 
-        // Warp the distance field with coherent noise for organic outline
         double warpX = noise.shape.sample2D(worldX * 0.02, worldZ * 0.015, 2.0, 0.5) * 0.35;
         double warpZ = noise.shape.sample2D(worldX * 0.015 + 500, worldZ * 0.02 + 500, 2.0, 0.5) * 0.35;
         double warpedXDist = xDist + warpX;
@@ -160,13 +167,11 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
 
         double falloff = 1.0 - horizDist;
 
-        // Coherent surface height variation
         double surfaceNoise = noise.surface.sample2D(worldX * 0.06, worldZ * 0.06, 2.0, 0.5) * 4.0
             + noise.surface.sample2D(worldX * 0.15 + 200, worldZ * 0.15 + 200, 2.0, 0.5) * 1.5;
         int localHeightUp = (int) (heightUp * falloff + surfaceNoise);
         int localHeightDown = (int) (heightDown * Math.pow(falloff, 1.5));
 
-        // Root tendrils hanging below
         double tendrilNoise = Math.abs(noise.carve.sample3D(
             worldX * 0.08, (centerY - localHeightDown) * 0.12, worldZ * 0.08, 2.0, 0.5));
         if (tendrilNoise > 0.6 && horizDist < 0.7) {
@@ -174,7 +179,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
           localHeightDown += tendrilLen;
         }
 
-        // Stalactite rim on outer portion
         if (horizDist > 0.5 && horizDist < 0.95) {
           double stalNoise = noise.detail.sample2D(worldX * 0.3, worldZ * 0.3, 2.0, 0.5);
           if (stalNoise > 0.3) {
@@ -198,7 +202,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
 
           if (!inIsland) continue;
 
-          // Internal cave carving for large islands
           if (isLarge && y < centerY - 2 && y > centerY - localHeightDown + 3) {
             double cave = noise.carve.sample3D(worldX * 0.08, y * 0.1, worldZ * 0.08, 2.0, 0.5);
             if (cave > 0.35) continue;
@@ -210,12 +213,10 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
           BlockState block = pickClassicBlock(y, centerY, yMax, yMin, worldX, worldZ, noise, islandSeed);
           chunk.setBlockState(pos, block, false);
 
-          // Surface decoration
           if (y == yMax && y >= centerY) {
             decorateSurface(chunk, pos, above, worldX, worldZ, noise, radiusX, radiusZ);
           }
 
-          // Underside glow accents
           if (y == yMin && y < centerY - 3) {
             maybeGlowUnderside(chunk, pos, above, worldX, worldZ, noise);
           }
@@ -223,7 +224,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
       }
     }
 
-    // Pond and trees for large islands
     if (isLarge) {
       generatePond(chunk, chunkX, chunkZ, noise, centerX, centerY + heightUp - 1, centerZ, Math.min(radiusX, radiusZ));
       generateTrees(chunk, chunkX, chunkZ, noise, islandSeed, centerX, centerY, centerZ, radiusX, radiusZ, heightUp);
@@ -231,8 +231,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
       generateTrees(chunk, chunkX, chunkZ, noise, islandSeed, centerX, centerY, centerZ, radiusX, radiusZ, heightUp);
     }
   }
-
-  // ========== SPIRE ISLAND ==========
 
   private void generateSpire(ChunkAccess chunk, int chunkX, int chunkZ,
                              long islandSeed, int centerX, int centerY, int centerZ) {
@@ -270,18 +268,17 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         for (int y = Math.max(minBuild, yBottom); y <= Math.min(maxBuild, yTop); y++) {
           double t = (y - yBottom) / (double) (yTop - yBottom);
 
-          // Spiraling ledge radius: oscillates with height + noise
           double angle = Math.atan2(dz, dx);
           double spiralWarp = noise.shape.sample2D(y * 0.15, angle * 2.0 + 100, 2.0, 0.5) * 2.0;
           double ledgeOscillation = Math.sin(y * 0.25 + angle * 2.0) * 1.5;
 
           double radiusAtY;
           if (t < 0.25) {
-            // Bottom taper - pointed
+
             double taperT = t / 0.25;
             radiusAtY = baseRadius * taperT * 0.6 + spiralWarp * taperT;
           } else {
-            // Main body narrows toward top with spiral ledges
+
             double narrowFactor = 1.0 - (t - 0.25) / 0.75;
             radiusAtY = baseRadius * narrowFactor * narrowFactor + spiralWarp + ledgeOscillation + 1.0;
           }
@@ -292,7 +289,7 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
 
             BlockState block;
             if (t > 0.85) {
-              // Crystal/calcite cap
+
               double capNoise = noise.detail.sample3D(worldX * 0.15, y * 0.15, worldZ * 0.15, 2.0, 0.5);
               if (capNoise > 0.2) {
                 block = Blocks.CALCITE.defaultBlockState();
@@ -310,8 +307,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
       }
     }
   }
-
-  // ========== MUSHROOM ISLAND ==========
 
   private void generateMushroom(ChunkAccess chunk, int chunkX, int chunkZ,
                                 long islandSeed, int centerX, int centerY, int centerZ) {
@@ -351,12 +346,11 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         double dz = worldZ - centerZ;
         double horizDist = Math.sqrt(dx * dx + dz * dz);
 
-        // Noise-warped stem with organic wobble
         double stemWarp = noise.shape.sample2D(worldX * 0.08, worldZ * 0.08, 2.0, 0.5) * 2.0;
         double effectiveStemRadius = stemRadius + stemWarp;
         if (horizDist <= Math.max(1.0, effectiveStemRadius)) {
           for (int y = Math.max(minBuild, stemBottom); y <= Math.min(maxBuild, stemTop); y++) {
-            // Taper stem slightly at bottom
+
             double stemT = (y - stemBottom) / (double) (stemTop - stemBottom);
             double taperRadius = effectiveStemRadius * (0.7 + stemT * 0.3);
             if (horizDist <= Math.max(1.0, taperRadius)) {
@@ -368,7 +362,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
           }
         }
 
-        // Noise-warped dome cap
         double capWarpX = noise.shape.sample2D(worldX * 0.025, worldZ * 0.02, 2.0, 0.5) * 0.3;
         double capWarpZ = noise.shape.sample2D(worldX * 0.02 + 300, worldZ * 0.025 + 300, 2.0, 0.5) * 0.3;
         double warpedDx = (dx / capRadius) + capWarpX;
@@ -384,7 +377,7 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
             if (chunk.getBlockState(pos).isAir()) {
               BlockState block;
               if (y == capBottom + localCapHeight) {
-                // Surface: mycelium
+
                 block = Blocks.MYCELIUM.defaultBlockState();
               } else if (y >= capBottom + localCapHeight - 2) {
                 block = Blocks.DIRT.defaultBlockState();
@@ -393,14 +386,12 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
               }
               chunk.setBlockState(pos, block, false);
 
-              // Surface decoration with mushrooms
               if (y == capBottom + localCapHeight) {
                 decorateMushroomSurface(chunk, pos, above, worldX, worldZ, noise);
               }
             }
           }
 
-          // Drip roots hanging from cap underside in a ring
           if (normalizedHoriz > 0.25 && normalizedHoriz < 0.85) {
             double dripNoise = noise.detail.sample2D(worldX * 0.2, worldZ * 0.2, 2.0, 0.5);
             if (dripNoise > 0.3) {
@@ -421,8 +412,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
       }
     }
   }
-
-  // ========== ERODED ISLAND ==========
 
   private void generateEroded(ChunkAccess chunk, int chunkX, int chunkZ,
                               long islandSeed, int centerX, int centerY, int centerZ) {
@@ -456,7 +445,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         int worldZ = chunkZ * 16 + z;
         double zDist = (worldZ - centerZ) / (double) radiusZ;
 
-        // Aggressive noise warp for very irregular outline
         double warpX = noise.shape.sample2D(worldX * 0.025, worldZ * 0.02, 2.0, 0.5) * 0.45;
         double warpZ = noise.shape.sample2D(worldX * 0.02 + 400, worldZ * 0.025 + 400, 2.0, 0.5) * 0.45;
         double warpedXDist = xDist + warpX;
@@ -474,7 +462,7 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         int yMax = Math.min(maxBuild, centerY + Math.max(0, localHeightUp));
 
         for (int y = yMin; y <= yMax; y++) {
-          // Aggressive erosion holes - lower threshold for more carving
+
           double erosion = noise.carve.sample3D(worldX * 0.1, y * 0.12, worldZ * 0.1, 2.0, 0.5);
           if (erosion > 0.25) continue;
 
@@ -502,8 +490,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
       }
     }
   }
-
-  // ========== MESA ISLAND ==========
 
   private void generateMesa(ChunkAccess chunk, int chunkX, int chunkZ,
                             long islandSeed, int centerX, int centerY, int centerZ) {
@@ -537,7 +523,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         int worldZ = chunkZ * 16 + z;
         double zDist = (worldZ - centerZ) / (double) radiusZ;
 
-        // Warp for irregular mesa outline
         double warpX = noise.shape.sample2D(worldX * 0.02, worldZ * 0.015, 2.0, 0.5) * 0.25;
         double warpZ = noise.shape.sample2D(worldX * 0.015 + 600, worldZ * 0.02 + 600, 2.0, 0.5) * 0.25;
         double warpedXDist = xDist + warpX;
@@ -547,13 +532,11 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
 
         double falloff = 1.0 - horizDist;
 
-        // Stepped cliff faces with noise-offset radius per step
         double stepNoise = noise.surface.sample2D(worldX * 0.04, worldZ * 0.04, 2.0, 0.5) * 0.08;
         double steppedFalloff = Math.floor((falloff + stepNoise) * 5.0) / 5.0;
         steppedFalloff = Math.max(0.0, Math.min(1.0, steppedFalloff));
         int localDown = (int) (totalDown * steppedFalloff);
 
-        // Overhangs on step edges
         double overhangNoise = noise.carve.sample2D(worldX * 0.06, worldZ * 0.06, 2.0, 0.5);
         if (overhangNoise > 0.4 && steppedFalloff < falloff - 0.1) {
           localDown += 2;
@@ -578,14 +561,12 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     }
   }
 
-  // ========== MONOLITH ISLAND (replaces Archipelago type in MIXED) ==========
-
   private void generateMonolith(ChunkAccess chunk, int chunkX, int chunkZ,
                                 long islandSeed, int centerX, int centerY, int centerZ) {
     RandomSource rand = RandomSource.create(islandSeed);
     int radiusX = 5 + rand.nextInt(8);
     int radiusZ = 5 + rand.nextInt(8);
-    int totalHeight = (radiusX + radiusZ) + rand.nextInt(20); // tall relative to width
+    int totalHeight = (radiusX + radiusZ) + rand.nextInt(20);
     IslandNoise noise = createIslandNoise(islandSeed);
 
     int minBuild = chunk.getMinBuildHeight();
@@ -614,7 +595,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         for (int y = yBottom; y <= yTop; y++) {
           double t = (double) (y - yBottom) / (yTop - yBottom);
 
-          // Tilt the slab slightly using noise
           double tiltX = noise.shape.sample2D(centerX * 0.01, centerZ * 0.01, 2.0, 0.5) * 0.15;
           double tiltZ = noise.shape.sample2D(centerX * 0.01 + 200, centerZ * 0.01 + 200, 2.0, 0.5) * 0.15;
 
@@ -624,10 +604,8 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
           double xDist = (worldX - effectiveCenterX) / (double) radiusX;
           double zDist = (worldZ - effectiveCenterZ) / (double) radiusZ;
 
-          // Subtle noise warp
           double warp = noise.surface.sample2D(worldX * 0.05, worldZ * 0.05 + y * 0.02, 2.0, 0.5) * 0.2;
 
-          // Taper at top and bottom
           double verticalScale = 1.0;
           if (t < 0.1) {
             verticalScale = t / 0.1;
@@ -649,14 +627,11 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     }
   }
 
-  // ========== ARCHIPELAGO STYLE ==========
-
   private void generateArchipelago(ChunkAccess chunk, int chunkX, int chunkZ,
                                    long islandSeed, int centerX, int centerY, int centerZ) {
     RandomSource rand = RandomSource.create(islandSeed);
     int count = 5 + rand.nextInt(6);
 
-    // Central hub island
     if (rand.nextInt(100) < 60) {
       generateClassic(chunk, chunkX, chunkZ, islandSeed ^ 0xA55A, centerX, centerY, centerZ);
     }
@@ -707,7 +682,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         int worldZ = chunkZ * 16 + z;
         double zDist = (worldZ - centerZ) / (double) radiusZ;
 
-        // Noise warp even on small islets
         double warpX = noise.shape.sample2D(worldX * 0.03, worldZ * 0.025, 2.0, 0.5) * 0.3;
         double warpZ = noise.shape.sample2D(worldX * 0.025 + 500, worldZ * 0.03 + 500, 2.0, 0.5) * 0.3;
         double warpedXDist = xDist + warpX;
@@ -749,8 +723,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     }
   }
 
-  // ========== SHARDS STYLE ==========
-
   private void generateShards(ChunkAccess chunk, int chunkX, int chunkZ,
                               long islandSeed, int centerX, int centerY, int centerZ) {
     RandomSource rand = RandomSource.create(islandSeed);
@@ -766,7 +738,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
           centerX + offsetX, centerY + offsetY, centerZ + offsetZ);
     }
 
-    // Debris fragments
     int debris = 6 + rand.nextInt(6);
     for (int i = 0; i < debris; i++) {
       int dx = rand.nextInt(60) - 30;
@@ -869,8 +840,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     }
   }
 
-  // ========== RUINS STYLE ==========
-
   private void generateRuins(ChunkAccess chunk, int chunkX, int chunkZ,
                              long islandSeed, int centerX, int centerY, int centerZ) {
     RandomSource rand = RandomSource.create(islandSeed);
@@ -931,8 +900,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     }
   }
 
-  // ========== SKYLANDS STYLE ==========
-
   private void generateSkylands(ChunkAccess chunk, int chunkX, int chunkZ,
                                 long islandSeed, int centerX, int centerY, int centerZ) {
     RandomSource rand = RandomSource.create(islandSeed);
@@ -966,7 +933,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         int worldZ = chunkZ * 16 + z;
         double zDist = (worldZ - centerZ) / (double) radiusZ;
 
-        // Noise-warped edge
         double warpX = noise.shape.sample2D(worldX * 0.015, worldZ * 0.012, 2.0, 0.5) * 0.4;
         double warpZ = noise.shape.sample2D(worldX * 0.012 + 700, worldZ * 0.015 + 700, 2.0, 0.5) * 0.4;
         double warpedXDist = xDist + warpX;
@@ -981,7 +947,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         int localHeightUp = (int) (heightUp * falloff + surfaceNoise);
         int localHeightDown = (int) (heightDown * Math.pow(falloff, 1.5));
 
-        // Root tendrils
         double tendrilNoise = Math.abs(noise.carve.sample3D(
             worldX * 0.07, (centerY - localHeightDown) * 0.1, worldZ * 0.07, 2.0, 0.5));
         if (tendrilNoise > 0.55 && horizDist < 0.6) {
@@ -992,7 +957,7 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         int yMax = Math.min(maxBuild, centerY + Math.max(0, localHeightUp));
 
         for (int y = yMin; y <= yMax; y++) {
-          // Void cuts through the body
+
           double carve = noise.carve.sample3D(worldX * 0.06, y * 0.08, worldZ * 0.06, 2.0, 0.5);
           if (carve > 0.45 && y < centerY + 2) continue;
 
@@ -1007,7 +972,7 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
           }
 
           if (inIsland) {
-            // Internal cave carving for large skylands
+
             if (isLarge && y < centerY - 2 && y > centerY - localHeightDown + 4) {
               double cave = noise.carve.sample3D(worldX * 0.09, y * 0.11, worldZ * 0.09, 2.0, 0.5);
               if (cave > 0.32) continue;
@@ -1029,14 +994,11 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
       }
     }
 
-    // Trees and ponds for skylands
     if (isLarge) {
       generatePond(chunk, chunkX, chunkZ, noise, centerX, centerY + heightUp - 1, centerZ, Math.min(radiusX, radiusZ));
       generateTrees(chunk, chunkX, chunkZ, noise, islandSeed, centerX, centerY, centerZ, radiusX, radiusZ, heightUp);
     }
   }
-
-  // ========== BLOCK SELECTION ==========
 
   private BlockState pickClassicBlock(int y, int centerY, int topY, int bottomY,
                                       int worldX, int worldZ, IslandNoise noise, long islandSeed) {
@@ -1048,14 +1010,14 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     if (depthFromTop <= 3) {
       return Blocks.DIRT.defaultBlockState();
     }
-    // Geological strata: stone -> then deepslate deeper down
+
     if (y < centerY - 10) {
       double deepslateNoise = noise.detail.sample2D(worldX * 0.05, worldZ * 0.05, 2.0, 0.5);
       if (deepslateNoise > -0.2) {
         return Blocks.DEEPSLATE.defaultBlockState();
       }
     }
-    // Ore pockets in interior
+
     if (depthFromTop > 4 && y < topY - 3) {
       double oreNoise = noise.detail.sample3D(worldX * 0.15, y * 0.15, worldZ * 0.15, 2.0, 0.5);
       if (oreNoise > 0.7) {
@@ -1140,16 +1102,16 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
   private BlockState pickMonolithBlock(double t, IslandNoise noise, int worldX, int y, int worldZ) {
     double blockNoise = noise.detail.sample3D(worldX * 0.08, y * 0.08, worldZ * 0.08, 2.0, 0.5);
     if (t > 0.85) {
-      // Top cap: polished deepslate
+
       return (blockNoise > 0.3) ? Blocks.POLISHED_DEEPSLATE.defaultBlockState()
           : Blocks.DEEPSLATE_TILES.defaultBlockState();
     }
     if (t < 0.15) {
-      // Bottom: rough deepslate
+
       return (blockNoise > 0.2) ? Blocks.COBBLED_DEEPSLATE.defaultBlockState()
           : Blocks.DEEPSLATE.defaultBlockState();
     }
-    // Main body: smooth alternation
+
     if (blockNoise > 0.4) {
       return Blocks.POLISHED_DEEPSLATE.defaultBlockState();
     }
@@ -1163,7 +1125,7 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     if (y == centerY) {
       return Blocks.RED_SAND.defaultBlockState();
     }
-    // Band pattern with noise offset for variation
+
     double bandWarp = noise.detail.sample2D(worldX * 0.03, worldZ * 0.03, 2.0, 0.5) * 1.5;
     int band = Math.abs((int) (y - centerY + bandWarp)) % 7;
     int offset = (int) ((islandSeed & 0x7L) % 7);
@@ -1200,8 +1162,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     return surfaceBlock;
   }
 
-  // ========== SURFACE DECORATION ==========
-
   private void decorateSurface(ChunkAccess chunk, BlockPos.MutableBlockPos pos,
                                BlockPos.MutableBlockPos above,
                                int worldX, int worldZ, IslandNoise noise,
@@ -1221,17 +1181,15 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
 
     BlockState belowBlock = chunk.getBlockState(pos);
 
-    // Moss carpet on moss blocks
     if (belowBlock.is(Blocks.MOSS_BLOCK) && decorNoise > 0.4) {
       chunk.setBlockState(above, Blocks.MOSS_CARPET.defaultBlockState(), false);
       return;
     }
 
-    // Coherent patches of vegetation
     double patchType = noise.surface.sample2D(worldX * 0.06 + 300, worldZ * 0.06 + 300, 2.0, 0.5);
 
     if (decorNoise > 0.6) {
-      // Flower patches
+
       BlockState flower;
       if (patchType > 0.3) {
         flower = Blocks.DANDELION.defaultBlockState();
@@ -1244,7 +1202,7 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
       }
       chunk.setBlockState(above, flower, false);
     } else if (decorNoise > 0.35) {
-      // Grass/fern patches
+
       if (patchType > 0.0) {
         chunk.setBlockState(above, Services.PLATFORM.getShortGrassBlock().defaultBlockState(), false);
       } else {
@@ -1272,8 +1230,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     }
   }
 
-  // ========== UNDERSIDE DECORATION ==========
-
   private void maybeDecorateUnderside(ChunkAccess chunk, BlockPos.MutableBlockPos pos,
                                       BlockPos.MutableBlockPos below,
                                       int worldX, int worldZ, IslandNoise noise) {
@@ -1297,14 +1253,12 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
                                   int worldX, int worldZ, IslandNoise noise) {
     double glowNoise = noise.detail.sample2D(worldX * 0.08 + 800, worldZ * 0.08 + 800, 2.0, 0.5);
     if (glowNoise > 0.6) {
-      // Place glow lichen on the underside face (replace solid block at pos with shroomlight)
+
       chunk.setBlockState(pos, Blocks.SHROOMLIGHT.defaultBlockState(), false);
     } else if (glowNoise > 0.45) {
       chunk.setBlockState(pos, Blocks.GLOWSTONE.defaultBlockState(), false);
     }
   }
-
-  // ========== TREES ==========
 
   private void generateTrees(ChunkAccess chunk, int chunkX, int chunkZ, IslandNoise noise,
                              long islandSeed, int centerX, int centerY, int centerZ,
@@ -1324,7 +1278,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         continue;
       }
 
-      // Find the surface Y at this position
       int surfaceY = -1;
       for (int y = centerY + heightUp + 5; y >= centerY - 2; y--) {
         BlockPos testPos = new BlockPos(treeLocalX, y, treeLocalZ);
@@ -1338,7 +1291,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
       }
       if (surfaceY < 0) continue;
 
-      // Pick tree type based on noise
       double treeType = noise.detail.sample2D(treeWorldX * 0.05, treeWorldZ * 0.05, 2.0, 0.5);
       BlockState logBlock;
       BlockState leafBlock;
@@ -1356,7 +1308,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
       int trunkHeight = 4 + treeRand.nextInt(4);
       BlockPos.MutableBlockPos treePos = new BlockPos.MutableBlockPos();
 
-      // Trunk
       for (int ty = 1; ty <= trunkHeight; ty++) {
         int y = surfaceY + ty;
         if (y >= chunk.getMaxBuildHeight()) break;
@@ -1366,7 +1317,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         }
       }
 
-      // Leaf sphere at top
       int leafCenterY = surfaceY + trunkHeight;
       int leafRadius = 2 + treeRand.nextInt(2);
       for (int lx = -leafRadius; lx <= leafRadius; lx++) {
@@ -1378,8 +1328,10 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
             int leafLocalX = treeLocalX + lx;
             int leafLocalZ = treeLocalZ + lz;
             int leafY = leafCenterY + ly;
-            if (leafLocalX < 0 || leafLocalX > 15 || leafLocalZ < 0 || leafLocalZ > 15) continue;
-            if (leafY >= chunk.getMaxBuildHeight() || leafY <= chunk.getMinBuildHeight()) continue;
+            if (leafLocalX < 0 || leafLocalX > 15 || leafLocalZ < 0 || leafLocalZ > 15)
+              continue;
+            if (leafY >= chunk.getMaxBuildHeight() || leafY <= chunk.getMinBuildHeight())
+              continue;
 
             treePos.set(leafLocalX, leafY, leafLocalZ);
             if (chunk.getBlockState(treePos).isAir()) {
@@ -1391,11 +1343,9 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     }
   }
 
-  // ========== PONDS ==========
-
   private void generatePond(ChunkAccess chunk, int chunkX, int chunkZ, IslandNoise noise,
                             int centerX, int surfaceY, int centerZ, int islandRadius) {
-    // Place pond offset from center
+
     double pondOffX = noise.surface.sample2D(centerX * 0.01, centerZ * 0.01, 2.0, 0.5) * islandRadius * 0.3;
     double pondOffZ = noise.surface.sample2D(centerX * 0.01 + 100, centerZ * 0.01 + 100, 2.0, 0.5) * islandRadius * 0.3;
     int pondCenterX = centerX + (int) pondOffX;
@@ -1416,7 +1366,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
 
         if (localX < 0 || localX > 15 || localZ < 0 || localZ > 15) continue;
 
-        // Find surface at this XZ
         int foundSurface = -1;
         for (int y = surfaceY + 5; y >= surfaceY - 8; y--) {
           pos.set(localX, y, localZ);
@@ -1430,7 +1379,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
         }
         if (foundSurface < 0) continue;
 
-        // Dig 1-2 blocks down and fill with water; rim gets sand
         boolean isRim = dist > (pondRadius - 1.5) * (pondRadius - 1.5);
         if (isRim) {
           pos.set(localX, foundSurface, localZ);
@@ -1438,12 +1386,12 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
             chunk.setBlockState(pos, Blocks.SAND.defaultBlockState(), false);
           }
         } else {
-          // Dig and fill with water
+
           pos.set(localX, foundSurface, localZ);
           if (!chunk.getBlockState(pos).isAir()) {
             chunk.setBlockState(pos, Blocks.WATER.defaultBlockState(), false);
           }
-          // Clay bottom
+
           pos.set(localX, foundSurface - 1, localZ);
           if (foundSurface - 1 > chunk.getMinBuildHeight() && !chunk.getBlockState(pos).isAir()) {
             chunk.setBlockState(pos, Blocks.CLAY.defaultBlockState(), false);
@@ -1452,8 +1400,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
       }
     }
   }
-
-  // ========== UTILITIES ==========
 
   protected RandomSource getChunkRandom(int chunkX, int chunkZ) {
     long chunkSeed = (long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + seed + 5000L;
@@ -1470,29 +1416,6 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     return 200;
   }
 
-  // ========== NOISE HOLDER ==========
-
-  /**
-   * Pre-built set of coherent noise samplers for a single island.
-   * Each island gets its own seeded noise to avoid cross-island pattern repetition.
-   */
-  private static class IslandNoise {
-    final PerlinOctaves shape;   // Large-scale shape warping (4 octaves)
-    final PerlinOctaves surface; // Medium-scale surface height (3 octaves)
-    final PerlinOctaves carve;   // 3D carving / erosion (4 octaves)
-    final PerlinOctaves detail;  // Small-scale material / decoration (2 octaves)
-
-    IslandNoise(long seed) {
-      RandomSource rand = RandomSource.create(seed);
-      this.shape = new PerlinOctaves(rand, 4);
-      this.surface = new PerlinOctaves(rand, 3);
-      this.carve = new PerlinOctaves(rand, 4);
-      this.detail = new PerlinOctaves(rand, 2);
-    }
-  }
-
-  // ========== ENUMS ==========
-
   public enum IslandStyle {
     MIXED,
     SKYLANDS,
@@ -1508,5 +1431,20 @@ public class MapGenFloatingIslands implements ITerrainAlteration {
     ERODED,
     MESA,
     MONOLITH
+  }
+
+  private static class IslandNoise {
+    final PerlinOctaves shape;
+    final PerlinOctaves surface;
+    final PerlinOctaves carve;
+    final PerlinOctaves detail;
+
+    IslandNoise(long seed) {
+      RandomSource rand = RandomSource.create(seed);
+      this.shape = new PerlinOctaves(rand, 4);
+      this.surface = new PerlinOctaves(rand, 3);
+      this.carve = new PerlinOctaves(rand, 4);
+      this.detail = new PerlinOctaves(rand, 2);
+    }
   }
 }

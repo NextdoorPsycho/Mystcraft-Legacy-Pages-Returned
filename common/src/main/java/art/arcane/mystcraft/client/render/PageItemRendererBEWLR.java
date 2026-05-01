@@ -20,16 +20,16 @@ import org.joml.Matrix4f;
  * <p>
  * <b>Procedural-symbol-pages refactor (post phase 1)</b>: the entire
  * pixel-pipeline (loading {@code page_background.png} +
- * {@code symbolcomponents.png} + {@code BufferedImage} composition +
- * async pre-warm queue + manual {@code DynamicTexture} registration)
- * has been replaced with a single delegate to
+ * {@code symbolcomponents.png} + {@code BufferedImage} composition + async
+ * pre-warm queue + manual {@code DynamicTexture} registration) has been
+ * replaced with a single delegate to
  * {@link SymbolPageTextureFactory#getPageTexture(ItemStack)}.
  * <p>
- * The factory is fully procedural — it composes a parchment background,
- * the symbol's {@link SymbolMotif} (with glyphs from
- * {@link SymbolGlyphFactory}), and (later phases) flourishes + ink
- * tint on a {@link com.mojang.blaze3d.platform.NativeImage}, caches the
- * result, and returns a {@link ResourceLocation} we can hand to
+ * The factory is fully procedural — it composes a parchment background, the
+ * symbol's {@link SymbolMotif} (with glyphs from {@link SymbolGlyphFactory}),
+ * and (later phases) flourishes + ink tint on a
+ * {@link com.mojang.blaze3d.platform.NativeImage}, caches the result, and
+ * returns a {@link ResourceLocation} we can hand to
  * {@link RenderType#entityCutoutNoCull}.
  */
 public class PageItemRendererBEWLR extends BlockEntityWithoutLevelRenderer {
@@ -52,19 +52,19 @@ public class PageItemRendererBEWLR extends BlockEntityWithoutLevelRenderer {
    * Pre-warms the procedural pipeline on a background thread.
    * <p>
    * Called once during client setup from each loader's bootstrap
-   * ({@code MystcraftFabricClient}, {@code MystcraftForge}). Replaces
-   * the legacy {@code BufferedImage}-based queue with
-   * {@link SymbolGlyphFactory#warm()} which iterates every registered
-   * symbol's poem words and pre-builds the glyph tiles. The
-   * page-level texture cache fills lazily on first render.
+   * ({@code MystcraftFabricClient}, {@code MystcraftForge}). Replaces the
+   * legacy {@code BufferedImage}-based queue with
+   * {@link SymbolGlyphFactory#warm()} which iterates every registered symbol's
+   * poem words and pre-builds the glyph tiles. The page-level texture cache
+   * fills lazily on first render.
    */
   public static void prewarmCache() {
     SymbolGlyphFactory.warm();
   }
 
   /**
-   * Drops every cached page / motif / glyph tile and the associated
-   * GPU memory. Call on resource-pack reload so palette changes pick up.
+   * Drops every cached page / motif / glyph tile and the associated GPU memory.
+   * Call on resource-pack reload so palette changes pick up.
    */
   public static void clearCache() {
     SymbolPageTextureFactory.reset();

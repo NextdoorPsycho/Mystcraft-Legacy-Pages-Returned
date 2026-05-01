@@ -15,13 +15,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Huge tree populator that generates mega/giant trees.
- * Used when the Huge Trees symbol is applied to an age.
- * Generates large trees in addition to normal tree generation.
+ * Huge tree populator that generates mega/giant trees. Used when the Huge Trees
+ * symbol is applied to an age. Generates large trees in addition to normal tree
+ * generation.
  */
 public class HugeTreePopulator implements IPopulate {
 
-  // Number of huge tree attempts per chunk
   private static final int DEFAULT_HUGE_TREES_PER_CHUNK = 3;
   private final long seed;
   private final int hugeTreesPerChunk;
@@ -40,34 +39,30 @@ public class HugeTreePopulator implements IPopulate {
   public void populate(WorldGenLevel world, RandomSource random, BlockPos chunkPos) {
     this.currentChunkPos = chunkPos;
 
-    // Sample biome at chunk center
     BlockPos centerPos = new BlockPos(chunkPos.getX() + 8, 64, chunkPos.getZ() + 8);
     Holder<Biome> biomeHolder = world.getBiome(centerPos);
 
     for (int i = 0; i < hugeTreesPerChunk; i++) {
-      // Huge trees need 2x2 base, so start at 2-12 to keep canopy within writable area
+
       int x = chunkPos.getX() + 2 + random.nextInt(12);
       int z = chunkPos.getZ() + 2 + random.nextInt(12);
       int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
       BlockPos treePos = new BlockPos(x, y, z);
 
-      // Check if valid location for huge tree (2x2 area)
       if (!canSupportHugeTree(world, treePos)) {
         continue;
       }
 
-      // Check if there's enough space
       if (!hasSpaceForHugeTree(world, treePos)) {
         continue;
       }
 
-      // Generate huge tree based on biome
       generateHugeTree(world, random, treePos, biomeHolder);
     }
   }
 
   private boolean canSupportHugeTree(WorldGenLevel world, BlockPos pos) {
-    // Check 2x2 area for valid ground
+
     for (int dx = 0; dx <= 1; dx++) {
       for (int dz = 0; dz <= 1; dz++) {
         BlockPos checkPos = pos.offset(dx, -1, dz);
@@ -82,7 +77,7 @@ public class HugeTreePopulator implements IPopulate {
   }
 
   private boolean hasSpaceForHugeTree(WorldGenLevel world, BlockPos pos) {
-    // Check vertical clearance for huge tree (only within writable area)
+
     for (int dy = 0; dy < 16; dy++) {
       for (int dx = -1; dx <= 2; dx++) {
         for (int dz = -1; dz <= 2; dz++) {
@@ -99,7 +94,7 @@ public class HugeTreePopulator implements IPopulate {
   }
 
   private void generateHugeTree(WorldGenLevel world, RandomSource random, BlockPos pos, Holder<Biome> biomeHolder) {
-    // Determine tree type based on biome
+
     HugeTreeType treeType = getHugeTreeType(biomeHolder, random);
 
     switch (treeType) {
@@ -119,7 +114,7 @@ public class HugeTreePopulator implements IPopulate {
     } else if (biomeHolder.is(Biomes.DARK_FOREST)) {
       return HugeTreeType.DARK_OAK;
     }
-    // Default to random mega spruce/giant oak
+
     return random.nextBoolean() ? HugeTreeType.MEGA_SPRUCE : HugeTreeType.GIANT_OAK;
   }
 
@@ -128,7 +123,6 @@ public class HugeTreePopulator implements IPopulate {
     BlockState log = Blocks.SPRUCE_LOG.defaultBlockState();
     BlockState leaves = Blocks.SPRUCE_LEAVES.defaultBlockState();
 
-    // 2x2 trunk
     for (int y = 0; y < height; y++) {
       for (int dx = 0; dx <= 1; dx++) {
         for (int dz = 0; dz <= 1; dz++) {
@@ -138,13 +132,12 @@ public class HugeTreePopulator implements IPopulate {
       }
     }
 
-    // Conical canopy
     for (int y = height / 2; y <= height + 2; y++) {
       int radius = Math.max(1, (height - y + 4) / 2);
 
       for (int dx = -radius; dx <= radius + 1; dx++) {
         for (int dz = -radius; dz <= radius + 1; dz++) {
-          // Distance from center (adjusted for 2x2 trunk)
+
           double dist = Math.sqrt((dx - 0.5) * (dx - 0.5) + (dz - 0.5) * (dz - 0.5));
           if (dist <= radius + 0.5) {
             BlockPos leafPos = pos.offset(dx, y, dz);
@@ -160,7 +153,6 @@ public class HugeTreePopulator implements IPopulate {
     BlockState log = Blocks.SPRUCE_LOG.defaultBlockState();
     BlockState leaves = Blocks.SPRUCE_LEAVES.defaultBlockState();
 
-    // 2x2 trunk
     for (int y = 0; y < height; y++) {
       for (int dx = 0; dx <= 1; dx++) {
         for (int dz = 0; dz <= 1; dz++) {
@@ -170,7 +162,6 @@ public class HugeTreePopulator implements IPopulate {
       }
     }
 
-    // Pine-style canopy (leaves only at top third)
     int canopyStart = height - height / 3;
     for (int y = canopyStart; y <= height + 2; y++) {
       int radius = Math.max(1, (height - y + 3) / 2);
@@ -192,7 +183,6 @@ public class HugeTreePopulator implements IPopulate {
     BlockState log = Blocks.JUNGLE_LOG.defaultBlockState();
     BlockState leaves = Blocks.JUNGLE_LEAVES.defaultBlockState();
 
-    // 2x2 trunk
     for (int y = 0; y < height; y++) {
       for (int dx = 0; dx <= 1; dx++) {
         for (int dz = 0; dz <= 1; dz++) {
@@ -201,7 +191,6 @@ public class HugeTreePopulator implements IPopulate {
         }
       }
 
-      // Add vines on trunk
       if (y > 3 && random.nextInt(3) == 0) {
         for (int dx = -1; dx <= 2; dx++) {
           for (int dz = -1; dz <= 2; dz++) {
@@ -218,7 +207,6 @@ public class HugeTreePopulator implements IPopulate {
       }
     }
 
-    // Large canopy
     for (int y = height - 8; y <= height + 2; y++) {
       int radius = Math.max(1, 4 - (height - y) / 3);
 
@@ -233,7 +221,6 @@ public class HugeTreePopulator implements IPopulate {
       }
     }
 
-    // Cocoa pods
     for (int y = 5; y < height - 2; y++) {
       if (random.nextInt(6) == 0) {
         for (int side = 0; side < 4; side++) {
@@ -241,7 +228,7 @@ public class HugeTreePopulator implements IPopulate {
           int dz = (side == 2) ? -1 : (side == 3) ? 2 : random.nextInt(2);
           BlockPos cocoaPos = pos.offset(dx, y, dz);
           if (isInWritableArea(cocoaPos, currentChunkPos) && world.getBlockState(cocoaPos).isAir()) {
-            // Would need proper facing calculation, simplified for now
+
             world.setBlock(cocoaPos, Blocks.COCOA.defaultBlockState(), 2);
           }
         }
@@ -254,7 +241,6 @@ public class HugeTreePopulator implements IPopulate {
     BlockState log = Blocks.DARK_OAK_LOG.defaultBlockState();
     BlockState leaves = Blocks.DARK_OAK_LEAVES.defaultBlockState();
 
-    // 2x2 trunk
     for (int y = 0; y < height; y++) {
       for (int dx = 0; dx <= 1; dx++) {
         for (int dz = 0; dz <= 1; dz++) {
@@ -264,10 +250,8 @@ public class HugeTreePopulator implements IPopulate {
       }
     }
 
-    // Branches
     generateDarkOakBranches(world, random, pos, height, log);
 
-    // Wide canopy
     for (int y = height - 3; y <= height + 1; y++) {
       int radius = y < height ? 4 : 2;
 
@@ -286,7 +270,6 @@ public class HugeTreePopulator implements IPopulate {
   private void generateDarkOakBranches(WorldGenLevel world, RandomSource random, BlockPos pos, int height, BlockState log) {
     int branchHeight = height - 2;
 
-    // Generate 2-4 branches
     int branches = 2 + random.nextInt(3);
     for (int b = 0; b < branches; b++) {
       int direction = random.nextInt(4);
@@ -308,7 +291,6 @@ public class HugeTreePopulator implements IPopulate {
     BlockState log = Blocks.OAK_LOG.defaultBlockState();
     BlockState leaves = Blocks.OAK_LEAVES.defaultBlockState();
 
-    // 2x2 trunk
     for (int y = 0; y < height; y++) {
       for (int dx = 0; dx <= 1; dx++) {
         for (int dz = 0; dz <= 1; dz++) {
@@ -318,7 +300,6 @@ public class HugeTreePopulator implements IPopulate {
       }
     }
 
-    // Large spherical canopy
     int canopyRadius = 5;
     int canopyCenter = height - 2;
 

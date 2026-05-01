@@ -6,10 +6,10 @@ import net.minecraft.world.level.biome.Biome;
 import java.util.List;
 
 /**
- * Biome controller that arranges biomes in a Voronoi-jittered grid.
- * Each grid cell has a jittered center point, and the closest center determines
- * the biome. This creates irregular, organic-looking cell boundaries instead of
- * the sharp rectangular edges of a plain grid.
+ * Biome controller that arranges biomes in a Voronoi-jittered grid. Each grid
+ * cell has a jittered center point, and the closest center determines the
+ * biome. This creates irregular, organic-looking cell boundaries instead of the
+ * sharp rectangular edges of a plain grid.
  */
 public class BiomeControllerGrid extends BiomeControllerBase {
 
@@ -41,7 +41,6 @@ public class BiomeControllerGrid extends BiomeControllerBase {
     double closestDist = Double.MAX_VALUE;
     int closestIndex = 0;
 
-    // Check 3x3 neighborhood for the closest jittered center
     for (int dx = -1; dx <= 1; dx++) {
       for (int dz = -1; dz <= 1; dz++) {
         int cx = cellX + dx;

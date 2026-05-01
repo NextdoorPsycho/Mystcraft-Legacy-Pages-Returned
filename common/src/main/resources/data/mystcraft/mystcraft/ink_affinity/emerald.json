@@ -1,6 +1,10 @@
 {
-  "items": ["minecraft:emerald"],
-  "tags": ["forge:gems/emerald"],
+  "items": [
+    "minecraft:emerald"
+  ],
+  "tags": [
+    "forge:gems/emerald"
+  ],
   "amount_per_item": 1.0,
   "tier_bonus": 0,
   "symbol_weights": {

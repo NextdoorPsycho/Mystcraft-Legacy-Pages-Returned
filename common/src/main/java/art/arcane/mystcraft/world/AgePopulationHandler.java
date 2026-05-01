@@ -2,8 +2,8 @@ package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
-import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import art.arcane.mystcraft.util.ChunkStatusCompat;
+import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -16,25 +16,24 @@ import java.util.*;
  * DISABLED: This handler is no longer used.
  * <p>
  * Population is now handled correctly during chunk generation via
- * AgeChunkGenerator.applyBiomeDecoration() which is called during
- * the FEATURES chunk status - the proper time for world generation.
+ * AgeChunkGenerator.applyBiomeDecoration() which is called during the FEATURES
+ * chunk status - the proper time for world generation.
  * <p>
  * This class is kept for reference but is not registered as an event handler.
  */
 public class AgePopulationHandler {
 
-  // Track populated chunks per dimension to avoid double-processing
   private static final Set<Long> populatedChunks = new HashSet<>();
-  // Queue of chunks to populate when we're done with current population
+
   private static final Deque<PendingPopulation> pendingQueue = new ArrayDeque<>();
   private static final int MAX_POPULATION_DEPTH = 1;
-  // Recursion guard
+
   private static volatile boolean isPopulating = false;
   private static volatile int currentDepth = 0;
 
   /**
-   * Handles chunk load events to perform population for Mystcraft ages.
-   * Called from platform-specific event wrappers if re-enabled.
+   * Handles chunk load events to perform population for Mystcraft ages. Called
+   * from platform-specific event wrappers if re-enabled.
    */
   public static void onChunkLoad(ServerLevel serverLevel, ChunkAccess chunk) {
     ChunkGenerator generator = serverLevel.getChunkSource().getGenerator();
@@ -176,6 +175,7 @@ public class AgePopulationHandler {
     populatedChunks.clear();
   }
 
-  private record PendingPopulation(AgeChunkGenerator generator, ServerLevel level, int chunkX, int chunkZ) {
+  private record PendingPopulation(AgeChunkGenerator generator,
+                                   ServerLevel level, int chunkX, int chunkZ) {
   }
 }

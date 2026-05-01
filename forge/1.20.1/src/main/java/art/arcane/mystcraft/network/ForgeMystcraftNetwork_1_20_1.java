@@ -21,8 +21,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Network handler for Mystcraft packets on Forge 1.20.1.
- * Uses Forge's SimpleChannel for client-server communication.
+ * Network handler for Mystcraft packets on Forge 1.20.1. Uses Forge's
+ * SimpleChannel for client-server communication.
  * <p>
  * Client-bound packets are handled specially to avoid loading client-dependent
  * classes on dedicated servers during registration.
@@ -37,18 +37,12 @@ public final class ForgeMystcraftNetwork_1_20_1 {
       PROTOCOL_VERSION::equals,
       PROTOCOL_VERSION::equals
   );
-
-  private static int packetId = 0;
-
-  // Maps packet class names to their registered IDs (for server-side sending)
   private static final Map<String, Integer> CLIENT_BOUND_PACKET_IDS = new HashMap<>();
+  private static int packetId = 0;
 
   private ForgeMystcraftNetwork_1_20_1() {
   }
 
-  /**
-   * Wraps a common packet handler to work with Forge's context type.
-   */
   private static <T> BiConsumer<T, Supplier<NetworkEvent.Context>> wrap(BiConsumer<T, PacketContext> handler) {
     return (packet, ctxSupplier) -> {
       NetworkEvent.Context ctx = ctxSupplier.get();
@@ -61,7 +55,7 @@ public final class ForgeMystcraftNetwork_1_20_1 {
    * Registers all packets. Call this during mod common setup.
    */
   public static void register() {
-    // Client -> Server packets (safe to register normally)
+
     CHANNEL.registerMessage(packetId++, OpenBookPacket.class,
         OpenBookPacket::encode, OpenBookPacket::decode, wrap(OpenBookPacket::handle),
         Optional.of(NetworkDirection.PLAY_TO_SERVER));
@@ -86,9 +80,6 @@ public final class ForgeMystcraftNetwork_1_20_1 {
         PocketHeadSyncPacket::encode, PocketHeadSyncPacket::decode, wrap(PocketHeadSyncPacket::handle),
         Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
-    // Server -> Client packets
-    // On dedicated server: register with ServerPacketWrapper to avoid loading client classes
-    // On client: register normally with full handler
     registerClientBoundPacket("art.arcane.mystcraft.network.SyncAgeDataPacket");
     registerClientBoundPacket("art.arcane.mystcraft.network.LinkEffectPacket");
     registerClientBoundPacket("art.arcane.mystcraft.network.SymbolSyncPacket");
@@ -103,26 +94,20 @@ public final class ForgeMystcraftNetwork_1_20_1 {
     Mystcraft.LOGGER.info("Registered {} network packets", packetId);
   }
 
-  /**
-   * Registers a client-bound packet.
-   * On dedicated servers, uses a wrapper class to avoid loading the actual packet class.
-   * On clients, loads the class and registers it normally.
-   */
   @SuppressWarnings("unchecked")
   private static void registerClientBoundPacket(String className) {
     int id = packetId++;
     CLIENT_BOUND_PACKET_IDS.put(className, id);
 
     if (FMLEnvironment.dist.isDedicatedServer()) {
-      // On dedicated server: register ServerPacketWrapper
-      // The wrapper uses reflection for encoding and doesn't load the packet class now
+
       CHANNEL.registerMessage(id, ServerPacketWrapper.class,
           (wrapper, buf) -> wrapper.encode(buf),
-          buf -> new ServerPacketWrapper(className, null), // Decode is never called on server
+          buf -> new ServerPacketWrapper(className, null),
           (wrapper, ctxSupplier) -> ctxSupplier.get().setPacketHandled(true),
           Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     } else {
-      // On client: register the actual packet class
+
       try {
         Class<?> packetClass = Class.forName(className);
 
@@ -131,7 +116,7 @@ public final class ForgeMystcraftNetwork_1_20_1 {
 
         BiConsumer<Object, FriendlyByteBuf> encoder = (packet, buf) -> {
           try {
-            // Handle both direct packets and wrapped packets
+
             Object actualPacket = packet instanceof ServerPacketWrapper ? ((ServerPacketWrapper) packet).packet : packet;
             encodeMethod.invoke(null, actualPacket, buf);
           } catch (ReflectiveOperationException e) {
@@ -211,10 +196,6 @@ public final class ForgeMystcraftNetwork_1_20_1 {
     CHANNEL.send(PacketDistributor.TRACKING_CHUNK.with(() -> level.getChunkAt(pos)), toSend);
   }
 
-  /**
-   * Wraps a packet in ServerPacketWrapper if we're on a dedicated server.
-   * This allows the packet to be sent without the original class being registered.
-   */
   private static Object wrapForServer(Object packet) {
     if (FMLEnvironment.dist.isDedicatedServer()) {
       String className = packet.getClass().getName();
@@ -226,12 +207,13 @@ public final class ForgeMystcraftNetwork_1_20_1 {
   }
 
   /**
-   * Wrapper class for client-bound packets on dedicated servers.
-   * Allows encoding packets without loading the original packet class during registration.
+   * Wrapper class for client-bound packets on dedicated servers. Allows
+   * encoding packets without loading the original packet class during
+   * registration.
    */
   public static class ServerPacketWrapper {
-    private final String className;
     public final Object packet;
+    private final String className;
     private java.lang.reflect.Method encodeMethod;
 
     public ServerPacketWrapper(String className, Object packet) {

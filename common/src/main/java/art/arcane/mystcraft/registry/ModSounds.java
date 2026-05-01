@@ -5,8 +5,8 @@ import net.minecraft.sounds.SoundEvent;
 import java.util.function.Supplier;
 
 /**
- * Common accessor for registered sound events.
- * Platform modules populate these suppliers during initialization.
+ * Common accessor for registered sound events. Platform modules populate these
+ * suppliers during initialization.
  */
 public final class ModSounds {
 

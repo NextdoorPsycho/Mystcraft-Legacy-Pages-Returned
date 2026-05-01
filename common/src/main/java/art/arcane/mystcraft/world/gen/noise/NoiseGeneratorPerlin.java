@@ -53,7 +53,7 @@ public class NoiseGeneratorPerlin {
                                  int xSize, int ySize, int zSize,
                                  double xScale, double yScale, double zScale, double amplitude) {
     if (ySize == 1) {
-      // 2D noise optimization
+
       int index = 0;
 
       double invAmplitude = 1.0D / amplitude;
@@ -93,7 +93,7 @@ public class NoiseGeneratorPerlin {
         }
       }
     } else {
-      // 3D noise
+
       int index = 0;
       double invAmplitude = 1.0D / amplitude;
 

@@ -75,8 +75,8 @@ public class PageBakedModel implements BakedModel {
   }
 
   /**
-   * Resolves the model variant based on the page's symbol content.
-   * Called by platform-specific model override handlers.
+   * Resolves the model variant based on the page's symbol content. Called by
+   * platform-specific model override handlers.
    */
   @Nullable
   public BakedModel resolvePageModel(@NotNull BakedModel model, @NotNull ItemStack stack,

@@ -19,8 +19,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The Meteor entity.
- * Falls from the sky in unstable Ages, causing destruction on impact.
+ * The Meteor entity. Falls from the sky in unstable Ages, causing destruction
+ * on impact.
  */
 public class MeteorEntity extends Entity {
 
@@ -63,7 +63,6 @@ public class MeteorEntity extends Entity {
       impact();
     }
 
-    // Remove if fallen too far
     if (getY() < level().getMinBuildHeight() - 64) {
       discard();
     }
@@ -79,17 +78,14 @@ public class MeteorEntity extends Entity {
     int size = getSize();
     float explosionRadius = 2.0f + (size * 1.5f);
 
-    // Play meteor impact sound
     level().playSound(null, impactPos, ModSounds.METEOR_IMPACT.get(),
         SoundSource.BLOCKS, 2.0f, 0.8f + random.nextFloat() * 0.4f);
 
-    // Create explosion if enabled
     if (explodeOnImpact) {
       level().explode(this, getX(), getY(), getZ(), explosionRadius,
           Level.ExplosionInteraction.TNT);
     }
 
-    // Create crater and spawn fire
     if (level() instanceof ServerLevel serverLevel) {
       int craterRadius = size + 1;
       createCrater(serverLevel, impactPos, craterRadius);
@@ -100,19 +96,16 @@ public class MeteorEntity extends Entity {
     discard();
   }
 
-  /**
-   * Creates a crater at the impact site.
-   */
   private void createCrater(ServerLevel level, BlockPos center, int radius) {
     int radiusSq = radius * radius;
     for (int dx = -radius; dx <= radius; dx++) {
       for (int dy = -radius; dy <= radius / 2; dy++) {
         for (int dz = -radius; dz <= radius; dz++) {
-          int distSq = dx * dx + dy * dy * 4 + dz * dz; // Elliptical shape
+          int distSq = dx * dx + dy * dy * 4 + dz * dz;
           if (distSq <= radiusSq) {
             BlockPos pos = center.offset(dx, dy, dz);
             BlockState state = level.getBlockState(pos);
-            // Don't destroy bedrock or other unbreakable blocks
+
             if (state.getDestroySpeed(level, pos) >= 0 && !state.isAir()) {
               level.destroyBlock(pos, false);
             }
@@ -122,9 +115,6 @@ public class MeteorEntity extends Entity {
     }
   }
 
-  /**
-   * Spawns fire around the impact site.
-   */
   private void spawnFire(ServerLevel level, BlockPos center, int radius) {
     int fireCount = getSize() * 3 + random.nextInt(4);
     for (int i = 0; i < fireCount; i++) {
@@ -132,7 +122,6 @@ public class MeteorEntity extends Entity {
       int dz = random.nextInt(radius * 2 + 1) - radius;
       BlockPos firePos = center.offset(dx, 0, dz);
 
-      // Find ground level
       for (int dy = radius; dy >= -radius; dy--) {
         BlockPos checkPos = firePos.above(dy);
         BlockPos belowPos = checkPos.below();
@@ -145,9 +134,6 @@ public class MeteorEntity extends Entity {
     }
   }
 
-  /**
-   * Spawns impact particles.
-   */
   private void spawnImpactParticles(ServerLevel level, BlockPos center) {
     int size = getSize();
     int particleCount = 20 + size * 10;

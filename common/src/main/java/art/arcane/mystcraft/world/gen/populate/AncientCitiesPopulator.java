@@ -11,12 +11,13 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Ancient cities populator that generates deep dark city structures.
- * Cities consist of deepslate brick structures with sculk, soul lanterns, and warden spawns.
- * Very rare: approximately 1 per 64 chunks, only generates at Y < -20.
+ * Ancient cities populator that generates deep dark city structures. Cities
+ * consist of deepslate brick structures with sculk, soul lanterns, and warden
+ * spawns. Very rare: approximately 1 per 64 chunks, only generates at Y < -20.
  * <p>
  * Uses chunk boundary checking to prevent cascade loading - blocks outside the
- * current chunk are simply skipped rather than triggering neighbor chunk loads.
+ * current chunk are simply skipped rather than triggering neighbor chunk
+ * loads.
  */
 public class AncientCitiesPopulator implements IPopulate {
 
@@ -25,7 +26,7 @@ public class AncientCitiesPopulator implements IPopulate {
   private static final int MIN_Y = -50;
   private final long seed;
   private final float spawnChance;
-  // Chunk boundaries for current population
+
   private int chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ;
 
   public AncientCitiesPopulator(long seed) {
@@ -42,11 +43,10 @@ public class AncientCitiesPopulator implements IPopulate {
     if (random.nextFloat() > spawnChance) {
       return;
     }
-    // Only attempt generation in specific chunks based on grid
+
     int chunkX = chunkPos.getX() >> 4;
     int chunkZ = chunkPos.getZ() >> 4;
 
-    // Set chunk boundaries for this population run
     chunkMinX = chunkX << 4;
     chunkMaxX = chunkMinX + 15;
     chunkMinZ = chunkZ << 4;
@@ -56,7 +56,6 @@ public class AncientCitiesPopulator implements IPopulate {
       return;
     }
 
-    // Very rare generation
     if (random.nextFloat() > 0.15f) {
       return;
     }
@@ -64,7 +63,6 @@ public class AncientCitiesPopulator implements IPopulate {
     int x = chunkPos.getX() + random.nextInt(16);
     int z = chunkPos.getZ() + random.nextInt(16);
 
-    // Deep underground only
     int y = MIN_Y + random.nextInt(MAX_Y - MIN_Y);
 
     BlockPos pos = new BlockPos(x, y, z);
@@ -72,18 +70,11 @@ public class AncientCitiesPopulator implements IPopulate {
     generateAncientCity(world, random, pos);
   }
 
-  /**
-   * Checks if a position is within the current chunk boundaries.
-   * This prevents cascade chunk loading when structures extend beyond chunk edges.
-   */
   private boolean isInChunk(BlockPos pos) {
     return pos.getX() >= chunkMinX && pos.getX() <= chunkMaxX &&
         pos.getZ() >= chunkMinZ && pos.getZ() <= chunkMaxZ;
   }
 
-  /**
-   * Safe setBlock that only places blocks within current chunk boundaries.
-   */
   private void safeSetBlock(WorldGenLevel world, BlockPos pos, BlockState state) {
     if (isInChunk(pos)) {
       world.setBlock(pos, state, 2);
@@ -91,20 +82,19 @@ public class AncientCitiesPopulator implements IPopulate {
   }
 
   private void generateAncientCity(WorldGenLevel world, RandomSource random, BlockPos pos) {
-    // Build simplified city structure (21x21 base, 12 blocks tall)
+
     int radius = 10;
     int height = 12;
 
-    // Clear area and add sculk foundation
     for (int dx = -radius; dx <= radius; dx++) {
       for (int dz = -radius; dz <= radius; dz++) {
-        // Floor layers with sculk
+
         for (int dy = -2; dy <= 0; dy++) {
           BlockPos floorPos = pos.offset(dx, dy, dz);
 
           BlockState floorBlock;
           if (dy == 0) {
-            // Top floor - mix of deepslate and sculk
+
             floorBlock = random.nextFloat() < 0.4f ?
                 Blocks.SCULK.defaultBlockState() :
                 Blocks.DEEPSLATE_TILES.defaultBlockState();
@@ -115,7 +105,6 @@ public class AncientCitiesPopulator implements IPopulate {
           safeSetBlock(world, floorPos, floorBlock);
         }
 
-        // Clear interior
         for (int dy = 1; dy < height; dy++) {
           BlockPos clearPos = pos.offset(dx, dy, dz);
           safeSetBlock(world, clearPos, Blocks.AIR.defaultBlockState());
@@ -123,14 +112,12 @@ public class AncientCitiesPopulator implements IPopulate {
       }
     }
 
-    // Build central structure with deepslate bricks
     int structureRadius = 6;
     for (int dy = 1; dy < height; dy++) {
       for (int dx = -structureRadius; dx <= structureRadius; dx++) {
         for (int dz = -structureRadius; dz <= structureRadius; dz++) {
           BlockPos buildPos = pos.offset(dx, dy, dz);
 
-          // Outer walls
           if (Math.abs(dx) == structureRadius || Math.abs(dz) == structureRadius) {
             BlockState wallBlock;
             if (dy % 3 == 0) {
@@ -139,16 +126,13 @@ public class AncientCitiesPopulator implements IPopulate {
               wallBlock = Blocks.DEEPSLATE_BRICKS.defaultBlockState();
             }
             safeSetBlock(world, buildPos, wallBlock);
-          }
-          // Corner pillars
-          else if (Math.abs(dx) == structureRadius - 1 && Math.abs(dz) == structureRadius - 1) {
+          } else if (Math.abs(dx) == structureRadius - 1 && Math.abs(dz) == structureRadius - 1) {
             safeSetBlock(world, buildPos, Blocks.POLISHED_DEEPSLATE.defaultBlockState());
           }
         }
       }
     }
 
-    // Add ceiling
     for (int dx = -structureRadius; dx <= structureRadius; dx++) {
       for (int dz = -structureRadius; dz <= structureRadius; dz++) {
         BlockPos ceilingPos = pos.offset(dx, height, dz);
@@ -156,7 +140,6 @@ public class AncientCitiesPopulator implements IPopulate {
       }
     }
 
-    // Add sculk spread throughout
     for (int i = 0; i < 100; i++) {
       int dx = random.nextInt(radius * 2) - radius;
       int dy = random.nextInt(height);
@@ -176,7 +159,6 @@ public class AncientCitiesPopulator implements IPopulate {
       }
     }
 
-    // Add soul lanterns for lighting
     for (int i = 0; i < 15; i++) {
       int dx = random.nextInt(structureRadius * 2) - structureRadius;
       int dy = random.nextInt(height - 4) + 2;
@@ -184,13 +166,11 @@ public class AncientCitiesPopulator implements IPopulate {
 
       BlockPos lanternPos = pos.offset(dx, dy, dz);
 
-      // Place on walls
       if (Math.abs(dx) == structureRadius || Math.abs(dz) == structureRadius) {
         safeSetBlock(world, lanternPos, Blocks.SOUL_LANTERN.defaultBlockState());
       }
     }
 
-    // Add candles
     for (int i = 0; i < 20; i++) {
       int dx = random.nextInt(radius * 2) - radius;
       int dz = random.nextInt(radius * 2) - radius;
@@ -202,7 +182,6 @@ public class AncientCitiesPopulator implements IPopulate {
       }
     }
 
-    // Add reinforced deepslate (rare)
     for (int i = 0; i < 5; i++) {
       int dx = random.nextInt(structureRadius * 2) - structureRadius;
       int dy = random.nextInt(height);
@@ -212,7 +191,6 @@ public class AncientCitiesPopulator implements IPopulate {
       safeSetBlock(world, reinforcedPos, Blocks.REINFORCED_DEEPSLATE.defaultBlockState());
     }
 
-    // Create central sculk shrieker area (warden spawn point)
     for (int dx = -2; dx <= 2; dx++) {
       for (int dz = -2; dz <= 2; dz++) {
         BlockPos shriekerAreaPos = pos.offset(dx, 1, dz);
@@ -223,7 +201,6 @@ public class AncientCitiesPopulator implements IPopulate {
       }
     }
 
-    // Small chance to spawn warden using addFreshEntity to avoid chunk-loading deadlocks
     if (random.nextFloat() < 0.1f) {
       BlockPos wardenPos = pos.offset(0, 2, 0);
       if (isInChunk(wardenPos)) {

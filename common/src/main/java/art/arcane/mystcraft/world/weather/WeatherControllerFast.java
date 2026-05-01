@@ -6,13 +6,13 @@ import net.minecraft.server.level.ServerLevel;
 import java.util.Random;
 
 /**
- * Weather controller with faster weather cycles.
- * Weather changes more frequently than normal.
+ * Weather controller with faster weather cycles. Weather changes more
+ * frequently than normal.
  */
 public class WeatherControllerFast implements IWeatherController {
 
   public static final String TYPE = "fast";
-  // Fast timing: 1/4 of normal duration
+
   private static final int RAIN_DURATION_BASE = 3000;
   private static final int RAIN_DURATION_VARIANCE = 3000;
   private static final int RAIN_COOLDOWN_BASE = 3000;
@@ -36,7 +36,7 @@ public class WeatherControllerFast implements IWeatherController {
 
   @Override
   public void updateWeather(ServerLevel level) {
-    // Update rain timer (faster cycles)
+
     if (rainTime > 0) {
       rainTime--;
       if (rainTime <= 0) {
@@ -49,7 +49,6 @@ public class WeatherControllerFast implements IWeatherController {
       }
     }
 
-    // Update thunder timer
     if (raining && thunderTime > 0) {
       thunderTime--;
       if (thunderTime <= 0) {
@@ -64,7 +63,6 @@ public class WeatherControllerFast implements IWeatherController {
       thundering = false;
     }
 
-    // Faster transitions (2x speed)
     if (raining) {
       rainLevel = Math.min(1.0f, rainLevel + 0.02f);
     } else {

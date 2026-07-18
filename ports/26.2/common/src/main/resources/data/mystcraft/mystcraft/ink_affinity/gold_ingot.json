@@ -1,0 +1,13 @@
+{
+  "items": [
+    "minecraft:gold_ingot"
+  ],
+  "tags": [
+    "c:ingots/gold"
+  ],
+  "amount_per_item": 1.0,
+  "link_property_weights": {
+    "intra_linking": 0.1,
+    "generate_platform": 0.05
+  }
+}

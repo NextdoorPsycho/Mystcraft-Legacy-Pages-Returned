@@ -1,0 +1,37 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 15.0,
+  "poem": [
+    "Terrain",
+    "Form",
+    "Ethereal",
+    "Flow"
+  ],
+  "logic": [
+    {
+      "type": "set_terrain_type",
+      "value": "end"
+    },
+    {
+      "type": "set_average_ground_level",
+      "value": 64
+    },
+    {
+      "type": "set_sea_level",
+      "value": -64
+    },
+    {
+      "type": "set_has_sea",
+      "value": false
+    },
+    {
+      "type": "set_sky_color",
+      "value": 0
+    },
+    {
+      "type": "add_instability",
+      "value": 15.0
+    }
+  ]
+}

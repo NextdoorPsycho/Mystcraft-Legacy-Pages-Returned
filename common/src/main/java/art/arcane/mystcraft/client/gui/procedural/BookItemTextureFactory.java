@@ -11,6 +11,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /**
  * Generates the in-inventory item icon for descriptive / linking / personal
  * link books as a closed-book front-view sprite.
@@ -92,7 +94,7 @@ public final class BookItemTextureFactory {
 
     int pageCount = 0;
     if (book.getItem() instanceof AgebookItem agebook) {
-      var pages = agebook.getPageList(book);
+      List<ItemStack> pages = agebook.getPageList(book);
       if (pages != null) pageCount = pages.size();
     }
 

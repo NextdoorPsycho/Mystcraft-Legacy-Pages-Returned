@@ -22,13 +22,6 @@ import java.util.List;
  */
 public class GuidebookScreen extends Screen {
 
-  private static final java.lang.reflect.Method SCREEN_SCROLL_3 =
-      art.arcane.mystcraft.util.ReflectionCompat.findMethod(Screen.class, "mouseScrolled",
-          boolean.class, double.class, double.class, double.class);
-  private static final java.lang.reflect.Method SCREEN_SCROLL_4 =
-      art.arcane.mystcraft.util.ReflectionCompat.findMethod(Screen.class, "mouseScrolled",
-          boolean.class, double.class, double.class, double.class, double.class);
-
   private static final int BOOK_WIDTH = 276;
   private static final int BOOK_HEIGHT = 180;
 
@@ -359,18 +352,12 @@ public class GuidebookScreen extends Screen {
     return super.mouseClicked(mouseX, mouseY, button);
   }
 
+  @Override
   public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
     if (handleScroll(delta)) {
       return true;
     }
-    return invokeSuperScroll3(mouseX, mouseY, delta);
-  }
-
-  public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-    if (handleScroll(deltaY)) {
-      return true;
-    }
-    return invokeSuperScroll4(mouseX, mouseY, deltaX, deltaY);
+    return super.mouseScrolled(mouseX, mouseY, delta);
   }
 
   private boolean handleScroll(double delta) {
@@ -384,30 +371,6 @@ public class GuidebookScreen extends Screen {
       tocScrollOffset = Math.min(maxScroll, tocScrollOffset + 1);
     }
     return true;
-  }
-
-  private boolean invokeSuperScroll3(double mouseX, double mouseY, double delta) {
-    if (SCREEN_SCROLL_3 == null) {
-      return false;
-    }
-    try {
-      Object result = SCREEN_SCROLL_3.invoke(this, mouseX, mouseY, delta);
-      return result instanceof Boolean value && value;
-    } catch (ReflectiveOperationException ignored) {
-      return false;
-    }
-  }
-
-  private boolean invokeSuperScroll4(double mouseX, double mouseY, double deltaX, double deltaY) {
-    if (SCREEN_SCROLL_4 == null) {
-      return false;
-    }
-    try {
-      Object result = SCREEN_SCROLL_4.invoke(this, mouseX, mouseY, deltaX, deltaY);
-      return result instanceof Boolean value && value;
-    } catch (ReflectiveOperationException ignored) {
-      return false;
-    }
   }
 
   private void openChapter(int index) {

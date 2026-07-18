@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:procedural_ui_book_cover_nbt_round_trip",
+  "max_ticks": 40,
+  "structure": "minecraft:empty"
+}

@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 5.0,
+  "poem": [
+    "Column",
+    "Ruin",
+    "Stone",
+    "Time"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "corrupted_columns_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:corrupted_columns"
+    },
+    {
+      "type": "add_instability",
+      "value": 5.0
+    }
+  ]
+}

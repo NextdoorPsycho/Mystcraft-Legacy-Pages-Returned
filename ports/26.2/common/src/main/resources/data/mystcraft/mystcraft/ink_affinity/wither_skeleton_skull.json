@@ -1,0 +1,25 @@
+{
+  "items": [
+    "minecraft:wither_skeleton_skull"
+  ],
+  "amount_per_item": 1.0,
+  "tier_bonus": 2,
+  "symbol_weights": {
+    "mystcraft:biome_nether_wastes": 0.3,
+    "mystcraft:biome_crimson_forest": 0.2
+  },
+  "category_weights": {
+    "feature_large": 0.3,
+    "environment": 0.3,
+    "structure": 0.2
+  },
+  "poem_token_weights": {
+    "Death": 0.4,
+    "Dread": 0.3,
+    "Doom": 0.3
+  },
+  "link_property_weights": {
+    "disarm": 0.2,
+    "following": 0.1
+  }
+}

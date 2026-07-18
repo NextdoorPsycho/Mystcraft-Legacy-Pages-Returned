@@ -10,12 +10,13 @@ Discord (`https://discord.gg/pRGH45W`).
 
 ## Project Overview
 
-Mystcraft Legacy is a Fabric and Forge continuation of Mystcraft targeting
-Minecraft 1.20.1. The mod preserves the core experience while moving symbol
+Mystcraft Legacy is a Fabric and Forge continuation of Mystcraft for Minecraft
+1.20.1 and 26.2. The mod preserves the core experience while moving symbol
 content to datapacks for maximum flexibility.
 
-TLDR: You can do just about everything you could before, it supports newer
-1.20.1, and it is designed to keep evolving.
+TLDR: Write a book, create an Age, and link into it just as before. The two
+Minecraft targets use separate toolchains so the stable 1.20.1 build remains
+usable while the modern 26.2 implementation can evolve independently.
 
 ---
 
@@ -24,15 +25,18 @@ TLDR: You can do just about everything you could before, it supports newer
 | Version    | Fabric | Forge |
 |:-----------|:------:|:-----:|
 | **1.20.1** |   ✅    |   ✅   |
+| **26.2**   |   ✅    |   ✅   |
 
 ---
 
-## Current Status (Important Notes)
+## Current Status
 
-- Block renderers for portals, writing desks, vanilla lecterns, and similar
-  display blocks are not working as intended yet.
-  Visuals may appear incorrect or missing while the backend logic still
-  functions.
+Both supported targets include loader-native GameTests for book travel,
+crafting, Age creation, world rules, commands, procedural content, persistence,
+network payloads, and dimension contracts. Production releases still require a
+manual gameplay/UI pass on both loaders and a representative JProfiler capture
+while generating and revisiting several Ages; compile success is not visual or
+performance proof.
 
 ---
 
@@ -70,10 +74,10 @@ TLDR: You can do just about everything you could before, it supports newer
 - Writing Desk: Writes symbols onto blank pages.
 - Book Binder: Binds pages into Agebooks or Linkbooks.
 - Ink Mixer: Creates colored inks and imbues link properties.
-- Link Modifier: Applies link flags to books. (Borked)
+- Link Modifier: Applies link flags to books.
 - Book Receptacle: Holds a book and activates a portal. Right-click with a book to insert; shift+empty-hand to retrieve. Each portal cell tints to the held book's colour (Linkbook: stored link colour, default 0x4488FF; Agebook: 0x66AAFF linked / 0x808890 unwritten; PersonalLinkBook: 0xAA44FF). Breaking the receptacle, breaking any frame crystal, or `/setblock`-ing it to air takes the lit portal down deterministically.
 - Crystal Block + Link Portal: Portal frame and portal surface. Each lit portal block carries a `LinkPortalBlockEntity` that stores a stamped colour, the source receptacle's BlockPos, and a snapshot of the book NBT — so the colour is uniform across every cell of a portal, two adjacent portals never bleed colours, and teleportation works even if the receptacle is removed mid-traversal.
-- Lectern (Vanilla): Displays and opens Mystcraft books. (Borked)
+- Lectern (Vanilla): Displays and opens Mystcraft books.
 
 ---
 
@@ -150,17 +154,39 @@ TLDR: You can do just about everything you could before, it supports newer
 
 ### Prerequisites
 
-- **Java:** JDK 17
-- **Minecraft Version:** 1.20.1
+| Target | Java | Build root |
+| --- | --- | --- |
+| Minecraft 1.20.1 | JDK 17 | repository root |
+| Minecraft 26.2 | JDK 25 | `ports/26.2/` |
 
 ### Build Commands
 
 The project uses Gradle.
 
-**Build All:**
+**Build every supported loader jar:**
 
 ```bash
-./gradlew buildAll
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew buildAllSupported
+```
+
+The root task delegates the 26.2 half to its isolated Gradle 9.5.1 build. To
+work on only one target:
+
+```bash
+# Minecraft 1.20.1
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew buildAllVersions
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ./run-tests.sh full
+
+# Minecraft 26.2
+cd ports/26.2
+JAVA_HOME=$(/usr/libexec/java_home -v 25) ./gradlew verifyProduction
+```
+
+`run-tests.sh` only starts dedicated GameTest servers; it never opens a client
+unless the client-render gate is explicitly requested:
+
+```bash
+MYSTCRAFT_RUN_CLIENT_GATE=1 JAVA_HOME=$(/usr/libexec/java_home -v 17) ./run-tests.sh procedural_ui
 ```
 
 **Run Client (Fabric):**
@@ -175,6 +201,15 @@ The project uses Gradle.
 ./gradlew :forge:1.20.1:runClient
 ```
 
+**Run Minecraft 26.2 clients and GameTests from the repository root:**
+
+```bash
+./gradlew runFabric26_2Client
+./gradlew runForge26_2Client
+./gradlew runFabric26_2GameTest
+./gradlew runForge26_2GameTest
+```
+
 ### VS Code / VS Code Insiders
 
 Open `Mystcraft-Legacy-Returned.code-workspace` from either VS Code or VS Code
@@ -182,9 +217,9 @@ Insiders. The workspace applies a blue UI background so it is obvious the
 workspace settings loaded, recommends the Java/Gradle extensions, and exposes
 the supported build/run/test entries through **Terminal > Run Task**.
 
-The workspace tasks mirror the supported 1.20.1 targets:
+The workspace tasks expose both supported targets:
 
-- Build all game platform jars
+- Build all supported game-platform jars
 - Build Fabric / Forge jars separately
 - Build Psycho / XComp jars
 - Run Fabric / Forge client and server
@@ -195,7 +230,7 @@ The workspace tasks mirror the supported 1.20.1 targets:
 
 ## Access Transformers / Access Wideners
 
-This mod requires access to private Minecraft fields (e.g.,
+The 1.20.1 implementation requires access to private Minecraft fields (e.g.,
 `LecternBlockEntity.book`). Each loader has different requirements:
 
 | Loader     | File Location                                                    | Field Naming           |
@@ -210,6 +245,10 @@ is applied.
 When adding new AT entries for Forge, look up the SRG name (format: `f_NNNNN_`
 for fields, `m_NNNNN_` for methods) from the MCP mappings or Forge decompiled
 sources.
+
+The 26.2 implementation uses mapped Mixin accessors in its common module. Do
+not use plain Java reflection with Mojang field or method names for either
+target; string names are not remapped in production Forge jars.
 
 ---
 

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " G ",
+    "GDG",
+    " G "
+  ],
+  "key": {
+    "G": "minecraft:glass",
+    "D": "minecraft:diamond"
+  },
+  "result": {
+    "id": "mystcraft:blockcrystal",
+    "count": 4
+  }
+}

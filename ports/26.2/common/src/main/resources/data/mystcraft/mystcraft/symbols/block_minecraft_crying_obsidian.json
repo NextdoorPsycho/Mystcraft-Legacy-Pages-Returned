@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 4,
+  "instability_cost": 15.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Void",
+    "Solid"
+  ],
+  "display_name": "Crying Obsidian Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:crying_obsidian"
+    },
+    {
+      "type": "add_instability",
+      "value": 15.0
+    }
+  ]
+}

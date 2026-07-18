@@ -1,0 +1,19 @@
+{
+  "given_item_modifiers": [
+    {
+      "function": "mystcraft:symbol_page",
+      "rank": 1,
+      "selection": "rank"
+    }
+  ],
+  "gives": {
+    "id": "mystcraft:page"
+  },
+  "max_uses": 2.0,
+  "reputation_discount": 0.05,
+  "wants": {
+    "count": 8.0,
+    "id": "minecraft:emerald"
+  },
+  "xp": 5.0
+}

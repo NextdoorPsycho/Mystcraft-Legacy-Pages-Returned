@@ -11,6 +11,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -47,7 +48,10 @@ public class LinkPermissions extends SavedData {
     if (tag.contains("EntryBlacklist", Tag.TAG_COMPOUND)) {
       CompoundTag blacklist = tag.getCompound("EntryBlacklist");
       for (String key : blacklist.getAllKeys()) {
-        int ageUID = Integer.parseInt(key);
+        Integer ageUID = parseAgeUID(key);
+        if (ageUID == null) {
+          continue;
+        }
         Set<UUID> players = loadUUIDSet(blacklist.getList(key, Tag.TAG_STRING));
         permissions.entryBlacklist.put(ageUID, players);
       }
@@ -56,7 +60,10 @@ public class LinkPermissions extends SavedData {
     if (tag.contains("EntryWhitelist", Tag.TAG_COMPOUND)) {
       CompoundTag whitelist = tag.getCompound("EntryWhitelist");
       for (String key : whitelist.getAllKeys()) {
-        int ageUID = Integer.parseInt(key);
+        Integer ageUID = parseAgeUID(key);
+        if (ageUID == null) {
+          continue;
+        }
         Set<UUID> players = loadUUIDSet(whitelist.getList(key, Tag.TAG_STRING));
         permissions.entryWhitelist.put(ageUID, players);
       }
@@ -65,7 +72,10 @@ public class LinkPermissions extends SavedData {
     if (tag.contains("WhitelistMode", Tag.TAG_COMPOUND)) {
       CompoundTag modes = tag.getCompound("WhitelistMode");
       for (String key : modes.getAllKeys()) {
-        int ageUID = Integer.parseInt(key);
+        Integer ageUID = parseAgeUID(key);
+        if (ageUID == null) {
+          continue;
+        }
         permissions.whitelistMode.put(ageUID, modes.getBoolean(key));
       }
     }
@@ -73,7 +83,10 @@ public class LinkPermissions extends SavedData {
     if (tag.contains("DepartureBlocked", Tag.TAG_COMPOUND)) {
       CompoundTag blocked = tag.getCompound("DepartureBlocked");
       for (String key : blocked.getAllKeys()) {
-        int ageUID = Integer.parseInt(key);
+        Integer ageUID = parseAgeUID(key);
+        if (ageUID == null) {
+          continue;
+        }
         Set<UUID> players = loadUUIDSet(blocked.getList(key, Tag.TAG_STRING));
         permissions.departureBlocked.put(ageUID, players);
       }
@@ -82,8 +95,15 @@ public class LinkPermissions extends SavedData {
     if (tag.contains("AgeOwners", Tag.TAG_COMPOUND)) {
       CompoundTag owners = tag.getCompound("AgeOwners");
       for (String key : owners.getAllKeys()) {
-        int ageUID = Integer.parseInt(key);
-        permissions.ageOwners.put(ageUID, UUID.fromString(owners.getString(key)));
+        Integer ageUID = parseAgeUID(key);
+        if (ageUID == null) {
+          continue;
+        }
+        try {
+          permissions.ageOwners.put(ageUID, UUID.fromString(owners.getString(key)));
+        } catch (IllegalArgumentException e) {
+          Mystcraft.LOGGER.warn("Ignoring invalid owner UUID for Age {}", ageUID);
+        }
       }
     }
 
@@ -92,6 +112,16 @@ public class LinkPermissions extends SavedData {
     }
 
     return permissions;
+  }
+
+  @Nullable
+  private static Integer parseAgeUID(String value) {
+    try {
+      return Integer.parseInt(value);
+    } catch (NumberFormatException e) {
+      Mystcraft.LOGGER.warn("Ignoring malformed Age permission key '{}'", value);
+      return null;
+    }
   }
 
   private static Set<UUID> loadUUIDSet(ListTag list) {

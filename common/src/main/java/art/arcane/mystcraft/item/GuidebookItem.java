@@ -26,18 +26,9 @@ public class GuidebookItem extends Item {
     ItemStack stack = player.getItemInHand(hand);
 
     if (level.isClientSide) {
-      openGuidebookClient();
+      ItemClientHooks.openGuidebook();
     }
 
     return InteractionResultHolder.consume(stack);
-  }
-
-  private void openGuidebookClient() {
-    try {
-      Class<?> clientHelperClass = Class.forName("art.arcane.mystcraft.client.GuidebookClientHelper");
-      clientHelperClass.getMethod("openGuidebook").invoke(null);
-    } catch (Exception e) {
-
-    }
   }
 }

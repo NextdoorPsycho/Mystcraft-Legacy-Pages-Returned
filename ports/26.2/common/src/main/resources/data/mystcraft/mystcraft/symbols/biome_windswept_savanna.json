@@ -1,0 +1,21 @@
+{
+  "category": "biome",
+  "card_rank": 1,
+  "instability_cost": 0.0,
+  "poem": [
+    "Nature",
+    "Nurture",
+    "Encourage",
+    "Windswept"
+  ],
+  "logic": [
+    {
+      "type": "add_biome",
+      "biome": "minecraft:windswept_savanna"
+    },
+    {
+      "type": "set_average_ground_level",
+      "value": 100
+    }
+  ]
+}

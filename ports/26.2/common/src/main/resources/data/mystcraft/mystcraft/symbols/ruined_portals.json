@@ -1,0 +1,29 @@
+{
+  "category": "structure",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "poem": [
+    "Civilization",
+    "Void",
+    "Gateway",
+    "Decay"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "ruined_portals_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:ruined_portals",
+      "params": {
+        "chance": 1.0
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 15.0,
+  "poem": [
+    "Terrain",
+    "Form",
+    "Constraint",
+    "Entropy"
+  ],
+  "logic": [
+    {
+      "type": "set_terrain_type",
+      "value": "nether"
+    },
+    {
+      "type": "set_average_ground_level",
+      "value": 64
+    },
+    {
+      "type": "set_sea_level",
+      "value": -64
+    },
+    {
+      "type": "set_has_sea",
+      "value": false
+    },
+    {
+      "type": "set_sky_color",
+      "value": 3342344
+    },
+    {
+      "type": "set_fog_color",
+      "value": 3342344
+    },
+    {
+      "type": "add_instability",
+      "value": 15.0
+    }
+  ]
+}

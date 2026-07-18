@@ -22,6 +22,10 @@ import java.util.Map;
  */
 public class PocketHeadSyncPacket {
 
+  // Modded registry paths can legitimately be much longer than vanilla block
+  // IDs; keep the packet bounded without rejecting valid namespaced IDs.
+  private static final int MAX_BLOCK_ID_LENGTH = 256;
+
   private final EnumMap<AgeData.PocketHeadFace, List<String>> headBlocks;
 
   public PocketHeadSyncPacket(Map<AgeData.PocketHeadFace, List<String>> headBlocks) {
@@ -45,7 +49,7 @@ public class PocketHeadSyncPacket {
       }
       buf.writeBoolean(true);
       for (String id : blocks) {
-        buf.writeUtf(id);
+        buf.writeUtf(id, MAX_BLOCK_ID_LENGTH);
       }
     }
   }
@@ -59,7 +63,7 @@ public class PocketHeadSyncPacket {
       }
       List<String> blocks = new ArrayList<>(64);
       for (int i = 0; i < 64; i++) {
-        blocks.add(buf.readUtf());
+        blocks.add(buf.readUtf(MAX_BLOCK_ID_LENGTH));
       }
       map.put(face, blocks);
     }

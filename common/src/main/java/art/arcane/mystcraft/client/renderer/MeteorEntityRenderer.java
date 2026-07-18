@@ -100,28 +100,28 @@ public class MeteorEntityRenderer extends EntityRenderer<MeteorEntity> {
         .uv(0, 0)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
         .uv2(light);
-    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
+    RenderCompat.vertexNormal(vertex, normal, nx, ny, nz).endVertex();
 
     vertex = buffer.vertex(matrix, x1, y1, z2)
         .color(ir, ig, ib, ia)
         .uv(0, 1)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
         .uv2(light);
-    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
+    RenderCompat.vertexNormal(vertex, normal, nx, ny, nz).endVertex();
 
     vertex = buffer.vertex(matrix, x2, y1, z2)
         .color(ir, ig, ib, ia)
         .uv(1, 1)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
         .uv2(light);
-    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
+    RenderCompat.vertexNormal(vertex, normal, nx, ny, nz).endVertex();
 
     vertex = buffer.vertex(matrix, x2, y1, z1)
         .color(ir, ig, ib, ia)
         .uv(1, 0)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
         .uv2(light);
-    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
+    RenderCompat.vertexNormal(vertex, normal, nx, ny, nz).endVertex();
   }
 
   private void addFace(VertexConsumer buffer, PoseStack.Pose pose, Matrix4f matrix, Matrix3f normal,
@@ -142,28 +142,28 @@ public class MeteorEntityRenderer extends EntityRenderer<MeteorEntity> {
         .uv(0, 0)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
         .uv2(light);
-    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
+    RenderCompat.vertexNormal(vertex, normal, nx, ny, nz).endVertex();
 
     vertex = buffer.vertex(matrix, x2, y2, z2)
         .color(ir, ig, ib, ia)
         .uv(0, 1)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
         .uv2(light);
-    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
+    RenderCompat.vertexNormal(vertex, normal, nx, ny, nz).endVertex();
 
     vertex = buffer.vertex(matrix, x3, y3, z3)
         .color(ir, ig, ib, ia)
         .uv(1, 1)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
         .uv2(light);
-    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
+    RenderCompat.vertexNormal(vertex, normal, nx, ny, nz).endVertex();
 
     vertex = buffer.vertex(matrix, x4, y4, z4)
         .color(ir, ig, ib, ia)
         .uv(1, 0)
         .overlayCoords(OverlayTexture.NO_OVERLAY)
         .uv2(light);
-    RenderCompat.vertexNormal(vertex, pose, normal, nx, ny, nz).endVertex();
+    RenderCompat.vertexNormal(vertex, normal, nx, ny, nz).endVertex();
   }
 
   private void renderTrail(MeteorEntity entity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource) {

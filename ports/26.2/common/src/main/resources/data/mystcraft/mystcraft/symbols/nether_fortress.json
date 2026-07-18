@@ -1,0 +1,29 @@
+{
+  "category": "structure",
+  "card_rank": 4,
+  "instability_cost": 10.0,
+  "poem": [
+    "Civilization",
+    "Chaos",
+    "Fire",
+    "Power"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "nether_fort_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:nether_fortress",
+      "params": {
+        "spawn_chance": 0.1
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 10.0
+    }
+  ]
+}

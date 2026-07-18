@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:commands_player_and_admin_workflows_are_registered",
+  "max_ticks": 80,
+  "structure": "minecraft:empty"
+}

@@ -5,18 +5,20 @@ import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.WeakHashMap;
 
 /**
  * Handles thematic death effects when players die in Mystcraft Ages. Sends
@@ -25,9 +27,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AgeDeathHandler {
 
-  private static final Random RANDOM = new Random();
-
-  private static final Map<UUID, Map<ResourceKey<Level>, Integer>> DEATH_COUNTS = new ConcurrentHashMap<>();
+  // Scope session-only narrative counters to the actual server. Resource keys
+  // repeat across integrated-server restarts, so a process-global UUID map
+  // leaked both memory and old death history into later worlds.
+  private static final Map<MinecraftServer, Map<UUID, Map<ResourceKey<Level>, Integer>>> DEATH_COUNTS =
+      Collections.synchronizedMap(new WeakHashMap<>());
 
   private static final String[] MESSAGES_LOW = {
       "mystcraft.death.low.release",
@@ -76,9 +80,9 @@ public class AgeDeathHandler {
     String playerName = player.getName().getString();
     ResourceKey<Level> dimensionKey = level.dimension();
 
-    int deathCount = incrementDeathCount(player.getUUID(), dimensionKey);
+    int deathCount = incrementDeathCount(level.getServer(), player.getUUID(), dimensionKey);
 
-    String messageKey = selectDeathMessage(instability, deathCount, source);
+    String messageKey = selectDeathMessage(instability, deathCount, source, level.random);
     Component message = Component.translatable(messageKey, playerName);
 
     for (ServerPlayer p : level.players()) {
@@ -96,26 +100,34 @@ public class AgeDeathHandler {
    */
   public static void onPlayerRespawn(ServerPlayer player, ServerLevel level) {
     if (!MystcraftConfig.deathEffectsEnabled.get()) {
+      return;
     }
   }
 
-  private static String selectDeathMessage(float instability, int deathCount, DamageSource source) {
+  public static void clearServerState(MinecraftServer server) {
+    synchronized (DEATH_COUNTS) {
+      DEATH_COUNTS.remove(server);
+    }
+  }
 
-    if (deathCount >= 3 && RANDOM.nextFloat() < 0.6f) {
-      return MESSAGES_REPEAT[RANDOM.nextInt(MESSAGES_REPEAT.length)];
+  private static String selectDeathMessage(float instability, int deathCount, DamageSource source,
+                                           RandomSource random) {
+
+    if (deathCount >= 3 && random.nextFloat() < 0.6f) {
+      return MESSAGES_REPEAT[random.nextInt(MESSAGES_REPEAT.length)];
     }
 
     String causeMessage = getCauseSpecificMessage(source);
-    if (causeMessage != null && RANDOM.nextFloat() < 0.5f) {
+    if (causeMessage != null && random.nextFloat() < 0.5f) {
       return causeMessage;
     }
 
     if (instability > 80.0f) {
-      return MESSAGES_HIGH[RANDOM.nextInt(MESSAGES_HIGH.length)];
+      return MESSAGES_HIGH[random.nextInt(MESSAGES_HIGH.length)];
     } else if (instability >= 50.0f) {
-      return MESSAGES_MEDIUM[RANDOM.nextInt(MESSAGES_MEDIUM.length)];
+      return MESSAGES_MEDIUM[random.nextInt(MESSAGES_MEDIUM.length)];
     } else {
-      return MESSAGES_LOW[RANDOM.nextInt(MESSAGES_LOW.length)];
+      return MESSAGES_LOW[random.nextInt(MESSAGES_LOW.length)];
     }
   }
 
@@ -142,12 +154,17 @@ public class AgeDeathHandler {
     return null;
   }
 
-  private static int incrementDeathCount(UUID playerId, ResourceKey<Level> dimension) {
-    Map<ResourceKey<Level>, Integer> playerDeaths = DEATH_COUNTS.computeIfAbsent(
-        playerId, k -> new HashMap<>());
-    int count = playerDeaths.getOrDefault(dimension, 0) + 1;
-    playerDeaths.put(dimension, count);
-    return count;
+  private static int incrementDeathCount(MinecraftServer server, UUID playerId,
+                                         ResourceKey<Level> dimension) {
+    synchronized (DEATH_COUNTS) {
+      Map<UUID, Map<ResourceKey<Level>, Integer>> serverDeaths = DEATH_COUNTS.computeIfAbsent(
+          server, key -> new HashMap<>());
+      Map<ResourceKey<Level>, Integer> playerDeaths = serverDeaths.computeIfAbsent(
+          playerId, key -> new HashMap<>());
+      int count = playerDeaths.getOrDefault(dimension, 0) + 1;
+      playerDeaths.put(dimension, count);
+      return count;
+    }
   }
 
   /**

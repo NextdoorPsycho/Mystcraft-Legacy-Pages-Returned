@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "mystcraft:item/guidebook",
+    "model": {
+      "type": "mystcraft:procedural_book"
+    }
+  }
+}

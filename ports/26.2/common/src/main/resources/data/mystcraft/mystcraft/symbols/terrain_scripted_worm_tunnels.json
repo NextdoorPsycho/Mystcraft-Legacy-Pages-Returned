@@ -1,0 +1,56 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "display_name": "Worm Tunnel World",
+  "poem": [
+    "Burrow",
+    "Tunnel",
+    "Worm",
+    "Deep"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "worm_tunnels",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "sub",
+            "a": 0.55,
+            "b": {
+              "op": "abs",
+              "input": {
+                "op": "noise3",
+                "scale": 0.025,
+                "octaves": 5,
+                "seed": 8813
+              }
+            }
+          },
+          "b": {
+            "op": "max",
+            "a": 0,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "sub",
+                "a": {
+                  "var": "y"
+                },
+                "b": 180
+              },
+              "b": 0.02
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

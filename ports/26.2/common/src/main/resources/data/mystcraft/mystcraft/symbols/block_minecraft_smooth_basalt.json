@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Fire",
+    "Crafted"
+  ],
+  "display_name": "Smooth Basalt Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:smooth_basalt"
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

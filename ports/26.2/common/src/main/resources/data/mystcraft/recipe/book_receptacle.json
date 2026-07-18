@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SIS",
+    "SGS",
+    "SSS"
+  ],
+  "key": {
+    "S": "#minecraft:stone_crafting_materials",
+    "I": "#c:ingots/iron",
+    "G": "minecraft:gold_ingot"
+  },
+  "result": {
+    "id": "mystcraft:blockbookreceptacle"
+  }
+}

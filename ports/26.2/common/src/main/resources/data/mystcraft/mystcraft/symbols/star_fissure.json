@@ -1,0 +1,20 @@
+{
+  "category": "special",
+  "card_rank": 4,
+  "instability_cost": -25.0,
+  "poem": [
+    "Portal",
+    "Form",
+    "Home",
+    "Return"
+  ],
+  "logic": [
+    {
+      "type": "set_star_fissure",
+      "enabled": true,
+      "params": {
+        "rarity": 16
+      }
+    }
+  ]
+}

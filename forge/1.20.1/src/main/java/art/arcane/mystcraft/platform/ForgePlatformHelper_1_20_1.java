@@ -1,16 +1,24 @@
 package art.arcane.mystcraft.platform;
 
+import art.arcane.mystcraft.mixin.MinecraftServerAccessor;
 import art.arcane.mystcraft.platform.services.IPlatformHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.NetworkHooks;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -35,6 +43,26 @@ public class ForgePlatformHelper_1_20_1 implements IPlatformHelper {
   @Override
   public boolean isDevelopmentEnvironment() {
     return !FMLLoader.isProduction();
+  }
+
+  @Override
+  public boolean isClientEnvironment() {
+    return FMLEnvironment.dist.isClient();
+  }
+
+  @Override
+  public Map<ResourceKey<Level>, ServerLevel> getLevelMap(MinecraftServer server) {
+    return server.forgeGetWorldMap();
+  }
+
+  @Override
+  public LevelStorageSource.LevelStorageAccess getLevelStorage(MinecraftServer server) {
+    return ((MinecraftServerAccessor) server).mystcraft$getStorageSource();
+  }
+
+  @Override
+  public void markWorldsDirty(MinecraftServer server) {
+    server.markWorldsDirty();
   }
 
   @Override

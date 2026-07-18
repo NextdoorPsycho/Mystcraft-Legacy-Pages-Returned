@@ -1,0 +1,36 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 6.0,
+  "display_name": "Creeping Roots",
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Root",
+    "Crawl"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "tendrils_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:tendrils",
+      "params": {
+        "count": 1,
+        "min_length": 60,
+        "max_length": 150,
+        "chance": 0.15,
+        "neighbor_range": 10,
+        "min_thickness": 3,
+        "max_thickness": 8
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
+  ]
+}

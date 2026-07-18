@@ -1,0 +1,29 @@
+{
+  "category": "structure",
+  "card_rank": 3,
+  "instability_cost": 3.0,
+  "poem": [
+    "Civilization",
+    "Nature",
+    "Puzzle",
+    "Ancient"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "jungle_temples_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:jungle_temples",
+      "params": {
+        "rarity": 32
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 3.0
+    }
+  ]
+}

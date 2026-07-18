@@ -16,34 +16,45 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DimensionSyncPacket {
 
+  private static final int MAX_SYNCED_DIMENSIONS = 16_384;
+  private static final int MAX_AGE_NAME_LENGTH = 128;
+
   private final List<DimensionEntry> dimensions;
 
   public DimensionSyncPacket(List<DimensionEntry> dimensions) {
-    this.dimensions = dimensions;
+    this.dimensions = List.copyOf(dimensions);
   }
 
   public static void encode(DimensionSyncPacket packet, FriendlyByteBuf buf) {
+    validateCount(packet.dimensions.size());
     buf.writeVarInt(packet.dimensions.size());
     for (DimensionEntry entry : packet.dimensions) {
       buf.writeVarInt(entry.ageUID);
       buf.writeResourceLocation(entry.dimensionId);
-      buf.writeUtf(entry.ageName);
+      buf.writeUtf(entry.ageName, MAX_AGE_NAME_LENGTH);
       buf.writeBoolean(entry.isUnstable);
     }
   }
 
   public static DimensionSyncPacket decode(FriendlyByteBuf buf) {
     int count = buf.readVarInt();
+    validateCount(count);
     List<DimensionEntry> dimensions = new ArrayList<>(count);
     for (int i = 0; i < count; i++) {
       dimensions.add(new DimensionEntry(
           buf.readVarInt(),
           buf.readResourceLocation(),
-          buf.readUtf(),
+          buf.readUtf(MAX_AGE_NAME_LENGTH),
           buf.readBoolean()
       ));
     }
     return new DimensionSyncPacket(dimensions);
+  }
+
+  private static void validateCount(int count) {
+    if (count < 0 || count > MAX_SYNCED_DIMENSIONS) {
+      throw new IllegalArgumentException("Invalid Mystcraft dimension sync count: " + count);
+    }
   }
 
   public static void handle(DimensionSyncPacket packet, PacketContext ctx) {
@@ -77,8 +88,14 @@ public class DimensionSyncPacket {
     private static final Map<ResourceLocation, DimensionEntry> BY_ID = new ConcurrentHashMap<>();
 
     public static void addDimension(DimensionEntry entry) {
-      BY_UID.put(entry.ageUID, entry);
-      BY_ID.put(entry.dimensionId, entry);
+      DimensionEntry previousUid = BY_UID.put(entry.ageUID, entry);
+      if (previousUid != null && !previousUid.dimensionId.equals(entry.dimensionId)) {
+        BY_ID.remove(previousUid.dimensionId, previousUid);
+      }
+      DimensionEntry previousId = BY_ID.put(entry.dimensionId, entry);
+      if (previousId != null && previousId.ageUID != entry.ageUID) {
+        BY_UID.remove(previousId.ageUID, previousId);
+      }
     }
 
     public static void removeDimension(int ageUID) {

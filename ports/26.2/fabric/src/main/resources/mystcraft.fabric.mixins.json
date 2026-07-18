@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "art.arcane.mystcraft.fabric.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "minVersion": "0.8",
+  "mixins": [
+    "LecternBlockEntityAccessor",
+    "SinglePoolElementAccessor",
+    "StructureTemplatePoolAccessor"
+  ],
+  "client": [
+    "SpecialModelRenderersAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 3,
+  "instability_cost": 10.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Fire",
+    "Solid"
+  ],
+  "display_name": "Magma Block Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:magma_block"
+    },
+    {
+      "type": "add_instability",
+      "value": 10.0
+    }
+  ]
+}

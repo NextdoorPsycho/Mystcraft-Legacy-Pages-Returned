@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 4,
+  "instability_cost": 20.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Earth",
+    "Vein"
+  ],
+  "display_name": "Diamond Ore Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:diamond_ore"
+    },
+    {
+      "type": "add_instability",
+      "value": 20.0
+    }
+  ]
+}

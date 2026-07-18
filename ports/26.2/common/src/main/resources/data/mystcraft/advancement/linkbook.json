@@ -1,0 +1,28 @@
+{
+  "display": {
+    "icon": {
+      "id": "mystcraft:linkbook_unlinked"
+    },
+    "title": {
+      "translate": "advancements.mystcraft.linkbook.title"
+    },
+    "description": {
+      "translate": "advancements.mystcraft.linkbook.description"
+    }
+  },
+  "parent": "mystcraft:root",
+  "criteria": {
+    "myst_unlinked_book_in_inventory": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mystcraft:linkbook_unlinked"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

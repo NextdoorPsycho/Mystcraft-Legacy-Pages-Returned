@@ -3,8 +3,6 @@ package art.arcane.mystcraft.block;
 import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
 import art.arcane.mystcraft.platform.Services;
 import art.arcane.mystcraft.registry.ModBlockEntities;
-import art.arcane.mystcraft.util.CodecCompat;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
@@ -49,7 +47,6 @@ public class WritingDeskBlock extends BaseEntityBlock {
   public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
   public static final BooleanProperty IS_TOP = BooleanProperty.create("is_top");
   public static final BooleanProperty IS_FOOT = BooleanProperty.create("is_foot");
-  public static final MapCodec<WritingDeskBlock> CODEC = CodecCompat.simpleCodec(WritingDeskBlock::new);
   private static final int[][] HEAD_FOOT_MAP = {
       {0, 1},
       {-1, 0},
@@ -113,10 +110,6 @@ public class WritingDeskBlock extends BaseEntityBlock {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(FACING, IS_TOP, IS_FOOT);
-  }
-
-  protected MapCodec<? extends BaseEntityBlock> codec() {
-    return CODEC;
   }
 
   @Override

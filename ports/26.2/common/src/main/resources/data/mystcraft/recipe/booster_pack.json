@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "mystcraft:page",
+    "mystcraft:page",
+    "mystcraft:page",
+    "mystcraft:page",
+    "mystcraft:page"
+  ],
+  "result": {
+    "id": "mystcraft:booster"
+  }
+}

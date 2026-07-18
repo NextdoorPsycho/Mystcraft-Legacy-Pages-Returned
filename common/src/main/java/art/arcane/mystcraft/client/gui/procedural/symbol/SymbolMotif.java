@@ -667,9 +667,13 @@ public enum SymbolMotif {
    * headroom.
    */
   public static final int TEX_SIZE = 256;
-  private static final ProceduralTextureCache MOTIF_CACHE =
-      new ProceduralTextureCache("symbol_motif", 96);
   private final String name;
+
+  /** Defers client texture classes until a render/cache operation actually runs. */
+  private static final class CacheHolder {
+    private static final ProceduralTextureCache INSTANCE =
+        new ProceduralTextureCache("symbol_motif", 96);
+  }
 
   SymbolMotif(@NotNull String name) {
     this.name = name;
@@ -722,7 +726,7 @@ public enum SymbolMotif {
    * Drops every cached motif render — call on resource-pack reload.
    */
   public static void invalidateCache() {
-    MOTIF_CACHE.clear();
+    CacheHolder.INSTANCE.clear();
   }
 
   @NotNull
@@ -903,7 +907,7 @@ public enum SymbolMotif {
         ? symbol.getRegistryName().toString()
         : "null")
         + "/" + Integer.toHexString(palette.hashCode());
-    return MOTIF_CACHE.getOrCreate(key, TEX_SIZE, TEX_SIZE,
+    return CacheHolder.INSTANCE.getOrCreate(key, TEX_SIZE, TEX_SIZE,
         image -> renderTo(image, symbol, palette));
   }
 

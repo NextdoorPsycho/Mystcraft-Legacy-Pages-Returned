@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "mystcraft:item/personal_link_book",
+    "model": {
+      "type": "mystcraft:procedural_book"
+    }
+  }
+}

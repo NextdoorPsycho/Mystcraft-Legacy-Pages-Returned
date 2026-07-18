@@ -9,14 +9,11 @@ import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -76,24 +73,29 @@ public final class PocketHeadClientSync {
     if (player == null) {
       return null;
     }
-    NativeImage skin = getSkinImage(mc, player);
-    if (skin == null) {
-      return null;
+    try (NativeImage skin = getSkinImage(mc, player)) {
+      if (skin == null) {
+        return null;
+      }
+      Map<AgeData.PocketHeadFace, int[]> facePixels = extractHeadFaces(skin);
+      return PocketHeadUtils.mapFacesToBlocksFromPixels(facePixels);
     }
-    Map<AgeData.PocketHeadFace, int[]> facePixels = extractHeadFaces(skin);
-    return PocketHeadUtils.mapFacesToBlocksFromPixels(facePixels);
   }
 
   @Nullable
   private static NativeImage getSkinImage(Minecraft mc, LocalPlayer player) {
-    ResourceLocation skinLoc = resolveSkinLocation(player);
-    if (skinLoc == null) {
+    if (!player.isSkinLoaded()) {
       return null;
     }
+    ResourceLocation skinLoc = player.getSkinTextureLocation();
     AbstractTexture texture = mc.getTextureManager().getTexture(skinLoc);
-    NativeImage image = extractNativeImage(texture);
-    if (image != null) {
-      return image;
+    NativeImage downloaded = new NativeImage(64, 64, false);
+    try {
+      texture.bind();
+      downloaded.downloadTexture(0, false);
+      return downloaded;
+    } catch (RuntimeException e) {
+      downloaded.close();
     }
     Optional<Resource> resource = mc.getResourceManager().getResource(skinLoc);
     if (resource.isEmpty()) {
@@ -104,77 +106,6 @@ public final class PocketHeadClientSync {
     } catch (Exception e) {
       return null;
     }
-  }
-
-  @Nullable
-  private static NativeImage extractNativeImage(AbstractTexture texture) {
-    if (texture instanceof DynamicTexture dyn) {
-      return dyn.getPixels();
-    }
-    try {
-      Method method = texture.getClass().getMethod("getPixels");
-      Object value = method.invoke(texture);
-      if (value instanceof NativeImage image) {
-        return image;
-      }
-    } catch (Exception ignored) {
-    }
-    try {
-      Field field = texture.getClass().getDeclaredField("pixels");
-      field.setAccessible(true);
-      Object value = field.get(texture);
-      if (value instanceof NativeImage image) {
-        return image;
-      }
-    } catch (Exception ignored) {
-    }
-    try {
-      Field field = texture.getClass().getDeclaredField("image");
-      field.setAccessible(true);
-      Object value = field.get(texture);
-      if (value instanceof NativeImage image) {
-        return image;
-      }
-    } catch (Exception ignored) {
-    }
-    return null;
-  }
-
-  @Nullable
-  private static ResourceLocation resolveSkinLocation(LocalPlayer player) {
-    try {
-      Method method = player.getClass().getMethod("getSkinTextureLocation");
-      Object value = method.invoke(player);
-      if (value instanceof ResourceLocation loc) {
-        return loc;
-      }
-    } catch (Exception ignored) {
-    }
-    try {
-      Method method = player.getClass().getMethod("getSkin");
-      Object skin = method.invoke(player);
-      if (skin != null) {
-        Method textureMethod = skin.getClass().getMethod("texture");
-        Object value = textureMethod.invoke(skin);
-        if (value instanceof ResourceLocation loc) {
-          return loc;
-        }
-      }
-    } catch (Exception ignored) {
-    }
-    try {
-      Method infoMethod = player.getClass().getMethod("getPlayerInfo");
-      Object info = infoMethod.invoke(player);
-      if (info != null) {
-        Method textureMethod = info.getClass().getMethod("getSkinTextureLocation");
-        Object value = textureMethod.invoke(info);
-        if (value instanceof ResourceLocation loc) {
-          return loc;
-        }
-      }
-    } catch (Exception ignored) {
-    }
-    return null;
   }
 
   private static Map<AgeData.PocketHeadFace, int[]> extractHeadFaces(NativeImage skin) {

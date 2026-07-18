@@ -3,13 +3,18 @@ package art.arcane.mystcraft.datapack.symbol;
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.world.AgeDirector;
 import art.arcane.mystcraft.api.world.logic.IBiomeController;
+import art.arcane.mystcraft.api.world.logic.IPopulate;
+import art.arcane.mystcraft.api.world.logic.ITerrainAlteration;
+import art.arcane.mystcraft.api.world.logic.ITerrainGenerator;
 import art.arcane.mystcraft.world.gen.biome.*;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.biome.Biome;
@@ -384,7 +389,7 @@ public final class SymbolLogicTypes {
           : json;
       return (director, seed) -> {
         if (popId == null) return;
-        var populator = PopulatorRegistry.create(popId, params, seed);
+        IPopulate populator = PopulatorRegistry.create(popId, params, seed);
         if (populator != null) {
           director.registerInterface(populator);
         }
@@ -434,7 +439,7 @@ public final class SymbolLogicTypes {
             working.remove(idx);
           }
           JsonObject params = new JsonObject();
-          var populator = PopulatorRegistry.create(popId, params, seed);
+          IPopulate populator = PopulatorRegistry.create(popId, params, seed);
           if (populator != null) {
             director.registerInterface(populator);
           }
@@ -460,7 +465,7 @@ public final class SymbolLogicTypes {
           : json;
       return (director, seed) -> {
         if (altId == null) return;
-        var alteration = TerrainAlterationRegistry.create(altId, params, seed);
+        ITerrainAlteration alteration = TerrainAlterationRegistry.create(altId, params, seed);
         if (alteration != null) {
           director.registerInterface(alteration);
         }
@@ -485,7 +490,7 @@ public final class SymbolLogicTypes {
           : json;
       return (director, seed) -> {
         if (genId == null) return;
-        var generator = TerrainGeneratorRegistry.create(genId, director, seed, params);
+        ITerrainGenerator generator = TerrainGeneratorRegistry.create(genId, director, seed, params);
         if (generator != null) {
           director.registerInterface(generator);
         }
@@ -561,7 +566,7 @@ public final class SymbolLogicTypes {
       ResourceLocation biomeId = ResourceLocation.tryParse(rawId);
       return (director, seed) -> {
         if (biomeId == null) return;
-        var server = Mystcraft.getCurrentServer();
+        MinecraftServer server = Mystcraft.getCurrentServer();
         if (server == null) return;
         server.registryAccess().registry(Registries.BIOME).ifPresent(registry -> {
           ResourceKey<Biome> key = ResourceKey.create(Registries.BIOME, biomeId);
@@ -632,13 +637,13 @@ public final class SymbolLogicTypes {
     public SymbolLogic parse(JsonObject json) {
       List<String> options = new ArrayList<>();
       if (json.has("options")) {
-        for (var element : GsonHelper.getAsJsonArray(json, "options")) {
+        for (JsonElement element : GsonHelper.getAsJsonArray(json, "options")) {
           options.add(element.getAsString());
         }
       }
       List<Integer> weights = new ArrayList<>();
       if (json.has("weights")) {
-        for (var element : GsonHelper.getAsJsonArray(json, "weights")) {
+        for (JsonElement element : GsonHelper.getAsJsonArray(json, "weights")) {
           weights.add(element.getAsInt());
         }
       }

@@ -1,0 +1,32 @@
+{
+  "category": "feature_large",
+  "card_rank": 3,
+  "instability_cost": 10.0,
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Form",
+    "Sky"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "floating_islands_enabled",
+      "value": true
+    },
+    {
+      "type": "register_terrain_alteration",
+      "id": "mystcraft:floating_islands",
+      "params": {
+        "style": "mixed",
+        "density": 9,
+        "structure_block": "minecraft:stone",
+        "surface_block": "minecraft:grass_block"
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 10.0
+    }
+  ]
+}

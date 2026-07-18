@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "mystcraft",
+  "version": "${version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
+  "authors": [
+    "NextdoorPsycho",
+    "XCompWiz"
+  ],
+  "contact": {
+    "homepage": "https://github.com/NextdoorPsycho/Mystcraft-Legacy-Returned",
+    "sources": "https://github.com/NextdoorPsycho/Mystcraft-Legacy-Returned",
+    "issues": "https://github.com/NextdoorPsycho/Mystcraft-Legacy-Returned/issues"
+  },
+  "license": "CC0-1.0",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "art.arcane.mystcraft.fabric.MystcraftFabric"
+    ],
+    "client": [
+      "art.arcane.mystcraft.fabric.MystcraftFabricClient"
+    ]
+  },
+  "mixins": [
+    "mystcraft.mixins.json",
+    "mystcraft.fabric.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "fabric-api": ">=0.154.2+26.2",
+    "minecraft": "~26.2",
+    "java": ">=25"
+  }
+}

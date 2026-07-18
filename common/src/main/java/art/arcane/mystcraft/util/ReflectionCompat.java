@@ -132,19 +132,15 @@ public final class ReflectionCompat {
   }
 
   private static boolean isParamCompatible(Class<?> methodParam, Class<?> desiredParam) {
-    if (methodParam.isPrimitive()) {
-      Class<?> wrapped = PRIMITIVE_WRAPPERS.get(methodParam);
-      return wrapped != null && wrapped.isAssignableFrom(desiredParam);
-    }
-    return methodParam.isAssignableFrom(desiredParam);
+    return wrapPrimitive(methodParam).isAssignableFrom(wrapPrimitive(desiredParam));
   }
 
   private static boolean isReturnCompatible(Class<?> expected, Class<?> actual) {
-    if (actual.isPrimitive()) {
-      Class<?> wrapped = PRIMITIVE_WRAPPERS.get(actual);
-      return wrapped != null && expected.isAssignableFrom(wrapped);
-    }
-    return expected.isAssignableFrom(actual);
+    return wrapPrimitive(expected).isAssignableFrom(wrapPrimitive(actual));
+  }
+
+  private static Class<?> wrapPrimitive(Class<?> type) {
+    return type.isPrimitive() ? PRIMITIVE_WRAPPERS.get(type) : type;
   }
 
   private static boolean hasNull(Class<?>[] params) {

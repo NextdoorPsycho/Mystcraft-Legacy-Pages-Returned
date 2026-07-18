@@ -1,0 +1,19 @@
+{
+  "given_item_modifiers": [
+    {
+      "category": "terrain",
+      "function": "mystcraft:symbol_page",
+      "selection": "category"
+    }
+  ],
+  "gives": {
+    "id": "mystcraft:page"
+  },
+  "max_uses": 1.0,
+  "reputation_discount": 0.05,
+  "wants": {
+    "count": 12.0,
+    "id": "minecraft:emerald"
+  },
+  "xp": 20.0
+}

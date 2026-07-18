@@ -1,0 +1,17 @@
+{
+  "category": "modifier",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": [
+    "Horizon",
+    "Sky",
+    "Distance",
+    "Form"
+  ],
+  "logic": [
+    {
+      "type": "set_horizon_height",
+      "value": 0.0
+    }
+  ]
+}

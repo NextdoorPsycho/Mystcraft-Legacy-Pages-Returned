@@ -1,7 +1,6 @@
 package art.arcane.mystcraft.blockentity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -11,46 +10,25 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Method;
-
 /**
  * Base class for all Mystcraft block entities. Provides common NBT handling and
  * sync utilities.
  */
 public abstract class MystcraftBlockEntity extends BlockEntity {
 
-  private static final Method SAVE_ADDITIONAL_PROVIDER = findMethod(BlockEntity.class, "saveAdditional", CompoundTag.class, HolderLookup.Provider.class);
-  private static final Method SAVE_ADDITIONAL_OLD = findMethod(BlockEntity.class, "saveAdditional", CompoundTag.class);
-  private static final Method LOAD_ADDITIONAL_PROVIDER = findMethod(BlockEntity.class, "loadAdditional", CompoundTag.class, HolderLookup.Provider.class);
-  private static final Method LOAD_OLD = findMethod(BlockEntity.class, "load", CompoundTag.class);
-  private static final Method GET_UPDATE_TAG_PROVIDER = findMethod(BlockEntity.class, "getUpdateTag", HolderLookup.Provider.class);
-  private static final Method GET_UPDATE_TAG_OLD = findMethod(BlockEntity.class, "getUpdateTag");
-
   public MystcraftBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
     super(type, pos, blockState);
   }
 
-  private static Method findMethod(Class<?> owner, String name, Class<?>... params) {
-    return art.arcane.mystcraft.util.ReflectionCompat.findMethod(owner, name, null, params);
-  }
-
+  @Override
   protected void saveAdditional(CompoundTag tag) {
-    invokeSuperSaveAdditional(tag, null);
+    super.saveAdditional(tag);
     writeNbt(tag);
   }
 
-  protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-    invokeSuperSaveAdditional(tag, provider);
-    writeNbt(tag);
-  }
-
+  @Override
   public void load(CompoundTag tag) {
-    invokeSuperLoad(tag, null);
-    readNbt(tag);
-  }
-
-  protected void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-    invokeSuperLoad(tag, provider);
+    super.load(tag);
     readNbt(tag);
   }
 
@@ -68,14 +46,9 @@ public abstract class MystcraftBlockEntity extends BlockEntity {
 
   }
 
+  @Override
   public CompoundTag getUpdateTag() {
-    CompoundTag tag = invokeSuperGetUpdateTag(null);
-    writeNbt(tag);
-    return tag;
-  }
-
-  public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
-    CompoundTag tag = invokeSuperGetUpdateTag(provider);
+    CompoundTag tag = super.getUpdateTag();
     writeNbt(tag);
     return tag;
   }
@@ -101,50 +74,5 @@ public abstract class MystcraftBlockEntity extends BlockEntity {
    */
   protected void markForUpdate() {
     sync();
-  }
-
-  private void invokeSuperSaveAdditional(CompoundTag tag, @Nullable HolderLookup.Provider provider) {
-    try {
-      if (provider != null && SAVE_ADDITIONAL_PROVIDER != null) {
-        SAVE_ADDITIONAL_PROVIDER.invoke(this, tag, provider);
-        return;
-      }
-      if (SAVE_ADDITIONAL_OLD != null) {
-        SAVE_ADDITIONAL_OLD.invoke(this, tag);
-      }
-    } catch (ReflectiveOperationException ignored) {
-    }
-  }
-
-  private void invokeSuperLoad(CompoundTag tag, @Nullable HolderLookup.Provider provider) {
-    try {
-      if (provider != null && LOAD_ADDITIONAL_PROVIDER != null) {
-        LOAD_ADDITIONAL_PROVIDER.invoke(this, tag, provider);
-        return;
-      }
-      if (LOAD_OLD != null) {
-        LOAD_OLD.invoke(this, tag);
-      }
-    } catch (ReflectiveOperationException ignored) {
-    }
-  }
-
-  private CompoundTag invokeSuperGetUpdateTag(@Nullable HolderLookup.Provider provider) {
-    try {
-      if (provider != null && GET_UPDATE_TAG_PROVIDER != null) {
-        Object tag = GET_UPDATE_TAG_PROVIDER.invoke(this, provider);
-        if (tag instanceof CompoundTag compoundTag) {
-          return compoundTag;
-        }
-      }
-      if (GET_UPDATE_TAG_OLD != null) {
-        Object tag = GET_UPDATE_TAG_OLD.invoke(this);
-        if (tag instanceof CompoundTag compoundTag) {
-          return compoundTag;
-        }
-      }
-    } catch (ReflectiveOperationException ignored) {
-    }
-    return new CompoundTag();
   }
 }

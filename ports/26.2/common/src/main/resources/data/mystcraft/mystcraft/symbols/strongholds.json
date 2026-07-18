@@ -1,0 +1,25 @@
+{
+  "category": "structure",
+  "card_rank": 3,
+  "instability_cost": 0.0,
+  "poem": [
+    "Civilization",
+    "Wisdom",
+    "Future",
+    "Honor"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "strongholds_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:strongholds",
+      "params": {
+        "rarity": 128
+      }
+    }
+  ]
+}

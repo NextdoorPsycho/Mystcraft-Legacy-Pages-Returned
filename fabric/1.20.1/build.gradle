@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.9.2'
+    id 'fabric-loom' version '1.10.5'
 }
 
 version = "${project.version}"
@@ -23,7 +23,7 @@ tasks.withType(JavaExec).configureEach {
 loom {
     accessWidenerPath = file("src/main/resources/${mod_id}.accesswidener")
     mixin {
-        defaultRefmapName.set("${mod_id}.refmap.json")
+        defaultRefmapName.set("mixin.refmap.json")
     }
 
     runs {
@@ -85,7 +85,9 @@ tasks.named('compileJava', JavaCompile) {
 tasks.named('processResources', ProcessResources) {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
-    from project(':common').sourceSets.main.resources
+    from(project(':common').sourceSets.main.resources) {
+        exclude 'mystcraft.accesswidener'
+    }
     from sourceSets.main.resources
 
     def expandProps = [

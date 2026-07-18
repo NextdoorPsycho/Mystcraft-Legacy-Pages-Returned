@@ -2,7 +2,7 @@ package art.arcane.mystcraft.symbol;
 
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
-import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 /**
@@ -17,8 +17,6 @@ public abstract class SymbolBase implements IAgeSymbol {
   protected Integer cardRank;
   protected float instabilityCost = 0.0f;
   protected boolean duplicatable = false;
-
-  private String cachedLocalizedName;
 
   public SymbolBase(ResourceLocation registryName, SymbolCategory category) {
     this.registryName = registryName;
@@ -81,10 +79,7 @@ public abstract class SymbolBase implements IAgeSymbol {
 
   @Override
   public String getLocalizedName() {
-    if (cachedLocalizedName == null) {
-      cachedLocalizedName = I18n.get(getUnlocalizedName());
-    }
-    return cachedLocalizedName;
+    return Component.translatable(getUnlocalizedName()).getString();
   }
 
   @Override

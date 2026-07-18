@@ -162,8 +162,7 @@ public class LinkbookItem extends Item implements TooltipCompat {
     ItemStack stack = player.getItemInHand(hand);
 
     if (level.isClientSide) {
-
-      art.arcane.mystcraft.client.screen.BookScreen.open(stack);
+      ItemClientHooks.openBook(stack);
     }
 
     return InteractionResultHolder.consume(stack);
@@ -189,37 +188,82 @@ public class LinkbookItem extends Item implements TooltipCompat {
       return;
     }
 
-    onLink(stack, level, entity);
-
-    LinkingManager.performLink(entity, linkData);
+    PendingBookDrop pendingDrop = prepareBookDrop(stack, level, entity);
+    LinkingManager.LinkResult result = LinkingManager.performLink(entity, linkData);
+    if (result == LinkingManager.LinkResult.SUCCESS && pendingDrop != null) {
+      pendingDrop.commit();
+    } else if (pendingDrop != null) {
+      pendingDrop.rollback();
+    }
   }
 
   /**
-   * Called before linking. Drops book in world if "following" flag is not set.
+   * Drops the book in the source world if the "following" flag is not set.
+   * Normal activation prepares this action before teleporting and commits it
+   * only after the link succeeds.
    */
   protected void onLink(@NotNull ItemStack stack, Level level, Entity entity) {
-    if (entity instanceof Player player) {
+    PendingBookDrop pendingDrop = prepareBookDrop(stack, level, entity);
+    if (pendingDrop != null) {
+      pendingDrop.commit();
+    }
+  }
 
+  @Nullable
+  private PendingBookDrop prepareBookDrop(@NotNull ItemStack stack, Level level, Entity entity) {
+    if (entity instanceof Player player) {
       ItemStack mainHand = player.getInventory().getSelected();
       ItemStack offHand = player.getOffhandItem();
 
       int slotToEmpty = -1;
-      if (ItemStackNbt.isSameItemSameTags(mainHand, stack)) {
+      if (mainHand == stack) {
         slotToEmpty = player.getInventory().selected;
-      } else if (ItemStackNbt.isSameItemSameTags(offHand, stack)) {
+      } else if (offHand == stack) {
         slotToEmpty = 40;
       } else {
-
-        return;
+        return null;
       }
 
-      if (dropItemOnLink(stack)) {
-
+      boolean reserveForDisarm = mainHand == stack
+          && LinkOptions.getFlag(ItemStackNbt.getTag(stack), LinkFlags.DISARM);
+      if (dropItemOnLink(stack) || reserveForDisarm) {
         LinkbookEntity bookEntity = new LinkbookEntity(level, player.getX(), player.getY(), player.getZ());
         bookEntity.setBookItem(stack.copy());
-        level.addFreshEntity(bookEntity);
+        if (reserveForDisarm) {
+          player.getInventory().setItem(slotToEmpty, ItemStack.EMPTY);
+        }
+        return new PendingBookDrop(level, player, slotToEmpty, stack, bookEntity, reserveForDisarm);
+      }
+    }
+    return null;
+  }
 
-        player.getInventory().setItem(slotToEmpty, ItemStack.EMPTY);
+  private record PendingBookDrop(Level sourceLevel, Player player, int inventorySlot,
+                                 ItemStack expectedStack, LinkbookEntity bookEntity,
+                                 boolean reservedForDisarm) {
+    private void commit() {
+      ItemStack currentStack = player.getInventory().getItem(inventorySlot);
+      if (reservedForDisarm ? !currentStack.isEmpty() : currentStack != expectedStack) {
+        rollback();
+        return;
+      }
+      if (sourceLevel.addFreshEntity(bookEntity)) {
+        if (!reservedForDisarm) {
+          player.getInventory().setItem(inventorySlot, ItemStack.EMPTY);
+        }
+      } else {
+        rollback();
+      }
+    }
+
+    private void rollback() {
+      if (!reservedForDisarm) {
+        return;
+      }
+      if (player.getInventory().getItem(inventorySlot).isEmpty()) {
+        player.getInventory().setItem(inventorySlot, expectedStack);
+      } else {
+        player.getInventory().placeItemBackInInventory(expectedStack);
       }
     }
   }

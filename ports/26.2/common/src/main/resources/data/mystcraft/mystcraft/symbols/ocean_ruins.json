@@ -1,0 +1,25 @@
+{
+  "category": "structure",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": [
+    "Civilization",
+    "Water",
+    "Past",
+    "Stone"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "ocean_ruins_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:ocean_ruins",
+      "params": {
+        "rarity": 20
+      }
+    }
+  ]
+}

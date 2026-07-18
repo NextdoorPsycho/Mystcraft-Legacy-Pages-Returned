@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:book_travel_two_adjacent_portals_each_has_own_color",
+  "max_ticks": 80,
+  "structure": "minecraft:empty"
+}

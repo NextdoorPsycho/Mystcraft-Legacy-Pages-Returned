@@ -1,0 +1,12 @@
+{
+  "gives": {
+    "id": "mystcraft:portfolio"
+  },
+  "max_uses": 4.0,
+  "reputation_discount": 0.05,
+  "wants": {
+    "count": 12.0,
+    "id": "minecraft:emerald"
+  },
+  "xp": 10.0
+}

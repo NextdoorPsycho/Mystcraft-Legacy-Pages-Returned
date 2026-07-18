@@ -1,0 +1,96 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "display_name": "Boneyard Arches",
+  "poem": [
+    "Bone",
+    "Arch",
+    "Cross",
+    "Ancient"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "boneyard",
+        "density": {
+          "op": "add",
+          "a": {
+            "op": "mul",
+            "a": {
+              "op": "max",
+              "a": {
+                "op": "sub",
+                "a": 2,
+                "b": {
+                  "op": "abs",
+                  "input": {
+                    "op": "sin",
+                    "input": {
+                      "op": "mul",
+                      "a": {
+                        "var": "x"
+                      },
+                      "b": 0.08
+                    }
+                  }
+                }
+              },
+              "b": {
+                "op": "sub",
+                "a": 2,
+                "b": {
+                  "op": "abs",
+                  "input": {
+                    "op": "sin",
+                    "input": {
+                      "op": "mul",
+                      "a": {
+                        "var": "z"
+                      },
+                      "b": 0.06
+                    }
+                  }
+                }
+              }
+            },
+            "b": {
+              "op": "sub",
+              "a": 1,
+              "b": {
+                "op": "div",
+                "a": {
+                  "op": "abs",
+                  "input": {
+                    "op": "sub",
+                    "a": {
+                      "var": "y"
+                    },
+                    "b": 80
+                  }
+                },
+                "b": 45
+              }
+            }
+          },
+          "b": {
+            "op": "mul",
+            "a": {
+              "op": "noise3",
+              "scale": 0.06,
+              "octaves": 2,
+              "seed": 1551
+            },
+            "b": 0.8
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

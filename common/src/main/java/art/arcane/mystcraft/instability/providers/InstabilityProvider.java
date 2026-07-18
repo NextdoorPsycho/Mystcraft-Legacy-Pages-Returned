@@ -3,12 +3,12 @@ package art.arcane.mystcraft.instability.providers;
 import art.arcane.mystcraft.api.instability.IEnvironmentalEffect;
 import art.arcane.mystcraft.api.instability.IInstabilityProvider;
 import art.arcane.mystcraft.api.instability.InstabilityDirector;
+import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 
 /**
@@ -85,13 +85,8 @@ public class InstabilityProvider implements IInstabilityProvider {
     if (arg instanceof MobEffect) {
       return arg;
     }
-    try {
-      Method valueMethod = arg.getClass().getMethod("value");
-      Object value = valueMethod.invoke(arg);
-      if (value instanceof MobEffect) {
-        return value;
-      }
-    } catch (ReflectiveOperationException ignored) {
+    if (arg instanceof Holder<?> holder && holder.value() instanceof MobEffect effect) {
+      return effect;
     }
     return arg;
   }

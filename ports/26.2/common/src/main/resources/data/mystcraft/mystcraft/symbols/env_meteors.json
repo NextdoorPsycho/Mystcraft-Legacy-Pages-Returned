@@ -1,0 +1,22 @@
+{
+  "category": "environment",
+  "card_rank": 3,
+  "instability_cost": 25.0,
+  "poem": [
+    "Environment",
+    "Sacrifice",
+    "Power",
+    "Momentum"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "meteors_enabled",
+      "value": true
+    },
+    {
+      "type": "add_instability",
+      "value": 25.0
+    }
+  ]
+}

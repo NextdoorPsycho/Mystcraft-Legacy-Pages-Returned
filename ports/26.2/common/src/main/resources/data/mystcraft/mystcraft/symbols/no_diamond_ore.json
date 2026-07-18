@@ -1,0 +1,18 @@
+{
+  "category": "modifier",
+  "card_rank": 3,
+  "instability_cost": 1.0,
+  "poem": [
+    "Earth",
+    "Vein",
+    "Void",
+    "Silence"
+  ],
+  "logic": [
+    {
+      "type": "set_ore_disabled",
+      "ore": "diamond",
+      "disabled": true
+    }
+  ]
+}

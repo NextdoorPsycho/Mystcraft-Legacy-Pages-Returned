@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 5.0,
+  "poem": [
+    "Structure",
+    "Form",
+    "Mystery",
+    "Ancient"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "obelisks_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:obelisks"
+    },
+    {
+      "type": "add_instability",
+      "value": 5.0
+    }
+  ]
+}

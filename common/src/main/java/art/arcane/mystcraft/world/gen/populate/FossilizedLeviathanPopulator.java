@@ -107,6 +107,9 @@ public class FossilizedLeviathanPopulator implements IPopulate {
       bx += (int) Math.round(-dz * curve);
       bz += (int) Math.round(dx * curve);
 
+      if (!isInWritableColumn(bx, bz, chunkPos)) {
+        continue;
+      }
       int localSurfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz) - 1;
       int spineY = localSurfaceY - buryDepth + (int) undulation;
 
@@ -162,6 +165,9 @@ public class FossilizedLeviathanPopulator implements IPopulate {
             if (sdx * sdx + sdz * sdz > 4) continue;
             int sx = bx + sdx;
             int sz = bz + sdz;
+            if (!isInWritableColumn(sx, sz, chunkPos)) {
+              continue;
+            }
             int sy = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, sx, sz) - 1;
             BlockPos soulPos = new BlockPos(sx, sy, sz);
             if (isInWritableArea(soulPos, chunkPos)) {

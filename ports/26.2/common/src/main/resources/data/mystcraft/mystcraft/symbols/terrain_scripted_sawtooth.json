@@ -1,0 +1,52 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 6.0,
+  "display_name": "Sawtooth Peaks",
+  "poem": [
+    "Jagged",
+    "Tooth",
+    "Repeat",
+    "Sharp"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "sawtooth",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 40,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "fract",
+                "input": {
+                  "op": "mul",
+                  "a": {
+                    "op": "noise2",
+                    "scale": 0.01,
+                    "octaves": 4,
+                    "seed": 7702
+                  },
+                  "b": 4
+                }
+              },
+              "b": 50
+            }
+          },
+          "b": {
+            "var": "y"
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
+  ]
+}

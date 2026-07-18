@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:book_travel_cooldown_is_per_portal_not_global",
+  "max_ticks": 40,
+  "structure": "minecraft:empty"
+}

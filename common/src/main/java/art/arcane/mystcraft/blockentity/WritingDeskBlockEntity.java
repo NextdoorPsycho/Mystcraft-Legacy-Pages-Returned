@@ -297,6 +297,7 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
   public boolean writeSymbol(@Nullable Player player, ResourceLocation symbol) {
     if (level == null || level.isClientSide) return false;
     if (!hasEnoughInk()) return false;
+    if (SymbolRegistry.get(symbol) == null) return false;
 
     ItemStack writingItem = getWritingItem();
 
@@ -310,6 +311,10 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     if (writingItem.isEmpty()) return false;
 
     if (writingItem.getItem() instanceof PageItem && Page.isBlank(writingItem)) {
+      // Page NBT applies to the whole ItemStack. Refuse malformed/legacy
+      // stacked input rather than turning every page in the stack into a
+      // symbol for the price of one page.
+      if (writingItem.getCount() != 1) return false;
       Page.setSymbol(writingItem, symbol);
       useInk();
       markForUpdate();
@@ -369,28 +374,45 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
 
     if (containerIn.getItem() instanceof InkVialItem vial) {
       int vialInk = vial.getInkAmount(containerIn);
-      int spaceInTank = INK_CAPACITY - getInkAmount();
-      if (vialInk > 0 && spaceInTank > 0) {
+      ItemStack emptyBottle = new ItemStack(Items.GLASS_BOTTLE);
 
-        int inkToTransfer = Math.min(vialInk * 10, spaceInTank);
-        int vialUnitsUsed = (inkToTransfer + 9) / 10;
-        inkToTransfer = vialUnitsUsed * 10;
-
-        inkTank.fill(inkToTransfer);
-        vial.setInkAmount(containerIn, vialInk - vialUnitsUsed);
-
-        if (vial.getInkAmount(containerIn) <= 0) {
-          ItemStack emptyBottle = new ItemStack(Items.GLASS_BOTTLE);
-          if (containerOut.isEmpty()) {
-            mainInventory.setItem(SLOT_CONTAINER_OUT, emptyBottle);
-            containerIn.shrink(1);
-          } else if (containerOut.is(Items.GLASS_BOTTLE) && containerOut.getCount() < containerOut.getMaxStackSize()) {
-            containerOut.grow(1);
-            containerIn.shrink(1);
-          }
-
+      // Empty vials still need to finish their container transaction after a
+      // player frees the output slot.
+      if (vialInk <= 0) {
+        if (canAcceptContainerOutput(containerOut, emptyBottle)) {
+          containerIn.shrink(1);
+          addContainerOutput(containerOut, emptyBottle);
+          mainInventory.setChanged();
         }
+        return;
       }
+
+      // One vial ink unit is exactly 10 mB. Round down to tank capacity so a
+      // nearly-full tank never consumes ink it cannot store.
+      int availableUnits = (INK_CAPACITY - getInkAmount()) / 10;
+      int vialUnitsUsed = Math.min(vialInk, availableUnits);
+      if (vialUnitsUsed <= 0) {
+        return;
+      }
+
+      boolean drainsVial = vialUnitsUsed == vialInk;
+      // A partially drained vial needs distinct NBT, so it cannot remain in a
+      // stack with untouched vials. Wait for enough tank space instead.
+      if (containerIn.getCount() > 1 && !drainsVial) {
+        return;
+      }
+      if (drainsVial && !canAcceptContainerOutput(containerOut, emptyBottle)) {
+        return;
+      }
+
+      inkTank.fill(vialUnitsUsed * 10);
+      if (drainsVial) {
+        containerIn.shrink(1);
+        addContainerOutput(containerOut, emptyBottle);
+      } else {
+        vial.setInkAmount(containerIn, vialInk - vialUnitsUsed);
+      }
+      mainInventory.setChanged();
       return;
     }
 
@@ -409,13 +431,29 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
           inkTank.fill(1000);
           mainInventory.setItem(SLOT_CONTAINER_OUT, emptyContainer);
           containerIn.shrink(1);
+          mainInventory.setChanged();
         } else if (ItemStackNbt.isSameItemSameTags(containerOut, emptyContainer) &&
             containerOut.getCount() < containerOut.getMaxStackSize()) {
           inkTank.fill(1000);
           containerOut.grow(1);
           containerIn.shrink(1);
+          mainInventory.setChanged();
         }
       }
+    }
+  }
+
+  private static boolean canAcceptContainerOutput(ItemStack currentOutput, ItemStack output) {
+    return currentOutput.isEmpty()
+        || (ItemStackNbt.isSameItemSameTags(currentOutput, output)
+        && currentOutput.getCount() < currentOutput.getMaxStackSize());
+  }
+
+  private void addContainerOutput(ItemStack currentOutput, ItemStack output) {
+    if (currentOutput.isEmpty()) {
+      mainInventory.setItem(SLOT_CONTAINER_OUT, output);
+    } else {
+      currentOutput.grow(output.getCount());
     }
   }
 
@@ -462,25 +500,32 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
   @NotNull
   public ItemStack addPageToTab(@Nullable Player player, int tabIndex, @NotNull ItemStack page) {
     if (page.isEmpty()) return page;
+    if (!(page.getItem() instanceof PageItem)) return page;
 
     ItemStack tabItem = getTabItem(tabIndex);
     if (tabItem.isEmpty()) return page;
 
+    ItemStack remaining = page.copy();
     if (tabItem.getItem() instanceof FolderItem) {
-      if (!FolderItem.isFull(tabItem)) {
-        FolderItem.addPage(tabItem, page.copy());
-        markForUpdate();
-        return ItemStack.EMPTY;
+      while (!remaining.isEmpty() && !FolderItem.isFull(tabItem)) {
+        ItemStack singlePage = remaining.copy();
+        singlePage.setCount(1);
+        if (!FolderItem.addPage(tabItem, singlePage)) break;
+        remaining.shrink(1);
       }
     } else if (tabItem.getItem() instanceof PortfolioItem) {
-      if (!PortfolioItem.isFull(tabItem)) {
-        PortfolioItem.addPage(tabItem, page.copy());
-        markForUpdate();
-        return ItemStack.EMPTY;
+      while (!remaining.isEmpty() && !PortfolioItem.isFull(tabItem)) {
+        ItemStack singlePage = remaining.copy();
+        singlePage.setCount(1);
+        if (!PortfolioItem.addPage(tabItem, singlePage)) break;
+        remaining.shrink(1);
       }
     }
 
-    return page;
+    if (remaining.getCount() != page.getCount()) {
+      markForUpdate();
+    }
+    return remaining.isEmpty() ? ItemStack.EMPTY : remaining;
   }
 
   /**
@@ -549,13 +594,13 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     }
 
     public int fill(int amount) {
-      int filled = Math.min(amount, capacity - this.amount);
+      int filled = Math.min(Math.max(0, amount), capacity - this.amount);
       this.amount += filled;
       return filled;
     }
 
     public int drain(int amount) {
-      int drained = Math.min(amount, this.amount);
+      int drained = Math.min(Math.max(0, amount), this.amount);
       this.amount -= drained;
 
       if (this.amount <= 0) {
@@ -594,10 +639,10 @@ public class WritingDeskBlockEntity extends MystcraftBlockEntity implements Menu
     }
 
     public void load(CompoundTag tag) {
-      this.amount = tag.getInt("InkAmount");
+      this.amount = Math.max(0, Math.min(capacity, tag.getInt("InkAmount")));
       if (tag.contains(TAG_BLEND, Tag.TAG_COMPOUND)) {
         InkBlend loaded = InkBlend.fromTag(tag.getCompound(TAG_BLEND));
-        this.blend = loaded.isEmpty() ? null : loaded;
+        this.blend = amount <= 0 || loaded.isEmpty() ? null : loaded;
       } else {
         this.blend = null;
       }

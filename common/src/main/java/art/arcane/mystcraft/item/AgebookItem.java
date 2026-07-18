@@ -13,9 +13,11 @@ import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.util.ItemStackNbt;
 import art.arcane.mystcraft.util.TooltipCompat;
 import art.arcane.mystcraft.world.AgeData;
+import art.arcane.mystcraft.world.AgeDefinition;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
 import art.arcane.mystcraft.world.AgeManager;
+import art.arcane.mystcraft.world.AgeSeed;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -144,7 +146,7 @@ public class AgebookItem extends Item implements TooltipCompat {
     ItemStack stack = player.getItemInHand(hand);
 
     if (level.isClientSide) {
-      art.arcane.mystcraft.client.screen.BookScreen.open(stack);
+      ItemClientHooks.openBook(stack);
     }
 
     return InteractionResultHolder.consume(stack);
@@ -191,7 +193,7 @@ public class AgebookItem extends Item implements TooltipCompat {
     List<ItemStack> pages = getPageList(stack);
     List<IAgeSymbol> symbols = extractSymbols(pages);
 
-    long seed = System.currentTimeMillis() ^ player.blockPosition().asLong();
+    long seed = AgeSeed.resolve(stack, pages);
 
     AgeBuilder builder = new AgeBuilder(symbols, seed);
     AgeDirectorImpl director = builder.build();
@@ -207,17 +209,21 @@ public class AgebookItem extends Item implements TooltipCompat {
     int ageUID = ageManager.allocateUID();
 
     java.util.UUID ageUUID = java.util.UUID.randomUUID();
+    ResourceLocation dimLoc = new ResourceLocation(Mystcraft.MOD_ID, "mystcraft_age_" + ageUID);
+    AgeDefinition definition = AgeDefinition.fromDirector(
+        symbols.stream().map(IAgeSymbol::getRegistryName).toList(),
+        director
+    );
+    ageManager.registerAge(ageUID, dimLoc, ageUUID, definition);
 
     ServerLevel ageLevel = AgeDimensionFactory.createAgeDimension(
         level.getServer(), ageUID, ageUUID, director);
 
     if (ageLevel == null) {
+      ageManager.unregisterAge(ageUID);
       Mystcraft.LOGGER.warn("Age creation failed for player {}", player.getGameProfile().getName());
       return;
     }
-
-    ResourceLocation dimLoc = new ResourceLocation("mystcraft", "mystcraft_age_" + ageUID);
-    ageManager.registerAge(ageUID, dimLoc, ageUUID);
 
     AgeData ageData = AgeData.get(ageLevel);
     ageData.setAgeUID(ageUID);

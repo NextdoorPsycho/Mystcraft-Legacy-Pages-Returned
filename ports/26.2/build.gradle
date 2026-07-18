@@ -1,0 +1,196 @@
+plugins {
+    id 'base'
+}
+
+allprojects {
+    group = mod_group
+    version = mod_version
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    repositories {
+        mavenCentral()
+        maven {
+            name = 'Sponge'
+            url = 'https://repo.spongepowered.org/repository/maven-public/'
+            content {
+                includeGroupAndSubgroups 'org.spongepowered'
+            }
+        }
+    }
+
+    java {
+        toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+        withSourcesJar()
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = Integer.parseInt(java_version)
+    }
+
+    tasks.register('verifyCompileClasspath') {
+        def projectPath = project.path
+        def compileClasspath = configurations.named('compileClasspath')
+
+        doLast {
+            println "Resolved ${projectPath}:compileClasspath: ${compileClasspath.get().files.size()} files"
+        }
+    }
+}
+
+def productionProjects = [project(':common'), project(':fabric'), project(':forge')]
+
+tasks.register('verifyProductionCompile') {
+    group = 'verification'
+    description = 'Compiles the complete Minecraft 26.2 common, Fabric, and Forge production source sets.'
+
+    dependsOn productionProjects.collect { project -> "${project.path}:compileJava" }
+    dependsOn productionProjects.collect { project -> "${project.path}:verifyCompileClasspath" }
+}
+
+tasks.register('buildPlatforms') {
+    group = 'build'
+    description = 'Builds the complete Fabric and Forge Minecraft 26.2 jars.'
+    dependsOn ':fabric:build', ':forge:build'
+}
+
+def productionJarFiles = [
+    fabric: project(':fabric').tasks.named('jar', Jar).flatMap { it.archiveFile },
+    forge : project(':forge').tasks.named('jar', Jar).flatMap { it.archiveFile }
+]
+def expectedVersion = version.toString()
+def expectedModId = mod_id.toString()
+def expectedLicense = mod_license.toString()
+
+tasks.register('verifyProductionJars') {
+    group = 'verification'
+    description = 'Checks that both 26.2 jars contain production code, resources, metadata, mixins, and no bootstrap placeholders.'
+    dependsOn 'buildPlatforms'
+
+    doLast {
+        def sharedEntries = [
+            'art/arcane/mystcraft/Mystcraft.class',
+            'art/arcane/mystcraft/item/AgebookItem.class',
+            'art/arcane/mystcraft/world/AgeDefinition.class',
+            'art/arcane/mystcraft/world/AgeDimensionContract.class',
+            'art/arcane/mystcraft/world/AgeDimensionFactory.class',
+            'art/arcane/mystcraft/world/gen/AgeChunkGenerator.class',
+            'art/arcane/mystcraft/network/MystcraftNetwork.class',
+            'art/arcane/mystcraft/network/LinkBookActivatePacket.class',
+            'art/arcane/mystcraft/registry/ModRegistrations.class',
+            'art/arcane/mystcraft/registry/ModLootFunctions.class',
+            'art/arcane/mystcraft/client/screen/BookScreen.class',
+            'mystcraft.mixins.json',
+            'data/mystcraft/dimension_type/age_normal.json',
+            'data/mystcraft/dimension_type/age_personal.json',
+            'data/mystcraft/test_instance/core_content_supports_gameplay.json',
+            'data/mystcraft/trade_set/archivist/level_1.json',
+            'assets/mystcraft/models/block/blockstarfissure.json',
+            'assets/mystcraft/items/agebook.json',
+            'pack.mcmeta',
+            'LICENSE_mystcraft'
+        ]
+        def platformEntries = [
+            fabric: [
+                'fabric.mod.json',
+                'art/arcane/mystcraft/fabric/MystcraftFabric.class',
+                'art/arcane/mystcraft/fabric/MystcraftFabricClient.class',
+                'art/arcane/mystcraft/fabric/FabricMystcraftNetwork.class',
+                'mystcraft.fabric.mixins.json'
+            ],
+            forge: [
+                'META-INF/mods.toml',
+                'art/arcane/mystcraft/forge/MystcraftForge.class',
+                'art/arcane/mystcraft/forge/ForgeMystcraftNetwork.class',
+                'mystcraft.forge.mixins.json'
+            ]
+        ]
+        def forbiddenEntries = [
+            'art/arcane/mystcraft/bootstrap/BootstrapPlatform.class',
+            'art/arcane/mystcraft/bootstrap/MystcraftBootstrap.class',
+            'art/arcane/mystcraft/bootstrap/RegistrationBootstrap.class',
+            'art/arcane/mystcraft/bootstrap/ServiceBootstrap.class',
+            'art/arcane/mystcraft/util/ReflectionCompat.class'
+        ]
+        def forbiddenMetadataPhrases = [
+            'bootstrap-only',
+            'registers no gameplay content',
+            'not available yet',
+            'status=placeholder'
+        ]
+
+        productionJarFiles.each { platform, archiveProvider ->
+            def archive = archiveProvider.get().asFile
+            new java.util.zip.ZipFile(archive).withCloseable { zip ->
+                (sharedEntries + platformEntries[platform]).each { entry ->
+                    if (zip.getEntry(entry) == null) {
+                        throw new GradleException("${archive.name} is missing ${entry}")
+                    }
+                }
+                forbiddenEntries.each { entry ->
+                    if (zip.getEntry(entry) != null) {
+                        throw new GradleException("${archive.name} unexpectedly contains scaffold entry ${entry}")
+                    }
+                }
+
+                def mystcraftClassCount = zip.entries().findAll { entry ->
+                    !entry.directory
+                        && entry.name.startsWith('art/arcane/mystcraft/')
+                        && entry.name.endsWith('.class')
+                }.size()
+                if (mystcraftClassCount < 300) {
+                    throw new GradleException(
+                        "${archive.name} contains only ${mystcraftClassCount} Mystcraft classes; common production output is incomplete")
+                }
+
+                def packMetadata = new groovy.json.JsonSlurper().parseText(
+                    zip.getInputStream(zip.getEntry('pack.mcmeta')).getText('UTF-8')
+                )
+                if (packMetadata.pack.max_format != 107
+                    || packMetadata.pack.min_format != [107, 1]) {
+                    throw new GradleException("${archive.name} has an invalid Minecraft 26.2 pack range")
+                }
+
+                if (platform == 'fabric') {
+                    def metadata = new groovy.json.JsonSlurper().parseText(
+                        zip.getInputStream(zip.getEntry('fabric.mod.json')).getText('UTF-8')
+                    )
+                    if (metadata.id != expectedModId
+                        || metadata.version != expectedVersion
+                        || metadata.license != expectedLicense) {
+                        throw new GradleException("${archive.name} contains incorrect production metadata")
+                    }
+                    forbiddenMetadataPhrases.each { phrase ->
+                        if (metadata.description.toLowerCase().contains(phrase)) {
+                            throw new GradleException("${archive.name} still describes itself as a scaffold: ${phrase}")
+                        }
+                    }
+                } else {
+                    def metadata = zip.getInputStream(zip.getEntry('META-INF/mods.toml'))
+                        .getText('UTF-8')
+                    def expectedVersionLine = "version=\"${expectedVersion}\""
+                    if (!metadata.contains("modId=\"${expectedModId}\"")
+                        || !metadata.contains(expectedVersionLine)
+                        || !metadata.contains("license=\"${expectedLicense}\"")) {
+                        throw new GradleException("${archive.name} contains incorrect production metadata")
+                    }
+                    forbiddenMetadataPhrases.each { phrase ->
+                        if (metadata.toLowerCase().contains(phrase)) {
+                            throw new GradleException("${archive.name} still describes itself as a scaffold: ${phrase}")
+                        }
+                    }
+                }
+            }
+            println "Verified ${platform} production jar: ${archive}"
+        }
+    }
+}
+
+tasks.register('verifyProduction') {
+    group = 'verification'
+    description = 'Runs the complete compile and packaged-artifact verification for Minecraft 26.2.'
+    dependsOn 'verifyProductionCompile', 'verifyProductionJars'
+}

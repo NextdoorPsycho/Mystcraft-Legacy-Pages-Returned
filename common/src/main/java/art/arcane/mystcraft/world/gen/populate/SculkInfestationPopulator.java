@@ -101,6 +101,9 @@ public class SculkInfestationPopulator implements IPopulate {
 
         int bx = cx + dx;
         int bz = cz + dz;
+        if (!isInWritableColumn(bx, bz, chunkPos)) {
+          continue;
+        }
         int bSurfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz) - 1;
 
         if (bSurfaceY <= world.getMinBuildHeight() + 2 || bSurfaceY >= world.getMaxBuildHeight() - 2) {

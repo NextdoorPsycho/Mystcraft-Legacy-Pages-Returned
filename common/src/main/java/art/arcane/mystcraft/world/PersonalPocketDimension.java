@@ -333,6 +333,26 @@ public final class PersonalPocketDimension {
     AgeManager ageManager = AgeManager.get(server);
     ResourceLocation dimLoc = ageManager.getDimension(ageUID);
     if (dimLoc != null) {
+      AgeDefinition definition = ageManager.getOrRecoverDefinition(server, ageUID);
+      UUID registeredOwner = ageManager.getAgeUUID(ageUID);
+      if (definition == null || !definition.isPersonalPocket()) {
+        Mystcraft.LOGGER.error(
+            "[PersonalPocket] Refusing to use Age {} for {} because it is not a recoverable personal pocket",
+            ageUID,
+            owner
+        );
+        return null;
+      }
+      if (!owner.equals(registeredOwner)) {
+        Mystcraft.LOGGER.error(
+            "[PersonalPocket] UID collision for Age {}: requested owner {}, registered owner {}",
+            ageUID,
+            owner,
+            registeredOwner
+        );
+        return null;
+      }
+
       ServerLevel existing = server.getLevel(net.minecraft.resources.ResourceKey.create(Registries.DIMENSION, dimLoc));
       if (existing != null) {
         Mystcraft.LOGGER.debug("[PersonalPocket] Using loaded pocket {} for {}", dimLoc, owner);
@@ -350,6 +370,7 @@ public final class PersonalPocketDimension {
 
     AgeDirectorImpl director = buildPersonalDirector(server);
     UUID ageUUID = owner;
+    AgeDefinition definition = AgeDefinition.personal(director.getSeed());
 
     java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> headBlocks =
         PocketHeadUtils.buildPocketHeadBlocks(server, owner);
@@ -360,15 +381,16 @@ public final class PersonalPocketDimension {
     preGenHeadBlocksCache.put(ageUID, headBlocks);
     Mystcraft.LOGGER.info("[PersonalPocket] Pre-cached head blocks for ageUID {}", ageUID);
 
+    ResourceLocation newDimLoc = new ResourceLocation(Mystcraft.MOD_ID, "mystcraft_age_" + ageUID);
+    ageManager.registerAge(ageUID, newDimLoc, ageUUID, definition);
+
     Mystcraft.LOGGER.info("[PersonalPocket] Creating new pocket dimension for {}", owner);
     ServerLevel level = AgeDimensionFactory.createAgeDimension(server, ageUID, ageUUID, director);
     if (level == null) {
       clearPreGenHeadBlocks(ageUID);
+      ageManager.unregisterAge(ageUID);
       return null;
     }
-
-    ResourceLocation newDimLoc = new ResourceLocation(Mystcraft.MOD_ID, "mystcraft_age_" + ageUID);
-    ageManager.registerAge(ageUID, newDimLoc, ageUUID);
 
     AgeData ageData = AgeData.get(level);
     ageData.setAgeUID(ageUID);
@@ -579,7 +601,11 @@ public final class PersonalPocketDimension {
   @Nullable
   public static ServerLevel getIfLoaded(MinecraftServer server, UUID owner) {
     int ageUID = getPersonalAgeUid(owner);
-    return AgeManager.get(server).getAgeLevel(server, ageUID);
+    AgeManager ageManager = AgeManager.get(server);
+    if (!owner.equals(ageManager.getAgeUUID(ageUID))) {
+      return null;
+    }
+    return ageManager.getAgeLevel(server, ageUID);
   }
 
   private static boolean hasNonWoolHeadBlocks(AgeData ageData) {
@@ -611,7 +637,11 @@ public final class PersonalPocketDimension {
   }
 
   private static AgeDirectorImpl buildPersonalDirector(MinecraftServer server) {
-    AgeDirectorImpl director = new AgeDirectorImpl(0L);
+    return buildPersonalDirector(server, 0L);
+  }
+
+  static AgeDirectorImpl buildPersonalDirector(MinecraftServer server, long seed) {
+    AgeDirectorImpl director = new AgeDirectorImpl(seed);
     director.setPersonalPocket(true);
     director.setTerrainType("personal");
     director.setTerrainBlock(Blocks.SMOOTH_STONE.defaultBlockState());

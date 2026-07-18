@@ -1,0 +1,19 @@
+* text=auto
+
+*.java text eol=lf
+*.gradle text eol=lf
+*.properties text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.cfg text eol=lf
+*.accesswidener text eol=lf
+
+*.bat text eol=crlf whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+*.jar binary
+*.class binary
+*.png binary
+*.ogg binary
+*.nbt binary

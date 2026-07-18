@@ -2,6 +2,7 @@ package art.arcane.mystcraft.fabric;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.client.FabricAgeBlockColorHandler;
+import art.arcane.mystcraft.client.GuidebookClientHelper;
 import art.arcane.mystcraft.client.PocketHeadClientSync;
 import art.arcane.mystcraft.client.gui.procedural.ProceduralUiReload;
 import art.arcane.mystcraft.client.model.WritingDeskModel;
@@ -11,6 +12,9 @@ import art.arcane.mystcraft.client.render.PageItemRendererBEWLR;
 import art.arcane.mystcraft.client.renderer.*;
 import art.arcane.mystcraft.client.screen.*;
 import art.arcane.mystcraft.network.FabricMystcraftNetwork;
+import art.arcane.mystcraft.network.SymbolSyncPacket;
+import art.arcane.mystcraft.item.ItemClientHooks;
+import art.arcane.mystcraft.util.ClientAccess;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -21,6 +25,7 @@ import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
+import net.minecraft.client.Minecraft;
 
 /**
  * Fabric client entry point for Mystcraft 1.20.1. Self-contained - does not
@@ -32,6 +37,9 @@ public class MystcraftFabricClient implements ClientModInitializer {
   public void onInitializeClient() {
     Mystcraft.LOGGER.info("[Mystcraft] Client setup (1.20.1)");
 
+    ClientAccess.install(() -> Minecraft.getInstance().level);
+    ItemClientHooks.setBookOpener(BookScreen::open);
+    ItemClientHooks.setGuidebookOpener(GuidebookClientHelper::openGuidebook);
     FabricMystcraftNetwork.registerClient();
 
     ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> PocketHeadClientSync.requestSend());
@@ -39,6 +47,10 @@ public class MystcraftFabricClient implements ClientModInitializer {
     ClientTickEvents.END_CLIENT_TICK.register(client -> PocketHeadClientSync.tick());
 
     DrawableWordManager.initialize();
+    SymbolSyncPacket.setClientSymbolsAppliedHandler(() -> {
+      PageItemRendererBEWLR.clearCache();
+      PageItemRendererBEWLR.prewarmCache();
+    });
     PageItemRendererBEWLR.prewarmCache();
 
     ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
@@ -87,7 +99,7 @@ public class MystcraftFabricClient implements ClientModInitializer {
             PageItemRendererBEWLR.getInstance().renderByItem(
                 stack, mode, poseStack, bufferSource, light, overlay));
 
-    var bookRenderer = (net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry.DynamicItemRenderer)
+    BuiltinItemRendererRegistry.DynamicItemRenderer bookRenderer =
         (stack, mode, poseStack, bufferSource, light, overlay) ->
             BookItemRendererBEWLR.getInstance().renderByItem(
                 stack, mode, poseStack, bufferSource, light, overlay);

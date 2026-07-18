@@ -1,0 +1,21 @@
+{
+  "category": "biome_controller",
+  "card_rank": 2,
+  "instability_cost": -5.0,
+  "poem": [
+    "Biome",
+    "Form",
+    "Constraint",
+    "Identity"
+  ],
+  "logic": [
+    {
+      "type": "set_biome_controller",
+      "value": "single"
+    },
+    {
+      "type": "add_instability",
+      "value": -5.0
+    }
+  ]
+}

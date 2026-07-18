@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "rules": [
+    {
+      "parent": "mystcraft:test_parent",
+      "children": [
+        "mystcraft:test_child"
+      ],
+      "rank": 1
+    }
+  ]
+}

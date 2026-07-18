@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:age_creation_agebook_keeps_pages_author_title_and_flags",
+  "max_ticks": 40,
+  "structure": "minecraft:empty"
+}

@@ -116,6 +116,9 @@ public class BonefieldsPopulator implements IPopulate {
     for (int step = 0; step < length; step++) {
       int bx = surface.getX() + (int) Math.round(dx * step);
       int bz = surface.getZ() + (int) Math.round(dz * step);
+      if (!isInWritableColumn(bx, bz, chunkPos)) {
+        continue;
+      }
       int surfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz) - 1;
       int baseY = surfaceY - buryDepth;
 
@@ -184,6 +187,9 @@ public class BonefieldsPopulator implements IPopulate {
       int dz = random.nextInt(7) - 3;
       int bx = surface.getX() + dx;
       int bz = surface.getZ() + dz;
+      if (!isInWritableColumn(bx, bz, chunkPos)) {
+        continue;
+      }
       int surfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz) - 1;
 
       BlockPos sandPos = new BlockPos(bx, surfaceY, bz);

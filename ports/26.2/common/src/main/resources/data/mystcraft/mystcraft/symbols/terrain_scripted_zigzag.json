@@ -1,0 +1,62 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 6.0,
+  "display_name": "Zigzag Ridges",
+  "poem": [
+    "Sharp",
+    "Edge",
+    "Angle",
+    "Peak"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "zigzag",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 55,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "abs",
+                "input": {
+                  "op": "sub",
+                  "a": {
+                    "op": "fract",
+                    "input": {
+                      "op": "mul",
+                      "a": {
+                        "op": "add",
+                        "a": {
+                          "var": "x"
+                        },
+                        "b": {
+                          "var": "z"
+                        }
+                      },
+                      "b": 0.04
+                    }
+                  },
+                  "b": 0.5
+                }
+              },
+              "b": 60
+            }
+          },
+          "b": {
+            "var": "y"
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
+  ]
+}

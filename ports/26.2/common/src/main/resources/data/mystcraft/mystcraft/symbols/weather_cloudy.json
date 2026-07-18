@@ -1,0 +1,17 @@
+{
+  "category": "weather",
+  "card_rank": 1,
+  "instability_cost": 0.0,
+  "poem": [
+    "Sustain",
+    "Static",
+    "Believe",
+    "Motion"
+  ],
+  "logic": [
+    {
+      "type": "set_weather_type",
+      "value": "cloudy"
+    }
+  ]
+}

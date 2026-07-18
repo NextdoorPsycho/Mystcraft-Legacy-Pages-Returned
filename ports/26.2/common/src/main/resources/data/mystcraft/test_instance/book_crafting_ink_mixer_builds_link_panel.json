@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:book_crafting_ink_mixer_builds_link_panel",
+  "max_ticks": 40,
+  "structure": "minecraft:empty"
+}

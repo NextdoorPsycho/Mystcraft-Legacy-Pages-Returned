@@ -1,0 +1,7 @@
+{
+  "type": "mystcraft:booster_pack",
+  "conditions": [{"condition": "forge:loot_table_id", "loot_table_id": "minecraft:chests/woodland_mansion"}],
+  "chance": 0.5,
+  "min_count": 1,
+  "max_count": 3
+}

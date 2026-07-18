@@ -1,0 +1,80 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+loom {
+    mods {
+        mystcraft {
+            sourceSet sourceSets.main
+            sourceSet project(':common').sourceSets.main
+        }
+    }
+
+    runs {
+        gametest {
+            server()
+            setConfigName('Fabric 26.2 GameTest')
+            ideConfigGenerated(true)
+            runDir('run/gametest')
+            vmArg '-Dfabric-api.gametest'
+            vmArg "-Dfabric-api.gametest.report-file=${layout.buildDirectory.get().asFile}/gametest-results.xml"
+        }
+    }
+}
+
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'mystcraft-client-gametest'
+        enableGameTests = false
+        enableClientGameTests = true
+        clearRunDirectory = true
+    }
+}
+
+description = 'Fabric platform module for Minecraft 26.2.'
+base.archivesName = "MystcraftLegacy_Fabric-${minecraft_version}"
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    implementation project(':common')
+}
+
+def modVersion = project.version
+def modName = rootProject.findProperty('mod_name')
+def modDescription = rootProject.findProperty('mod_description')
+
+tasks.named('processResources', ProcessResources) {
+    inputs.property 'version', modVersion
+    inputs.property 'mod_name', modName
+    inputs.property 'mod_description', modDescription
+
+    filesMatching('fabric.mod.json') {
+        expand version: modVersion,
+            mod_name: modName,
+            mod_description: modDescription
+    }
+}
+
+tasks.named('jar', Jar) {
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    from project(':common').sourceSets.main.output
+    from(rootProject.file('../../LICENSE')) {
+        rename { 'LICENSE_mystcraft' }
+    }
+}
+
+tasks.named('sourcesJar', Jar) {
+    from project(':common').sourceSets.main.allSource
+}
+
+tasks.named('runClient') {
+    description = 'Starts the Fabric 26.2 client with Mystcraft loaded.'
+}
+
+tasks.named('runServer') {
+    description = 'Starts the headless Fabric 26.2 dedicated server with Mystcraft loaded.'
+    args '--nogui'
+}

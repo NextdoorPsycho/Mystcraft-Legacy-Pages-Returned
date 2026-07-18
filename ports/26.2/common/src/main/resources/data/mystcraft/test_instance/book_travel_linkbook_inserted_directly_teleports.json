@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:book_travel_linkbook_inserted_directly_teleports",
+  "max_ticks": 40,
+  "structure": "minecraft:empty"
+}

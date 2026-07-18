@@ -7,7 +7,6 @@ import art.arcane.mystcraft.entity.MeteorEntity;
 import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
-import art.arcane.mystcraft.util.MobEffectCompat;
 import art.arcane.mystcraft.world.AgeData;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import net.minecraft.core.BlockPos;
@@ -340,10 +339,8 @@ public final class InstabilityManager {
     int duration = (int) chosen[1];
     int amplifier = (int) chosen[2];
 
-    MobEffectInstance instance = MobEffectCompat.createInstance(effect, duration, amplifier);
-    if (instance != null) {
-      target.addEffect(instance);
-    }
+    MobEffectInstance instance = new MobEffectInstance(effect, duration, amplifier);
+    target.addEffect(instance);
     Mystcraft.LOGGER.debug("Applied {} to player {}", effect.getDescriptionId(), target.getName().getString());
   }
 

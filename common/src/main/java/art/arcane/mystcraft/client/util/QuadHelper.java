@@ -114,7 +114,7 @@ public final class QuadHelper {
         .uv(u, v)
         .overlayCoords(overlay)
         .uv2(light);
-    RenderCompat.vertexNormal(vc, pose, pose.normal(), nx, ny, nz).endVertex();
+    RenderCompat.vertexNormal(vc, pose.normal(), nx, ny, nz).endVertex();
   }
 
   private static int clampByte(int v) {

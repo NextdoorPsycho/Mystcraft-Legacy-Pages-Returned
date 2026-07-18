@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "PLP",
+    "WWW"
+  ],
+  "key": {
+    "I": "#c:ingots/iron",
+    "P": "#minecraft:planks",
+    "L": "minecraft:leather",
+    "W": "#minecraft:planks"
+  },
+  "result": {
+    "id": "mystcraft:blockbookbinder"
+  }
+}

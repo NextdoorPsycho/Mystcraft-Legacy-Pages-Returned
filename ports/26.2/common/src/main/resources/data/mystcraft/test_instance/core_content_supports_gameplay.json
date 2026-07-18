@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:core_content_supports_gameplay",
+  "max_ticks": 100,
+  "structure": "minecraft:empty"
+}

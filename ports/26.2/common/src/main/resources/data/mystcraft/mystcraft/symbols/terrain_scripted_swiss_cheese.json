@@ -1,0 +1,45 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "display_name": "Swiss Cheese",
+  "poem": [
+    "Hole",
+    "Solid",
+    "Porous",
+    "Stone"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "swiss_cheese",
+        "density": {
+          "op": "mul",
+          "a": {
+            "op": "sub",
+            "a": 70,
+            "b": {
+              "var": "y"
+            }
+          },
+          "b": {
+            "op": "step",
+            "edge": 0.2,
+            "value": {
+              "op": "noise3",
+              "scale": 0.035,
+              "octaves": 3,
+              "seed": 9911
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

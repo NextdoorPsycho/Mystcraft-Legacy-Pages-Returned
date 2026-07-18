@@ -6,8 +6,6 @@ import art.arcane.mystcraft.network.MystcraftNetwork;
 import art.arcane.mystcraft.network.OpenLecternBookPacket;
 import art.arcane.mystcraft.portal.PortalUtils;
 import art.arcane.mystcraft.registry.ModBlocks;
-import art.arcane.mystcraft.util.CodecCompat;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -62,7 +60,6 @@ import org.jetbrains.annotations.Nullable;
 public class BookReceptacleBlock extends BaseEntityBlock {
 
   public static final DirectionProperty FACING = BlockStateProperties.FACING;
-  public static final MapCodec<BookReceptacleBlock> CODEC = CodecCompat.simpleCodec(BookReceptacleBlock::new);
   private static final VoxelShape SHAPE_UP = Block.box(0, 0, 0, 16, 6, 16);
   private static final VoxelShape SHAPE_NORTH = Block.box(0, 0, 10, 16, 16, 16);
   private static final VoxelShape SHAPE_SOUTH = Block.box(0, 0, 0, 16, 16, 6);
@@ -77,10 +74,6 @@ public class BookReceptacleBlock extends BaseEntityBlock {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(FACING);
-  }
-
-  protected MapCodec<? extends BaseEntityBlock> codec() {
-    return CODEC;
   }
 
   @Override

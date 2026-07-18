@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "mystcraft-client-gametest",
+  "version": "1.0.0",
+  "name": "Mystcraft Client GameTests",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "art.arcane.mystcraft.fabric.gametest.MystcraftFabricClientGameTest"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "fabric-client-gametest-api-v1": "*",
+    "mystcraft": "*"
+  }
+}

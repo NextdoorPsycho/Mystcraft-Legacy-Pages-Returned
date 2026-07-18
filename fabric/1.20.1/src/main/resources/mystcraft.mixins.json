@@ -9,7 +9,9 @@
     "ItemInHandRendererMixin"
   ],
   "mixins": [
-    "DataFixerSchemaMixin"
+    "DataFixerSchemaMixin",
+    "MappedRegistryAccessor",
+    "MinecraftServerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

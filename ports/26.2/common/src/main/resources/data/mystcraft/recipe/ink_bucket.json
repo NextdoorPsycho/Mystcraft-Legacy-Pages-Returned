@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "minecraft:water_bucket",
+    "#mystcraft:ink_sacs",
+    "minecraft:lapis_lazuli"
+  ],
+  "result": {
+    "id": "mystcraft:ink_bucket"
+  }
+}

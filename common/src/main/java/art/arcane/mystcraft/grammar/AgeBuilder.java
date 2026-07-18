@@ -3,6 +3,7 @@ package art.arcane.mystcraft.grammar;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.api.world.logic.IPopulate;
+import art.arcane.mystcraft.api.world.logic.ITerrainAlteration;
 import art.arcane.mystcraft.datapack.symbol.PopulatorRegistry;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
@@ -637,6 +638,7 @@ public class AgeBuilder {
     }
 
     director = new AgeDirectorImpl(seed);
+    director.setInstability(instability);
 
     LOGGER.debug("Building Age with {} symbols (instability: {})",
         expandedSymbols.size(), instability);
@@ -696,17 +698,15 @@ public class AgeBuilder {
         director.getTerrainAlterations().size(),
         director.getPopulateFunctions().size());
     if (!director.getTerrainAlterations().isEmpty()) {
-      for (var alt : director.getTerrainAlterations()) {
+      for (ITerrainAlteration alt : director.getTerrainAlterations()) {
         LOGGER.debug("[AgeBuilder]     Alteration: {}", alt.getClass().getSimpleName());
       }
     }
     if (!director.getPopulateFunctions().isEmpty()) {
-      for (var pop : director.getPopulateFunctions()) {
+      for (IPopulate pop : director.getPopulateFunctions()) {
         LOGGER.debug("[AgeBuilder]     Populator: {}", pop.getIdentifier());
       }
     }
-
-    director.setInstability(instability);
 
     return director;
   }

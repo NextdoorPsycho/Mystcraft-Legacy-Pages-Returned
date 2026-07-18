@@ -1,0 +1,10 @@
+{
+  "type": "mystcraft:symbol_page",
+  "conditions": [
+    {"condition": "forge:loot_table_id", "loot_table_id": "minecraft:entities/pillager"},
+    {"condition": "minecraft:killed_by_player"}
+  ],
+  "chance": 0.05,
+  "min_pages": 1,
+  "max_pages": 1
+}

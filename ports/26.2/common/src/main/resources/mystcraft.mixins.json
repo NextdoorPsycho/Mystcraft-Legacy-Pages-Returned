@@ -1,0 +1,22 @@
+{
+  "required": true,
+  "package": "art.arcane.mystcraft.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "minVersion": "0.8",
+  "mixins": [
+    "DataFixerSchemaMixin",
+    "BuiltinTestFunctionsMixin",
+    "MappedRegistryAccessor",
+    "MinecraftServerAccessor",
+    "ServerPlayerDeathMessageMixin"
+  ],
+  "client": [
+    "DimensionSpecialEffectsMixin",
+    "FogRendererMixin",
+    "ItemInHandRendererInvoker",
+    "ItemInHandRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

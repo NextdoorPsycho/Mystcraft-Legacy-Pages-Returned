@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:age_creation_agebook_with_every_page_creates_dimension",
+  "max_ticks": 300,
+  "structure": "minecraft:empty"
+}

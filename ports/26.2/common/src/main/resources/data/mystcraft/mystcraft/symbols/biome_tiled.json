@@ -1,0 +1,17 @@
+{
+  "category": "biome_controller",
+  "card_rank": 3,
+  "instability_cost": 0.0,
+  "poem": [
+    "Biome",
+    "Form",
+    "System",
+    "Weave"
+  ],
+  "logic": [
+    {
+      "type": "set_biome_controller",
+      "value": "tiled"
+    }
+  ]
+}

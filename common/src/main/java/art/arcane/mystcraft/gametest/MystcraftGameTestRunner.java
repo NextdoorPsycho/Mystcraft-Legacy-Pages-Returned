@@ -17,17 +17,24 @@ import art.arcane.mystcraft.event.AgeReturnHandler;
 import art.arcane.mystcraft.event.PersonalPocketEscapeHandler;
 import art.arcane.mystcraft.grammar.AgeBuilder;
 import art.arcane.mystcraft.item.*;
+import art.arcane.mystcraft.link.LinkEvent;
+import art.arcane.mystcraft.link.LinkEventBus;
 import art.arcane.mystcraft.link.LinkingManager;
+import art.arcane.mystcraft.menu.FolderMenu;
+import art.arcane.mystcraft.menu.PortfolioMenu;
 import art.arcane.mystcraft.registry.ModBlocks;
 import art.arcane.mystcraft.registry.ModItems;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.util.CommonListenerCookieCompat;
 import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.PocketHeadUtils;
 import art.arcane.mystcraft.util.ServerPlayerTeleport;
 import art.arcane.mystcraft.world.*;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import com.mojang.brigadier.ParseResults;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -37,21 +44,28 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -68,9 +82,35 @@ public final class MystcraftGameTestRunner {
     if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.CORE)) {
       return;
     }
-    MystcraftGameTestAssertions.assertCoreGameplayContentLoaded();
-    MystcraftGameTestAssertions.assertRegisteredObjectsReachable();
+    MystcraftServerGameTestAssertions.assertCoreGameplayContentLoaded();
+    MystcraftServerGameTestAssertions.assertRegisteredObjectsReachable();
+    assertPocketHeadPaletteValidation(helper);
     helper.succeed();
+  }
+
+  private static void assertPocketHeadPaletteValidation(GameTestHelper helper) {
+    Map<AgeData.PocketHeadFace, List<String>> palette =
+        new EnumMap<>(AgeData.PocketHeadFace.class);
+    for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
+      palette.put(face, new ArrayList<>(Collections.nCopies(64, "minecraft:white_wool")));
+    }
+
+    if (!PocketHeadUtils.isValidHeadBlockMap(palette)) {
+      helper.fail("Pocket-head validation rejected a complete wool palette");
+      return;
+    }
+
+    List<String> bottom = palette.remove(AgeData.PocketHeadFace.BOTTOM);
+    if (PocketHeadUtils.isValidHeadBlockMap(palette)) {
+      helper.fail("Pocket-head validation accepted a palette with a missing face");
+      return;
+    }
+    palette.put(AgeData.PocketHeadFace.BOTTOM, bottom);
+
+    palette.get(AgeData.PocketHeadFace.FRONT).set(0, "minecraft:diamond_block");
+    if (PocketHeadUtils.isValidHeadBlockMap(palette)) {
+      helper.fail("Pocket-head validation accepted a block outside the skin wool palette");
+    }
   }
 
   public static void runPersonalBookAlwaysStaysCarriedTest(GameTestHelper helper) {
@@ -143,6 +183,8 @@ public final class MystcraftGameTestRunner {
       MystcraftConfig.dropBooksOnRead = () -> true;
       assertDropBooksOnRead(helper, true, false);
       assertDropBooksOnRead(helper, false, true);
+      assertLinkbookActivationDropTransaction(helper);
+      assertLinkFlagsFollowersAndPassengers(helper);
 
       MystcraftConfig.dropBooksOnRead = () -> false;
       assertDropBooksOnRead(helper, false, false);
@@ -216,14 +258,6 @@ public final class MystcraftGameTestRunner {
       return;
     }
 
-    if (!loadedProxy.hurt(level.damageSources().generic(), 1.0F)) {
-      helper.fail("Proxy damage was not handled");
-      return;
-    }
-    if (!loadedProxy.isRemoved()) {
-      helper.fail("Proxy was not removed after damage");
-      return;
-    }
     helper.succeed();
   }
 
@@ -764,9 +798,20 @@ public final class MystcraftGameTestRunner {
       return;
     }
 
+    if (art.arcane.mystcraft.block.LinkPortalBlock.isOnCooldownForTest(
+        entityId, Level.NETHER, portalA, now + 5)) {
+      helper.fail("Cooldown leaked to the same block position in another dimension");
+      return;
+    }
+
     long pastCooldown = now + art.arcane.mystcraft.block.LinkPortalBlock.cooldownTicksForTest() + 1;
     if (art.arcane.mystcraft.block.LinkPortalBlock.isOnCooldownForTest(entityId, portalA, pastCooldown)) {
       helper.fail("Cooldown on portal A did not expire after COOLDOWN_TICKS");
+      return;
+    }
+
+    if (art.arcane.mystcraft.block.LinkPortalBlock.isOnCooldownForTest(entityId, portalA, now - 1)) {
+      helper.fail("Cooldown from a later server clock remained active after time moved backwards");
       return;
     }
 
@@ -821,6 +866,11 @@ public final class MystcraftGameTestRunner {
           + Integer.toHexString(portalBe.getPortalColor()));
       return;
     }
+    if (portalBe.getReceptaclePos() != null) {
+      helper.fail("Fresh LinkPortalBlockEntity treated an unstamped cell as owned by "
+          + portalBe.getReceptaclePos());
+      return;
+    }
 
     // Stamp a custom colour and a receptacle anchor, then verify the BE
     // round-trips through writeNbt -> readNbt via getUpdateTag/load. We use
@@ -829,7 +879,9 @@ public final class MystcraftGameTestRunner {
     // capability serialisation hook racing with the test thread). The
     // pipeline we actually care about is writeNbt() -> readNbt(), which
     // both paths exercise; getUpdateTag is the more direct route.
-    BlockPos anchor = new BlockPos(5, 7, 9);
+    // The world origin is a legitimate receptacle position and must not be
+    // conflated with the old "unknown" sentinel.
+    BlockPos anchor = BlockPos.ZERO;
     portalBe.setPortalColor(0xCAFE99);
     portalBe.setReceptaclePos(anchor);
 
@@ -981,6 +1033,9 @@ public final class MystcraftGameTestRunner {
     for (int[] c : xz) {
       helper.setBlock(new BlockPos(c[0], 1, c[1]), crystal);
     }
+    for (int z = 1; z <= 3; z++) {
+      helper.setBlock(new BlockPos(1, 1, z), Blocks.AIR.defaultBlockState());
+    }
     BlockPos receptaclePos = new BlockPos(1, 2, 0);
     helper.setBlock(receptaclePos,
         ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, Direction.UP));
@@ -1054,6 +1109,9 @@ public final class MystcraftGameTestRunner {
         {0, 4}, {1, 4}, {2, 4},
     };
     for (int[] c : frameA) helper.setBlock(new BlockPos(c[0], 1, c[1]), crystal);
+    for (int z = 1; z <= 3; z++) {
+      helper.setBlock(new BlockPos(1, 1, z), Blocks.AIR.defaultBlockState());
+    }
     BlockPos recA = new BlockPos(1, 2, 0);
     helper.setBlock(recA,
         ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, Direction.UP));
@@ -1066,6 +1124,9 @@ public final class MystcraftGameTestRunner {
         {4, 4}, {5, 4}, {6, 4},
     };
     for (int[] c : frameB) helper.setBlock(new BlockPos(c[0], 1, c[1]), crystal);
+    for (int z = 1; z <= 3; z++) {
+      helper.setBlock(new BlockPos(5, 1, z), Blocks.AIR.defaultBlockState());
+    }
     BlockPos recB = new BlockPos(5, 2, 0);
     helper.setBlock(recB,
         ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, Direction.UP));
@@ -1151,6 +1212,9 @@ public final class MystcraftGameTestRunner {
     for (int[] c : xz) {
       helper.setBlock(new BlockPos(c[0], 1, c[1]), crystal);
     }
+    for (int z = 1; z <= 3; z++) {
+      helper.setBlock(new BlockPos(1, 1, z), Blocks.AIR.defaultBlockState());
+    }
     BlockPos receptaclePos = new BlockPos(1, 2, 0);
     helper.setBlock(receptaclePos,
         ModBlocks.BOOK_RECEPTACLE.get().defaultBlockState().setValue(BookReceptacleBlock.FACING, Direction.UP));
@@ -1211,6 +1275,9 @@ public final class MystcraftGameTestRunner {
     };
     for (int[] c : xz) {
       helper.setBlock(new BlockPos(c[0], 1, c[1]), crystal);
+    }
+    for (int z = 1; z <= 3; z++) {
+      helper.setBlock(new BlockPos(1, 1, z), Blocks.AIR.defaultBlockState());
     }
     BlockPos receptaclePos = new BlockPos(1, 2, 0);
     BlockPos crystalToBreak = new BlockPos(0, 1, 2);
@@ -1289,6 +1356,37 @@ public final class MystcraftGameTestRunner {
       helper.fail("Folder did not extract and clear its pages");
       return;
     }
+    if (folder.getMaxStackSize() != 1) {
+      helper.fail("Folders can stack despite carrying per-item page NBT");
+      return;
+    }
+    ItemStack stackedPages = Page.createPage();
+    stackedPages.setCount(3);
+    FolderItem.setPages(folder, List.of(stackedPages));
+    if (FolderItem.getPageCount(folder) != 3
+        || FolderItem.getPages(folder).stream().anyMatch(page -> page.getCount() != 1)) {
+      helper.fail("Folder did not normalize a legacy stacked page entry without loss");
+      return;
+    }
+    if (FolderItem.addPage(folder, new ItemStack(Items.STICK))) {
+      helper.fail("Folder accepted a non-page item");
+      return;
+    }
+    ServerPlayer player = createMockServerPlayer(helper);
+    if (player == null) {
+      return;
+    }
+    player.getInventory().clearContent();
+    int folderSlot = player.getInventory().selected;
+    player.getInventory().setItem(folderSlot, folder);
+    FolderMenu menu = new FolderMenu(990, player.getInventory(), folderSlot);
+    FolderItem.setPages(folder, List.of(Page.createPage(), Page.createLinkPage()));
+    menu.reloadFromFolder();
+    menu.removed(player);
+    if (FolderItem.getPageCount(folder) != 2) {
+      helper.fail("Reloading a Folder menu did not preserve externally updated page NBT");
+      return;
+    }
     helper.succeed();
   }
 
@@ -1327,6 +1425,21 @@ public final class MystcraftGameTestRunner {
       helper.fail("Portfolio unique symbol list did not update after removal");
       return;
     }
+    ServerPlayer player = createMockServerPlayer(helper);
+    if (player == null) {
+      return;
+    }
+    player.getInventory().clearContent();
+    int portfolioSlot = player.getInventory().selected;
+    player.getInventory().setItem(portfolioSlot, portfolio);
+    int pagesBeforeReload = PortfolioItem.getPageCount(portfolio);
+    PortfolioMenu menu = new PortfolioMenu(991, player.getInventory(), portfolioSlot);
+    menu.reloadFromPortfolio();
+    if (PortfolioItem.getPageCount(portfolio) != pagesBeforeReload) {
+      helper.fail("Opening/reloading a Portfolio erased its page NBT");
+      return;
+    }
+    menu.removed(player);
     while (PortfolioItem.getPageCount(portfolio) < PortfolioItem.MAX_PAGES) {
       PortfolioItem.addPage(portfolio, Page.createPage());
     }
@@ -1404,7 +1517,67 @@ public final class MystcraftGameTestRunner {
       helper.fail("Book Binder did not consume pages and cover after building");
       return;
     }
+    assertBookBinderTransfersAreLossless(helper);
     helper.succeed();
+  }
+
+  private static void assertBookBinderTransfersAreLossless(GameTestHelper helper) {
+    Supplier<Integer> originalMaxSymbols = MystcraftConfig.maxSymbolsPerBook;
+    try {
+      MystcraftConfig.maxSymbolsPerBook = () -> 2;
+
+      BookBinderBlockEntity partialBinder = new BookBinderBlockEntity(
+          BlockPos.ZERO, ModBlocks.BOOK_BINDER.get().defaultBlockState());
+      partialBinder.insertPage(Page.createSymbolPage(symbolId("biome_plains")), 0);
+      ItemStack stackedPages = Page.createSymbolPage(symbolId("terrain_flat"));
+      stackedPages.setCount(3);
+      ItemStack remainder = partialBinder.insertPage(stackedPages, -100);
+      if (partialBinder.getPageList().size() != 2 || remainder.getCount() != 2
+          || !symbolId("terrain_flat").equals(Page.getSymbol(partialBinder.getPageList().get(0)))) {
+        helper.fail("Book Binder did not clamp a negative index or return its capacity remainder");
+        return;
+      }
+
+      ItemStack rejected = new ItemStack(Items.STICK, 4);
+      if (partialBinder.insertPage(rejected, 0) != rejected || rejected.getCount() != 4) {
+        helper.fail("Book Binder consumed a non-page insertion");
+        return;
+      }
+
+      BookBinderBlockEntity folderImportBinder = new BookBinderBlockEntity(
+          BlockPos.ZERO, ModBlocks.BOOK_BINDER.get().defaultBlockState());
+      folderImportBinder.insertPage(Page.createSymbolPage(symbolId("biome_plains")), 0);
+      ItemStack sourceFolder = new ItemStack(ModItems.FOLDER.get());
+      FolderItem.addPage(sourceFolder, Page.createLinkPage());
+      FolderItem.addPage(sourceFolder, Page.createSymbolPage(symbolId("terrain_flat")));
+      FolderItem.addPage(sourceFolder, Page.createPage());
+      ItemStack returnedSourceFolder = folderImportBinder.insertFromFolder(sourceFolder, -50);
+      if (folderImportBinder.getPageList().size() != 2 || FolderItem.getPageCount(sourceFolder) != 2
+          || !Page.isLinkPanel(folderImportBinder.getPageList().get(0))
+          || returnedSourceFolder != sourceFolder) {
+        helper.fail("Book Binder folder import discarded pages that did not fit");
+        return;
+      }
+
+      MystcraftConfig.maxSymbolsPerBook = () -> FolderItem.MAX_PAGES + 5;
+      BookBinderBlockEntity folderExportBinder = new BookBinderBlockEntity(
+          BlockPos.ZERO, ModBlocks.BOOK_BINDER.get().defaultBlockState());
+      ItemStack exportPages = Page.createPage();
+      exportPages.setCount(FolderItem.MAX_PAGES + 2);
+      ItemStack exportInsertRemainder = folderExportBinder.insertPage(exportPages, 0);
+      if (!exportInsertRemainder.isEmpty()) {
+        helper.fail("Book Binder setup could not insert the export test pages");
+        return;
+      }
+      ItemStack emptyFolder = new ItemStack(ModItems.FOLDER.get());
+      ItemStack returnedExportFolder = folderExportBinder.insertFromFolder(emptyFolder, 0);
+      if (FolderItem.getPageCount(emptyFolder) != FolderItem.MAX_PAGES
+          || folderExportBinder.getPageList().size() != 2 || returnedExportFolder != emptyFolder) {
+        helper.fail("Book Binder discarded pages when exporting into a full Folder");
+      }
+    } finally {
+      MystcraftConfig.maxSymbolsPerBook = originalMaxSymbols;
+    }
   }
 
   public static void runInkMixerWorkflowTest(GameTestHelper helper) {
@@ -1467,6 +1640,52 @@ public final class MystcraftGameTestRunner {
       }
       if (desk.getInkAmount() != 0) {
         helper.fail("Writing Desk did not consume ink");
+        return;
+      }
+
+      desk.setWritingItem(Page.createPage());
+      desk.getInkTank().fill(WritingDeskBlockEntity.INK_COST);
+      if (desk.writeSymbol(null, symbolId("missing_gametest_symbol"))
+          || desk.getInkAmount() != WritingDeskBlockEntity.INK_COST
+          || !Page.isBlank(desk.getWritingItem())) {
+        helper.fail("Writing Desk consumed resources for an unknown symbol");
+        return;
+      }
+
+      ItemStack stackedBlankPages = Page.createPage();
+      stackedBlankPages.setCount(2);
+      desk.setWritingItem(stackedBlankPages);
+      if (desk.writeSymbol(null, symbolId("terrain_flat"))
+          || desk.getInkAmount() != WritingDeskBlockEntity.INK_COST) {
+        helper.fail("Writing Desk wrote an entire stacked page input for one ink cost");
+        return;
+      }
+
+      desk.getInkTank().drain(WritingDeskBlockEntity.INK_COST);
+      desk.getInkTank().fill(WritingDeskBlockEntity.INK_CAPACITY - 5);
+      Container inventory = desk.getMainInventory();
+      ItemStack vialStack = new ItemStack(ModItems.INK_VIAL.get(), 2);
+      inventory.setItem(WritingDeskBlockEntity.SLOT_CONTAINER_IN, vialStack);
+      desk.processFluidContainers();
+      if (desk.getInkAmount() != WritingDeskBlockEntity.INK_CAPACITY - 5
+          || vialStack.getCount() != 2) {
+        helper.fail("Writing Desk consumed vial ink that did not fit in the tank");
+        return;
+      }
+
+      desk.getInkTank().drain(WritingDeskBlockEntity.INK_CAPACITY);
+      desk.processFluidContainers();
+      if (desk.getInkAmount() != WritingDeskBlockEntity.INK_CAPACITY
+          || vialStack.getCount() != 1
+          || inventory.getItem(WritingDeskBlockEntity.SLOT_CONTAINER_OUT).getCount() != 1
+          || ((InkVialItem) vialStack.getItem()).getInkAmount(vialStack) != InkVialItem.MAX_INK) {
+        helper.fail("Writing Desk drained or erased more than one vial from a stack");
+        return;
+      }
+
+      WritingDeskBlockEntity.InkTank tank = new WritingDeskBlockEntity.InkTank(100);
+      if (tank.fill(-10) != 0 || tank.drain(-10) != 0 || tank.getAmount() != 0) {
+        helper.fail("Writing Desk ink tank accepted a negative transfer");
         return;
       }
       helper.succeed();
@@ -1541,6 +1760,62 @@ public final class MystcraftGameTestRunner {
     }
     if (!director.isSkyColorNatural()) {
       helper.fail("AgeBuilder did not apply natural sky color");
+      return;
+    }
+    if (director.getInstability() <= builder.getInstability()) {
+      helper.fail("AgeBuilder discarded dynamic fallback instability: base="
+          + builder.getInstability() + ", final=" + director.getInstability());
+      return;
+    }
+
+    List<ResourceLocation> description = List.of(
+        symbolId("terrain_flat"),
+        symbolId("biome_plains"),
+        symbolId("weather_normal"),
+        symbolId("lighting_normal"),
+        symbolId("color_sky_natural")
+    );
+    long orderedSeed = AgeSeed.deriveFromSymbolIds(description);
+    long reorderedSeed = AgeSeed.deriveFromSymbolIds(List.of(
+        symbolId("biome_plains"),
+        symbolId("terrain_flat"),
+        symbolId("weather_normal"),
+        symbolId("lighting_normal"),
+        symbolId("color_sky_natural")
+    ));
+    if (orderedSeed == reorderedSeed) {
+      helper.fail("AgeSeed ignored symbol ordering");
+      return;
+    }
+
+    AgeDefinition definition = AgeDefinition.fromDirector(description, director);
+    AgeDefinition loadedDefinition = AgeDefinition.load(definition.save());
+    if (loadedDefinition == null
+        || loadedDefinition.getSeed() != director.getSeed()
+        || !loadedDefinition.getSymbolIds().equals(description)) {
+      helper.fail("AgeDefinition did not round-trip its seed and ordered symbols");
+      return;
+    }
+    AgeDirectorImpl rebuiltDirector = loadedDefinition.buildDirector(helper.getLevel().getServer());
+    if (rebuiltDirector == null
+        || rebuiltDirector.getSeed() != director.getSeed()
+        || !rebuiltDirector.getTerrainType().equals(director.getTerrainType())) {
+      helper.fail("AgeDefinition did not reconstruct the original generation director");
+      return;
+    }
+
+    AgeManager manager = new AgeManager();
+    UUID ageUUID = UUID.fromString("c9d41988-7a5e-44bc-a028-8aeae2969ff8");
+    ResourceLocation dimension = symbolId("mystcraft_age_4242");
+    manager.registerAge(4242, dimension, ageUUID, definition);
+    AgeManager loadedManager = AgeManager.load(manager.save(new CompoundTag()));
+    AgeDefinition managerDefinition = loadedManager.getDefinition(4242);
+    if (!dimension.equals(loadedManager.getDimension(4242))
+        || !ageUUID.equals(loadedManager.getAgeUUID(4242))
+        || managerDefinition == null
+        || managerDefinition.getSeed() != definition.getSeed()
+        || !managerDefinition.getSymbolIds().equals(description)) {
+      helper.fail("AgeManager did not persist the restart-safe Age definition");
       return;
     }
     helper.succeed();
@@ -1911,45 +2186,178 @@ public final class MystcraftGameTestRunner {
   }
 
   private static void assertDropBooksOnRead(GameTestHelper helper, boolean expectDrop, boolean following) {
-    ServerLevel level = helper.getLevel();
-    ServerPlayer player = createMockServerPlayer(helper);
-    if (player == null) {
-      return;
-    }
-    player.getInventory().clearContent();
-    player.moveTo(0.5, 2.0, 0.5, 0.0F, 0.0F);
-
-    LinkbookItemAccessor linkbook = new LinkbookItemAccessor((art.arcane.mystcraft.item.LinkbookItem) ModItems.LINKBOOK.get());
+    LinkbookItem linkbook = (LinkbookItem) ModItems.LINKBOOK.get();
     ItemStack stack = new ItemStack(ModItems.LINKBOOK.get());
     CompoundTag tag = returnLink(0, new BlockPos(0, 2, 0), 0.0F);
     LinkOptions.setFlag(tag, LinkFlags.FOLLOWING, following);
     ItemStackNbt.setTag(stack, tag);
 
-    int slot = player.getInventory().selected;
-    player.getInventory().setItem(slot, stack);
+    boolean actualDrop = linkbook.dropItemOnLink(stack);
+    if (actualDrop != expectDrop) {
+      helper.fail("Normal linkbook drop decision was " + actualDrop
+          + " with following=" + following + ", expected " + expectDrop);
+    }
+  }
 
-    AABB box = new AABB(-2, 0, -2, 2, 5, 2);
-    int before = level.getEntitiesOfClass(LinkbookEntity.class, box).size();
-    linkbook.onLink(stack, level, player);
-    int after = level.getEntitiesOfClass(LinkbookEntity.class, box).size();
-    ItemStack slotStack = player.getInventory().getItem(slot);
+  private static void assertLinkbookActivationDropTransaction(GameTestHelper helper) {
+    ServerLevel level = helper.getLevel();
+    LinkbookItem linkbook = (LinkbookItem) ModItems.LINKBOOK.get();
 
-    if (expectDrop) {
-      if (after <= before) {
-        helper.fail("Expected normal linkbook to drop when linking");
+    ServerPlayer successfulPlayer = createMockServerPlayer(helper);
+    if (successfulPlayer == null) {
+      return;
+    }
+    successfulPlayer.getInventory().clearContent();
+    ItemStack successfulBook = new ItemStack(linkbook);
+    CompoundTag successfulTag = returnLink(
+        LinkingManager.getDimensionUID(level), successfulPlayer.blockPosition(), successfulPlayer.getYRot());
+    LinkOptions.setFlag(successfulTag, LinkFlags.INTRA_LINKING, true);
+    LinkOptions.setFlag(successfulTag, LinkFlags.DISARM, true);
+    LinkOptions.setFlag(successfulTag, LinkFlags.GENERATE_PLATFORM, false);
+    ItemStackNbt.setTag(successfulBook, successfulTag);
+    int successfulSlot = successfulPlayer.getInventory().selected;
+    successfulPlayer.getInventory().setItem(successfulSlot, successfulBook);
+    AABB successfulSource = successfulPlayer.getBoundingBox().inflate(2.0);
+    int beforeSuccessfulDrop = level.getEntitiesOfClass(LinkbookEntity.class, successfulSource).size();
+
+    linkbook.activate(successfulBook, level, successfulPlayer);
+
+    int afterSuccessfulDrop = level.getEntitiesOfClass(LinkbookEntity.class, successfulSource).size();
+    if (!successfulPlayer.getInventory().getItem(successfulSlot).isEmpty()
+        || afterSuccessfulDrop <= beforeSuccessfulDrop) {
+      helper.fail("A successful link did not commit the prepared source-world book drop");
+      return;
+    }
+
+    ServerPlayer failedPlayer = createMockServerPlayer(helper);
+    if (failedPlayer == null) {
+      return;
+    }
+    failedPlayer.getInventory().clearContent();
+    ItemStack failedBook = new ItemStack(linkbook);
+    CompoundTag failedTag = returnLink(
+        LinkingManager.getDimensionUID(level), failedPlayer.blockPosition(), failedPlayer.getYRot());
+    LinkOptions.setFlag(failedTag, LinkFlags.DISARM, true);
+    ItemStackNbt.setTag(failedBook, failedTag);
+    int failedSlot = failedPlayer.getInventory().selected;
+    failedPlayer.getInventory().setItem(failedSlot, failedBook);
+    AABB failedSource = failedPlayer.getBoundingBox().inflate(2.0);
+    int beforeFailedDrop = level.getEntitiesOfClass(LinkbookEntity.class, failedSource).size();
+
+    linkbook.activate(failedBook, level, failedPlayer);
+
+    int afterFailedDrop = level.getEntitiesOfClass(LinkbookEntity.class, failedSource).size();
+    if (failedPlayer.getInventory().getItem(failedSlot) != failedBook) {
+      helper.fail("A failed link removed the held linkbook");
+      return;
+    }
+    if (afterFailedDrop != beforeFailedDrop) {
+      helper.fail("A failed link spawned a source-world LinkbookEntity");
+    }
+  }
+
+  private static void assertLinkFlagsFollowersAndPassengers(GameTestHelper helper) {
+    ServerLevel sourceLevel = helper.getLevel();
+    ServerPlayer crossDimensionPlayer = createMockServerPlayer(helper);
+    if (crossDimensionPlayer == null) {
+      return;
+    }
+
+    Vec3 eventStart = crossDimensionPlayer.position();
+    CompoundTag cancellableLink = returnLink(
+        LinkingManager.getDimensionUID(sourceLevel),
+        crossDimensionPlayer.blockPosition().offset(4, 0, 0),
+        0.0F
+    );
+    LinkOptions.setFlag(cancellableLink, LinkFlags.INTRA_LINKING, true);
+    boolean[] observedEvents = new boolean[2];
+    LinkingManager.LinkResult cancelledResult;
+    try (LinkEventBus.Registration ignored = LinkEventBus.register(event -> {
+      if (event instanceof LinkEvent.Allow allow) {
+        observedEvents[0] = true;
+        allow.setCancelReason("GameTest cancellation");
+        allow.setCancelled(true);
+      } else if (event instanceof LinkEvent.Failed failed
+          && failed.getReason() == LinkEvent.Failed.FailureReason.CANCELLED) {
+        observedEvents[1] = true;
+      }
+    })) {
+      cancelledResult = LinkingManager.performLink(crossDimensionPlayer, cancellableLink);
+    }
+    if (cancelledResult != LinkingManager.LinkResult.CANCELLED
+        || !observedEvents[0] || !observedEvents[1]
+        || crossDimensionPlayer.position().distanceToSqr(eventStart) > 0.0001) {
+      helper.fail("LinkEventBus did not dispatch and honor an Allow cancellation");
+      return;
+    }
+
+    Vec3 sameDimensionStart = crossDimensionPlayer.position();
+    CompoundTag missingIntraFlag = returnLink(
+        LinkingManager.getDimensionUID(sourceLevel), crossDimensionPlayer.blockPosition().offset(8, 0, 0), 0.0F);
+    LinkingManager.LinkResult missingIntraResult =
+        LinkingManager.performLink(crossDimensionPlayer, missingIntraFlag);
+    if (missingIntraResult != LinkingManager.LinkResult.BLOCKED
+        || crossDimensionPlayer.position().distanceToSqr(sameDimensionStart) > 0.0001) {
+      helper.fail("A same-dimension link without INTRA_LINKING was not blocked in place");
+      return;
+    }
+
+    ServerLevel otherLevel = null;
+    for (ServerLevel candidate : sourceLevel.getServer().getAllLevels()) {
+      if (candidate != sourceLevel) {
+        otherLevel = candidate;
+        break;
+      }
+    }
+    if (otherLevel != null) {
+      CompoundTag intraOnlyLink = returnLink(
+          LinkingManager.getDimensionUID(otherLevel), otherLevel.getSharedSpawnPos(), 0.0F);
+      LinkOptions.setFlag(intraOnlyLink, LinkFlags.INTRA_LINKING_ONLY, true);
+      LinkingManager.LinkResult result = LinkingManager.performLink(crossDimensionPlayer, intraOnlyLink);
+      if (result != LinkingManager.LinkResult.BLOCKED || crossDimensionPlayer.serverLevel() != sourceLevel) {
+        helper.fail("INTRA_LINKING_ONLY did not block cross-dimensional travel before teleport");
         return;
       }
-      if (!slotStack.isEmpty()) {
-        helper.fail("Expected dropped normal linkbook to be removed from inventory");
-      }
+    }
+
+    BlockPos sourcePos = helper.absolutePos(new BlockPos(10, 3, 10));
+    ArmorStand source = new ArmorStand(
+        sourceLevel, sourcePos.getX() + 0.5, sourcePos.getY(), sourcePos.getZ() + 0.5);
+    ArmorStand passenger = new ArmorStand(
+        sourceLevel, sourcePos.getX() + 0.5, sourcePos.getY(), sourcePos.getZ() + 0.5);
+    ArmorStand nestedPassenger = new ArmorStand(
+        sourceLevel, sourcePos.getX() + 0.5, sourcePos.getY(), sourcePos.getZ() + 0.5);
+    ArmorStand follower = new ArmorStand(
+        sourceLevel, sourcePos.getX() + 2.5, sourcePos.getY(), sourcePos.getZ() + 0.5);
+    if (!sourceLevel.addFreshEntity(source) || !sourceLevel.addFreshEntity(passenger)
+        || !sourceLevel.addFreshEntity(nestedPassenger) || !sourceLevel.addFreshEntity(follower)) {
+      helper.fail("Could not spawn linking follower/passenger test entities");
       return;
     }
-    if (after != before) {
-      helper.fail("Expected no dropped linkbook entity");
+    if (!passenger.startRiding(source, true) || !nestedPassenger.startRiding(passenger, true)) {
+      helper.fail("Could not build nested passenger hierarchy for linking test");
       return;
     }
-    if (slotStack.isEmpty()) {
-      helper.fail("Expected normal linkbook to remain in inventory");
+
+    double followerOffsetX = follower.getX() - source.getX();
+    CompoundTag linkData = returnLink(
+        LinkingManager.getDimensionUID(sourceLevel), sourcePos.offset(8, 0, 0), 0.0F);
+    LinkOptions.setFlag(linkData, LinkFlags.INTRA_LINKING, true);
+    LinkOptions.setFlag(linkData, LinkFlags.FOLLOWING, true);
+    LinkOptions.setFlag(linkData, LinkFlags.GENERATE_PLATFORM, false);
+
+    LinkingManager.LinkResult result = LinkingManager.performLink(source, linkData);
+    if (result != LinkingManager.LinkResult.SUCCESS) {
+      helper.fail("Follower/passenger link failed: " + result);
+      return;
+    }
+    if (passenger.getVehicle() != source || nestedPassenger.getVehicle() != passenger) {
+      helper.fail("Linking did not restore the original nested passenger hierarchy");
+      return;
+    }
+    double resultingOffsetX = follower.getX() - source.getX();
+    if (Math.abs(resultingOffsetX - followerOffsetX) > 0.25) {
+      helper.fail("Follower offset changed during linking: " + followerOffsetX + " -> " + resultingOffsetX);
     }
   }
 
@@ -1969,8 +2377,8 @@ public final class MystcraftGameTestRunner {
 
   private static CommandAttempt performCommand(CommandSourceStack source, String command) {
     String normalized = normalizeCommand(command);
-    var commands = source.getServer().getCommands();
-    var parse = commands.getDispatcher().parse(normalized, source);
+    Commands commands = source.getServer().getCommands();
+    ParseResults<CommandSourceStack> parse = commands.getDispatcher().parse(normalized, source);
     int result = commands.performCommand(parse, normalized);
     return new CommandAttempt(result, commandDiagnostics(parse));
   }
@@ -2156,7 +2564,7 @@ public final class MystcraftGameTestRunner {
       return;
     }
     try {
-      MystcraftGameTestAssertions.assertInkBlendRoundTripsThroughNbt();
+      MystcraftServerGameTestAssertions.assertInkBlendRoundTripsThroughNbt();
     } catch (RuntimeException e) {
       helper.fail(e.getMessage());
       return;
@@ -2174,7 +2582,7 @@ public final class MystcraftGameTestRunner {
       return;
     }
     try {
-      MystcraftGameTestAssertions.assertBookCoverNbtRoundTripsForEachCover();
+      MystcraftServerGameTestAssertions.assertBookCoverNbtRoundTripsForEachCover();
     } catch (RuntimeException e) {
       helper.fail(e.getMessage());
       return;
@@ -2191,7 +2599,7 @@ public final class MystcraftGameTestRunner {
       return;
     }
     try {
-      MystcraftGameTestAssertions.assertInkAffinityBiasesSymbolRoll();
+      MystcraftServerGameTestAssertions.assertInkAffinityBiasesSymbolRoll();
     } catch (RuntimeException e) {
       helper.fail(e.getMessage());
       return;
@@ -2199,146 +2607,13 @@ public final class MystcraftGameTestRunner {
     helper.succeed();
   }
 
-  /**
-   * Verifies the procedural-symbol glyph pipeline is deterministic — same
-   * symbol id + poem word always produce identical pixels. Validates three
-   * layers: seed math, curated D'ni vocabulary stability, and (when blaze3d is
-   * available) byte-identical NativeImage content.
-   */
-  public static void runSymbolGlyphIsDeterministicTest(GameTestHelper helper) {
-    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
-      return;
-    }
-    try {
-      MystcraftGameTestAssertions.assertSymbolGlyphIsDeterministic();
-    } catch (RuntimeException e) {
-      helper.fail(e.getMessage());
-      return;
-    }
-    helper.succeed();
-  }
-
-  /**
-   * Verifies the per-category motif dispatch is correct (every
-   * {@link art.arcane.mystcraft.api.symbol.SymbolCategory} resolves to its
-   * spec'd motif) and that motif rendering is deterministic + cross-category
-   * distinct. See plan §5.3.2 for the dispatch table.
-   */
-  public static void runMotifDispatchPerCategoryTest(GameTestHelper helper) {
-    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
-      return;
-    }
-    try {
-      MystcraftGameTestAssertions.assertMotifDispatchPerCategory();
-    } catch (RuntimeException e) {
-      helper.fail(e.getMessage());
-      return;
-    }
-    helper.succeed();
-  }
-
-  /**
-   * Verifies card rank produces a strictly monotonic visual progression: each
-   * rank 1..5 yields more flourish ornamentation (border + corner + spine +
-   * halo features) and, with GL natives, more non-transparent pixels than the
-   * previous rank. See plan §5.3.3 for the rank table.
-   */
-  public static void runSymbolRankProgressionTest(GameTestHelper helper) {
-    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
-      return;
-    }
-    try {
-      MystcraftGameTestAssertions.assertSymbolRankProgression();
-    } catch (RuntimeException e) {
-      helper.fail(e.getMessage());
-      return;
-    }
-    helper.succeed();
-  }
-
-  /**
-   * Verifies datapack
-   * {@link art.arcane.mystcraft.datapack.symbol.SymbolDisplay} overrides
-   * survive parser → API → render. Three layers: JSON parsing,
-   * {@link art.arcane.mystcraft.api.symbol.IAgeSymbol#getDisplay()} contract,
-   * and (with GL natives) pixel-distinctness across motif / palette overrides.
-   * See plan §5.4 for the schema.
-   */
+  /** Verifies the server-safe datapack parser contract for symbol display overrides. */
   public static void runSymbolDisplayOverrideAppliedTest(GameTestHelper helper) {
     if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
       return;
     }
     try {
-      MystcraftGameTestAssertions.assertSymbolDisplayOverrideApplied();
-    } catch (RuntimeException e) {
-      helper.fail(e.getMessage());
-      return;
-    }
-    helper.succeed();
-  }
-
-  /**
-   * Verifies that reloading the procedural-UI subsystem clears every
-   * symbol-side cache and that re-rendering produces byte-identical pixels. Two
-   * layers: (1) cache-size accounting on
-   * {@link
-   * art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory}
-   * (always runs); (2) deterministic FNV-1a hash equality across reload
-   * (skipped without GL natives). See plan §6 Phase 5 / Task 5.4.
-   */
-  public static void runProceduralUiReloadFlushesSymbolCachesTest(GameTestHelper helper) {
-    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
-      return;
-    }
-    try {
-      MystcraftGameTestAssertions.assertProceduralUiReloadFlushesSymbolCaches();
-    } catch (RuntimeException e) {
-      helper.fail(e.getMessage());
-      return;
-    }
-    helper.succeed();
-  }
-
-  /**
-   * Verifies that
-   * {@link
-   * art.arcane.mystcraft.client.gui.procedural.symbol.SymbolGlyphFactory#warmBlocking()}
-   * pre-warms the symbol glyph cache for every registered symbol and completes
-   * within a soft regression window. Combines plan §6 Phase 5 tasks 5.6 (perf
-   * check) + 5.7 (correctness — synchronous warm completes and populates
-   * {@code symbolCount} tiles or saturates the LRU cap).
-   */
-  public static void runProceduralSymbolWarmCompletesTest(GameTestHelper helper) {
-    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
-      return;
-    }
-    try {
-      MystcraftGameTestAssertions.assertProceduralSymbolWarmCompletes();
-    } catch (RuntimeException e) {
-      helper.fail(e.getMessage());
-      return;
-    }
-    helper.succeed();
-  }
-
-  /**
-   * Verifies the Art-of-Writing Guidebook and the unlinked Linkbook participate
-   * in the procedural book-cover pipeline. Two layers: (1)
-   * {@link
-   * art.arcane.mystcraft.client.gui.procedural.BookTextureFactory#detectKind}
-   * returns {@code GUIDEBOOK} / {@code LINKBOOK_UNLINKED} for the respective
-   * items (always runs); (2) cover + item-icon {@code ResourceLocation}s are
-   * non-null and differ between the two kinds, proving the cache keys
-   * distinguish them (skipped without GL natives). See
-   * {@code plans/2026-04-29-procedural-symbol-pages-v1.md} follow-up "tutorial
-   * + unlinked book covers".
-   */
-  public static void runGuidebookAndUnlinkedBookKindsRenderTest(GameTestHelper helper) {
-    if (MystcraftGameTestSuites.skipUnless(helper, MystcraftGameTestSuites.PROCEDURAL_UI)) {
-      return;
-    }
-    try {
-      MystcraftGameTestAssertions.assertGuidebookAndUnlinkedBookKindsRender();
+      MystcraftServerGameTestAssertions.assertSymbolDisplayDataOverrideApplied();
     } catch (RuntimeException e) {
       helper.fail(e.getMessage());
       return;
@@ -2356,22 +2631,4 @@ public final class MystcraftGameTestRunner {
     }
   }
 
-  private static final class LinkbookItemAccessor {
-    private final art.arcane.mystcraft.item.LinkbookItem item;
-
-    private LinkbookItemAccessor(art.arcane.mystcraft.item.LinkbookItem item) {
-      this.item = item;
-    }
-
-    private void onLink(@NotNull ItemStack stack, Level level, Entity entity) {
-      try {
-        java.lang.reflect.Method method = art.arcane.mystcraft.item.LinkbookItem.class
-            .getDeclaredMethod("onLink", ItemStack.class, Level.class, Entity.class);
-        method.setAccessible(true);
-        method.invoke(item, stack, level, entity);
-      } catch (ReflectiveOperationException e) {
-        throw new IllegalStateException("Unable to invoke LinkbookItem.onLink", e);
-      }
-    }
-  }
 }

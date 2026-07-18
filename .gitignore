@@ -144,11 +144,13 @@ secrets.json
 credentials.json
 
 # Logs & debug
+/logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 debug.log
 *.log
+*.log.gz
 
 # Temporary files
 *.tmp
@@ -156,6 +158,7 @@ debug.log
 .tmp/
 .temp/
 .cache/
+.codegraph/
 .pubspec.yaml.local
 
 # Node (in case of tooling)

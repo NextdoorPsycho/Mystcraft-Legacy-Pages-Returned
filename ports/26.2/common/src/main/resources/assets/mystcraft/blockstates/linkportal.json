@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "mystcraft:block/linkportal_ew"
+    },
+    "axis=y": {
+      "model": "mystcraft:block/linkportal_ud"
+    },
+    "axis=z": {
+      "model": "mystcraft:block/linkportal_ns"
+    }
+  }
+}

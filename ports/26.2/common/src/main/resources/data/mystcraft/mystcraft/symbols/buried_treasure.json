@@ -1,0 +1,25 @@
+{
+  "category": "structure",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": [
+    "Civilization",
+    "Earth",
+    "Treasure",
+    "Hidden"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "buried_treasure_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:buried_treasure",
+      "params": {
+        "rarity": 20
+      }
+    }
+  ]
+}

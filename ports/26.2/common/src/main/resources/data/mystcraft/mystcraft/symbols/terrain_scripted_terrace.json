@@ -1,0 +1,52 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 5.0,
+  "display_name": "Terraced Plateaus",
+  "poem": [
+    "Step",
+    "Level",
+    "Plateau",
+    "Flat"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "terrace",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "mul",
+            "a": {
+              "op": "floor",
+              "input": {
+                "op": "mul",
+                "a": {
+                  "op": "add",
+                  "a": 0.5,
+                  "b": {
+                    "op": "noise2",
+                    "scale": 0.008,
+                    "octaves": 4,
+                    "seed": 4949
+                  }
+                },
+                "b": 8
+              }
+            },
+            "b": 10
+          },
+          "b": {
+            "var": "y"
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 5.0
+    }
+  ]
+}

@@ -32,8 +32,8 @@ import java.util.List;
  * <p>
  * Key differences from Portfolio: - ORDERED: Pages have fixed slot positions
  * (0, 1, 2, ...) - WRITABLE: Can write symbols directly to blank pages inside -
- * STACKABLE: Stacks to 32 when empty (workspace items) - BOOKBINDER: Can be
- * used as a book cover (when empty) - CAPACITY: 16 pages (a working set for Age
+ * NON-STACKING: Stored page NBT always belongs to one physical folder -
+ * BOOKBINDER: Can be used as a book cover (when empty) - CAPACITY: 16 pages (a working set for Age
  * creation)
  * <p>
  * The Folder is designed as a portable workspace for organizing pages at the
@@ -44,11 +44,11 @@ public class FolderItem extends Item implements TooltipCompat {
   public static final int MAX_PAGES = 16;
   private static final String TAG_PAGES = "Pages";
 
-  private static final int STACK_SIZE_EMPTY = 32;
-  private static final int STACK_SIZE_FILLED = 1;
-
   public FolderItem(Properties properties) {
-    super(properties.stacksTo(STACK_SIZE_EMPTY));
+    // Vanilla 1.20 has no cross-loader, per-stack max-size hook. Allowing
+    // empty folders to stack means adding NBT to one mutates the entire stack
+    // into multiple identical filled folders. Keep every NBT container unique.
+    super(properties.stacksTo(1));
   }
 
   /**
@@ -64,7 +64,12 @@ public class FolderItem extends Item implements TooltipCompat {
     for (int i = 0; i < listTag.size(); i++) {
       ItemStack page = ItemStackNbt.load(listTag.getCompound(i));
       if (!page.isEmpty()) {
-        pages.add(page);
+        int count = page.getCount();
+        for (int pageIndex = 0; pageIndex < count; pageIndex++) {
+          ItemStack singlePage = page.copy();
+          singlePage.setCount(1);
+          pages.add(singlePage);
+        }
       }
     }
     return pages;
@@ -76,6 +81,9 @@ public class FolderItem extends Item implements TooltipCompat {
    * @return true if the page was added successfully
    */
   public static boolean addPage(ItemStack folder, ItemStack page) {
+    if (page.isEmpty() || !(page.getItem() instanceof PageItem)) {
+      return false;
+    }
     if (ItemStackNbt.getTag(folder) == null) {
       ItemStackNbt.setTag(folder, new CompoundTag());
     }
@@ -83,7 +91,9 @@ public class FolderItem extends Item implements TooltipCompat {
     if (pages.size() >= MAX_PAGES) {
       return false;
     }
-    pages.add(page.copy());
+    ItemStack singlePage = page.copy();
+    singlePage.setCount(1);
+    pages.add(singlePage);
     setPages(folder, pages);
     return true;
   }
@@ -111,7 +121,12 @@ public class FolderItem extends Item implements TooltipCompat {
     ListTag listTag = new ListTag();
     for (ItemStack page : pages) {
       if (!page.isEmpty()) {
-        listTag.add(ItemStackNbt.save(page));
+        int count = page.getCount();
+        for (int pageIndex = 0; pageIndex < count; pageIndex++) {
+          ItemStack singlePage = page.copy();
+          singlePage.setCount(1);
+          listTag.add(ItemStackNbt.save(singlePage));
+        }
       }
     }
     tag.put(TAG_PAGES, listTag);
@@ -225,6 +240,9 @@ public class FolderItem extends Item implements TooltipCompat {
    * support ORDERED placement - you can put pages at specific positions.
    */
   public static ItemStack setPageAt(ItemStack folder, int index, ItemStack page) {
+    if (index < 0 || index >= MAX_PAGES) {
+      return page;
+    }
     List<ItemStack> pages = getPages(folder);
 
     while (pages.size() <= index) {
@@ -235,13 +253,6 @@ public class FolderItem extends Item implements TooltipCompat {
     pages.set(index, page.copy());
     setPages(folder, pages);
     return displaced;
-  }
-
-  /**
-   * Folders stack to 32 when empty, but only 1 when containing pages.
-   */
-  public int getMaxStackSize(ItemStack stack) {
-    return isEmpty(stack) ? STACK_SIZE_EMPTY : STACK_SIZE_FILLED;
   }
 
   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
@@ -259,6 +270,17 @@ public class FolderItem extends Item implements TooltipCompat {
     ItemStack stack = player.getItemInHand(hand);
 
     if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+      // Repair legacy stacks before any page NBT can be written. Keep the
+      // folder being opened in the selected hand slot and safely redistribute
+      // or drop every additional folder.
+      if (stack.getCount() > 1) {
+        ItemStack extras = stack.copy();
+        extras.setCount(stack.getCount() - 1);
+        stack.setCount(1);
+        if (!player.getInventory().add(extras) && !extras.isEmpty()) {
+          player.drop(extras, false);
+        }
+      }
       int slot = hand == InteractionHand.MAIN_HAND ? player.getInventory().selected : 40;
       MenuProvider provider = new MenuProvider() {
         @Override

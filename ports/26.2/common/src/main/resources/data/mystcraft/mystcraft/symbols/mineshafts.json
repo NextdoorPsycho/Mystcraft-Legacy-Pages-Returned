@@ -1,0 +1,25 @@
+{
+  "category": "structure",
+  "card_rank": 3,
+  "instability_cost": 0.0,
+  "poem": [
+    "Civilization",
+    "Machine",
+    "Motion",
+    "Tradition"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "mineshafts_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:mineshafts",
+      "params": {
+        "rarity": 8
+      }
+    }
+  ]
+}

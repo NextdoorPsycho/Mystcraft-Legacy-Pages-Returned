@@ -89,7 +89,7 @@ public class PortfolioMenu extends AbstractContainerMenu {
   @Override
   public boolean stillValid(@NotNull Player player) {
     ItemStack current = player.getInventory().getItem(portfolioSlot);
-    return !current.isEmpty() && current.getItem() instanceof PortfolioItem;
+    return current == portfolioStack && current.getItem() instanceof PortfolioItem;
   }
 
   @Override
@@ -169,6 +169,8 @@ public class PortfolioMenu extends AbstractContainerMenu {
 
   private static class PortfolioInventoryHandler extends SimpleContainer {
     private final ItemStack portfolio;
+    private final List<ItemStack> overflow = new ArrayList<>();
+    private boolean loading;
 
     public PortfolioInventoryHandler(ItemStack portfolio) {
       super(PortfolioItem.MAX_PAGES);
@@ -181,12 +183,24 @@ public class PortfolioMenu extends AbstractContainerMenu {
      * modifications like sorting.
      */
     public void reloadFromPortfolio() {
-
-      clearContent();
-
-      List<ItemStack> pages = PortfolioItem.getPages(portfolio);
-      for (int i = 0; i < pages.size() && i < getContainerSize(); i++) {
-        setItem(i, pages.get(i).copy());
+      loading = true;
+      try {
+        // clearContent() invokes the overridable setChanged(); the loading
+        // guard prevents a reload from saving an empty list over the NBT it is
+        // about to read.
+        super.clearContent();
+        overflow.clear();
+        List<ItemStack> pages = PortfolioItem.getPages(portfolio);
+        for (int i = 0; i < pages.size(); i++) {
+          ItemStack page = pages.get(i).copy();
+          if (i < getContainerSize()) {
+            setItem(i, page);
+          } else {
+            overflow.add(page);
+          }
+        }
+      } finally {
+        loading = false;
       }
     }
 
@@ -198,13 +212,38 @@ public class PortfolioMenu extends AbstractContainerMenu {
           pages.add(stack.copy());
         }
       }
+      for (ItemStack stack : overflow) {
+        if (!stack.isEmpty()) {
+          pages.add(stack.copy());
+        }
+      }
       PortfolioItem.setPages(portfolio, pages);
     }
 
     @Override
     public void setChanged() {
       super.setChanged();
+      if (loading) {
+        return;
+      }
+      promoteOverflow();
       saveToPortfolio();
+    }
+
+    private void promoteOverflow() {
+      if (overflow.isEmpty()) {
+        return;
+      }
+      loading = true;
+      try {
+        for (int slot = 0; slot < getContainerSize() && !overflow.isEmpty(); slot++) {
+          if (getItem(slot).isEmpty()) {
+            setItem(slot, overflow.remove(0));
+          }
+        }
+      } finally {
+        loading = false;
+      }
     }
 
     @Override

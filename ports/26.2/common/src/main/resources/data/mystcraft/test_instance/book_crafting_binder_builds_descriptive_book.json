@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:book_crafting_binder_builds_descriptive_book",
+  "max_ticks": 40,
+  "structure": "minecraft:empty"
+}

@@ -1,0 +1,59 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "display_name": "Fractured Earth",
+  "poem": [
+    "Break",
+    "Shift",
+    "Fault",
+    "Depth"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "fracture",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 60,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "cell",
+                "mode": "square",
+                "size": 56,
+                "seed": 5480,
+                "min": 0.0,
+                "max": 1.0
+              },
+              "b": 40
+            }
+          },
+          "b": {
+            "op": "add",
+            "a": {
+              "var": "y"
+            },
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "cell_distance",
+                "mode": "square",
+                "size": 56
+              },
+              "b": 25
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 6.0,
+  "display_name": "Comb Walls",
+  "poem": [
+    "Wall",
+    "Thin",
+    "Parallel",
+    "Divide"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "comb",
+        "density": {
+          "op": "mul",
+          "a": {
+            "op": "add",
+            "a": {
+              "op": "sub",
+              "a": 80,
+              "b": {
+                "var": "y"
+              }
+            },
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "noise2",
+                "scale": 0.015,
+                "octaves": 3,
+                "seed": 7272
+              },
+              "b": 15
+            }
+          },
+          "b": {
+            "op": "step",
+            "edge": 0.8,
+            "value": {
+              "op": "fract",
+              "input": {
+                "op": "add",
+                "a": {
+                  "op": "mul",
+                  "a": {
+                    "var": "x"
+                  },
+                  "b": 0.1
+                },
+                "b": {
+                  "op": "mul",
+                  "a": {
+                    "op": "noise2",
+                    "scale": 0.008,
+                    "octaves": 2,
+                    "seed": 3333
+                  },
+                  "b": 0.3
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
+  ]
+}

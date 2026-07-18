@@ -1,0 +1,25 @@
+{
+  "category": "structure",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": [
+    "Civilization",
+    "Ice",
+    "Shelter",
+    "Snow"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "igloos_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:igloos",
+      "params": {
+        "rarity": 48
+      }
+    }
+  ]
+}

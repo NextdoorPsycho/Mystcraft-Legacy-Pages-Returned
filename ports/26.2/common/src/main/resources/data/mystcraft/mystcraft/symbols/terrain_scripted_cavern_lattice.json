@@ -1,0 +1,38 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "display_name": "Cavern Lattice",
+  "poem": [
+    "Stone",
+    "Hollow",
+    "Weave",
+    "Below"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "cavern_lattice",
+        "density": {
+          "op": "sub",
+          "a": 0.45,
+          "b": {
+            "op": "abs",
+            "input": {
+              "op": "noise3",
+              "scale": 0.03,
+              "octaves": 5,
+              "seed": 4242
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

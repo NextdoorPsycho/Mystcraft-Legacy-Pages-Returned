@@ -1,0 +1,36 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 4.0,
+  "display_name": "Fine Tendrils",
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Delicate",
+    "Thread"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "tendrils_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:tendrils",
+      "params": {
+        "count": 1,
+        "min_length": 10,
+        "max_length": 30,
+        "chance": 0.25,
+        "neighbor_range": 4,
+        "min_thickness": 1,
+        "max_thickness": 2
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 4.0
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "display_name": "Needle Spikes",
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Needle",
+    "Pierce"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "spikes_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:spikes",
+      "params": {
+        "count": 1,
+        "min_height": 40,
+        "max_height": 100,
+        "cold_temperature": 0.15,
+        "chance": 0.06
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

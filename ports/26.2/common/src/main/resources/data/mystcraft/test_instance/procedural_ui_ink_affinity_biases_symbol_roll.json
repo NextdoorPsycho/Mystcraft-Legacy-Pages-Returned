@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:procedural_ui_ink_affinity_biases_symbol_roll",
+  "max_ticks": 80,
+  "structure": "minecraft:empty"
+}

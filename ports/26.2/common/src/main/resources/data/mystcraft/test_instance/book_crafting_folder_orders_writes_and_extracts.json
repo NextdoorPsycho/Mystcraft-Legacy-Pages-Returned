@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:book_crafting_folder_orders_writes_and_extracts",
+  "max_ticks": 40,
+  "structure": "minecraft:empty"
+}

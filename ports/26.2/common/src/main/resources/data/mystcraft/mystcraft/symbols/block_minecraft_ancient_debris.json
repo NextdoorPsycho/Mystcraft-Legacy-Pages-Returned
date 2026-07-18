@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 4,
+  "instability_cost": 25.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Fire",
+    "Vein"
+  ],
+  "display_name": "Ancient Debris Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:ancient_debris"
+    },
+    {
+      "type": "add_instability",
+      "value": 25.0
+    }
+  ]
+}

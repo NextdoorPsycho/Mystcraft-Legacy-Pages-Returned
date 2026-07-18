@@ -1,0 +1,52 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 6.0,
+  "display_name": "Staircase Terrain",
+  "poem": [
+    "Step",
+    "Ascend",
+    "Plateau",
+    "Order"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "staircase",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 50,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "floor",
+                "input": {
+                  "op": "mul",
+                  "a": {
+                    "op": "noise2",
+                    "scale": 0.008,
+                    "octaves": 4,
+                    "seed": 6612
+                  },
+                  "b": 6
+                }
+              },
+              "b": 12
+            }
+          },
+          "b": {
+            "var": "y"
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
+  ]
+}

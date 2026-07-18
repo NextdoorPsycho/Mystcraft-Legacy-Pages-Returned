@@ -10,8 +10,16 @@ The project follows a multi-loader structure:
   Fabric-specific implementation for 1.20.1.
 - `forge/`
   Forge-specific implementation for 1.20.1.
+- `ports/26.2/`
+  Isolated Java 25 / Gradle 9.5.1 production build, with its own `common`,
+  `fabric`, and `forge` modules for Minecraft 26.2.
 - `docs/`
   Documentation (see below).
+
+The two common source trees intentionally isolate incompatible Minecraft APIs.
+Behavioral fixes that apply to both targets should be mirrored, while
+loader-specific registration, networking, lifecycle, and client code stays in
+the matching platform module.
 
 ## Docs Directory
 

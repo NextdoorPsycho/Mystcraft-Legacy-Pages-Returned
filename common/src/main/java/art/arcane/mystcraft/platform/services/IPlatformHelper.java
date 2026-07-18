@@ -1,11 +1,17 @@
 package art.arcane.mystcraft.platform.services;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.level.storage.LevelStorageSource;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -28,6 +34,28 @@ public interface IPlatformHelper {
    * environment.
    */
   boolean isDevelopmentEnvironment();
+
+  /**
+   * Returns true when the current process is allowed to load client-only
+   * Minecraft classes.
+   */
+  boolean isClientEnvironment();
+
+  /**
+   * Returns the live server-level map used when registering a dynamic Age.
+   */
+  Map<ResourceKey<Level>, ServerLevel> getLevelMap(MinecraftServer server);
+
+  /**
+   * Returns the current world's storage handle for constructing a dynamic
+   * {@link ServerLevel}.
+   */
+  LevelStorageSource.LevelStorageAccess getLevelStorage(MinecraftServer server);
+
+  /**
+   * Notifies the loader that the set of server levels changed.
+   */
+  void markWorldsDirty(MinecraftServer server);
 
   /**
    * Opens a menu with optional extra data for client-side menu construction.

@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "poem": [
+    "Eye",
+    "Watch",
+    "Gaze",
+    "Dread"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "eyeblight_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:eyeblight"
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

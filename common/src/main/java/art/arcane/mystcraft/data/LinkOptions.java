@@ -4,6 +4,7 @@ import art.arcane.mystcraft.util.ItemStackNbt;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -14,8 +15,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Utility class for reading and writing link data to/from NBT. Handles
- * dimension IDs, spawn positions, display names, and link flags.
+ * Utility class for reading and writing link data to/from NBT. Link fields are
+ * stored directly on the item tag; the legacy nested {@code LinkOptions}
+ * compound is still read and migrated when an instance is saved.
  */
 public class LinkOptions {
 
@@ -40,10 +42,10 @@ public class LinkOptions {
 
   @NotNull
   public static String getDisplayName(@Nullable CompoundTag nbttagcompound) {
-    if (nbttagcompound != null && nbttagcompound.contains("DisplayName")) {
+    if (nbttagcompound != null && nbttagcompound.contains("DisplayName", Tag.TAG_STRING)) {
       return nbttagcompound.getString("DisplayName");
     }
-    if (nbttagcompound != null && nbttagcompound.contains("agename")) {
+    if (nbttagcompound != null && nbttagcompound.contains("agename", Tag.TAG_STRING)) {
       return nbttagcompound.getString("agename");
     }
     return "???";
@@ -58,10 +60,11 @@ public class LinkOptions {
   }
 
   public static boolean getFlag(CompoundTag nbttagcompound, String flag) {
-    if (nbttagcompound != null && getFlagCompound(nbttagcompound).contains(flag)) {
-      return getFlagCompound(nbttagcompound).getBoolean(flag);
+    if (nbttagcompound == null || !nbttagcompound.contains("Flags", Tag.TAG_COMPOUND)) {
+      return false;
     }
-    return false;
+    CompoundTag flags = nbttagcompound.getCompound("Flags");
+    return flags.contains(flag, Tag.TAG_ANY_NUMERIC) && flags.getBoolean(flag);
   }
 
   public static CompoundTag setProperty(CompoundTag nbttagcompound, String flag, String value) {
@@ -79,8 +82,11 @@ public class LinkOptions {
 
   @Nullable
   public static String getProperty(CompoundTag nbttagcompound, String flag) {
-    if (nbttagcompound != null && getPropertyCompound(nbttagcompound).contains(flag)) {
-      return getPropertyCompound(nbttagcompound).getString(flag);
+    if (nbttagcompound != null && nbttagcompound.contains("Props", Tag.TAG_COMPOUND)) {
+      CompoundTag properties = nbttagcompound.getCompound("Props");
+      if (properties.contains(flag, Tag.TAG_STRING)) {
+        return properties.getString(flag);
+      }
     }
     return null;
   }
@@ -95,10 +101,10 @@ public class LinkOptions {
 
   @Nullable
   public static Integer getDimensionUID(CompoundTag nbttagcompound) {
-    if (nbttagcompound != null && nbttagcompound.contains("Dimension")) {
+    if (nbttagcompound != null && nbttagcompound.contains("Dimension", Tag.TAG_ANY_NUMERIC)) {
       return nbttagcompound.getInt("Dimension");
     }
-    if (nbttagcompound != null && nbttagcompound.contains("AgeUID")) {
+    if (nbttagcompound != null && nbttagcompound.contains("AgeUID", Tag.TAG_ANY_NUMERIC)) {
       return nbttagcompound.getInt("AgeUID");
     }
     return null;
@@ -118,8 +124,12 @@ public class LinkOptions {
 
   @Nullable
   public static UUID getUUID(CompoundTag nbttagcompound) {
-    if (nbttagcompound != null && nbttagcompound.contains("TargetUUID")) {
-      return UUID.fromString(nbttagcompound.getString("TargetUUID"));
+    if (nbttagcompound != null && nbttagcompound.contains("TargetUUID", Tag.TAG_STRING)) {
+      try {
+        return UUID.fromString(nbttagcompound.getString("TargetUUID"));
+      } catch (IllegalArgumentException ignored) {
+        return null;
+      }
     }
     return null;
   }
@@ -138,7 +148,10 @@ public class LinkOptions {
 
   @Nullable
   public static BlockPos getSpawn(CompoundTag nbttagcompound) {
-    if (nbttagcompound != null && nbttagcompound.contains("SpawnX") && nbttagcompound.contains("SpawnY") && nbttagcompound.contains("SpawnZ")) {
+    if (nbttagcompound != null
+        && nbttagcompound.contains("SpawnX", Tag.TAG_ANY_NUMERIC)
+        && nbttagcompound.contains("SpawnY", Tag.TAG_ANY_NUMERIC)
+        && nbttagcompound.contains("SpawnZ", Tag.TAG_ANY_NUMERIC)) {
       return new BlockPos(nbttagcompound.getInt("SpawnX"), nbttagcompound.getInt("SpawnY"), nbttagcompound.getInt("SpawnZ"));
     }
     return null;
@@ -153,7 +166,7 @@ public class LinkOptions {
   }
 
   public static float getSpawnYaw(CompoundTag nbttagcompound) {
-    if (nbttagcompound != null && nbttagcompound.contains("SpawnYaw")) {
+    if (nbttagcompound != null && nbttagcompound.contains("SpawnYaw", Tag.TAG_ANY_NUMERIC)) {
       return nbttagcompound.getFloat("SpawnYaw");
     }
     return 180;
@@ -177,7 +190,7 @@ public class LinkOptions {
    */
   @Nullable
   public static Integer getLinkColor(CompoundTag nbttagcompound) {
-    if (nbttagcompound != null && nbttagcompound.contains("LinkColor")) {
+    if (nbttagcompound != null && nbttagcompound.contains("LinkColor", Tag.TAG_ANY_NUMERIC)) {
       return nbttagcompound.getInt("LinkColor");
     }
     return null;
@@ -196,7 +209,7 @@ public class LinkOptions {
 
   @NotNull
   private static CompoundTag getFlagCompound(CompoundTag nbttagcompound) {
-    if (!nbttagcompound.contains("Flags")) {
+    if (!nbttagcompound.contains("Flags", Tag.TAG_COMPOUND)) {
       nbttagcompound.put("Flags", new CompoundTag());
     }
     return nbttagcompound.getCompound("Flags");
@@ -204,7 +217,7 @@ public class LinkOptions {
 
   @NotNull
   private static CompoundTag getPropertyCompound(CompoundTag nbttagcompound) {
-    if (!nbttagcompound.contains("Props")) {
+    if (!nbttagcompound.contains("Props", Tag.TAG_COMPOUND)) {
       nbttagcompound.put("Props", new CompoundTag());
     }
     return nbttagcompound.getCompound("Props");
@@ -224,9 +237,9 @@ public class LinkOptions {
 
   @Nullable
   public static ResourceKey<Level> getDimension(CompoundTag nbttagcompound) {
-    if (nbttagcompound != null && nbttagcompound.contains("DimensionKey")) {
-      String key = nbttagcompound.getString("DimensionKey");
-      return ResourceKey.create(Registries.DIMENSION, new ResourceLocation(key));
+    if (nbttagcompound != null && nbttagcompound.contains("DimensionKey", Tag.TAG_STRING)) {
+      ResourceLocation key = ResourceLocation.tryParse(nbttagcompound.getString("DimensionKey"));
+      return key == null ? null : ResourceKey.create(Registries.DIMENSION, key);
     }
     return null;
   }
@@ -244,7 +257,7 @@ public class LinkOptions {
   }
 
   public static boolean isDead(CompoundTag nbttagcompound) {
-    if (nbttagcompound != null && nbttagcompound.contains("LinkDead")) {
+    if (nbttagcompound != null && nbttagcompound.contains("LinkDead", Tag.TAG_ANY_NUMERIC)) {
       return nbttagcompound.getBoolean("LinkDead");
     }
     return false;
@@ -272,7 +285,7 @@ public class LinkOptions {
    */
   @Nullable
   public static ResourceLocation getCoverItemId(@Nullable CompoundTag nbttagcompound) {
-    if (nbttagcompound != null && nbttagcompound.contains("Cover")) {
+    if (nbttagcompound != null && nbttagcompound.contains("Cover", Tag.TAG_STRING)) {
       String raw = nbttagcompound.getString("Cover");
       if (!raw.isEmpty()) {
         return ResourceLocation.tryParse(raw);
@@ -298,7 +311,7 @@ public class LinkOptions {
    * when the tag is missing so callers can detect "unset".
    */
   public static int getInkTint(@Nullable CompoundTag nbttagcompound) {
-    if (nbttagcompound != null && nbttagcompound.contains("InkTint")) {
+    if (nbttagcompound != null && nbttagcompound.contains("InkTint", Tag.TAG_ANY_NUMERIC)) {
       return nbttagcompound.getInt("InkTint");
     }
     return -1;
@@ -314,8 +327,15 @@ public class LinkOptions {
   public static LinkOptions fromItemStack(ItemStack stack) {
     if (stack.isEmpty()) return null;
     CompoundTag tag = ItemStackNbt.getTag(stack);
-    if (tag == null || !tag.contains(TAG_LINK_OPTIONS)) return null;
-    return new LinkOptions(tag.getCompound(TAG_LINK_OPTIONS));
+    if (tag == null || tag.isEmpty()) return null;
+
+    CompoundTag data = tag.contains(TAG_LINK_OPTIONS, Tag.TAG_COMPOUND)
+        ? tag.getCompound(TAG_LINK_OPTIONS).copy()
+        : new CompoundTag();
+    CompoundTag rootData = tag.copy();
+    rootData.remove(TAG_LINK_OPTIONS);
+    data.merge(rootData);
+    return new LinkOptions(data);
   }
 
   /**
@@ -438,7 +458,8 @@ public class LinkOptions {
   public void toItemStack(ItemStack stack) {
     if (stack.isEmpty()) return;
     CompoundTag tag = ItemStackNbt.getOrCreateTag(stack);
-    tag.put(TAG_LINK_OPTIONS, this.data.copy());
+    tag.merge(this.data.copy());
+    tag.remove(TAG_LINK_OPTIONS);
     ItemStackNbt.setTag(stack, tag);
   }
 }

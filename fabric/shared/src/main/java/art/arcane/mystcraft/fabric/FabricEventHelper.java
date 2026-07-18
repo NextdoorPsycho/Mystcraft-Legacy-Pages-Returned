@@ -4,10 +4,10 @@ import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.SymbolCategory;
 import art.arcane.mystcraft.command.MystcraftCommands;
 import art.arcane.mystcraft.event.*;
-import art.arcane.mystcraft.instability.InstabilityManager;
 import art.arcane.mystcraft.network.FabricNetworkEvents;
 import art.arcane.mystcraft.platform.services.IEventHelper;
 import art.arcane.mystcraft.villager.ArchivistTradeListings;
+import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
@@ -28,7 +28,8 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 
-import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Consolidated Fabric event helper for Mystcraft 1.20.1. Combines:
@@ -43,7 +44,6 @@ public final class FabricEventHelper implements IEventHelper {
   public static void registerAll() {
 
     ServerTickEvents.END_WORLD_TICK.register(level -> {
-      InstabilityManager.onLevelTick(level);
       AgeEffectsHandler.onLevelTick(level);
       PersonalPocketEscapeHandler.tickProxyCleanup(level);
     });
@@ -175,43 +175,17 @@ public final class FabricEventHelper implements IEventHelper {
 
     StructurePoolElement element = StructurePoolElement.legacy(pieceId).apply(StructureTemplatePool.Projection.RIGID);
 
-    try {
-      Field templatesField = findField(StructureTemplatePool.class, "templates");
-      if (templatesField == null) {
-        Mystcraft.LOGGER.warn("[Mystcraft] Could not find templates field for pool {}", poolId);
-        return;
-      }
+    List<Pair<StructurePoolElement, Integer>> rawTemplates = new ArrayList<>(pool.rawTemplates);
+    rawTemplates.add(Pair.of(element, weight));
+    pool.rawTemplates = rawTemplates;
 
-      templatesField.setAccessible(true);
-
-      @SuppressWarnings("unchecked")
-      ObjectArrayList<StructurePoolElement> templates =
-          (ObjectArrayList<StructurePoolElement>) templatesField.get(pool);
-
-      ObjectArrayList<StructurePoolElement> newTemplates = new ObjectArrayList<>(templates);
-      for (int i = 0; i < weight; i++) {
-        newTemplates.add(element);
-      }
-      templatesField.set(pool, newTemplates);
-
-      Mystcraft.LOGGER.debug("[Mystcraft] Added {} to pool {} with weight {}", pieceId, poolId, weight);
-    } catch (Exception e) {
-      Mystcraft.LOGGER.warn("[Mystcraft] Failed to add {} to pool {}: {}", pieceId, poolId, e.getMessage());
+    ObjectArrayList<StructurePoolElement> templates = new ObjectArrayList<>(pool.templates);
+    for (int i = 0; i < weight; i++) {
+      templates.add(element);
     }
-  }
+    pool.templates = templates;
 
-  private static Field findField(Class<?> clazz, String name) {
-    for (Field field : clazz.getDeclaredFields()) {
-      if (field.getName().equals(name)) {
-        return field;
-      }
-    }
-    for (Field field : clazz.getDeclaredFields()) {
-      if (field.getType() == ObjectArrayList.class && name.equals("templates")) {
-        return field;
-      }
-    }
-    return null;
+    Mystcraft.LOGGER.debug("[Mystcraft] Added {} to pool {} with weight {}", pieceId, poolId, weight);
   }
 
   @Override

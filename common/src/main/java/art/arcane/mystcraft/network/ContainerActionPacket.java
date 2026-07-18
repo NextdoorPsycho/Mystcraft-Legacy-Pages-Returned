@@ -8,9 +8,11 @@ import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.item.AgebookItem;
 import art.arcane.mystcraft.item.FolderItem;
 import art.arcane.mystcraft.item.LinkbookItem;
+import art.arcane.mystcraft.item.PageItem;
 import art.arcane.mystcraft.item.PortfolioItem;
 import art.arcane.mystcraft.menu.*;
 import art.arcane.mystcraft.util.ItemStackNbt;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,6 +26,9 @@ import java.util.List;
  * clicks. Used for things like clicking on the Ink Mixer basin to add items.
  */
 public class ContainerActionPacket {
+
+  private static final int MAX_STRING_DATA_LENGTH = 256;
+  private static final int MAX_BOOK_TITLE_LENGTH = 21;
 
   private final Action action;
   private final int containerId;
@@ -55,7 +60,7 @@ public class ContainerActionPacket {
     buf.writeEnum(packet.action);
     buf.writeVarInt(packet.containerId);
     buf.writeBoolean(packet.rightClick);
-    buf.writeUtf(packet.stringData);
+    buf.writeUtf(packet.stringData, MAX_STRING_DATA_LENGTH);
     buf.writeVarInt(packet.intData);
   }
 
@@ -63,7 +68,7 @@ public class ContainerActionPacket {
     Action action = buf.readEnum(Action.class);
     int containerId = buf.readVarInt();
     boolean rightClick = buf.readBoolean();
-    String stringData = buf.readUtf();
+    String stringData = buf.readUtf(MAX_STRING_DATA_LENGTH);
     int intData = buf.readVarInt();
     return new ContainerActionPacket(action, containerId, rightClick, stringData, intData);
   }
@@ -106,6 +111,7 @@ public class ContainerActionPacket {
             handleLinkModifierSetTitle(player, packet.stringData);
         case LINK_MODIFIER_SET_SEED ->
             handleLinkModifierSetSeed(player, packet.stringData);
+        case LINK_MODIFIER_APPLY -> handleLinkModifierApply(player);
         case LINK_MODIFIER_RECYCLE -> handleLinkModifierRecycle(player);
         case FOLDER_ADD_PAGE ->
             handleFolderAddPage(player, packet.intData, packet.rightClick);
@@ -144,7 +150,7 @@ public class ContainerActionPacket {
     }
 
     BookBinderBlockEntity blockEntity = menu.getBlockEntity();
-    blockEntity.setBookTitle(title);
+    blockEntity.setBookTitle(truncateBookTitle(title));
     player.containerMenu.broadcastChanges();
   }
 
@@ -154,7 +160,7 @@ public class ContainerActionPacket {
     }
 
     ItemStack carried = player.containerMenu.getCarried();
-    if (carried.isEmpty()) {
+    if (carried.isEmpty() || !(carried.getItem() instanceof PageItem)) {
       return;
     }
 
@@ -211,7 +217,7 @@ public class ContainerActionPacket {
     }
 
     LinkModifierBlockEntity blockEntity = menu.getBlockEntity();
-    blockEntity.setBookTitle(player, title);
+    blockEntity.setBookTitle(player, truncateBookTitle(title));
     player.containerMenu.broadcastChanges();
   }
 
@@ -222,6 +228,15 @@ public class ContainerActionPacket {
 
     LinkModifierBlockEntity blockEntity = menu.getBlockEntity();
     blockEntity.setItemSeed(player, seed);
+    player.containerMenu.broadcastChanges();
+  }
+
+  private static void handleLinkModifierApply(ServerPlayer player) {
+    if (!(player.containerMenu instanceof LinkModifierMenu menu)) {
+      return;
+    }
+
+    menu.getBlockEntity().performModification();
     player.containerMenu.broadcastChanges();
   }
 
@@ -241,7 +256,7 @@ public class ContainerActionPacket {
     }
 
     ItemStack carried = player.containerMenu.getCarried();
-    if (carried.isEmpty()) {
+    if (carried.isEmpty() || !(carried.getItem() instanceof PageItem)) {
       return;
     }
 
@@ -262,10 +277,10 @@ public class ContainerActionPacket {
         return;
       }
       ItemStack single = carried.split(1);
-      pages.add(Math.min(index, pages.size()), single);
+      pages.add(clampInsertionIndex(index, pages.size()), single);
     } else {
 
-      int insertIndex = Math.min(index, pages.size());
+      int insertIndex = clampInsertionIndex(index, pages.size());
       while (!carried.isEmpty()) {
         if (maxSymbols >= 0 && pages.size() >= maxSymbols) {
           break;
@@ -329,7 +344,7 @@ public class ContainerActionPacket {
     }
 
     ItemStack carried = player.containerMenu.getCarried();
-    if (carried.isEmpty()) {
+    if (carried.isEmpty() || !(carried.getItem() instanceof PageItem)) {
       return;
     }
 
@@ -388,7 +403,7 @@ public class ContainerActionPacket {
     }
 
     ResourceLocation symbol = ResourceLocation.tryParse(symbolId);
-    if (symbol == null) {
+    if (symbol == null || art.arcane.mystcraft.symbol.SymbolRegistry.get(symbol) == null) {
       return;
     }
 
@@ -410,12 +425,12 @@ public class ContainerActionPacket {
     }
 
     if (writingItem.getItem() instanceof AgebookItem) {
-      var tag = ItemStackNbt.getOrCreateTag(writingItem);
-      LinkOptions.setDisplayName(tag, title);
+      CompoundTag tag = ItemStackNbt.getOrCreateTag(writingItem);
+      LinkOptions.setDisplayName(tag, truncateBookTitle(title));
       ItemStackNbt.setTag(writingItem, tag);
       blockEntity.setChanged();
     } else if (writingItem.getItem() instanceof LinkbookItem linkbook) {
-      linkbook.setDisplayName(writingItem, title);
+      linkbook.setDisplayName(writingItem, truncateBookTitle(title));
       blockEntity.setChanged();
     }
 
@@ -428,7 +443,7 @@ public class ContainerActionPacket {
     }
 
     ItemStack carried = player.containerMenu.getCarried();
-    if (carried.isEmpty()) {
+    if (carried.isEmpty() || !(carried.getItem() instanceof PageItem)) {
       return;
     }
 
@@ -442,12 +457,12 @@ public class ContainerActionPacket {
     if (singleItem) {
       ItemStack single = carried.split(1);
       if (pages.size() < FolderItem.MAX_PAGES) {
-        pages.add(Math.min(index, pages.size()), single);
+        pages.add(clampInsertionIndex(index, pages.size()), single);
       } else {
         carried.grow(1);
       }
     } else {
-      int insertIndex = Math.min(index, pages.size());
+      int insertIndex = clampInsertionIndex(index, pages.size());
       while (!carried.isEmpty() && pages.size() < FolderItem.MAX_PAGES) {
         ItemStack single = carried.split(1);
         pages.add(insertIndex++, single);
@@ -455,6 +470,7 @@ public class ContainerActionPacket {
     }
 
     FolderItem.setPages(folder, pages);
+    menu.reloadFromFolder();
     player.containerMenu.setCarried(carried.isEmpty() ? ItemStack.EMPTY : carried);
     player.containerMenu.broadcastChanges();
   }
@@ -481,6 +497,7 @@ public class ContainerActionPacket {
 
     ItemStack removed = pages.remove(index);
     FolderItem.setPages(folder, pages);
+    menu.reloadFromFolder();
 
     if (!removed.isEmpty()) {
       player.containerMenu.setCarried(removed);
@@ -498,6 +515,16 @@ public class ContainerActionPacket {
     menu.reloadFromPortfolio();
 
     player.containerMenu.broadcastChanges();
+  }
+
+  private static String truncateBookTitle(String title) {
+    return title.length() <= MAX_BOOK_TITLE_LENGTH
+        ? title
+        : title.substring(0, MAX_BOOK_TITLE_LENGTH);
+  }
+
+  private static int clampInsertionIndex(int index, int size) {
+    return Math.max(0, Math.min(index, size));
   }
 
   public enum Action {
@@ -518,6 +545,7 @@ public class ContainerActionPacket {
     LINK_MODIFIER_RECYCLE,
     FOLDER_ADD_PAGE,
     FOLDER_REMOVE_PAGE,
-    PORTFOLIO_SORT
+    PORTFOLIO_SORT,
+    LINK_MODIFIER_APPLY
   }
 }

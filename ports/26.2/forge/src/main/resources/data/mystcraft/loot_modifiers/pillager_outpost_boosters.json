@@ -1,0 +1,7 @@
+{
+  "type": "mystcraft:booster_pack",
+  "conditions": [{"condition": "forge:loot_table_id", "loot_table_id": "minecraft:chests/pillager_outpost"}],
+  "chance": 0.35,
+  "min_count": 1,
+  "max_count": 2
+}

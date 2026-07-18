@@ -1,0 +1,19 @@
+{
+  "items": [
+    "minecraft:prismarine_crystals"
+  ],
+  "amount_per_item": 0.5,
+  "tier_bonus": 0,
+  "category_weights": {
+    "sea": 0.3,
+    "feature_medium": 0.2
+  },
+  "poem_token_weights": {
+    "Wet": 0.2,
+    "Sea": 0.4,
+    "Ocean": 0.4
+  },
+  "link_property_weights": {
+    "generate_platform": 0.2
+  }
+}

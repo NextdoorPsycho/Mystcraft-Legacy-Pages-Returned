@@ -105,7 +105,9 @@ public class CorruptedColumnsPopulator implements IPopulate {
       columnX[c] = clusterCenterX + offsetX;
       columnZ[c] = clusterCenterZ + offsetZ;
 
-      int colSurfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, columnX[c], columnZ[c]) - 1;
+      int colSurfaceY = isInWritableColumn(columnX[c], columnZ[c], chunkPos)
+          ? world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, columnX[c], columnZ[c]) - 1
+          : Integer.MIN_VALUE;
       columnSurfaceY[c] = colSurfaceY;
 
       int fullHeight = minHeight + random.nextInt(maxHeight - minHeight + 1);
@@ -126,6 +128,9 @@ public class CorruptedColumnsPopulator implements IPopulate {
     }
 
     for (int c = 0; c < columnCount; c++) {
+      if (columnSurfaceY[c] == Integer.MIN_VALUE) {
+        continue;
+      }
       BlockState ground = world.getBlockState(new BlockPos(columnX[c], columnSurfaceY[c], columnZ[c]));
       if (!ground.isSolid() || ground.is(BlockTags.LEAVES)) {
         continue;
@@ -158,11 +163,11 @@ public class CorruptedColumnsPopulator implements IPopulate {
     }
 
     for (int a = 0; a < columnCount; a++) {
-      if (columnBroken[a]) {
+      if (columnBroken[a] || columnSurfaceY[a] == Integer.MIN_VALUE) {
         continue;
       }
       for (int b = a + 1; b < columnCount; b++) {
-        if (columnBroken[b]) {
+        if (columnBroken[b] || columnSurfaceY[b] == Integer.MIN_VALUE) {
           continue;
         }
         double dist = Math.sqrt(
@@ -214,6 +219,9 @@ public class CorruptedColumnsPopulator implements IPopulate {
       int rx = centerX + dx;
       int rz = centerZ + dz;
 
+      if (!isInWritableColumn(rx, rz, chunkPos)) {
+        continue;
+      }
       int rSurfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, rx, rz) - 1;
       if (rSurfaceY <= world.getMinBuildHeight() + 1) {
         continue;

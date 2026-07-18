@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 /**
@@ -34,9 +35,12 @@ public class AgeManager extends SavedData {
   private static final String TAG_UID = "UID";
   private static final String TAG_UUID = "UUID";
   private static final String TAG_DIMENSION = "Dimension";
+  private static final String TAG_DEFINITION = "Definition";
   private final Map<Integer, ResourceLocation> ageUIDtoDimension = new HashMap<>();
   private final Map<ResourceLocation, Integer> dimensionToAgeUID = new HashMap<>();
   private final Map<UUID, Integer> ageUUIDtoUID = new HashMap<>();
+  private final Map<Integer, UUID> ageUIDtoUUID = new HashMap<>();
+  private final Map<Integer, AgeDefinition> ageDefinitions = new HashMap<>();
   private int nextUID = 1000;
 
   public AgeManager() {
@@ -85,6 +89,8 @@ public class AgeManager extends SavedData {
     this.ageUIDtoDimension.clear();
     this.dimensionToAgeUID.clear();
     this.ageUUIDtoUID.clear();
+    this.ageUIDtoUUID.clear();
+    this.ageDefinitions.clear();
 
     ListTag agesList = tag.getList(TAG_AGES, Tag.TAG_COMPOUND);
     for (int i = 0; i < agesList.size(); i++) {
@@ -93,16 +99,38 @@ public class AgeManager extends SavedData {
       String dimStr = ageTag.getString(TAG_DIMENSION);
 
       if (uid > 0 && !dimStr.isEmpty()) {
-        ResourceLocation dimLoc = new ResourceLocation(dimStr);
+        ResourceLocation dimLoc = ResourceLocation.tryParse(dimStr);
+        if (dimLoc == null) {
+          Mystcraft.LOGGER.error("Ignoring Age {} with invalid dimension ID '{}'", uid, dimStr);
+          continue;
+        }
+        if (dimensionToAgeUID.containsKey(dimLoc) || ageUIDtoDimension.containsKey(uid)) {
+          Mystcraft.LOGGER.error("Ignoring duplicate AgeManager entry {} -> {}", uid, dimLoc);
+          continue;
+        }
         ageUIDtoDimension.put(uid, dimLoc);
         dimensionToAgeUID.put(dimLoc, uid);
 
-        if (ageTag.contains(TAG_UUID)) {
+        if (ageTag.contains(TAG_UUID, Tag.TAG_STRING)) {
           try {
             UUID uuid = UUID.fromString(ageTag.getString(TAG_UUID));
-            ageUUIDtoUID.put(uuid, uid);
+            if (ageUUIDtoUID.containsKey(uuid)) {
+              Mystcraft.LOGGER.error("Ignoring duplicate UUID {} for Age {}", uuid, uid);
+            } else {
+              ageUUIDtoUID.put(uuid, uid);
+              ageUIDtoUUID.put(uid, uuid);
+            }
           } catch (IllegalArgumentException e) {
             Mystcraft.LOGGER.error("Failed to parse UUID for age {}: {}", uid, ageTag.getString(TAG_UUID));
+          }
+        }
+
+        if (ageTag.contains(TAG_DEFINITION, Tag.TAG_COMPOUND)) {
+          AgeDefinition definition = AgeDefinition.load(ageTag.getCompound(TAG_DEFINITION));
+          if (definition != null) {
+            ageDefinitions.put(uid, definition);
+          } else {
+            Mystcraft.LOGGER.error("Age {} has an invalid persisted generation definition", uid);
           }
         }
       }
@@ -115,15 +143,12 @@ public class AgeManager extends SavedData {
     tag.putInt(TAG_NEXT_UID, nextUID);
 
     Map<Integer, ResourceLocation> ageMap;
-    Map<UUID, Integer> uuidMap;
+    Map<Integer, UUID> uuidMap;
+    Map<Integer, AgeDefinition> definitionMap;
     synchronized (this) {
-      ageMap = new HashMap<>(ageUIDtoDimension);
-      uuidMap = new HashMap<>(ageUUIDtoUID);
-    }
-
-    Map<Integer, UUID> uidToUUID = new HashMap<>();
-    for (Map.Entry<UUID, Integer> entry : uuidMap.entrySet()) {
-      uidToUUID.put(entry.getValue(), entry.getKey());
+      ageMap = new TreeMap<>(ageUIDtoDimension);
+      uuidMap = new HashMap<>(ageUIDtoUUID);
+      definitionMap = new HashMap<>(ageDefinitions);
     }
 
     ListTag agesList = new ListTag();
@@ -133,9 +158,14 @@ public class AgeManager extends SavedData {
       ageTag.putInt(TAG_UID, uid);
       ageTag.putString(TAG_DIMENSION, entry.getValue().toString());
 
-      UUID uuid = uidToUUID.get(uid);
+      UUID uuid = uuidMap.get(uid);
       if (uuid != null) {
         ageTag.putString(TAG_UUID, uuid.toString());
+      }
+
+      AgeDefinition definition = definitionMap.get(uid);
+      if (definition != null) {
+        ageTag.put(TAG_DEFINITION, definition.save());
       }
 
       agesList.add(ageTag);
@@ -154,6 +184,12 @@ public class AgeManager extends SavedData {
    * Allocates a new age UID.
    */
   public synchronized int allocateUID() {
+    while (ageUIDtoDimension.containsKey(nextUID)) {
+      if (nextUID == Integer.MAX_VALUE) {
+        throw new IllegalStateException("No free Mystcraft Age UIDs remain");
+      }
+      nextUID++;
+    }
     int uid = nextUID++;
     setDirty();
     return uid;
@@ -163,13 +199,70 @@ public class AgeManager extends SavedData {
    * Registers a new age.
    */
   public synchronized void registerAge(int uid, ResourceLocation dimension, @Nullable UUID uuid) {
-    ageUIDtoDimension.put(uid, dimension);
+    registerAge(uid, dimension, uuid, null);
+  }
+
+  /**
+   * Registers an Age together with the durable inputs needed to recreate its
+   * chunk generator after a restart.
+   */
+  public synchronized void registerAge(
+      int uid,
+      @NotNull ResourceLocation dimension,
+      @Nullable UUID uuid,
+      @Nullable AgeDefinition definition
+  ) {
+    if (uid <= 0) {
+      throw new IllegalArgumentException("Age UID must be positive: " + uid);
+    }
+    Integer dimensionOwner = dimensionToAgeUID.get(dimension);
+    if (dimensionOwner != null && dimensionOwner != uid) {
+      throw new IllegalStateException(
+          "Dimension " + dimension + " is already registered to Age " + dimensionOwner
+      );
+    }
+    if (uuid != null) {
+      Integer uuidOwner = ageUUIDtoUID.get(uuid);
+      if (uuidOwner != null && uuidOwner != uid) {
+        throw new IllegalStateException("UUID " + uuid + " is already registered to Age " + uuidOwner);
+      }
+    }
+
+    ResourceLocation previousDimension = ageUIDtoDimension.put(uid, dimension);
+    if (previousDimension != null && !previousDimension.equals(dimension)) {
+      dimensionToAgeUID.remove(previousDimension);
+    }
     dimensionToAgeUID.put(dimension, uid);
+
+    UUID previousUUID = ageUIDtoUUID.remove(uid);
+    if (previousUUID != null) {
+      ageUUIDtoUID.remove(previousUUID);
+    }
     if (uuid != null) {
       ageUUIDtoUID.put(uuid, uid);
+      ageUIDtoUUID.put(uid, uuid);
+    }
+    if (definition != null) {
+      ageDefinitions.put(uid, definition);
     }
     setDirty();
     Mystcraft.LOGGER.info("Registered age {} for dimension {}", uid, dimension);
+  }
+
+  /**
+   * Removes a partially-created Age registration without reusing its UID.
+   */
+  public synchronized void unregisterAge(int uid) {
+    ResourceLocation dimension = ageUIDtoDimension.remove(uid);
+    if (dimension != null) {
+      dimensionToAgeUID.remove(dimension);
+    }
+    UUID uuid = ageUIDtoUUID.remove(uid);
+    if (uuid != null) {
+      ageUUIDtoUID.remove(uuid);
+    }
+    ageDefinitions.remove(uid);
+    setDirty();
   }
 
   /**
@@ -199,6 +292,64 @@ public class AgeManager extends SavedData {
    */
   public synchronized int getAgeUIDByUUID(UUID uuid) {
     return ageUUIDtoUID.getOrDefault(uuid, 0);
+  }
+
+  /**
+   * Gets the persistent UUID for an Age.
+   */
+  @Nullable
+  public synchronized UUID getAgeUUID(int uid) {
+    return ageUIDtoUUID.get(uid);
+  }
+
+  /**
+   * Gets the persisted generation definition for an Age.
+   */
+  @Nullable
+  public synchronized AgeDefinition getDefinition(int uid) {
+    return ageDefinitions.get(uid);
+  }
+
+  /**
+   * Returns the persisted definition, importing the old per-Age SavedData
+   * format once when necessary.
+   */
+  @Nullable
+  public AgeDefinition getOrRecoverDefinition(@NotNull MinecraftServer server, int uid) {
+    ResourceLocation dimension;
+    synchronized (this) {
+      AgeDefinition definition = ageDefinitions.get(uid);
+      if (definition != null) {
+        return definition;
+      }
+      dimension = ageUIDtoDimension.get(uid);
+    }
+    if (dimension == null) {
+      return null;
+    }
+
+    AgeDefinition.LegacyMigration migration = AgeDefinition.loadLegacy(server, uid, dimension);
+    if (migration == null) {
+      return null;
+    }
+
+    synchronized (this) {
+      AgeDefinition existing = ageDefinitions.get(uid);
+      if (existing != null) {
+        return existing;
+      }
+      ageDefinitions.put(uid, migration.definition());
+      if (migration.ageUUID() != null && !ageUUIDtoUID.containsKey(migration.ageUUID())) {
+        UUID previousUUID = ageUIDtoUUID.put(uid, migration.ageUUID());
+        if (previousUUID != null) {
+          ageUUIDtoUID.remove(previousUUID);
+        }
+        ageUUIDtoUID.put(migration.ageUUID(), uid);
+      }
+      setDirty();
+      Mystcraft.LOGGER.info("Migrated persistent generation definition for Age {}", uid);
+      return migration.definition();
+    }
   }
 
   /**
@@ -249,6 +400,8 @@ public class AgeManager extends SavedData {
     ageUIDtoDimension.clear();
     dimensionToAgeUID.clear();
     ageUUIDtoUID.clear();
+    ageUIDtoUUID.clear();
+    ageDefinitions.clear();
     nextUID = 1000;
     setDirty();
   }

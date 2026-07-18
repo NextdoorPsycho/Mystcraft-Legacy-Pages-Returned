@@ -49,6 +49,16 @@ public final class PocketHeadUtils {
       new PaletteEntry("minecraft:black_wool", 0x1D1D21)
   };
 
+  private static final Set<String> ALLOWED_HEAD_BLOCK_IDS;
+
+  static {
+    Set<String> allowed = new HashSet<>();
+    for (PaletteEntry entry : PALETTE) {
+      allowed.add(entry.blockId);
+    }
+    ALLOWED_HEAD_BLOCK_IDS = Collections.unmodifiableSet(allowed);
+  }
+
   private PocketHeadUtils() {
   }
 
@@ -128,8 +138,21 @@ public final class PocketHeadUtils {
       if (list == null || list.size() != FACE_PIXELS) {
         return false;
       }
+      for (String blockId : list) {
+        if (!isAllowedHeadBlockId(blockId)) {
+          return false;
+        }
+      }
     }
     return true;
+  }
+
+  /**
+   * Returns whether a client-supplied pocket-head pixel is one of the wool
+   * blocks produced by this class's skin palette.
+   */
+  public static boolean isAllowedHeadBlockId(@Nullable String blockId) {
+    return blockId != null && ALLOWED_HEAD_BLOCK_IDS.contains(blockId);
   }
 
   private static GameProfile resolveProfile(MinecraftServer server, UUID owner) {
@@ -139,14 +162,10 @@ public final class PocketHeadUtils {
       profile = cached.orElse(profile);
     }
     try {
-      Object sessionService = server.getSessionService();
-      java.lang.reflect.Method fill = sessionService.getClass().getMethod("fillProfileProperties", GameProfile.class, boolean.class);
-      Object filled = fill.invoke(sessionService, profile, true);
-      if (filled instanceof GameProfile filledProfile) {
-        return filledProfile;
-      }
+      GameProfile filled = server.getSessionService().fillProfileProperties(profile, true);
+      return filled != null ? filled : profile;
     } catch (Exception e) {
-      Mystcraft.LOGGER.debug("[PocketHead] fillProfileProperties unavailable or failed for {}", owner);
+      Mystcraft.LOGGER.debug("[PocketHead] Failed to fill profile properties for {}", owner);
     }
     return profile;
   }
@@ -162,14 +181,10 @@ public final class PocketHeadUtils {
     }
     GameProfile profile = cached.get();
     try {
-      Object sessionService = server.getSessionService();
-      java.lang.reflect.Method fill = sessionService.getClass().getMethod("fillProfileProperties", GameProfile.class, boolean.class);
-      Object filled = fill.invoke(sessionService, profile, true);
-      if (filled instanceof GameProfile filledProfile) {
-        return filledProfile;
-      }
+      GameProfile filled = server.getSessionService().fillProfileProperties(profile, true);
+      return filled != null ? filled : profile;
     } catch (Exception e) {
-      Mystcraft.LOGGER.debug("[PocketHead] fillProfileProperties unavailable or failed for {}", name);
+      Mystcraft.LOGGER.debug("[PocketHead] Failed to fill profile properties for {}", name);
     }
     return profile;
   }
@@ -314,32 +329,7 @@ public final class PocketHeadUtils {
   }
 
   private static String getPropertyValue(Property property) {
-    try {
-      java.lang.reflect.Method method = property.getClass().getMethod("getValue");
-      Object value = method.invoke(property);
-      if (value instanceof String str) {
-        return str;
-      }
-    } catch (Exception ignored) {
-    }
-    try {
-      java.lang.reflect.Method method = property.getClass().getMethod("value");
-      Object value = method.invoke(property);
-      if (value instanceof String str) {
-        return str;
-      }
-    } catch (Exception ignored) {
-    }
-    try {
-      java.lang.reflect.Field field = property.getClass().getDeclaredField("value");
-      field.setAccessible(true);
-      Object value = field.get(property);
-      if (value instanceof String str) {
-        return str;
-      }
-    } catch (Exception ignored) {
-    }
-    return null;
+    return property.getValue();
   }
 
   private static BufferedImage downloadSkin(String url) {

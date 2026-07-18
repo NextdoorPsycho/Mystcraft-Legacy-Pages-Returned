@@ -1,6 +1,6 @@
 package art.arcane.mystcraft.platform.services;
 
-import net.minecraft.advancements.CriterionTrigger;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Factory for creating advancement criterion triggers for the supported 1.20.1
@@ -9,53 +9,23 @@ import net.minecraft.advancements.CriterionTrigger;
 public interface IAdvancementTriggerFactory {
 
   /**
-   * Creates the EnterMystDimensionSafeTrigger for this version. Triggers when a
-   * player enters a Mystcraft dimension with a return linkbook.
-   *
-   * @return The criterion trigger
-   */
-  CriterionTrigger<?> createEnterMystDimensionSafeTrigger();
-
-  /**
-   * Creates the EnterMystDimensionQuinnTrigger for this version. Triggers when
-   * a player enters a Mystcraft dimension without a return linkbook.
-   *
-   * @return The criterion trigger
-   */
-  CriterionTrigger<?> createEnterMystDimensionQuinnTrigger();
-
-  /**
-   * Creates the WritingDeskWriteTrigger for this version. Triggers when a
-   * player writes on a page at the writing desk.
-   *
-   * @return The criterion trigger
-   */
-  CriterionTrigger<?> createWritingDeskWriteTrigger();
-
-  /**
    * Registers all advancement triggers with the vanilla CriteriaTriggers
    * registry. Uses version-appropriate registration method.
    */
   void registerTriggers();
 
   /**
-   * Gets the EnterMystDimensionSafeTrigger instance after registration.
-   *
-   * @return The registered trigger, cast appropriately for the version
+   * Triggers the safe-entry criterion for a player who carried a return book.
    */
-  Object getEnterMystDimensionSafeTrigger();
+  void triggerEnterMystDimensionSafe(ServerPlayer player);
 
   /**
-   * Gets the EnterMystDimensionQuinnTrigger instance after registration.
-   *
-   * @return The registered trigger, cast appropriately for the version
+   * Triggers the Quinn-entry criterion for a player without a return book.
    */
-  Object getEnterMystDimensionQuinnTrigger();
+  void triggerEnterMystDimensionQuinn(ServerPlayer player);
 
   /**
-   * Gets the WritingDeskWriteTrigger instance after registration.
-   *
-   * @return The registered trigger, cast appropriately for the version
+   * Triggers the writing-desk criterion after a successful page write.
    */
-  Object getWritingDeskWriteTrigger();
+  void triggerWritingDeskWrite(ServerPlayer player);
 }

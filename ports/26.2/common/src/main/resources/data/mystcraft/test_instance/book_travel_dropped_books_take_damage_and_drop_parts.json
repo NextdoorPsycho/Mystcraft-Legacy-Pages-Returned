@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:book_travel_dropped_books_take_damage_and_drop_parts",
+  "max_ticks": 40,
+  "structure": "minecraft:empty"
+}

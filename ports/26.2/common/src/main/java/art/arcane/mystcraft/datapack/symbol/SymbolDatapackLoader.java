@@ -1,0 +1,161 @@
+package art.arcane.mystcraft.datapack.symbol;
+
+import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.config.MystcraftConfig;
+import art.arcane.mystcraft.datapack.grammar.GrammarDatapackLoader;
+import art.arcane.mystcraft.grammar.CFGGrammarGenerator;
+import art.arcane.mystcraft.grammar.GrammarRules;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Applies datapack symbol definitions to the live registry.
+ */
+public final class SymbolDatapackLoader {
+
+  private SymbolDatapackLoader() {
+  }
+
+  public static void apply(Map<Identifier, JsonElement> elements,
+                           Map<Identifier, JsonElement> grammarRules) {
+    Mystcraft.LOGGER.info("[Datapack] SymbolDatapackLoader.apply() starting");
+    applySymbolBlacklist();
+    Mystcraft.LOGGER.info("[Datapack] Blacklist applied, resetting to static symbols");
+    SymbolRegistry.resetToStatic();
+    Mystcraft.LOGGER.info("[Datapack] Registry reset, resetting grammar");
+    CFGGrammarGenerator.reset();
+    Mystcraft.LOGGER.info("[Datapack] Grammar reset, registering base rules");
+    GrammarRules.registerBaseRules();
+    Mystcraft.LOGGER.info("[Datapack] Base rules registered, applying datapack grammar rules");
+    GrammarDatapackLoader.applyRules(grammarRules);
+
+    registerFluidSeaSymbols();
+
+    int applied = 0;
+    for (Map.Entry<Identifier, JsonElement> entry : elements.entrySet()) {
+      if (!entry.getValue().isJsonObject()) continue;
+      Identifier id = entry.getKey();
+      JsonObject json = entry.getValue().getAsJsonObject();
+      SymbolDefinition definition = SymbolDefinition.fromJson(id, json);
+      if (definition == null) {
+        continue;
+      }
+      DataSymbol symbol = new DataSymbol(
+          definition.id,
+          definition.category,
+          definition.cardRank,
+          definition.instabilityCost,
+          definition.poem,
+          definition.allowRandom,
+          definition.canDuplicate,
+          definition.grammarMode,
+          definition.grammarToken,
+          definition.grammarRank,
+          definition.logic,
+          definition.displayName,
+          definition.display
+      );
+      boolean registered = SymbolRegistry.register(symbol, definition.replace);
+      if (registered) {
+        applied++;
+      }
+    }
+
+    Mystcraft.LOGGER.info("[Datapack] Symbol registration complete, building grammar...");
+    CFGGrammarGenerator.buildGrammar();
+    Mystcraft.LOGGER.info("[Datapack] Grammar built, freezing registry");
+    SymbolRegistry.freeze();
+
+    Mystcraft.LOGGER.info("[Datapack] Applied {} symbol definitions", applied);
+  }
+
+  private static void applySymbolBlacklist() {
+    SymbolRegistry.clearBlacklist();
+    List<String> disabled = MystcraftConfig.disabledSymbols.get();
+    if (disabled == null || disabled.isEmpty()) {
+      return;
+    }
+    for (String raw : disabled) {
+      if (raw == null || raw.isBlank()) {
+        continue;
+      }
+      if (Identifier.tryParse(raw) == null) {
+        Mystcraft.LOGGER.warn("[Datapack] Invalid symbol id in disabledSymbols: {}", raw);
+        continue;
+      }
+      SymbolRegistry.blacklist(Identifier.parse(raw));
+    }
+  }
+
+  private static void registerFluidSeaSymbols() {
+    int count = 0;
+    for (Fluid fluid : BuiltInRegistries.FLUID) {
+      if (fluid == Fluids.EMPTY) continue;
+      FluidState state = fluid.defaultFluidState();
+      if (!state.isSource()) continue;
+      Identifier fluidId = BuiltInRegistries.FLUID.getKey(fluid);
+      if (fluidId == null) continue;
+
+      boolean isWater = fluid == Fluids.WATER;
+      boolean isLava = fluid == Fluids.LAVA;
+
+      int cardRank = isWater ? 1 : (isLava ? 4 : 3);
+      float instability = isWater ? 0.0f : (isLava ? 25.0f : 15.0f);
+      String[] poem = isWater
+          ? new String[]{"Terrain", "Water", "Flow", "Sea"}
+          : (isLava ? new String[]{"Terrain", "Fire", "Flow", "Chaos"}
+             : new String[]{"Terrain", "Liquid", "Flow", "Strange"});
+
+      String symbolPath = "sea_" + fluidId.getNamespace() + "_" + fluidId.getPath();
+      Identifier symbolId = SymbolRegistry.mystcraftId(symbolPath);
+      String displayName = formatDisplayName(fluidId.getPath()) + " Sea";
+
+      SymbolLogic logic = (director, seed) ->
+          director.setSeaBlock(state.createLegacyBlock());
+
+      DataSymbol symbol = new DataSymbol(
+          symbolId,
+          art.arcane.mystcraft.api.symbol.SymbolCategory.SEA,
+          cardRank,
+          instability,
+          poem,
+          true,
+          false,
+          art.arcane.mystcraft.api.symbol.GrammarBindingMode.DEFAULT,
+          null,
+          null,
+          List.of(logic),
+          displayName
+      );
+      if (SymbolRegistry.register(symbol)) {
+        count++;
+      }
+    }
+    Mystcraft.LOGGER.info("[Datapack] Registered {} fluid sea symbols", count);
+  }
+
+  private static String formatDisplayName(String path) {
+    String[] parts = path.split("_");
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < parts.length; i++) {
+      if (i > 0) builder.append(' ');
+      String part = parts[i];
+      if (!part.isEmpty()) {
+        builder.append(Character.toUpperCase(part.charAt(0)));
+        if (part.length() > 1) {
+          builder.append(part.substring(1));
+        }
+      }
+    }
+    return builder.toString();
+  }
+}

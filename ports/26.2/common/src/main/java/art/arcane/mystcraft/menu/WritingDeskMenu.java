@@ -1,0 +1,260 @@
+package art.arcane.mystcraft.menu;
+
+import art.arcane.mystcraft.blockentity.WritingDeskBlockEntity;
+import art.arcane.mystcraft.registry.ModBlocks;
+import art.arcane.mystcraft.registry.ModMenuTypes;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.DataSlot;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Menu for the Writing Desk block. Provides access to writing slot, paper slot,
+ * ink container slots, tab slots, and displays ink level.
+ * <p>
+ * Layout: xShift=233 (right panel offset), yShift=20 (button bar + gap)
+ */
+public class WritingDeskMenu extends AbstractContainerMenu {
+
+  public static final int X_SHIFT = 228 + 5;
+  public static final int Y_SHIFT = 20;
+  public static final int TAB_SLOT_COUNT = 4;
+
+  public static final int TAB_SLOTS_START = 0;
+  public static final int TAB_SLOTS_END = TAB_SLOT_COUNT;
+
+  public static final int SLOT_WRITING = TAB_SLOTS_END;
+  public static final int SLOT_PAPER = TAB_SLOTS_END + 1;
+  public static final int SLOT_CONTAINER_IN = TAB_SLOTS_END + 2;
+  public static final int SLOT_CONTAINER_OUT = TAB_SLOTS_END + 3;
+  public static final int BLOCK_ENTITY_SLOTS = TAB_SLOTS_END + 4;
+
+  private static final int PLAYER_INVENTORY_START = BLOCK_ENTITY_SLOTS;
+  private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
+  private static final int PLAYER_HOTBAR_END = PLAYER_INVENTORY_END + 9;
+  private final WritingDeskBlockEntity blockEntity;
+  private final ContainerLevelAccess access;
+  private final DataSlot inkAmountData;
+  private final DataSlot inkCapacityData;
+
+  /**
+   * Client-side constructor - called from ScreenConstructor.
+   */
+  public WritingDeskMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
+    this(containerId, playerInventory, getBlockEntity(playerInventory, extraData));
+  }
+
+  /**
+   * Server-side constructor. Slot positions: - Tab slots (4 visible): x=37,
+   * y=14+i*37+yShift for i=0..3 - Main slot 0 (target): (8+xShift, 60+yShift) =
+   * (241, 80) - Main slot 1 (paper): (8+xShift, 8+yShift) = (241, 28) - Main
+   * slot 2 (container in): (152+xShift, 8+yShift) = (385, 28) - Main slot 3
+   * (container out): (152+xShift, 60+yShift) = (385, 80) - Player inv:
+   * (8+xShift, 84+i*18+yShift) starts at (241, 104) - Hotbar: (8+xShift,
+   * 142+yShift) = (241, 162)
+   */
+  public WritingDeskMenu(int containerId, Inventory playerInventory, WritingDeskBlockEntity blockEntity) {
+    super(ModMenuTypes.WRITING_DESK.get(), containerId);
+    this.blockEntity = blockEntity;
+    this.access = ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos());
+
+    Container mainContainer = blockEntity.getMainInventory();
+    Container tabContainer = blockEntity.getTabInventory();
+
+    for (int i = 0; i < TAB_SLOT_COUNT; i++) {
+      addSlot(new Slot(tabContainer, i, 37, 14 + i * 37 + Y_SHIFT));
+    }
+
+    addSlot(new Slot(mainContainer, WritingDeskBlockEntity.SLOT_WRITING, 8 + X_SHIFT, 60 + Y_SHIFT) {
+      @Override
+      public int getMaxStackSize() {
+        return 1;
+      }
+    });
+
+    addSlot(new Slot(mainContainer, WritingDeskBlockEntity.SLOT_PAPER, 8 + X_SHIFT, 8 + Y_SHIFT));
+
+    addSlot(new Slot(mainContainer, WritingDeskBlockEntity.SLOT_CONTAINER_IN, 152 + X_SHIFT, 8 + Y_SHIFT));
+
+    addSlot(new Slot(mainContainer, WritingDeskBlockEntity.SLOT_CONTAINER_OUT, 152 + X_SHIFT, 60 + Y_SHIFT) {
+      @Override
+      public boolean mayPlace(@NotNull ItemStack stack) {
+        return false;
+      }
+
+      @Override
+      public boolean mayPickup(@NotNull Player player) {
+        return true;
+      }
+    });
+
+    for (int row = 0; row < 3; row++) {
+      for (int col = 0; col < 9; col++) {
+        addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18 + X_SHIFT, 84 + row * 18 + Y_SHIFT));
+      }
+    }
+
+    for (int col = 0; col < 9; col++) {
+      addSlot(new Slot(playerInventory, col, 8 + col * 18 + X_SHIFT, 142 + Y_SHIFT));
+    }
+
+    inkAmountData = addDataSlot(DataSlot.standalone());
+    inkCapacityData = addDataSlot(DataSlot.standalone());
+    if (blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide()) {
+      inkAmountData.set(blockEntity.getInkAmount());
+      inkCapacityData.set(WritingDeskBlockEntity.INK_CAPACITY);
+    }
+  }
+
+  private static WritingDeskBlockEntity getBlockEntity(Inventory playerInventory, FriendlyByteBuf extraData) {
+    BlockEntity be = playerInventory.player.level().getBlockEntity(extraData.readBlockPos());
+    if (be instanceof WritingDeskBlockEntity desk) {
+      return desk;
+    }
+    throw new IllegalStateException("Block entity is not a WritingDeskBlockEntity");
+  }
+
+  @Override
+  public boolean stillValid(@NotNull Player player) {
+    return stillValid(access, player, ModBlocks.WRITING_DESK.get());
+  }
+
+  @Override
+  public void broadcastChanges() {
+    super.broadcastChanges();
+    inkAmountData.set(blockEntity.getInkAmount());
+  }
+
+  /**
+   * Gets the current ink amount (client-safe).
+   */
+  public int getInkAmount() {
+    return inkAmountData.get();
+  }
+
+  /**
+   * Gets the ink capacity (client-safe).
+   */
+  public int getInkCapacity() {
+    return inkCapacityData.get();
+  }
+
+  /**
+   * Gets the ink percentage (0-100).
+   */
+  public int getInkPercentage() {
+    int capacity = getInkCapacity();
+    if (capacity <= 0) return 0;
+    return (getInkAmount() * 100) / capacity;
+  }
+
+  /**
+   * Checks if there's enough ink to write.
+   */
+  public boolean hasEnoughInk() {
+    return getInkAmount() >= WritingDeskBlockEntity.INK_COST;
+  }
+
+  /**
+   * Gets the block entity.
+   */
+  public WritingDeskBlockEntity getBlockEntity() {
+    return blockEntity;
+  }
+
+  @Override
+  @NotNull
+  public ItemStack quickMoveStack(@NotNull Player player, int index) {
+    ItemStack result = ItemStack.EMPTY;
+    Slot slot = slots.get(index);
+
+    if (slot.hasItem()) {
+      ItemStack stackInSlot = slot.getItem();
+      result = stackInSlot.copy();
+
+      if (index < BLOCK_ENTITY_SLOTS) {
+        if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true)) {
+          return ItemStack.EMPTY;
+        }
+      } else {
+
+        if (WritingDeskBlockEntity.isWritableItem(stackInSlot)) {
+          if (!moveItemStackTo(stackInSlot, SLOT_WRITING, SLOT_WRITING + 1, false)) {
+
+          } else {
+            if (stackInSlot.isEmpty()) {
+              slot.setByPlayer(ItemStack.EMPTY);
+            } else {
+              slot.setChanged();
+            }
+            return result;
+          }
+        }
+
+        if (WritingDeskBlockEntity.isInkContainer(stackInSlot)) {
+          if (!moveItemStackTo(stackInSlot, SLOT_CONTAINER_IN, SLOT_CONTAINER_IN + 1, false)) {
+
+          } else {
+            if (stackInSlot.isEmpty()) {
+              slot.setByPlayer(ItemStack.EMPTY);
+            } else {
+              slot.setChanged();
+            }
+            return result;
+          }
+        }
+
+        if (WritingDeskBlockEntity.isBlankPage(stackInSlot)) {
+          if (!moveItemStackTo(stackInSlot, SLOT_PAPER, SLOT_PAPER + 1, false)) {
+
+          } else {
+            if (stackInSlot.isEmpty()) {
+              slot.setByPlayer(ItemStack.EMPTY);
+            } else {
+              slot.setChanged();
+            }
+            return result;
+          }
+        }
+
+        if (WritingDeskBlockEntity.isPageCollectionItem(stackInSlot)) {
+          if (!moveItemStackTo(stackInSlot, TAB_SLOTS_START, TAB_SLOTS_END, false)) {
+
+          } else {
+            if (stackInSlot.isEmpty()) {
+              slot.setByPlayer(ItemStack.EMPTY);
+            } else {
+              slot.setChanged();
+            }
+            return result;
+          }
+        }
+
+        if (index < PLAYER_INVENTORY_END) {
+          if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
+            return ItemStack.EMPTY;
+          }
+        } else {
+          if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false)) {
+            return ItemStack.EMPTY;
+          }
+        }
+      }
+
+      if (stackInSlot.isEmpty()) {
+        slot.setByPlayer(ItemStack.EMPTY);
+      } else {
+        slot.setChanged();
+      }
+    }
+
+    return result;
+  }
+}

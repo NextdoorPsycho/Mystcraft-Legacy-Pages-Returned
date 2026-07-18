@@ -67,14 +67,14 @@
     },
     "tasks": [
       {
-        "label": "Build - All Game Platform Jars",
+        "label": "Build - All Supported Platform Jars",
         "type": "shell",
         "command": "./gradlew",
         "windows": {
           "command": ".\\gradlew.bat"
         },
         "args": [
-          "buildAllVersions",
+          "buildAllSupported",
           "--no-daemon"
         ],
         "group": {
@@ -109,6 +109,34 @@
           "--no-daemon"
         ],
         "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "label": "Build - Minecraft 26.2 Fabric and Forge Jars",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "build26_2",
+          "--no-daemon"
+        ],
+        "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "label": "Verify - Minecraft 26.2 Production Jars",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "verify26_2",
+          "--no-daemon"
+        ],
+        "group": "test",
         "problemMatcher": []
       },
       {
@@ -196,6 +224,34 @@
         "problemMatcher": []
       },
       {
+        "label": "Run - Fabric 26.2 Client",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "runFabric26_2Client",
+          "--no-daemon"
+        ],
+        "group": "none",
+        "problemMatcher": []
+      },
+      {
+        "label": "Run - Forge 26.2 Client",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "runForge26_2Client",
+          "--no-daemon"
+        ],
+        "group": "none",
+        "problemMatcher": []
+      },
+      {
         "label": "Test - Fabric 1.20.1 GameTest",
         "type": "shell",
         "command": "./gradlew",
@@ -218,6 +274,34 @@
         },
         "args": [
           "runForgeGameTest",
+          "--no-daemon"
+        ],
+        "group": "test",
+        "problemMatcher": []
+      },
+      {
+        "label": "Test - Fabric 26.2 GameTest",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "runFabric26_2GameTest",
+          "--no-daemon"
+        ],
+        "group": "test",
+        "problemMatcher": []
+      },
+      {
+        "label": "Test - Forge 26.2 GameTest",
+        "type": "shell",
+        "command": "./gradlew",
+        "windows": {
+          "command": ".\\gradlew.bat"
+        },
+        "args": [
+          "runForge26_2GameTest",
           "--no-daemon"
         ],
         "group": "test",
@@ -247,7 +331,7 @@
         "label": "Verify - Build and Fast GameTests",
         "dependsOrder": "sequence",
         "dependsOn": [
-          "Build - All Game Platform Jars",
+          "Build - All Supported Platform Jars",
           "Test - Fast GameTests (All Platforms)"
         ],
         "group": "test",

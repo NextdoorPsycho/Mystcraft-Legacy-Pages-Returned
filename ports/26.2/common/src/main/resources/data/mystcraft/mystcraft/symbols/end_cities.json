@@ -1,0 +1,29 @@
+{
+  "category": "structure",
+  "card_rank": 4,
+  "instability_cost": 15.0,
+  "poem": [
+    "Civilization",
+    "Void",
+    "Shulker",
+    "Elytra"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "end_cities_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:end_cities",
+      "params": {
+        "chance": 1.0
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 15.0
+    }
+  ]
+}

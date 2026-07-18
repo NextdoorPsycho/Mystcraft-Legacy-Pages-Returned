@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "art.arcane.mystcraft.forge.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "minVersion": "0.8",
+  "mixins": [
+    "StructureTemplatePoolAccessor"
+  ],
+  "client": [
+    "SpecialModelRenderersAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

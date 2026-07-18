@@ -1,0 +1,44 @@
+{
+  "category": "feature_large",
+  "card_rank": 3,
+  "instability_cost": 6.0,
+  "poem": [
+    "Structure",
+    "Chance",
+    "Scatter",
+    "Find"
+  ],
+  "logic": [
+    {
+      "type": "register_populator_pool",
+      "count": 5,
+      "pool": [
+        "mystcraft:villages",
+        "mystcraft:dungeons",
+        "mystcraft:mineshafts",
+        "mystcraft:strongholds",
+        "mystcraft:nether_fortress",
+        "mystcraft:pillager_outposts",
+        "mystcraft:ruined_portals",
+        "mystcraft:ocean_monuments",
+        "mystcraft:witch_huts",
+        "mystcraft:desert_temples",
+        "mystcraft:jungle_temples",
+        "mystcraft:woodland_mansions",
+        "mystcraft:trail_ruins",
+        "mystcraft:ancient_cities",
+        "mystcraft:bastion_remnants",
+        "mystcraft:end_cities",
+        "mystcraft:igloos",
+        "mystcraft:shipwrecks",
+        "mystcraft:ocean_ruins",
+        "mystcraft:buried_treasure",
+        "mystcraft:nether_fossils"
+      ]
+    },
+    {
+      "type": "add_instability",
+      "value": 6.0
+    }
+  ]
+}

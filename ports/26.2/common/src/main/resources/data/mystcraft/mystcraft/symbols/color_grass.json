@@ -1,0 +1,20 @@
+{
+  "category": "visual_effect",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": [
+    "Grass",
+    "Image",
+    "Color",
+    "Form"
+  ],
+  "can_duplicate": true,
+  "logic": [
+    {
+      "type": "set_color_from_stack",
+      "target": "grass",
+      "palette": "grass",
+      "random_instability": 2.0
+    }
+  ]
+}

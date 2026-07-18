@@ -18,9 +18,11 @@ import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.util.ItemStackNbt;
 import art.arcane.mystcraft.util.ServerPlayerTeleport;
 import art.arcane.mystcraft.world.AgeData;
+import art.arcane.mystcraft.world.AgeDefinition;
 import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.AgeDirectorImpl;
 import art.arcane.mystcraft.world.AgeManager;
+import art.arcane.mystcraft.world.AgeSeed;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import art.arcane.mystcraft.world.gen.populate.StarFissurePopulator;
 import com.google.gson.JsonObject;
@@ -38,6 +40,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -47,6 +50,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -334,7 +340,7 @@ public class MystcraftCommands {
       String ageName = "Unnamed";
       ServerLevel level = ageManager.getAgeLevel(source.getServer(), ageId);
       if (level != null) {
-        var ageData = art.arcane.mystcraft.world.AgeData.getIfPresent(level);
+        AgeData ageData = AgeData.getIfPresent(level);
         if (ageData != null && ageData.getAgeName() != null) {
           ageName = ageData.getAgeName();
         }
@@ -382,7 +388,7 @@ public class MystcraftCommands {
     String ageName = "Unnamed";
     ServerLevel level = ageManager.getAgeLevel(source.getServer(), ageId);
     if (level != null) {
-      var ageData = art.arcane.mystcraft.world.AgeData.getIfPresent(level);
+      AgeData ageData = AgeData.getIfPresent(level);
       if (ageData != null && ageData.getAgeName() != null) {
         ageName = ageData.getAgeName();
       }
@@ -409,12 +415,44 @@ public class MystcraftCommands {
 
     AgeManager ageManager = AgeManager.get(source.getServer());
     int newAgeId = ageManager.allocateUID();
+    long worldSeed = source.getServer().getWorldData().worldGenOptions().seed();
+    long seed = AgeSeed.deriveForAllocatedAge(worldSeed, newAgeId);
+    AgeBuilder builder = AgeBuilder.random(seed);
+    AgeDirectorImpl director = builder.build();
+    if (MystcraftConfig.microDimensionsEnabled.get() && !director.isPersonalPocket()) {
+      director.setMicroDimensions(
+          true,
+          MystcraftConfig.microDimensionRadiusChunks.get(),
+          MystcraftConfig.microDimensionExtraChunks.get()
+      );
+    }
 
-    ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(source.getServer(), newAgeId);
+    java.util.UUID ageUUID = java.util.UUID.randomUUID();
+    ResourceLocation dimension = new ResourceLocation(
+        Mystcraft.MOD_ID,
+        "mystcraft_age_" + newAgeId
+    );
+    AgeDefinition definition = AgeDefinition.fromDirector(List.of(), director);
+    ageManager.registerAge(newAgeId, dimension, ageUUID, definition);
+
+    ServerLevel ageLevel = AgeDimensionFactory.createAgeDimension(
+        source.getServer(), newAgeId, ageUUID, director
+    );
     if (ageLevel == null) {
+      ageManager.unregisterAge(newAgeId);
       source.sendFailure(Component.literal("Failed to create new age."));
       return 0;
     }
+
+    AgeData ageData = AgeData.get(ageLevel);
+    ageData.setAgeUID(newAgeId);
+    ageData.setAgeUUID(ageUUID);
+    ageData.setAgeName("Random Age");
+    ageData.addAuthor(player.getGameProfile().getName());
+    ageData.copyFromDirector(director);
+    BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
+    ageData.setSpawn(spawn.getX(), spawn.getY(), spawn.getZ());
+    AgeDimensionFactory.applyMicroDimensionBorder(ageLevel, ageData);
 
     source.sendSuccess(() -> Component.literal("Created Age " + newAgeId), true);
     return 1;
@@ -432,7 +470,7 @@ public class MystcraftCommands {
       byCategory.computeIfAbsent(category, k -> new java.util.ArrayList<>()).add(symbol.getRegistryName());
     }
 
-    for (var entry : byCategory.entrySet()) {
+    for (Map.Entry<String, List<ResourceLocation>> entry : byCategory.entrySet()) {
       source.sendSuccess(() -> Component.literal("  " + entry.getKey() + ": " + entry.getValue().size()), false);
     }
 
@@ -578,7 +616,7 @@ public class MystcraftCommands {
       return 0;
     }
 
-    var ageData = art.arcane.mystcraft.world.AgeData.getIfPresent((ServerLevel) level);
+    AgeData ageData = AgeData.getIfPresent((ServerLevel) level);
     if (ageData == null) {
       source.sendFailure(Component.literal("No age data found."));
       return 0;
@@ -650,7 +688,7 @@ public class MystcraftCommands {
       String key = symbol.getCategory().name().toLowerCase();
       byCategory.put(key, byCategory.getOrDefault(key, 0) + 1);
     }
-    for (var entry : byCategory.entrySet()) {
+    for (Map.Entry<String, Integer> entry : byCategory.entrySet()) {
       source.sendSuccess(() -> Component.literal("  " + entry.getKey() + ": " + entry.getValue()), false);
     }
     return symbols.size();
@@ -1630,11 +1668,13 @@ public class MystcraftCommands {
                                                   List<ResourceLocation> symbolIds, String ageName,
                                                   boolean teleport) {
     List<IAgeSymbol> symbols = new ArrayList<>();
+    List<ResourceLocation> appliedSymbolIds = new ArrayList<>();
     List<ItemStack> pages = new ArrayList<>();
     for (ResourceLocation id : symbolIds) {
       IAgeSymbol symbol = SymbolRegistry.get(id);
       if (symbol != null) {
         symbols.add(symbol);
+        appliedSymbolIds.add(id);
         pages.add(Page.createSymbolPage(id));
       }
     }
@@ -1643,7 +1683,7 @@ public class MystcraftCommands {
       return 0;
     }
 
-    long seed = System.currentTimeMillis() ^ player.blockPosition().asLong();
+    long seed = AgeSeed.deriveFromSymbolIds(appliedSymbolIds);
     AgeBuilder builder = new AgeBuilder(symbols, seed);
     AgeDirectorImpl director = builder.build();
     if (MystcraftConfig.microDimensionsEnabled.get() && !director.isPersonalPocket()) {
@@ -1657,17 +1697,18 @@ public class MystcraftCommands {
     AgeManager ageManager = AgeManager.get(source.getServer());
     int ageUID = ageManager.allocateUID();
     java.util.UUID ageUUID = java.util.UUID.randomUUID();
+    ResourceLocation dimLoc = new ResourceLocation(Mystcraft.MOD_ID, "mystcraft_age_" + ageUID);
+    AgeDefinition definition = AgeDefinition.fromDirector(appliedSymbolIds, director);
+    ageManager.registerAge(ageUID, dimLoc, ageUUID, definition);
 
     ServerLevel ageLevel = AgeDimensionFactory.createAgeDimension(
         source.getServer(), ageUID, ageUUID, director);
 
     if (ageLevel == null) {
+      ageManager.unregisterAge(ageUID);
       source.sendFailure(Component.literal("Failed to create age."));
       return 0;
     }
-
-    ResourceLocation dimLoc = new ResourceLocation("mystcraft", "mystcraft_age_" + ageUID);
-    ageManager.registerAge(ageUID, dimLoc, ageUUID);
 
     AgeData ageData = AgeData.get(ageLevel);
     ageData.setAgeUID(ageUID);
@@ -2053,8 +2094,9 @@ public class MystcraftCommands {
    */
   private static void appendPerAxisDiag(StringBuilder sb, ServerLevel level, BlockPos seed) {
     boolean foundClosed = false;
-    for (var axis : net.minecraft.core.Direction.Axis.values()) {
-      var diag = art.arcane.mystcraft.portal.PortalUtils.diagnoseFrameOnAxis(level, seed, axis);
+    for (Direction.Axis axis : Direction.Axis.values()) {
+      art.arcane.mystcraft.portal.PortalUtils.FrameDiagnosis diag =
+          art.arcane.mystcraft.portal.PortalUtils.diagnoseFrameOnAxis(level, seed, axis);
       sb.append("[").append(axis).append("] ");
       if (diag == null) {
         sb.append("no air neighbors on this axis.\n");
@@ -2063,7 +2105,7 @@ public class MystcraftCommands {
         sb.append("    Reach bounds: ").append(diag.boundsMin()).append(" → ").append(diag.boundsMax()).append("\n");
         if (!diag.sampleLeaks().isEmpty()) {
           sb.append("    Leak samples (gap is near these):\n");
-          for (var leak : diag.sampleLeaks()) {
+          for (BlockPos leak : diag.sampleLeaks()) {
             sb.append("      • ").append(leak).append("\n");
           }
         }
@@ -2091,8 +2133,8 @@ public class MystcraftCommands {
       return 0;
     }
     BlockPos pos = ((net.minecraft.world.phys.BlockHitResult) hit).getBlockPos();
-    var state = level.getBlockState(pos);
-    var block = state.getBlock();
+    BlockState state = level.getBlockState(pos);
+    Block block = state.getBlock();
 
     StringBuilder sb = new StringBuilder();
     sb.append("=== Mystcraft Diag at ").append(pos).append(" ===\n");
@@ -2102,7 +2144,8 @@ public class MystcraftCommands {
       sb.append("Type: CrystalBlock\n");
       sb.append("ACTIVE = ").append(state.getValue(art.arcane.mystcraft.block.CrystalBlock.ACTIVE)).append("\n");
 
-      var receptacle = art.arcane.mystcraft.portal.PortalUtils.findReceptacle(level, pos);
+      BlockEntity receptacle =
+          art.arcane.mystcraft.portal.PortalUtils.findReceptacle(level, pos);
       sb.append("Connected Receptacle: ").append(receptacle == null ? "NONE" : receptacle.getBlockPos()).append("\n");
 
       sb.append("--- Frame Diagnosis (per axis) ---\n");
@@ -2110,12 +2153,12 @@ public class MystcraftCommands {
     } else if (block instanceof art.arcane.mystcraft.block.BookReceptacleBlock) {
       sb.append("Type: BookReceptacleBlock\n");
       sb.append("FACING = ").append(state.getValue(art.arcane.mystcraft.block.BookReceptacleBlock.FACING)).append("\n");
-      var be = level.getBlockEntity(pos);
+      BlockEntity be = level.getBlockEntity(pos);
       if (be instanceof art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity recept) {
         sb.append("BE: present\n");
         sb.append("HasBook: ").append(recept.hasBook()).append("\n");
         if (recept.hasBook()) {
-          var book = recept.getBook();
+          ItemStack book = recept.getBook();
           sb.append("Book: ").append(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(book.getItem())).append("\n");
           sb.append("ValidActivator: ").append(art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity.isValidPortalActivator(book)).append("\n");
         }
@@ -2124,9 +2167,9 @@ public class MystcraftCommands {
         sb.append("BE: ABSENT (").append(be == null ? "null" : be.getClass().getSimpleName()).append(")\n");
       }
 
-      var facing = state.getValue(art.arcane.mystcraft.block.BookReceptacleBlock.FACING);
-      var crystalPos = pos.relative(facing.getOpposite());
-      var crystalState = level.getBlockState(crystalPos);
+      Direction facing = state.getValue(art.arcane.mystcraft.block.BookReceptacleBlock.FACING);
+      BlockPos crystalPos = pos.relative(facing.getOpposite());
+      BlockState crystalState = level.getBlockState(crystalPos);
       sb.append("Preferred Axis (from FACING): ").append(facing.getAxis()).append("\n");
       sb.append("--- Frame Diagnosis (seed Crystal at ").append(crystalPos).append(") ---\n");
       if (!crystalState.is(art.arcane.mystcraft.portal.PortalUtils.getFrameBlock())) {
@@ -2138,7 +2181,8 @@ public class MystcraftCommands {
     } else if (block instanceof art.arcane.mystcraft.block.LinkPortalBlock) {
       sb.append("Type: LinkPortalBlock\n");
       sb.append("AXIS = ").append(state.getValue(art.arcane.mystcraft.block.LinkPortalBlock.AXIS)).append("\n");
-      var receptacle = art.arcane.mystcraft.portal.PortalUtils.findReceptacle(level, pos);
+      BlockEntity receptacle =
+          art.arcane.mystcraft.portal.PortalUtils.findReceptacle(level, pos);
       sb.append("Connected Receptacle: ").append(receptacle == null ? "NONE" : receptacle.getBlockPos()).append("\n");
     } else {
       sb.append("Type: NOT a Mystcraft portal block\n");

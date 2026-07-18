@@ -1,0 +1,22 @@
+{
+  "category": "environment",
+  "card_rank": 3,
+  "instability_cost": 10.0,
+  "poem": [
+    "Environment",
+    "Dynamic",
+    "Change",
+    "Spur"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "accelerated_enabled",
+      "value": true
+    },
+    {
+      "type": "add_instability",
+      "value": 10.0
+    }
+  ]
+}

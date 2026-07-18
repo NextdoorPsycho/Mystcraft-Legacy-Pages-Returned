@@ -1,0 +1,26 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 5.0,
+  "poem": [
+    "Bone",
+    "Ancient",
+    "Death",
+    "Ruin"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "bonefields_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:bonefields"
+    },
+    {
+      "type": "add_instability",
+      "value": 5.0
+    }
+  ]
+}

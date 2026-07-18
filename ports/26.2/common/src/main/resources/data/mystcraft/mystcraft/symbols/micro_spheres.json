@@ -1,0 +1,37 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 4.0,
+  "display_name": "Micro Spheres",
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Tiny",
+    "Bead"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "spheres_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:spheres",
+      "params": {
+        "count": 4,
+        "min_radius": 2,
+        "max_radius": 4,
+        "spawn_chance": 0.2,
+        "floating_chance": 0.6,
+        "neighbor_range": 1,
+        "min_base_y": 50,
+        "max_base_y": 130
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 4.0
+    }
+  ]
+}

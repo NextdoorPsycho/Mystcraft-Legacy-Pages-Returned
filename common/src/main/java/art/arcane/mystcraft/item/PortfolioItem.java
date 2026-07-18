@@ -65,7 +65,12 @@ public class PortfolioItem extends Item implements TooltipCompat {
     for (int i = 0; i < listTag.size(); i++) {
       ItemStack page = ItemStackNbt.load(listTag.getCompound(i));
       if (!page.isEmpty()) {
-        pages.add(page);
+        int count = page.getCount();
+        for (int pageIndex = 0; pageIndex < count; pageIndex++) {
+          ItemStack singlePage = page.copy();
+          singlePage.setCount(1);
+          pages.add(singlePage);
+        }
       }
     }
     return pages;
@@ -77,6 +82,9 @@ public class PortfolioItem extends Item implements TooltipCompat {
    * @return true if the page was added successfully
    */
   public static boolean addPage(ItemStack portfolio, ItemStack page) {
+    if (page.isEmpty() || !(page.getItem() instanceof PageItem)) {
+      return false;
+    }
     if (ItemStackNbt.getTag(portfolio) == null) {
       ItemStackNbt.setTag(portfolio, new CompoundTag());
     }
@@ -84,7 +92,9 @@ public class PortfolioItem extends Item implements TooltipCompat {
     if (pages.size() >= MAX_PAGES) {
       return false;
     }
-    pages.add(page.copy());
+    ItemStack singlePage = page.copy();
+    singlePage.setCount(1);
+    pages.add(singlePage);
     setPages(portfolio, pages);
     return true;
   }
@@ -112,7 +122,12 @@ public class PortfolioItem extends Item implements TooltipCompat {
     ListTag listTag = new ListTag();
     for (ItemStack page : pages) {
       if (!page.isEmpty()) {
-        listTag.add(ItemStackNbt.save(page));
+        int count = page.getCount();
+        for (int pageIndex = 0; pageIndex < count; pageIndex++) {
+          ItemStack singlePage = page.copy();
+          singlePage.setCount(1);
+          listTag.add(ItemStackNbt.save(singlePage));
+        }
       }
     }
     tag.put(TAG_PAGES, listTag);

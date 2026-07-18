@@ -1,0 +1,17 @@
+{
+  "category": "modifier",
+  "card_rank": 2,
+  "instability_cost": 0.0,
+  "poem": [
+    "Color",
+    "Sky",
+    "Light",
+    "Flow"
+  ],
+  "logic": [
+    {
+      "type": "set_sunset_color",
+      "value": 3997621
+    }
+  ]
+}

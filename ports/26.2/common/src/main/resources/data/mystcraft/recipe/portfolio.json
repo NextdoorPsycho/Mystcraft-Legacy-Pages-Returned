@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "LLL",
+    "SFS",
+    "LLL"
+  ],
+  "key": {
+    "L": "minecraft:leather",
+    "S": "minecraft:string",
+    "F": "mystcraft:folder"
+  },
+  "result": {
+    "id": "mystcraft:portfolio"
+  }
+}

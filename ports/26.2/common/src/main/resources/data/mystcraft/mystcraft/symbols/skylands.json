@@ -1,0 +1,35 @@
+{
+  "category": "feature_large",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Void",
+    "Elevate"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "skylands_enabled",
+      "value": true
+    },
+    {
+      "type": "set_has_sea",
+      "value": false
+    },
+    {
+      "type": "register_terrain_alteration",
+      "id": "mystcraft:floating_islands",
+      "params": {
+        "density": 3,
+        "structure_block": "minecraft:stone",
+        "surface_block": "minecraft:stone"
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

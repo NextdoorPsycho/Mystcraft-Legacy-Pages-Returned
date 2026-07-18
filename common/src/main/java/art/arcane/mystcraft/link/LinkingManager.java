@@ -2,6 +2,7 @@ package art.arcane.mystcraft.link;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.data.LinkFlags;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.instability.InstabilityManager;
@@ -11,6 +12,7 @@ import art.arcane.mystcraft.registry.ModSounds;
 import art.arcane.mystcraft.symbol.SymbolRegistry;
 import art.arcane.mystcraft.util.ChunkStatusCompat;
 import art.arcane.mystcraft.util.MystcraftChunkLeases;
+import art.arcane.mystcraft.util.PlayerMessages;
 import art.arcane.mystcraft.util.ServerPlayerTeleport;
 import art.arcane.mystcraft.world.*;
 import net.minecraft.core.BlockPos;
@@ -25,7 +27,7 @@ import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
@@ -41,7 +43,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Manages linking (teleportation) operations for Mystcraft. Handles
@@ -91,6 +98,26 @@ public final class LinkingManager {
       return LinkResult.DIMENSION_NOT_FOUND;
     }
 
+    boolean isIntraLink = sourceLevel.dimension().equals(targetLevel.dimension());
+    if (isIntraLink && !LinkOptions.getFlag(linkData, LinkFlags.INTRA_LINKING)) {
+      String message = "This link does not allow intra-dimensional travel";
+      fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
+          LinkEvent.Failed.FailureReason.CANCELLED, message);
+      if (entity instanceof ServerPlayer player) {
+        PlayerMessages.send(player, Component.literal(message + "."), false);
+      }
+      return LinkResult.BLOCKED;
+    }
+    if (!isIntraLink && LinkOptions.getFlag(linkData, LinkFlags.INTRA_LINKING_ONLY)) {
+      String message = "This link only allows intra-dimensional travel";
+      fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
+          LinkEvent.Failed.FailureReason.CANCELLED, message);
+      if (entity instanceof ServerPlayer player) {
+        PlayerMessages.send(player, Component.literal(message + "."), false);
+      }
+      return LinkResult.BLOCKED;
+    }
+
     if (AgeDimensionFactory.isMystcraftAge(targetLevel.dimension())) {
       AgeData ageData = AgeData.getIfPresent(targetLevel);
       if (ageData != null) {
@@ -109,6 +136,7 @@ public final class LinkingManager {
     }
 
     LinkEvent.Allow allowEvent = new LinkEvent.Allow(entity, linkData, sourceDimension, sourcePos);
+    LinkEventBus.post(allowEvent);
 
     if (allowEvent.isCancelled()) {
       String reason = allowEvent.getCancelReason();
@@ -128,7 +156,7 @@ public final class LinkingManager {
       if (sourceUID > 0 && !permissions.canDepart(player, sourceUID)) {
         fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
             LinkEvent.Failed.FailureReason.PERMISSION_DENIED, "You cannot leave this Age");
-        player.sendSystemMessage(Component.literal("You cannot leave this Age."));
+        PlayerMessages.send(player, Component.literal("You cannot leave this Age."), false);
         return LinkResult.PERMISSION_DENIED;
       }
 
@@ -136,16 +164,9 @@ public final class LinkingManager {
       if (targetUID > 0 && !permissions.canEnter(player, targetUID)) {
         fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
             LinkEvent.Failed.FailureReason.PERMISSION_DENIED, "You cannot enter this Age");
-        player.sendSystemMessage(Component.literal("You cannot enter this Age."));
+        PlayerMessages.send(player, Component.literal("You cannot enter this Age."), false);
         return LinkResult.PERMISSION_DENIED;
       }
-    }
-
-    boolean isIntraLink = sourceLevel.dimension().equals(targetLevel.dimension());
-    boolean allowIntra = LinkOptions.getFlag(linkData, LinkFlags.INTRA_LINKING);
-
-    if (isIntraLink && !allowIntra) {
-      Mystcraft.LOGGER.debug("Intra-dimensional link attempted without modifier");
     }
 
     MystcraftChunkLeases.leaseReturnWindow(sourceLevel, sourcePos);
@@ -186,6 +207,7 @@ public final class LinkingManager {
 
     LinkEvent.Alter alterEvent = new LinkEvent.Alter(entity, linkData, sourceDimension, sourcePos,
         targetLevel, targetVec, targetYaw);
+    LinkEventBus.post(alterEvent);
 
     targetLevel = alterEvent.getTargetLevel();
     targetVec = alterEvent.getTargetPosition();
@@ -193,6 +215,7 @@ public final class LinkingManager {
 
     LinkEvent.Start startEvent = new LinkEvent.Start(entity, linkData, sourceDimension, sourcePos,
         targetLevel, targetVec, targetYaw);
+    LinkEventBus.post(startEvent);
 
     if (startEvent.isCancelled()) {
       fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
@@ -203,19 +226,21 @@ public final class LinkingManager {
     playLinkSound(sourceLevel, sourcePos, linkData, true);
     sendLinkEffect(sourceLevel, sourcePos, LinkEffectPacket.LinkEffectType.DEPARTURE);
 
-    List<Entity> followers = null;
-    if (LinkOptions.getFlag(linkData, LinkFlags.FOLLOWING)) {
-      followers = getFollowingEntities(entity);
+    boolean follows = LinkOptions.getFlag(linkData, LinkFlags.FOLLOWING);
+    RidingGroupData sourceRidingGroup = captureRidingGroup(entity, follows);
+    List<FollowerData> followers = null;
+    if (follows) {
+      followers = captureFollowers(entity, sourceRidingGroup);
     }
 
-    List<PassengerData> passengers = collectPassengers(entity);
-
+    PendingDisarm pendingDisarm = null;
     if (LinkOptions.getFlag(linkData, LinkFlags.DISARM) && entity instanceof ServerPlayer player) {
-      disarmEntity(player);
+      pendingDisarm = prepareDisarm(player, sourceLevel);
     }
 
     Vec3 momentum = entity.getDeltaMovement();
 
+    PendingReturnLink pendingReturnLink = null;
     if (entity instanceof ServerPlayer player) {
       int targetAgeUID = AgeDimensionFactory.getAgeUID(targetLevel.dimension());
       if (targetAgeUID > 0) {
@@ -223,11 +248,28 @@ public final class LinkingManager {
         LinkOptions.setDimensionUID(returnData, getDimensionUID(sourceLevel));
         LinkOptions.setSpawn(returnData, sourcePos);
         LinkOptions.setSpawnYaw(returnData, player.getYRot());
-        AgeReturnData.get(server).setReturnLink(player.getUUID(), targetAgeUID, returnData);
+        pendingReturnLink = new PendingReturnLink(player.getUUID(), targetAgeUID, returnData);
       }
     }
 
-    teleportEntity(entity, targetLevel, targetVec, targetYaw);
+    TeleportedRidingGroup teleportedSource = teleportRidingGroup(
+        sourceRidingGroup, targetLevel, targetVec, targetYaw);
+    if (teleportedSource == null) {
+      if (pendingDisarm != null) {
+        pendingDisarm.rollback();
+      }
+      fireFailedEvent(entity, linkData, sourceDimension, sourcePos,
+          LinkEvent.Failed.FailureReason.TELEPORT_FAILED, "Entity teleport failed");
+      return LinkResult.TELEPORT_FAILED;
+    }
+    entity = teleportedSource.anchor();
+
+    if (pendingDisarm != null) {
+      pendingDisarm.commit();
+    }
+    if (pendingReturnLink != null) {
+      pendingReturnLink.commit(server);
+    }
 
     if (LinkOptions.getFlag(linkData, LinkFlags.MAINTAIN_MOMENTUM)) {
       entity.setDeltaMovement(momentum);
@@ -240,10 +282,8 @@ public final class LinkingManager {
       }
     }
 
-    restorePassengers(entity, targetLevel, passengers, targetVec);
-
     if (followers != null && !followers.isEmpty()) {
-      teleportFollowers(entity, followers, targetLevel, targetVec, linkData);
+      teleportFollowers(followers, targetLevel, targetVec, linkData);
     }
 
     BlockPos arrivalPos = BlockPos.containing(targetVec);
@@ -252,6 +292,7 @@ public final class LinkingManager {
 
     LinkEvent.End endEvent = new LinkEvent.End(entity, linkData, sourceDimension, sourcePos,
         targetLevel, targetVec);
+    LinkEventBus.post(endEvent);
 
     if (AgeDimensionFactory.isMystcraftAge(targetLevel.dimension()) && entity instanceof ServerPlayer serverPlayer) {
       checkMystDimensionAdvancements(serverPlayer);
@@ -303,51 +344,114 @@ public final class LinkingManager {
   private static void fireFailedEvent(Entity entity, CompoundTag linkData, ResourceKey<Level> sourceDimension,
                                       BlockPos sourcePos, LinkEvent.Failed.FailureReason reason, String message) {
     LinkEvent.Failed failedEvent = new LinkEvent.Failed(entity, linkData, sourceDimension, sourcePos, reason, message);
-
+    LinkEventBus.post(failedEvent);
   }
 
-  private static List<PassengerData> collectPassengers(Entity root) {
-    List<PassengerData> passengers = new ArrayList<>();
-    collectPassengersRecursive(root, root.position(), passengers);
-    return passengers;
+  private static RidingGroupData captureRidingGroup(Entity anchor, boolean includeVehicle) {
+    List<RidingEntityData> members = new ArrayList<>();
+    Entity groupRoot = includeVehicle ? anchor.getRootVehicle() : anchor;
+    collectRidingGroup(groupRoot, null, anchor.position(), members);
+    return new RidingGroupData(anchor, members);
   }
 
-  private static void collectPassengersRecursive(Entity entity, Vec3 rootPos, List<PassengerData> list) {
+  private static void collectRidingGroup(Entity entity, @Nullable Entity parent, Vec3 anchorPosition,
+                                         List<RidingEntityData> members) {
+    members.add(new RidingEntityData(entity, parent, entity.position().subtract(anchorPosition)));
     for (Entity passenger : entity.getPassengers()) {
-      Vec3 offset = passenger.position().subtract(rootPos);
-      list.add(new PassengerData(passenger, offset));
-      collectPassengersRecursive(passenger, rootPos, list);
+      collectRidingGroup(passenger, entity, anchorPosition, members);
     }
   }
 
-  private static void restorePassengers(Entity root, ServerLevel level, List<PassengerData> passengers, Vec3 rootPos) {
-
-    root.ejectPassengers();
-
-    for (PassengerData data : passengers) {
-      Entity passenger = data.passenger;
-      Vec3 passengerPos = rootPos.add(data.offset);
-
-      teleportEntity(passenger, level, passengerPos, passenger.getYRot());
+  private static List<FollowerData> captureFollowers(Entity source, RidingGroupData sourceGroup) {
+    Set<Entity> sourceMembers = Collections.newSetFromMap(new IdentityHashMap<>());
+    for (RidingEntityData member : sourceGroup.members()) {
+      sourceMembers.add(member.entity());
     }
 
+    double radius = 3.0;
+    AABB area = new AABB(
+        source.getX() - radius, source.getY() - radius, source.getZ() - radius,
+        source.getX() + radius, source.getY() + radius, source.getZ() + radius
+    );
+    List<Entity> nearbyEntities = source.level().getEntities(
+        source, area, candidate -> candidate instanceof LivingEntity && !sourceMembers.contains(candidate));
+
+    Set<Entity> capturedRoots = Collections.newSetFromMap(new IdentityHashMap<>());
+    List<FollowerData> followers = new ArrayList<>();
+    Vec3 sourcePosition = source.position();
+    for (Entity candidate : nearbyEntities) {
+      Entity root = candidate.getRootVehicle();
+      if (sourceMembers.contains(root) || !capturedRoots.add(root)) {
+        continue;
+      }
+      followers.add(new FollowerData(
+          captureRidingGroup(candidate, true),
+          candidate.position().subtract(sourcePosition),
+          candidate.getDeltaMovement()
+      ));
+    }
+    return followers;
   }
 
-  private static void teleportFollowers(Entity source, List<Entity> followers, ServerLevel targetLevel,
+  @Nullable
+  private static TeleportedRidingGroup teleportRidingGroup(RidingGroupData group, ServerLevel targetLevel,
+                                                            Vec3 anchorTarget, float anchorYaw) {
+    List<RidingEntityData> members = group.members();
+    Entity groupRoot = members.get(0).entity();
+    if (groupRoot.isPassenger()) {
+      groupRoot.stopRiding();
+    }
+    for (int i = members.size() - 1; i >= 0; i--) {
+      if (members.get(i).parent() != null) {
+        members.get(i).entity().stopRiding();
+      }
+    }
+
+    Map<Entity, Entity> replacements = new IdentityHashMap<>();
+    for (RidingEntityData member : members) {
+      Entity original = member.entity();
+      Vec3 destination = anchorTarget.add(member.offset());
+      float yaw = original == group.anchor() ? anchorYaw : original.getYRot();
+      Entity teleported = teleportEntity(original, targetLevel, destination, yaw);
+      if (teleported == null) {
+        Mystcraft.LOGGER.warn("[LinkingManager] Failed to teleport riding-group entity {}",
+            original.getType());
+        continue;
+      }
+      replacements.put(original, teleported);
+    }
+
+    for (RidingEntityData member : members) {
+      if (member.parent() == null) {
+        continue;
+      }
+      Entity passenger = replacements.get(member.entity());
+      Entity vehicle = replacements.get(member.parent());
+      if (passenger != null && vehicle != null && !passenger.startRiding(vehicle, true)) {
+        Mystcraft.LOGGER.warn("[LinkingManager] Failed to restore passenger {} onto {}",
+            passenger.getType(), vehicle.getType());
+      }
+    }
+
+    Entity teleportedAnchor = replacements.get(group.anchor());
+    return teleportedAnchor == null ? null : new TeleportedRidingGroup(teleportedAnchor);
+  }
+
+  private static void teleportFollowers(List<FollowerData> followers, ServerLevel targetLevel,
                                         Vec3 targetVec, CompoundTag linkData) {
-    for (Entity follower : followers) {
-      if (follower == source) continue;
-
-      Vec3 offset = follower.position().subtract(source.position());
-      Vec3 followerTarget = targetVec.add(offset);
-
-      Vec3 followerMomentum = follower.getDeltaMovement();
-
-      List<PassengerData> followerPassengers = collectPassengers(follower);
-
-      teleportEntity(follower, targetLevel, followerTarget, follower.getYRot());
+    boolean teleportedAny = false;
+    for (FollowerData followerData : followers) {
+      Vec3 followerTarget = targetVec.add(followerData.offset());
+      TeleportedRidingGroup teleported = teleportRidingGroup(
+          followerData.group(), targetLevel, followerTarget, followerData.group().anchor().getYRot());
+      if (teleported == null) {
+        continue;
+      }
+      teleportedAny = true;
+      Entity follower = teleported.anchor();
 
       if (LinkOptions.getFlag(linkData, LinkFlags.MAINTAIN_MOMENTUM)) {
+        Vec3 followerMomentum = followerData.momentum();
         follower.setDeltaMovement(followerMomentum);
         if (follower instanceof ServerPlayer followerPlayer && followerPlayer.connection != null) {
           followerPlayer.connection.send(
@@ -357,13 +461,13 @@ public final class LinkingManager {
           follower.hurtMarked = true;
         }
       }
-
-      restorePassengers(follower, targetLevel, followerPassengers, followerTarget);
     }
 
-    BlockPos targetPos = BlockPos.containing(targetVec);
-    playSound(targetLevel, targetPos, ModSounds.LINKING_FOLLOWING.get(), 1.0f, 1.0f);
-    sendLinkEffect(targetLevel, targetPos, LinkEffectPacket.LinkEffectType.FOLLOWING);
+    if (teleportedAny) {
+      BlockPos targetPos = BlockPos.containing(targetVec);
+      playSound(targetLevel, targetPos, ModSounds.LINKING_FOLLOWING.get(), 1.0f, 1.0f);
+      sendLinkEffect(targetLevel, targetPos, LinkEffectPacket.LinkEffectType.FOLLOWING);
+    }
   }
 
   /**
@@ -463,67 +567,43 @@ public final class LinkingManager {
     return null;
   }
 
-  private static void teleportEntity(Entity entity, ServerLevel targetLevel, Vec3 targetPos, float yaw) {
+  @Nullable
+  private static Entity teleportEntity(Entity entity, ServerLevel targetLevel, Vec3 targetPos, float yaw) {
     if (entity instanceof ServerPlayer player) {
       ServerPlayerTeleport.teleport(player, targetLevel, targetPos.x, targetPos.y, targetPos.z, yaw, player.getXRot());
-    } else {
-      entity.teleportTo(targetLevel, targetPos.x, targetPos.y, targetPos.z, null, yaw, entity.getXRot());
+      return player;
     }
+    boolean changedDimension = entity.level() != targetLevel;
+    UUID entityId = entity.getUUID();
+    boolean teleported = entity.teleportTo(
+        targetLevel, targetPos.x, targetPos.y, targetPos.z, Set.of(), yaw, entity.getXRot());
+    if (!teleported) {
+      return null;
+    }
+    if (!changedDimension) {
+      return entity;
+    }
+
+    Entity replacement = targetLevel.getEntity(entityId);
+    if (replacement == null) {
+      Mystcraft.LOGGER.error("[LinkingManager] Cross-dimension teleport succeeded but replacement {} was not found",
+          entityId);
+    }
+    return replacement;
   }
 
-  private static List<Entity> getFollowingEntities(Entity source) {
-    List<Entity> followers = new ArrayList<>();
-    double radius = 3.0;
-
-    Entity rootVehicle = source.getRootVehicle();
-    if (rootVehicle != source) {
-      followers.add(rootVehicle);
-
-      addAllPassengers(rootVehicle, followers);
+  @Nullable
+  private static PendingDisarm prepareDisarm(ServerPlayer player, ServerLevel sourceLevel) {
+    ItemStack heldItem = player.getMainHandItem();
+    if (heldItem.isEmpty()) {
+      return null;
     }
 
-    AABB area = new AABB(
-        source.getX() - radius, source.getY() - radius, source.getZ() - radius,
-        source.getX() + radius, source.getY() + radius, source.getZ() + radius
-    );
-
-    List<Entity> nearbyEntities = source.level().getEntities(source, area, e -> {
-      if (e == source || followers.contains(e)) return false;
-
-      if (e instanceof LivingEntity) {
-
-        if (source instanceof Player player && e instanceof Mob mob) {
-
-          if (mob.getLeashHolder() == player) {
-            return true;
-          }
-        }
-        return true;
-      }
-      return false;
-    });
-
-    followers.addAll(nearbyEntities);
-    return followers;
-  }
-
-  private static void addAllPassengers(Entity entity, List<Entity> list) {
-    for (Entity passenger : entity.getPassengers()) {
-      if (!list.contains(passenger)) {
-        list.add(passenger);
-        addAllPassengers(passenger, list);
-      }
-    }
-  }
-
-  private static void disarmEntity(ServerPlayer player) {
-
-    if (!player.getMainHandItem().isEmpty()) {
-      player.drop(player.getMainHandItem().copy(), false);
-      player.getMainHandItem().setCount(0);
-    }
-
-    playSound(player.serverLevel(), player.blockPosition(), ModSounds.LINKING_DISARM.get(), 1.0f, 1.0f);
+    int inventorySlot = player.getInventory().selected;
+    ItemStack reservedItem = heldItem.copy();
+    Vec3 sourcePosition = player.position();
+    player.getInventory().setItem(inventorySlot, ItemStack.EMPTY);
+    return new PendingDisarm(sourceLevel, player, inventorySlot, reservedItem, sourcePosition);
   }
 
   private static void generateSpawnPlatform(ServerLevel level, BlockPos pos) {
@@ -835,21 +915,63 @@ public final class LinkingManager {
     BLOCKED,
     PERMISSION_DENIED,
     START_CANCELLED,
-    TOO_UNSTABLE
+    TOO_UNSTABLE,
+    TELEPORT_FAILED
   }
 
-  /**
-   * Link flags that can be applied to modify linking behavior.
-   */
-  public static class LinkFlags {
-    public static final String FOLLOWING = "following";
-    public static final String DISARM = "disarm";
-    public static final String INTRA_LINKING = "intralinking";
-    public static final String RELATIVE = "relative";
-    public static final String GENERATE_PLATFORM = "generateplatform";
-    public static final String MAINTAIN_MOMENTUM = "maintainmomentum";
+  private record RidingEntityData(Entity entity, @Nullable Entity parent, Vec3 offset) {
   }
 
-  private record PassengerData(Entity passenger, Vec3 offset) {
+  private record RidingGroupData(Entity anchor, List<RidingEntityData> members) {
+  }
+
+  private record TeleportedRidingGroup(Entity anchor) {
+  }
+
+  private record FollowerData(RidingGroupData group, Vec3 offset, Vec3 momentum) {
+  }
+
+  private record PendingDisarm(
+      ServerLevel sourceLevel,
+      ServerPlayer player,
+      int inventorySlot,
+      ItemStack reservedItem,
+      Vec3 sourcePosition
+  ) {
+    private void commit() {
+      ItemEntity droppedItem = new ItemEntity(
+          sourceLevel,
+          sourcePosition.x,
+          sourcePosition.y + 0.5,
+          sourcePosition.z,
+          reservedItem.copy()
+      );
+      droppedItem.setDefaultPickUpDelay();
+      if (sourceLevel.addFreshEntity(droppedItem)) {
+        playSound(
+            sourceLevel,
+            BlockPos.containing(sourcePosition),
+            ModSounds.LINKING_DISARM.get(),
+            1.0f,
+            1.0f
+        );
+      } else {
+        rollback();
+      }
+    }
+
+    private void rollback() {
+      if (player.getInventory().getItem(inventorySlot).isEmpty()) {
+        player.getInventory().setItem(inventorySlot, reservedItem);
+      } else {
+        player.getInventory().placeItemBackInInventory(reservedItem);
+      }
+    }
+  }
+
+  private record PendingReturnLink(UUID playerId, int targetAgeUID, CompoundTag returnData) {
+    private void commit(MinecraftServer server) {
+      AgeReturnData.get(server).setReturnLink(playerId, targetAgeUID, returnData);
+    }
   }
 }

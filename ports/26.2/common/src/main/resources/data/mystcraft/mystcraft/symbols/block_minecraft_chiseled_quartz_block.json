@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 3,
+  "instability_cost": 5.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Earth",
+    "Crafted"
+  ],
+  "display_name": "Chiseled Quartz Block Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:chiseled_quartz_block"
+    },
+    {
+      "type": "add_instability",
+      "value": 5.0
+    }
+  ]
+}

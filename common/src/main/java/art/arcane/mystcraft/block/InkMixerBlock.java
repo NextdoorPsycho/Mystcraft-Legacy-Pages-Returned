@@ -3,8 +3,6 @@ package art.arcane.mystcraft.block;
 import art.arcane.mystcraft.blockentity.InkMixerBlockEntity;
 import art.arcane.mystcraft.platform.Services;
 import art.arcane.mystcraft.registry.ModBlockEntities;
-import art.arcane.mystcraft.util.CodecCompat;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
@@ -37,8 +35,6 @@ import java.util.List;
 public class InkMixerBlock extends BaseEntityBlock {
 
   public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-  public static final MapCodec<InkMixerBlock> CODEC = CodecCompat.simpleCodec(InkMixerBlock::new);
-
   public InkMixerBlock(Properties properties) {
     super(properties);
     registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
@@ -47,10 +43,6 @@ public class InkMixerBlock extends BaseEntityBlock {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(FACING);
-  }
-
-  protected MapCodec<? extends BaseEntityBlock> codec() {
-    return CODEC;
   }
 
   @Override

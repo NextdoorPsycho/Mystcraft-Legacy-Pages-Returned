@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IGI",
+    "SRS",
+    "SES"
+  ],
+  "key": {
+    "I": "#c:ingots/iron",
+    "G": "minecraft:gold_ingot",
+    "S": "#minecraft:stone_crafting_materials",
+    "R": "minecraft:redstone",
+    "E": "minecraft:ender_pearl"
+  },
+  "result": {
+    "id": "mystcraft:blocklinkmodifier"
+  }
+}

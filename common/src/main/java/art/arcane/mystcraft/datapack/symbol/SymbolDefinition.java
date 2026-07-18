@@ -111,6 +111,10 @@ public final class SymbolDefinition {
     List<SymbolLogic> logic = new ArrayList<>();
     if (json.has("logic")) {
       JsonArray logicArray = GsonHelper.getAsJsonArray(json, "logic");
+      boolean redundantInstabilityLogic = hasRedundantInstabilityLogic(
+          logicArray,
+          instabilityCost
+      );
       for (JsonElement element : logicArray) {
         if (!element.isJsonObject()) continue;
         JsonObject logicObj = element.getAsJsonObject();
@@ -118,6 +122,9 @@ public final class SymbolDefinition {
         ResourceLocation typeId = SymbolLogicRegistry.resolveId(typeRaw);
         if (typeId == null) {
           Mystcraft.LOGGER.warn("[SymbolDefinition] Missing logic type for {}", id);
+          continue;
+        }
+        if (redundantInstabilityLogic && isAddInstability(typeId)) {
           continue;
         }
         SymbolLogic parsed = SymbolLogicRegistry.create(typeId, logicObj);
@@ -143,5 +150,42 @@ public final class SymbolDefinition {
         logic,
         SymbolDisplay.fromJson(id, json.get("display"))
     );
+  }
+
+  /**
+   * Older symbol packs commonly declared the same cost twice: once as
+   * {@code instability_cost} for the grammar and once as executable
+   * {@code add_instability} logic. The grammar owns the declared base cost;
+   * matching executable entries are therefore metadata duplicates. Logic that
+   * intentionally adds a different amount remains executable.
+   */
+  private static boolean hasRedundantInstabilityLogic(
+      JsonArray logicArray,
+      float instabilityCost
+  ) {
+    float logicInstability = 0.0f;
+    int instabilityEntries = 0;
+    for (JsonElement element : logicArray) {
+      if (!element.isJsonObject()) {
+        continue;
+      }
+      JsonObject logicObj = element.getAsJsonObject();
+      ResourceLocation typeId = SymbolLogicRegistry.resolveId(
+          GsonHelper.getAsString(logicObj, "type", null)
+      );
+      if (!isAddInstability(typeId)) {
+        continue;
+      }
+      logicInstability += GsonHelper.getAsFloat(logicObj, "value", 0.0f);
+      instabilityEntries++;
+    }
+    return instabilityEntries > 0
+        && Math.abs(logicInstability - instabilityCost) <= 0.0001f;
+  }
+
+  private static boolean isAddInstability(ResourceLocation typeId) {
+    return typeId != null
+        && Mystcraft.MOD_ID.equals(typeId.getNamespace())
+        && "add_instability".equals(typeId.getPath());
   }
 }

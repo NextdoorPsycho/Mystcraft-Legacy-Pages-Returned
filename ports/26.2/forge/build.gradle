@@ -1,0 +1,115 @@
+plugins {
+    id 'net.minecraftforge.gradle' version "${forgegradle_version}"
+}
+
+description = 'Forge platform module for Minecraft 26.2.'
+base.archivesName = "MystcraftLegacy_Forge-${minecraft_version}"
+
+minecraft {
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir("run/${name}")
+            systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
+        }
+
+        register('client') {
+            // GLFW requires the JVM's initial macOS thread for window events.
+            // Keep this in the checked-in run configuration so a fresh clone
+            // launches the Forge client without IDE-specific VM options.
+            if (System.getProperty('os.name', '').toLowerCase(Locale.ROOT).contains('mac')) {
+                jvmArgs '-XstartOnFirstThread'
+            }
+        }
+
+        register('server') {
+            args '--nogui'
+        }
+
+        register('gameTestServer')
+
+        register('data') {
+            args '--mod', mod_id, '--all',
+                '--output', layout.buildDirectory.dir('generated/smoke-resources'),
+                '--existing', layout.projectDirectory.dir('src/main/resources')
+        }
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
+    implementation project(':common')
+
+    annotationProcessor "net.minecraftforge:eventbus-validator:${eventbus_validator_version}"
+}
+
+def productionVersion = project.version
+def metadataProperties = [
+    version       : productionVersion.toString(),
+    modName       : mod_name.toString(),
+    modDescription: mod_description.toString(),
+    modAuthors    : mod_authors.toString(),
+    modLicense    : mod_license.toString(),
+    modHomepage   : mod_homepage.toString(),
+    modIssues     : mod_issues.toString()
+]
+
+tasks.named('processResources', ProcessResources) {
+    inputs.properties metadataProperties
+    inputs.file project(':common').file('src/main/resources/mystcraft.mixins.json')
+
+    filesMatching('META-INF/mods.toml') {
+        expand metadataProperties
+    }
+
+    // Forge 65 bundles Mixin 0.8.7, whose highest declared compatibility
+    // level is Java 21. Generate a Forge-named view of the common config so
+    // its mixin list cannot drift while leaving Fabric's Java 25 metadata
+    // untouched.
+    from(project(':common').file('src/main/resources/mystcraft.mixins.json')) {
+        rename { 'mystcraft.common.forge.mixins.json' }
+        filter { line -> line.replace('"JAVA_25"', '"JAVA_21"') }
+    }
+}
+
+tasks.named('jar', Jar) {
+    from project(':common').sourceSets.main.output
+    from(rootProject.file('../../LICENSE')) {
+        rename { 'LICENSE_mystcraft' }
+    }
+    manifest {
+        attributes(
+            'Implementation-Title': metadataProperties.modName,
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': metadataProperties.modAuthors,
+            'MixinConfigs': 'mystcraft.common.forge.mixins.json,mystcraft.forge.mixins.json'
+        )
+    }
+}
+
+tasks.named('sourcesJar', Jar) {
+    from project(':common').sourceSets.main.allSource
+}
+
+// Forge 65's userdev locator treats exploded classes and resources as separate
+// mod files. Run against the assembled jar so metadata and @Mod classes share
+// the same container, matching the artifact users actually receive.
+def forgeProductionJar = tasks.named('jar', Jar)
+def commonRuntimeJar = project(':common').tasks.named('jar', Jar)
+sourceSets.main.runtimeClasspath = (configurations.runtimeClasspath - files(
+    commonRuntimeJar.flatMap { it.archiveFile }
+)) + files(
+    forgeProductionJar.flatMap { it.archiveFile }
+)
+
+tasks.matching { task ->
+    task.name in ['runClient', 'runServer', 'runGameTestServer', 'runData']
+}.configureEach {
+    dependsOn forgeProductionJar
+}

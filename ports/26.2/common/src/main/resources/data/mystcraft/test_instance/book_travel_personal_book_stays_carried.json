@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:book_travel_personal_book_stays_carried",
+  "max_ticks": 40,
+  "structure": "minecraft:empty"
+}

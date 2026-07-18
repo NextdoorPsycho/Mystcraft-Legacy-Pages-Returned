@@ -1,0 +1,21 @@
+{
+  "category": "weather",
+  "card_rank": 2,
+  "instability_cost": 3.0,
+  "poem": [
+    "Sustain",
+    "Static",
+    "Inhibit",
+    "Energy"
+  ],
+  "logic": [
+    {
+      "type": "set_weather_type",
+      "value": "snow"
+    },
+    {
+      "type": "add_instability",
+      "value": 3.0
+    }
+  ]
+}

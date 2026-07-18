@@ -1,0 +1,44 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 0.0,
+  "poem": [
+    "Logic",
+    "Test",
+    "Register",
+    "Apply"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "spikes_enabled",
+      "value": true
+    },
+    {
+      "type": "set_flag",
+      "flag": "caves_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:spikes",
+      "params": {
+        "count": 1,
+        "min_height": 10,
+        "max_height": 30,
+        "cold_temperature": 0.15,
+        "chance": 0.08
+      }
+    },
+    {
+      "type": "register_terrain_alteration",
+      "id": "mystcraft:caves",
+      "params": {
+        "rate": 10,
+        "size": 30,
+        "fill_block": "minecraft:air"
+      }
+    }
+  ],
+  "allow_random": false
+}

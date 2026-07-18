@@ -1,0 +1,21 @@
+{
+  "category": "environment",
+  "card_rank": 2,
+  "instability_cost": 5.0,
+  "poem": [
+    "Environment",
+    "Dynamic",
+    "Haste",
+    "Brevity"
+  ],
+  "logic": [
+    {
+      "type": "set_timescale",
+      "value": 2.0
+    },
+    {
+      "type": "add_instability",
+      "value": 5.0
+    }
+  ]
+}

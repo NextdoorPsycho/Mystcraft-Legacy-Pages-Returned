@@ -1,10 +1,12 @@
 package art.arcane.mystcraft.entity;
 
 import art.arcane.mystcraft.registry.ModEntities;
-import art.arcane.mystcraft.util.NbtCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MoverType;
@@ -22,6 +24,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public class MystcraftFallingBlockEntity extends Entity {
 
+  private static final EntityDataAccessor<BlockState> DATA_BLOCK_STATE =
+      SynchedEntityData.defineId(MystcraftFallingBlockEntity.class, EntityDataSerializers.BLOCK_STATE);
   private BlockState blockState = Blocks.STONE.defaultBlockState();
   private BlockPos startPos = BlockPos.ZERO;
   private int time;
@@ -33,7 +37,7 @@ public class MystcraftFallingBlockEntity extends Entity {
   public MystcraftFallingBlockEntity(Level level, double x, double y, double z, BlockState state) {
     this(ModEntities.FALLING_BLOCK.get(), level);
     setPos(x, y, z);
-    this.blockState = state;
+    setBlockState(state);
     this.blocksBuilding = true;
     setDeltaMovement(Vec3.ZERO);
     this.xo = x;
@@ -44,7 +48,7 @@ public class MystcraftFallingBlockEntity extends Entity {
 
   @Override
   protected void defineSynchedData() {
-
+    entityData.define(DATA_BLOCK_STATE, Blocks.STONE.defaultBlockState());
   }
 
   @Override
@@ -104,10 +108,13 @@ public class MystcraftFallingBlockEntity extends Entity {
 
   @Override
   protected void readAdditionalSaveData(CompoundTag tag) {
-    blockState = NbtUtils.readBlockState(level().holderLookup(net.minecraft.core.registries.Registries.BLOCK), tag.getCompound("BlockState"));
+    setBlockState(NbtUtils.readBlockState(
+        level().holderLookup(net.minecraft.core.registries.Registries.BLOCK),
+        tag.getCompound("BlockState")
+    ));
     time = tag.getInt("Time");
     if (tag.contains("StartPos")) {
-      startPos = NbtCompat.readBlockPos(tag, "StartPos");
+      startPos = NbtUtils.readBlockPos(tag.getCompound("StartPos"));
     }
   }
 
@@ -119,7 +126,12 @@ public class MystcraftFallingBlockEntity extends Entity {
   }
 
   public BlockState getBlockState() {
-    return blockState;
+    return entityData.get(DATA_BLOCK_STATE);
+  }
+
+  private void setBlockState(BlockState state) {
+    blockState = state == null ? Blocks.STONE.defaultBlockState() : state;
+    entityData.set(DATA_BLOCK_STATE, blockState);
   }
 
   public BlockPos getStartPos() {

@@ -33,47 +33,11 @@ import net.minecraft.world.level.block.Blocks;
 import java.util.*;
 
 /**
- * Shared assertions for the cross-loader GameTest suites.
+ * Strict client-only assertions for procedural rendering.
  */
 public final class MystcraftGameTestAssertions {
 
   private MystcraftGameTestAssertions() {
-  }
-
-  /**
-   * Returns {@code true} when {@code t} is a class-load failure for a
-   * client-only class on a dedicated-server runtime.
-   *
-   * <p>The two loaders surface this differently:
-   * <ul>
-   *   <li><b>Forge</b> wraps the failure in
-   *       {@link java.lang.BootstrapMethodError} (a {@link LinkageError}
-   *       subclass) at the {@code invokedynamic} site.</li>
-   *   <li><b>Fabric</b> throws a plain {@link RuntimeException} from
-   *       its class loader's environment guard (verified in
-   *       {@code fabric-loader-0.18.4-sources.jar}: the loader literally
-   *       executes
-   *       {@code throw new RuntimeException("Cannot load class " + name
-   *       + " in environment type " + envType)}).</li>
-   * </ul>
-   *
-   * <p>Layer-3 pixel tests need to skip cleanly on both runtimes, so
-   * they wrap the GL call with this predicate. Real failures (assertion
-   * mismatches, NPEs, etc.) propagate normally because they don't carry
-   * the load-failure marker text.
-   */
-  static boolean isClientOnlyClassLoadFailure(Throwable t) {
-    if (t == null) return false;
-    if (t instanceof LinkageError) return true;
-    String msg = t.getMessage();
-    if (msg != null
-        && (msg.contains("Cannot load class")
-        || msg.contains("in environment type")
-        || msg.contains("Attempted to load class"))) {
-      return true;
-    }
-    Throwable cause = t.getCause();
-    return cause != null && cause != t && isClientOnlyClassLoadFailure(cause);
   }
 
   public static void assertCoreGameplayContentLoaded() {
@@ -374,7 +338,7 @@ public final class MystcraftGameTestAssertions {
    *       {@link DrawableWordManager#getCuratedSeed(String)} returns a
    *       stable, case-insensitive seed for known D'ni words and
    *       distinct seeds for distinct words.</li>
-   *   <li><b>Pixel layer (graceful skip if blaze3d is unavailable)</b> —
+   *   <li><b>Pixel layer (client runtime required)</b> —
    *       calls {@link SymbolGlyphFactory#glyph} twice with the cache
    *       reset between calls and asserts the two
    *       {@link com.mojang.blaze3d.platform.NativeImage}s carry
@@ -439,25 +403,14 @@ public final class MystcraftGameTestAssertions {
       throw new IllegalStateException("DrawableWordManager.getCuratedColor not stable + case-insensitive for 'fire'");
     }
 
-    try {
-      assertGlyphPixelDeterminism(desert, forest);
-    } catch (LinkageError | RuntimeException e) {
-      if (!isClientOnlyClassLoadFailure(e)) {
-        if (e instanceof RuntimeException re) throw re;
-        throw (LinkageError) e;
-      }
-
-      Mystcraft.LOGGER.info("[ProceduralUiTest] Pixel determinism layer deferred (no GL runtime): {}",
-          e.toString());
-    }
+    assertGlyphPixelDeterminism(desert, forest);
   }
 
   private static void assertGlyphPixelDeterminism(@org.jetbrains.annotations.NotNull ResourceLocation desert,
                                                   @org.jetbrains.annotations.NotNull ResourceLocation forest) {
     IAgeSymbol biomeDesert = SymbolRegistry.get(desert);
     if (biomeDesert == null) {
-
-      return;
+      throw new IllegalStateException("Required client test symbol is missing: " + desert);
     }
     SymbolPalette.Entry palette = SymbolPalette.get(biomeDesert.getCategory());
     int size = SymbolGlyphFactory.GLYPH_SIZE;
@@ -522,7 +475,7 @@ public final class MystcraftGameTestAssertions {
    *       {@code (category → expected motif)} table is checked. Acts as
    *       a regression guard: any change to {@code defaultFor} fails the
    *       test until both the test and the spec are updated together.</li>
-   *   <li><b>Pixel layer (graceful skip if blaze3d is unavailable)</b> —
+   *   <li><b>Pixel layer (client runtime required)</b> —
    *       picks one symbol per category, renders the motif into a fresh
    *       128×128 {@link com.mojang.blaze3d.platform.NativeImage}, hashes
    *       the pixels, and asserts (a) the hash repeats on a second
@@ -572,16 +525,7 @@ public final class MystcraftGameTestAssertions {
     }
 
     DrawableWordManager.initialize();
-    try {
-      assertMotifPixelDispatch();
-    } catch (LinkageError | RuntimeException e) {
-      if (!isClientOnlyClassLoadFailure(e)) {
-        if (e instanceof RuntimeException re) throw re;
-        throw (LinkageError) e;
-      }
-      Mystcraft.LOGGER.info("[ProceduralUiTest] Motif dispatch pixel layer deferred (no GL runtime): {}",
-          e.toString());
-    }
+    assertMotifPixelDispatch();
   }
 
   private static void assertMotifPixelDispatch() {
@@ -602,8 +546,7 @@ public final class MystcraftGameTestAssertions {
       }
     }
     if (hashByCategory.isEmpty()) {
-
-      return;
+      throw new IllegalStateException("No registered symbols are available for the motif client test");
     }
     long uniqueHashes = hashByCategory.values().stream().distinct().count();
     int sampled = hashByCategory.size();
@@ -679,17 +622,16 @@ public final class MystcraftGameTestAssertions {
    *       returns increasingly-decorated treatments — measured by counting
    *       enabled features (border weight + ornament weight + spine +
    *       mid-edge + halo). This layer runs without LWJGL natives.</li>
-   *   <li><b>Pixel monotonicity.</b> Render the same sample symbol with
+   *   <li><b>Pixel progression.</b> Render the same sample symbol with
    *       a wrapper overriding {@code getCardRank} to each value 1..5,
-   *       count non-transparent pixels, assert each step is strictly
-   *       greater than the previous. Skipped when GL natives are
-   *       unavailable.</li>
+   *       assert each rank is deterministic, and assert all five rank images
+   *       are distinct on the client runtime.</li>
    * </ol>
    * <p>
    * The sample symbol is forced to {@code instabilityCost == 0} via the
    * wrapper so the warning halo doesn't pollute the comparison — the
    * halo is an independent treatment validated separately by
-   * {@link #renderRankPixelCounts}'s instability cap is unreachable
+   * {@link #renderRankPixelHashes}'s instability cap is unreachable
    * because of the wrapper.
    */
   public static void assertSymbolRankProgression() {
@@ -712,36 +654,29 @@ public final class MystcraftGameTestAssertions {
     }
 
     DrawableWordManager.initialize();
-    try {
-      assertSymbolRankPixelProgression();
-    } catch (LinkageError | RuntimeException e) {
-      if (!isClientOnlyClassLoadFailure(e)) {
-        if (e instanceof RuntimeException re) throw re;
-        throw (LinkageError) e;
-      }
-      Mystcraft.LOGGER.info("[ProceduralUiTest] Rank progression pixel layer deferred (no GL runtime): {}",
-          e.toString());
-    }
+    assertSymbolRankPixelProgression();
   }
 
   private static void assertSymbolRankPixelProgression() {
     IAgeSymbol sample = pickStableSymbolForRankTest();
     if (sample == null) {
-      Mystcraft.LOGGER.info("[ProceduralUiTest] Rank progression pixel layer deferred (no stable symbols).");
-      return;
+      throw new IllegalStateException("No stable symbol is available for the client rank test");
     }
 
-    int[] pixelCounts = renderRankPixelCounts(sample);
-    for (int i = 1; i < pixelCounts.length; i++) {
-      if (pixelCounts[i] <= pixelCounts[i - 1]) {
-        StringBuilder sb = new StringBuilder("Rank progression for ")
-            .append(sample.getRegistryName())
-            .append(" not strictly increasing in non-transparent pixel count: ");
-        for (int j = 0; j < pixelCounts.length; j++) {
-          if (j > 0) sb.append(" → ");
-          sb.append("rank").append(j + 1).append("=").append(pixelCounts[j]);
+    long[] firstPass = renderRankPixelHashes(sample);
+    long[] secondPass = renderRankPixelHashes(sample);
+    for (int rank = 0; rank < firstPass.length; rank++) {
+      if (firstPass[rank] != secondPass[rank]) {
+        throw new IllegalStateException("Rank " + (rank + 1) + " render for "
+            + sample.getRegistryName() + " is not deterministic: 0x"
+            + Long.toHexString(firstPass[rank]) + " vs 0x"
+            + Long.toHexString(secondPass[rank]));
+      }
+      for (int earlier = 0; earlier < rank; earlier++) {
+        if (firstPass[rank] == firstPass[earlier]) {
+          throw new IllegalStateException("Rank renders for " + sample.getRegistryName()
+              + " are pixel-identical at ranks " + (earlier + 1) + " and " + (rank + 1));
         }
-        throw new IllegalStateException(sb.toString());
       }
     }
   }
@@ -785,27 +720,26 @@ public final class MystcraftGameTestAssertions {
     return null;
   }
 
-  private static int[] renderRankPixelCounts(@org.jetbrains.annotations.NotNull IAgeSymbol symbol) {
-    int[] counts = new int[5];
+  private static long[] renderRankPixelHashes(@org.jetbrains.annotations.NotNull IAgeSymbol symbol) {
+    long[] hashes = new long[5];
     for (int rank = 1; rank <= 5; rank++) {
       IAgeSymbol wrapped = withCardRank(symbol, rank);
       try (com.mojang.blaze3d.platform.NativeImage img =
                SymbolPageTextureFactory.composeSymbolPageImage(wrapped)) {
-        int nonTransparent = 0;
+        long hash = 0xCBF29CE484222325L;
+        long prime = 0x100000001B3L;
         int w = img.getWidth();
         int h = img.getHeight();
         for (int y = 0; y < h; y++) {
           for (int x = 0; x < w; x++) {
-
-            int p = img.getPixelRGBA(x, y);
-            int alpha = (p >>> 24) & 0xFF;
-            if (alpha != 0) nonTransparent++;
+            hash ^= img.getPixelRGBA(x, y) & 0xFFFFFFFFL;
+            hash *= prime;
           }
         }
-        counts[rank - 1] = nonTransparent;
+        hashes[rank - 1] = hash;
       }
     }
-    return counts;
+    return hashes;
   }
 
   /**
@@ -817,7 +751,7 @@ public final class MystcraftGameTestAssertions {
    *       directly; assert {@link SymbolGlyphFactory#cacheSize()} drops
    *       to {@code 0}. Validates the wiring fix for plan task 5.4 (the
    *       reload listener previously skipped the symbol caches entirely).</li>
-   *   <li><b>Pixel-identity layer (graceful skip if blaze3d is unavailable)</b> —
+   *   <li><b>Pixel-identity layer (client runtime required)</b> —
    *       render a glyph, capture its hash, reload, render the same
    *       glyph again, assert hash matches. Reload should be transparent
    *       to deterministic content, but the {@link NativeImage} reference
@@ -825,34 +759,18 @@ public final class MystcraftGameTestAssertions {
    * </ol>
    */
   public static void assertProceduralUiReloadFlushesSymbolCaches() {
-
     DrawableWordManager.initialize();
 
-    int beforeReloadSize;
-    try {
-      IAgeSymbol sample = pickFirstSymbolOfCategory(SymbolCategory.BIOME);
-      if (sample == null) {
+    IAgeSymbol sample = pickFirstSymbolOfCategory(SymbolCategory.BIOME);
+    if (sample == null) {
+      throw new IllegalStateException("No biome symbol is available for the client reload test");
+    }
+    SymbolPalette.Entry palette = SymbolPalette.get(sample.getCategory());
 
-        ProceduralUiReload.reloadAll();
-        return;
-      }
-      SymbolPalette.Entry palette = SymbolPalette.get(sample.getCategory());
-
-      SymbolGlyphFactory.glyph(sample, "Stone", palette);
-      beforeReloadSize = SymbolGlyphFactory.cacheSize();
-      if (beforeReloadSize == 0) {
-        Mystcraft.LOGGER.info("[ProceduralUiTest] Reload test Layer 1 deferred (cache stayed empty).");
-        return;
-      }
-    } catch (LinkageError | RuntimeException e) {
-      if (!isClientOnlyClassLoadFailure(e)) {
-        if (e instanceof RuntimeException re) throw re;
-        throw (LinkageError) e;
-      }
-
-      Mystcraft.LOGGER.info("[ProceduralUiTest] Reload test deferred (no GL runtime): {}",
-          e.toString());
-      return;
+    SymbolGlyphFactory.glyph(sample, "Stone", palette);
+    int beforeReloadSize = SymbolGlyphFactory.cacheSize();
+    if (beforeReloadSize == 0) {
+      throw new IllegalStateException("Symbol glyph cache stayed empty before reload");
     }
 
     ProceduralUiReload.reloadAll();
@@ -863,21 +781,14 @@ public final class MystcraftGameTestAssertions {
               + "before=" + beforeReloadSize + ", after=" + afterReloadSize);
     }
 
-    try {
-      assertReloadPreservesPixelIdentity();
-    } catch (LinkageError | RuntimeException e) {
-      if (!isClientOnlyClassLoadFailure(e)) {
-        if (e instanceof RuntimeException re) throw re;
-        throw (LinkageError) e;
-      }
-      Mystcraft.LOGGER.info("[ProceduralUiTest] Reload pixel-identity layer deferred (no GL runtime): {}",
-          e.toString());
-    }
+    assertReloadPreservesPixelIdentity();
   }
 
   private static void assertReloadPreservesPixelIdentity() {
     IAgeSymbol sample = pickFirstSymbolOfCategory(SymbolCategory.BIOME);
-    if (sample == null) return;
+    if (sample == null) {
+      throw new IllegalStateException("No biome symbol is available for the client reload test");
+    }
     SymbolPalette.Entry palette = SymbolPalette.get(sample.getCategory());
     long hashBefore = hashGlyph(sample, "Stone", palette);
 
@@ -981,7 +892,7 @@ public final class MystcraftGameTestAssertions {
    *       {@link #withDisplay} and assert
    *       {@link IAgeSymbol#getDisplay()} returns the supplied override
    *       (default returns {@code null}).</li>
-   *   <li><b>Pixel layer (graceful skip if blaze3d is unavailable)</b> —
+   *   <li><b>Pixel layer (client runtime required)</b> —
    *       render the same base symbol four ways:
    *       <ul>
    *         <li>no display override (category default = WREATH for BIOME)</li>
@@ -1042,8 +953,7 @@ public final class MystcraftGameTestAssertions {
 
     IAgeSymbol base = pickFirstSymbolOfCategory(SymbolCategory.BIOME);
     if (base == null) {
-
-      return;
+      throw new IllegalStateException("No biome symbol is available for the display override test");
     }
     if (base.getDisplay() != null) {
       throw new IllegalStateException("Vanilla IAgeSymbol.getDisplay() default must return null; "
@@ -1057,16 +967,7 @@ public final class MystcraftGameTestAssertions {
     }
 
     DrawableWordManager.initialize();
-    try {
-      assertSymbolDisplayPixelOverride(base);
-    } catch (LinkageError | RuntimeException e) {
-      if (!isClientOnlyClassLoadFailure(e)) {
-        if (e instanceof RuntimeException re) throw re;
-        throw (LinkageError) e;
-      }
-      Mystcraft.LOGGER.info("[ProceduralUiTest] Display override pixel layer deferred (no GL runtime): {}",
-          e.toString());
-    }
+    assertSymbolDisplayPixelOverride(base);
   }
 
   private static void assertSymbolDisplayPixelOverride(@org.jetbrains.annotations.NotNull IAgeSymbol base) {
@@ -1208,18 +1109,15 @@ public final class MystcraftGameTestAssertions {
    *       cores still pass.</li>
    * </ol>
    *
-   * <p>If GL natives are unavailable (NativeImage allocation fails),
-   * the test degrades into a smoke check that the call doesn't crash
-   * and the cache is reset cleanly. This mirrors the layered approach
-   * used by the other procedural-UI tests.
+   * <p>This assertion is client-only. Native or rendering failures are test
+   * failures and are never converted into a pass.
    */
   public static void assertProceduralSymbolWarmCompletes() {
     DrawableWordManager.initialize();
 
     int symbolCount = SymbolRegistry.getAll().size();
     if (symbolCount == 0) {
-      Mystcraft.LOGGER.info("[ProceduralUiTest] Warm-completes test deferred: empty SymbolRegistry.");
-      return;
+      throw new IllegalStateException("Symbol registry is empty during the client warm test");
     }
 
     SymbolGlyphFactory.reset();
@@ -1229,18 +1127,7 @@ public final class MystcraftGameTestAssertions {
     }
 
     long start = System.nanoTime();
-    int finalSize;
-    try {
-      finalSize = SymbolGlyphFactory.warmBlocking();
-    } catch (LinkageError | RuntimeException e) {
-      if (!isClientOnlyClassLoadFailure(e)) {
-        if (e instanceof RuntimeException re) throw re;
-        throw (LinkageError) e;
-      }
-      Mystcraft.LOGGER.info("[ProceduralUiTest] Warm-completes test deferred (no GL runtime): {}",
-          e.toString());
-      return;
-    }
+    int finalSize = SymbolGlyphFactory.warmBlocking();
     long durationMs = (System.nanoTime() - start) / 1_000_000L;
 
     Mystcraft.LOGGER.info(
@@ -1252,10 +1139,12 @@ public final class MystcraftGameTestAssertions {
           "warmBlocking returned zero entries — pre-warm did not run");
     }
 
-    if (finalSize < symbolCount) {
+    int capacity = SymbolGlyphFactory.cacheCapacity();
+    int expectedMinimum = Math.min(symbolCount, capacity);
+    if (finalSize < expectedMinimum || finalSize > capacity) {
       throw new IllegalStateException(
-          "warmBlocking populated only " + finalSize
-              + " tiles, expected at least one tile per symbol (" + symbolCount + ")");
+          "warmBlocking populated " + finalSize + " tiles; expected " + expectedMinimum
+              + ".." + capacity + " for " + symbolCount + " symbols");
     }
 
     final long ceilingMs = 30_000L;
@@ -1287,12 +1176,10 @@ public final class MystcraftGameTestAssertions {
    *       return non-null {@link ResourceLocation}s, AND those locations
    *       must differ between the two new kinds (proves the cache keys
    *       distinguish them, which in turn proves their palettes/emblems
-   *       diverge). On a server-only runtime this layer defers cleanly
-   *       because the factories load {@code com.mojang.blaze3d.platform.NativeImage}.</li>
+   *       diverge).</li>
    * </ol>
    */
   public static void assertGuidebookAndUnlinkedBookKindsRender() {
-
     Item guidebookItem = ModItems.GUIDEBOOK == null ? null : ModItems.GUIDEBOOK.get();
     Item unlinkedItem = ModItems.LINKBOOK_UNLINKED == null ? null : ModItems.LINKBOOK_UNLINKED.get();
     if (guidebookItem == null || guidebookItem == Items.AIR) {
@@ -1320,17 +1207,7 @@ public final class MystcraftGameTestAssertions {
               + " — expected LINKBOOK_UNLINKED");
     }
 
-    try {
-      assertGuidebookAndUnlinkedBookKindsRenderPixels(guideStack, unlinkedStack);
-    } catch (LinkageError | RuntimeException e) {
-      if (!isClientOnlyClassLoadFailure(e)) {
-        if (e instanceof RuntimeException re) throw re;
-        throw (LinkageError) e;
-      }
-      Mystcraft.LOGGER.info(
-          "[ProceduralUiTest] Guidebook + unlinked-book render layer deferred (no GL runtime): {}",
-          e.toString());
-    }
+    assertGuidebookAndUnlinkedBookKindsRenderPixels(guideStack, unlinkedStack);
   }
 
   private static void assertGuidebookAndUnlinkedBookKindsRenderPixels(

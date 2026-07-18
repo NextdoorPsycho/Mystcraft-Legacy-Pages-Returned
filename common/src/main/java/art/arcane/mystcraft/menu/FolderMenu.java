@@ -89,7 +89,7 @@ public class FolderMenu extends AbstractContainerMenu {
   @Override
   public boolean stillValid(@NotNull Player player) {
     ItemStack current = player.getInventory().getItem(folderSlot);
-    return !current.isEmpty() && current.getItem() instanceof FolderItem;
+    return current == folderStack && current.getItem() instanceof FolderItem;
   }
 
   @Override
@@ -159,8 +159,17 @@ public class FolderMenu extends AbstractContainerMenu {
     return folderStack;
   }
 
+  /**
+   * Reloads the visible slots after a packet mutates the folder NBT directly.
+   */
+  public void reloadFromFolder() {
+    folderInventory.loadFromFolder();
+  }
+
   private static class FolderInventoryHandler extends SimpleContainer {
     private final ItemStack folder;
+    private final List<ItemStack> overflow = new ArrayList<>();
+    private boolean loading;
 
     public FolderInventoryHandler(ItemStack folder) {
       super(FolderItem.MAX_PAGES);
@@ -170,8 +179,20 @@ public class FolderMenu extends AbstractContainerMenu {
 
     private void loadFromFolder() {
       List<ItemStack> pages = FolderItem.getPages(folder);
-      for (int i = 0; i < pages.size() && i < getContainerSize(); i++) {
-        setItem(i, pages.get(i).copy());
+      loading = true;
+      try {
+        super.clearContent();
+        overflow.clear();
+        for (int i = 0; i < pages.size(); i++) {
+          ItemStack page = pages.get(i).copy();
+          if (i < getContainerSize()) {
+            setItem(i, page);
+          } else {
+            overflow.add(page);
+          }
+        }
+      } finally {
+        loading = false;
       }
     }
 
@@ -183,13 +204,38 @@ public class FolderMenu extends AbstractContainerMenu {
           pages.add(stack.copy());
         }
       }
+      for (ItemStack stack : overflow) {
+        if (!stack.isEmpty()) {
+          pages.add(stack.copy());
+        }
+      }
       FolderItem.setPages(folder, pages);
     }
 
     @Override
     public void setChanged() {
       super.setChanged();
+      if (loading) {
+        return;
+      }
+      promoteOverflow();
       saveToFolder();
+    }
+
+    private void promoteOverflow() {
+      if (overflow.isEmpty()) {
+        return;
+      }
+      loading = true;
+      try {
+        for (int slot = 0; slot < getContainerSize() && !overflow.isEmpty(); slot++) {
+          if (getItem(slot).isEmpty()) {
+            setItem(slot, overflow.remove(0));
+          }
+        }
+      } finally {
+        loading = false;
+      }
     }
 
     @Override

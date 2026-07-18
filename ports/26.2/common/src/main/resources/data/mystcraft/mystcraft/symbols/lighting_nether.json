@@ -1,0 +1,21 @@
+{
+  "category": "lighting",
+  "card_rank": 3,
+  "instability_cost": 8.0,
+  "poem": [
+    "Light",
+    "Form",
+    "Inferno",
+    "Glow"
+  ],
+  "logic": [
+    {
+      "type": "set_lighting_type",
+      "value": "nether"
+    },
+    {
+      "type": "add_instability",
+      "value": 8.0
+    }
+  ]
+}

@@ -18,6 +18,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -66,27 +67,12 @@ public class MystcraftForge {
   }
 
   private static net.minecraft.world.level.block.Block resolveShortGrass() {
-    try {
-      return (net.minecraft.world.level.block.Block) net.minecraft.world.level.block.Blocks.class.getField("SHORT_GRASS").get(null);
-    } catch (ReflectiveOperationException ignored) {
-
-    }
-    try {
-      return (net.minecraft.world.level.block.Block) net.minecraft.world.level.block.Blocks.class.getField("GRASS").get(null);
-    } catch (ReflectiveOperationException ignored) {
-
-    }
-    return net.minecraft.world.level.block.Blocks.GRASS_BLOCK;
+    return net.minecraft.world.level.block.Blocks.GRASS;
   }
 
   private void registerGameTests(net.minecraftforge.event.RegisterGameTestsEvent event) {
     Mystcraft.LOGGER.info("[Mystcraft] Registering GameTests");
-    try {
-      Class<?> gameTestClass = Class.forName("art.arcane.mystcraft.gametest.MystcraftForgeGameTests");
-      event.register(gameTestClass);
-    } catch (ClassNotFoundException e) {
-      Mystcraft.LOGGER.info("[Mystcraft] GameTests not available for this Forge version");
-    }
+    event.register(art.arcane.mystcraft.gametest.MystcraftForgeGameTests.class);
   }
 
   private void registerEntityAttributes(net.minecraftforge.event.entity.EntityAttributeCreationEvent event) {
@@ -121,8 +107,15 @@ public class MystcraftForge {
   }
 
   @SubscribeEvent
+  public void onServerStopping(ServerStoppingEvent event) {
+    AgeDimensionFactory.prepareForServerStop(event.getServer());
+  }
+
+  @SubscribeEvent
   public void onServerStopped(ServerStoppedEvent event) {
     Mystcraft.LOGGER.info("[Mystcraft] Server stopped");
+    art.arcane.mystcraft.event.AgeEffectsHandler.clearServerState(event.getServer());
+    art.arcane.mystcraft.event.AgeDeathHandler.clearServerState(event.getServer());
     Mystcraft.setCurrentServer(null);
   }
 
@@ -194,7 +187,17 @@ public class MystcraftForge {
       Mystcraft.LOGGER.info("[Mystcraft] Client setup");
 
       event.enqueueWork(() -> {
+        art.arcane.mystcraft.util.ClientAccess.install(() ->
+            net.minecraft.client.Minecraft.getInstance().level);
+        art.arcane.mystcraft.item.ItemClientHooks.setBookOpener(
+            art.arcane.mystcraft.client.screen.BookScreen::open);
+        art.arcane.mystcraft.item.ItemClientHooks.setGuidebookOpener(
+            art.arcane.mystcraft.client.GuidebookClientHelper::openGuidebook);
         art.arcane.mystcraft.client.render.DrawableWordManager.initialize();
+        art.arcane.mystcraft.network.SymbolSyncPacket.setClientSymbolsAppliedHandler(() -> {
+          art.arcane.mystcraft.client.render.PageItemRendererBEWLR.clearCache();
+          art.arcane.mystcraft.client.render.PageItemRendererBEWLR.prewarmCache();
+        });
         art.arcane.mystcraft.client.render.PageItemRendererBEWLR.prewarmCache();
 
         net.minecraft.client.gui.screens.MenuScreens.register(

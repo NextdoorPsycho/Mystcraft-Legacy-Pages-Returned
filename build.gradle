@@ -2,6 +2,12 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
 }
 
+def isMystcraftReleaseJar = { File file ->
+    file.isFile()
+            && file.name.endsWith('.jar')
+            && (file.name.startsWith('MystcraftLegacy_') || file.name.startsWith('mystcraft_legacy'))
+}
+
 tasks.register('cleanLibs') {
     group = 'build'
     description = 'Cleans libs directories and output directory'
@@ -27,7 +33,7 @@ tasks.register('cleanLibs') {
         outputDirs.each { dir ->
             def targetDir = file(dir)
             if (targetDir.exists()) {
-                targetDir.listFiles()?.findAll { it.name.endsWith('.jar') }?.each { it.delete() }
+                targetDir.listFiles()?.findAll(isMystcraftReleaseJar)?.each { it.delete() }
                 println "Cleaned output directory: ${targetDir.absolutePath}"
             }
         }
@@ -75,7 +81,7 @@ def registerCopyTask = { String name, String outputProp ->
             }
             def deleted = 0
             targetDir.listFiles()?.each { File f ->
-                if ((f.name.startsWith('MystcraftLegacy_') || f.name.startsWith('mystcraft_legacy')) && f.name.endsWith('.jar')) {
+                if (isMystcraftReleaseJar(f)) {
                     if (f.delete()) {
                         deleted++
                     }
@@ -125,7 +131,7 @@ def registerPrismDeployTask = { String taskName, String platform, String version
             }
             def deleted = 0
             targetDir.listFiles()?.each { File f ->
-                if ((f.name.startsWith('MystcraftLegacy_') || f.name.startsWith('mystcraft_legacy')) && f.name.endsWith('.jar')) {
+                if (isMystcraftReleaseJar(f)) {
                     if (f.delete()) {
                         deleted++
                     }
@@ -177,6 +183,33 @@ registerTaskAlias('runFabricGameTest', ':fabric:1.20.1:runGametest', 'mystcraft 
 registerTaskAlias('runForgeClient', ':forge:1.20.1:runClient', 'mystcraft runners', 'Runs the Forge 1.20.1 client')
 registerTaskAlias('runForgeServer', ':forge:1.20.1:runServer', 'mystcraft runners', 'Runs the Forge 1.20.1 server')
 registerTaskAlias('runForgeGameTest', ':forge:1.20.1:runGameTestServer', 'mystcraft runners', 'Runs the Forge 1.20.1 GameTest server')
+
+def port26Directory = file('ports/26.2')
+def port26GradleLauncher = System.getProperty('os.name').toLowerCase(java.util.Locale.ROOT).contains('windows')
+        ? 'gradlew.bat'
+        : './gradlew'
+
+def registerPort26Task = { String name, String nestedTask, String groupName, String taskDescription ->
+    tasks.register(name, Exec) {
+        group = groupName
+        description = taskDescription
+        workingDir port26Directory
+        commandLine port26GradleLauncher, nestedTask, '--no-daemon'
+    }
+}
+
+registerPort26Task('build26_2', 'buildPlatforms', 'build', 'Builds the Fabric and Forge Minecraft 26.2 production jars')
+registerPort26Task('verify26_2', 'verifyProduction', 'verification', 'Compiles and verifies both Minecraft 26.2 production jars')
+registerPort26Task('runFabric26_2Client', ':fabric:runClient', 'mystcraft runners', 'Runs the Fabric Minecraft 26.2 client')
+registerPort26Task('runFabric26_2GameTest', ':fabric:runGametest', 'mystcraft runners', 'Runs the Fabric Minecraft 26.2 GameTest server')
+registerPort26Task('runForge26_2Client', ':forge:runClient', 'mystcraft runners', 'Runs the Forge Minecraft 26.2 client')
+registerPort26Task('runForge26_2GameTest', ':forge:runGameTestServer', 'mystcraft runners', 'Runs the Forge Minecraft 26.2 GameTest server')
+
+tasks.register('buildAllSupported') {
+    group = 'build'
+    description = 'Builds every supported Minecraft 1.20.1 and 26.2 Fabric and Forge jar'
+    dependsOn 'buildAllVersions', 'build26_2'
+}
 
 subprojects {
     apply plugin: 'java'

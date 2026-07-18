@@ -109,6 +109,9 @@ public class WeepingWallsPopulator implements IPopulate {
     for (int step = 0; step < length; step++) {
       int bx = startX + (int) Math.round(dx * step);
       int bz = startZ + (int) Math.round(dz * step);
+      if (!isInWritableColumn(bx, bz, chunkPos)) {
+        continue;
+      }
       int localSurfaceY = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz) - 1;
 
       double lengthProgress = (double) step / length;

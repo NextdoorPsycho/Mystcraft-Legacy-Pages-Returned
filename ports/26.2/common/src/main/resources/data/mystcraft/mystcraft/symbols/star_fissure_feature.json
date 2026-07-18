@@ -1,0 +1,24 @@
+{
+  "category": "feature_large",
+  "card_rank": 3,
+  "instability_cost": -10.0,
+  "poem": [
+    "Link",
+    "Form",
+    "Star",
+    "Escape"
+  ],
+  "logic": [
+    {
+      "type": "set_star_fissure",
+      "enabled": true,
+      "params": {
+        "rarity": 16
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": -10.0
+    }
+  ]
+}

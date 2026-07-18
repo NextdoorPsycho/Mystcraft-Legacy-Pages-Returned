@@ -1,0 +1,59 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "display_name": "Shattered Plains",
+  "poem": [
+    "Crack",
+    "Divide",
+    "Ruin",
+    "Void"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "shattered",
+        "density": {
+          "op": "sub",
+          "a": {
+            "op": "add",
+            "a": 70,
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "cell",
+                "mode": "hex",
+                "size": 80,
+                "seed": 7703,
+                "min": 0.0,
+                "max": 1.0
+              },
+              "b": -50
+            }
+          },
+          "b": {
+            "op": "add",
+            "a": {
+              "var": "y"
+            },
+            "b": {
+              "op": "mul",
+              "a": {
+                "op": "cell_distance",
+                "mode": "hex",
+                "size": 80
+              },
+              "b": 30
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "category": "sea",
+  "card_rank": 4,
+  "instability_cost": 25.0,
+  "poem": [
+    "Sea",
+    "Fire",
+    "Flow",
+    "Chaos"
+  ],
+  "logic": [
+    {
+      "type": "set_sea_block",
+      "block": "minecraft:lava"
+    }
+  ]
+}

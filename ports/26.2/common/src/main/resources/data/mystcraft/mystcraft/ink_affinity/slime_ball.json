@@ -1,0 +1,25 @@
+{
+  "items": [
+    "minecraft:slime_ball"
+  ],
+  "tags": [
+    "c:slime_balls"
+  ],
+  "amount_per_item": 0.5,
+  "tier_bonus": 0,
+  "symbol_weights": {
+    "mystcraft:biome_swamp": 0.35,
+    "mystcraft:biome_mangrove_swamp": 0.3
+  },
+  "category_weights": {
+    "biome": 0.15
+  },
+  "poem_token_weights": {
+    "Bog": 0.3,
+    "Marsh": 0.3,
+    "Wet": 0.2
+  },
+  "link_property_weights": {
+    "maintain_momentum": 0.1
+  }
+}

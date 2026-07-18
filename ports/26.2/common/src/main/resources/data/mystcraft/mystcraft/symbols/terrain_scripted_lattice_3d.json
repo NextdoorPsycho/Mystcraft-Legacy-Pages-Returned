@@ -1,0 +1,94 @@
+{
+  "category": "terrain",
+  "card_rank": 4,
+  "instability_cost": 10.0,
+  "display_name": "3D Lattice",
+  "poem": [
+    "Grid",
+    "Beam",
+    "Frame",
+    "Structure"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "lattice_3d",
+        "density": {
+          "op": "max",
+          "a": {
+            "op": "max",
+            "a": {
+              "op": "sub",
+              "a": 0.15,
+              "b": {
+                "op": "abs",
+                "input": {
+                  "op": "sub",
+                  "a": {
+                    "op": "fract",
+                    "input": {
+                      "op": "mul",
+                      "a": {
+                        "var": "x"
+                      },
+                      "b": 0.08
+                    }
+                  },
+                  "b": 0.5
+                }
+              }
+            },
+            "b": {
+              "op": "sub",
+              "a": 0.15,
+              "b": {
+                "op": "abs",
+                "input": {
+                  "op": "sub",
+                  "a": {
+                    "op": "fract",
+                    "input": {
+                      "op": "mul",
+                      "a": {
+                        "var": "y"
+                      },
+                      "b": 0.08
+                    }
+                  },
+                  "b": 0.5
+                }
+              }
+            }
+          },
+          "b": {
+            "op": "sub",
+            "a": 0.15,
+            "b": {
+              "op": "abs",
+              "input": {
+                "op": "sub",
+                "a": {
+                  "op": "fract",
+                  "input": {
+                    "op": "mul",
+                    "a": {
+                      "var": "z"
+                    },
+                    "b": 0.08
+                  }
+                },
+                "b": 0.5
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 10.0
+    }
+  ]
+}

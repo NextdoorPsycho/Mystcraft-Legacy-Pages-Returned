@@ -11,13 +11,12 @@ import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.link.LinkingManager;
 import art.arcane.mystcraft.portal.PortalUtils;
 import art.arcane.mystcraft.registry.ModSounds;
-import art.arcane.mystcraft.util.CodecCompat;
 import art.arcane.mystcraft.util.ItemStackNbt;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -59,13 +58,11 @@ import java.util.UUID;
 public class LinkPortalBlock extends BaseEntityBlock {
 
   public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
-  public static final MapCodec<LinkPortalBlock> CODEC = CodecCompat.simpleCodec(LinkPortalBlock::new);
-
   // Per-(entity, portal-block) cooldowns. Keying by both prevents the
   // "walk through one portal, then back through a different one" path from
   // being silently swallowed because the player's UUID is on global
   // cooldown. Pruned periodically.
-  private static final Map<UUID, Map<BlockPos, Long>> TELEPORT_COOLDOWNS = new HashMap<>();
+  private static final Map<UUID, Map<PortalLocation, Long>> TELEPORT_COOLDOWNS = new HashMap<>();
   private static final long COOLDOWN_TICKS = 100;
   private static final int COOLDOWN_PRUNE_THRESHOLD = 256;
 
@@ -77,10 +74,6 @@ public class LinkPortalBlock extends BaseEntityBlock {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(AXIS);
-  }
-
-  protected MapCodec<? extends BaseEntityBlock> codec() {
-    return CODEC;
   }
 
   @Nullable
@@ -147,7 +140,7 @@ public class LinkPortalBlock extends BaseEntityBlock {
     }
 
     long currentTime = level.getGameTime();
-    if (isOnCooldown(entity, pos, currentTime)) {
+    if (isOnCooldown(entity, level.dimension(), pos, currentTime)) {
       return;
     }
 
@@ -161,7 +154,7 @@ public class LinkPortalBlock extends BaseEntityBlock {
 
     if (book.getItem() instanceof PersonalLinkBookItem personalBook
         && entity instanceof ServerPlayer) {
-      setCooldown(entity, pos, currentTime);
+      setCooldown(entity, level.dimension(), pos, currentTime);
       level.playSound(null, pos, ModSounds.LINKING_PORTAL.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
       personalBook.activate(book, level, entity);
       return;
@@ -179,7 +172,7 @@ public class LinkPortalBlock extends BaseEntityBlock {
       }
       art.arcane.mystcraft.util.PlayerMessages.send(serverPlayer,
           Component.translatable("mystcraft.portal.agebook_age_created"), true);
-      setCooldown(entity, pos, currentTime);
+      setCooldown(entity, level.dimension(), pos, currentTime);
       return;
     }
 
@@ -188,7 +181,7 @@ public class LinkPortalBlock extends BaseEntityBlock {
       return;
     }
 
-    setCooldown(entity, pos, currentTime);
+    setCooldown(entity, level.dimension(), pos, currentTime);
 
     level.playSound(null, pos, ModSounds.LINKING_PORTAL.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
 
@@ -213,19 +206,21 @@ public class LinkPortalBlock extends BaseEntityBlock {
     }
   }
 
-  private static boolean isOnCooldown(Entity entity, BlockPos portalBlockPos, long now) {
-    Map<BlockPos, Long> perEntity = TELEPORT_COOLDOWNS.get(entity.getUUID());
+  private static boolean isOnCooldown(Entity entity, ResourceKey<Level> dimension,
+                                      BlockPos portalBlockPos, long now) {
+    Map<PortalLocation, Long> perEntity = TELEPORT_COOLDOWNS.get(entity.getUUID());
     if (perEntity == null) {
       return false;
     }
-    Long last = perEntity.get(portalBlockPos);
-    return last != null && (now - last) < COOLDOWN_TICKS;
+    Long last = perEntity.get(new PortalLocation(dimension, portalBlockPos));
+    return isActiveCooldown(last, now);
   }
 
-  private static void setCooldown(Entity entity, BlockPos portalBlockPos, long now) {
+  private static void setCooldown(Entity entity, ResourceKey<Level> dimension,
+                                  BlockPos portalBlockPos, long now) {
     TELEPORT_COOLDOWNS
         .computeIfAbsent(entity.getUUID(), k -> new HashMap<>())
-        .put(portalBlockPos.immutable(), now);
+        .put(new PortalLocation(dimension, portalBlockPos), now);
     if (TELEPORT_COOLDOWNS.size() > COOLDOWN_PRUNE_THRESHOLD) {
       pruneCooldowns(now);
     }
@@ -234,13 +229,13 @@ public class LinkPortalBlock extends BaseEntityBlock {
   private static void pruneCooldowns(long now) {
     long stale = COOLDOWN_TICKS * 2;
     TELEPORT_COOLDOWNS.values().forEach(perEntity ->
-        perEntity.entrySet().removeIf(e -> now - e.getValue() > stale));
+        perEntity.entrySet().removeIf(e -> now - e.getValue() < 0 || now - e.getValue() > stale));
     TELEPORT_COOLDOWNS.entrySet().removeIf(e -> e.getValue().isEmpty());
   }
 
   // ---------------------------------------------------------------------------
   // Test-only hooks for the gametest harness. The cooldown map is a static
-  // {@code Map<UUID, Map<BlockPos,Long>>} that lets us prove the per-portal
+  // {@code Map<UUID, Map<PortalLocation,Long>>} that lets us prove the per-portal
   // keying (Phase 2.5) without standing up a real ServerPlayer in two
   // dimensions. Production code must NEVER call these.
   // ---------------------------------------------------------------------------
@@ -249,22 +244,46 @@ public class LinkPortalBlock extends BaseEntityBlock {
   }
 
   public static void setCooldownForTest(UUID id, BlockPos portalBlockPos, long now) {
+    setCooldownForTest(id, Level.OVERWORLD, portalBlockPos, now);
+  }
+
+  public static void setCooldownForTest(UUID id, ResourceKey<Level> dimension,
+                                        BlockPos portalBlockPos, long now) {
     TELEPORT_COOLDOWNS
         .computeIfAbsent(id, k -> new HashMap<>())
-        .put(portalBlockPos.immutable(), now);
+        .put(new PortalLocation(dimension, portalBlockPos), now);
   }
 
   public static boolean isOnCooldownForTest(UUID id, BlockPos portalBlockPos, long now) {
-    Map<BlockPos, Long> perEntity = TELEPORT_COOLDOWNS.get(id);
+    return isOnCooldownForTest(id, Level.OVERWORLD, portalBlockPos, now);
+  }
+
+  public static boolean isOnCooldownForTest(UUID id, ResourceKey<Level> dimension,
+                                             BlockPos portalBlockPos, long now) {
+    Map<PortalLocation, Long> perEntity = TELEPORT_COOLDOWNS.get(id);
     if (perEntity == null) {
       return false;
     }
-    Long last = perEntity.get(portalBlockPos);
-    return last != null && (now - last) < COOLDOWN_TICKS;
+    Long last = perEntity.get(new PortalLocation(dimension, portalBlockPos));
+    return isActiveCooldown(last, now);
+  }
+
+  private static boolean isActiveCooldown(@Nullable Long last, long now) {
+    if (last == null) {
+      return false;
+    }
+    long elapsed = now - last;
+    return elapsed >= 0 && elapsed < COOLDOWN_TICKS;
   }
 
   public static long cooldownTicksForTest() {
     return COOLDOWN_TICKS;
+  }
+
+  private record PortalLocation(ResourceKey<Level> dimension, BlockPos blockPos) {
+    private PortalLocation {
+      blockPos = blockPos.immutable();
+    }
   }
 
   private CompoundTag getLinkData(ItemStack book) {

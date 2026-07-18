@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 1,
+  "instability_cost": 2.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Earth",
+    "Growth"
+  ],
+  "display_name": "Grass Block Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:grass_block"
+    },
+    {
+      "type": "add_instability",
+      "value": 2.0
+    }
+  ]
+}

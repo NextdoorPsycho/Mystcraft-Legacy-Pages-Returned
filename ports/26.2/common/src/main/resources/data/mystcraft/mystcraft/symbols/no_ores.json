@@ -1,0 +1,17 @@
+{
+  "category": "modifier",
+  "card_rank": 3,
+  "instability_cost": 2.0,
+  "poem": [
+    "Resource",
+    "Void",
+    "Silence",
+    "Empty"
+  ],
+  "logic": [
+    {
+      "type": "set_ores_disabled",
+      "disabled": true
+    }
+  ]
+}

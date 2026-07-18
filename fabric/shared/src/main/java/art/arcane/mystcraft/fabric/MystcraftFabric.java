@@ -61,8 +61,12 @@ public class MystcraftFabric implements ModInitializer {
       }
     });
 
+    ServerLifecycleEvents.SERVER_STOPPING.register(AgeDimensionFactory::prepareForServerStop);
+
     ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
       Mystcraft.LOGGER.info("[Mystcraft] Server stopped");
+      art.arcane.mystcraft.event.AgeEffectsHandler.clearServerState(server);
+      art.arcane.mystcraft.event.AgeDeathHandler.clearServerState(server);
       Mystcraft.setCurrentServer(null);
     });
 

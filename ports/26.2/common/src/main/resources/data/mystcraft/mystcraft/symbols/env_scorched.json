@@ -1,0 +1,22 @@
+{
+  "category": "environment",
+  "card_rank": 3,
+  "instability_cost": 20.0,
+  "poem": [
+    "Environment",
+    "Sacrifice",
+    "Power",
+    "Chaos"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "scorched_enabled",
+      "value": true
+    },
+    {
+      "type": "add_instability",
+      "value": 20.0
+    }
+  ]
+}

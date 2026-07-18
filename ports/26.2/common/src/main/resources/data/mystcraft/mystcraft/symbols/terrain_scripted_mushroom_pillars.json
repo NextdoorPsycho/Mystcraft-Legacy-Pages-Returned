@@ -1,0 +1,57 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 9.0,
+  "display_name": "Mushroom Pillars",
+  "poem": [
+    "Stem",
+    "Crown",
+    "Grow",
+    "Fungal"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "mushroom_pillars",
+        "density": {
+          "op": "mul",
+          "a": {
+            "op": "sub",
+            "a": {
+              "op": "noise3",
+              "scale": 0.06,
+              "octaves": 3,
+              "seed": 9925
+            },
+            "b": {
+              "op": "lerp",
+              "a": 0.6,
+              "b": 0.2,
+              "t": {
+                "op": "smoothstep",
+                "edge0": 60,
+                "edge1": 90,
+                "value": {
+                  "var": "y"
+                }
+              }
+            }
+          },
+          "b": {
+            "op": "step",
+            "edge": 30,
+            "value": {
+              "var": "y"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 9.0
+    }
+  ]
+}

@@ -2,9 +2,7 @@ package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.StarFissureBlockEntity;
 import art.arcane.mystcraft.registry.ModSounds;
-import art.arcane.mystcraft.util.CodecCompat;
 import art.arcane.mystcraft.util.ServerPlayerTeleport;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,7 +29,6 @@ import org.jetbrains.annotations.Nullable;
  */
 public class StarFissureBlock extends BaseEntityBlock {
 
-  public static final MapCodec<StarFissureBlock> CODEC = CodecCompat.simpleCodec(StarFissureBlock::new);
   private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 1.6, 16);
 
   public StarFissureBlock(Properties properties) {
@@ -63,10 +60,6 @@ public class StarFissureBlock extends BaseEntityBlock {
   @Override
   public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
     return null;
-  }
-
-  protected MapCodec<? extends BaseEntityBlock> codec() {
-    return CODEC;
   }
 
   @Override

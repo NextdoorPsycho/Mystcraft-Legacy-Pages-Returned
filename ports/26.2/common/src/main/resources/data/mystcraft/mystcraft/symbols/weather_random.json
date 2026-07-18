@@ -1,0 +1,21 @@
+{
+  "category": "weather",
+  "card_rank": 4,
+  "instability_cost": 3.0,
+  "poem": [
+    "Sustain",
+    "Dynamic",
+    "Chaos",
+    "Change"
+  ],
+  "logic": [
+    {
+      "type": "set_weather_type",
+      "value": "random"
+    },
+    {
+      "type": "add_instability",
+      "value": 3.0
+    }
+  ]
+}

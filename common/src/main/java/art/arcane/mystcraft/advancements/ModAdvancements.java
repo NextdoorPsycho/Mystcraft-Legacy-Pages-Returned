@@ -4,8 +4,8 @@ import art.arcane.mystcraft.platform.Services;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Registers Mystcraft custom advancement criteria triggers. Uses
- * version-specific factory via Services for cross-version compatibility.
+ * Registers and dispatches Mystcraft custom advancement criteria through the
+ * loader-specific service implementation.
  */
 public final class ModAdvancements {
 
@@ -22,42 +22,23 @@ public final class ModAdvancements {
   }
 
   /**
-   * Triggers the WritingDeskWrite advancement for a player. Uses reflection to
-   * avoid direct class references that may not exist in all versions.
+   * Triggers the WritingDeskWrite advancement for a player.
    */
   public static void triggerWritingDeskWrite(ServerPlayer player) {
-    Object trigger = Services.ADVANCEMENTS.getWritingDeskWriteTrigger();
-    if (trigger == null) return;
-    triggerViaReflection(trigger, player);
+    Services.ADVANCEMENTS.triggerWritingDeskWrite(player);
   }
 
   /**
-   * Triggers the EnterMystDimensionSafe advancement for a player. Uses
-   * reflection to avoid direct class references that may not exist in all
-   * versions.
+   * Triggers the EnterMystDimensionSafe advancement for a player.
    */
   public static void triggerEnterMystDimensionSafe(ServerPlayer player) {
-    Object trigger = Services.ADVANCEMENTS.getEnterMystDimensionSafeTrigger();
-    if (trigger == null) return;
-    triggerViaReflection(trigger, player);
+    Services.ADVANCEMENTS.triggerEnterMystDimensionSafe(player);
   }
 
   /**
-   * Triggers the EnterMystDimensionQuinn advancement for a player. Uses
-   * reflection to avoid direct class references that may not exist in all
-   * versions.
+   * Triggers the EnterMystDimensionQuinn advancement for a player.
    */
   public static void triggerEnterMystDimensionQuinn(ServerPlayer player) {
-    Object trigger = Services.ADVANCEMENTS.getEnterMystDimensionQuinnTrigger();
-    if (trigger == null) return;
-    triggerViaReflection(trigger, player);
-  }
-
-  private static void triggerViaReflection(Object trigger, ServerPlayer player) {
-    try {
-      trigger.getClass().getMethod("trigger", ServerPlayer.class).invoke(trigger, player);
-    } catch (Exception e) {
-
-    }
+    Services.ADVANCEMENTS.triggerEnterMystDimensionQuinn(player);
   }
 }

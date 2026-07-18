@@ -1,0 +1,13 @@
+{
+  "type": "mystcraft:booster_pack",
+  "conditions": [{
+    "condition": "minecraft:any_of",
+    "terms": [
+      {"condition": "forge:loot_table_id", "loot_table_id": "minecraft:chests/desert_pyramid"},
+      {"condition": "forge:loot_table_id", "loot_table_id": "minecraft:chests/jungle_temple"}
+    ]
+  }],
+  "chance": 0.45,
+  "min_count": 1,
+  "max_count": 2
+}

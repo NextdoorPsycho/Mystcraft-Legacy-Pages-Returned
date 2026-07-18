@@ -1,5 +1,6 @@
 package art.arcane.mystcraft.blockentity;
 
+import art.arcane.mystcraft.data.LinkFlags;
 import art.arcane.mystcraft.data.LinkOptions;
 import art.arcane.mystcraft.data.Page;
 import art.arcane.mystcraft.item.AgebookItem;
@@ -9,6 +10,7 @@ import art.arcane.mystcraft.item.PersonalLinkBookItem;
 import art.arcane.mystcraft.menu.LinkModifierMenu;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.world.AgeSeed;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -28,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalLong;
 
 /**
  * Block entity for the Link Modifier. Used to add modifier pages (link
@@ -46,10 +49,10 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
     @Override
     public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
       if (slot == SLOT_BOOK) {
-        return isModifiableLinkbook(stack);
+        return isModifiableBook(stack);
       }
       if (slot >= SLOT_MODIFIER_START && slot <= SLOT_MODIFIER_END) {
-        return stack.getItem() instanceof PageItem && Page.hasLinkProperties(stack);
+        return stack.getItem() instanceof PageItem && hasKnownLinkProperty(stack);
       }
       return false;
     }
@@ -71,10 +74,11 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
     super(ModBlockEntities.LINK_MODIFIER.get(), pos, blockState);
   }
 
-  private static boolean isModifiableLinkbook(ItemStack stack) {
-    return !stack.isEmpty()
-        && stack.getItem() instanceof LinkbookItem
-        && !(stack.getItem() instanceof PersonalLinkBookItem);
+  private static boolean isModifiableBook(ItemStack stack) {
+    if (stack.isEmpty() || stack.getItem() instanceof PersonalLinkBookItem) {
+      return false;
+    }
+    return stack.getItem() instanceof LinkbookItem || stack.getItem() instanceof AgebookItem;
   }
 
   /**
@@ -136,7 +140,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
   @NotNull
   public ItemStack getModifierPage(int index) {
     int slot = SLOT_MODIFIER_START + index;
-    if (slot > SLOT_MODIFIER_END) {
+    if (index < 0 || slot > SLOT_MODIFIER_END) {
       return ItemStack.EMPTY;
     }
     return inventory.getItem(slot);
@@ -148,13 +152,13 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    */
   public boolean canModify() {
     ItemStack book = getBook();
-    if (!isModifiableLinkbook(book)) {
+    if (!isModifiableBook(book)) {
       return false;
     }
 
     for (int i = SLOT_MODIFIER_START; i <= SLOT_MODIFIER_END; i++) {
       ItemStack page = inventory.getItem(i);
-      if (!page.isEmpty() && Page.hasLinkProperties(page)) {
+      if (!page.isEmpty() && hasKnownLinkProperty(page)) {
         return true;
       }
     }
@@ -171,22 +175,40 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
     }
 
     ItemStack book = getBook();
+    CompoundTag bookTag = ItemStackNbt.getOrCreateTag(book);
 
     for (int i = SLOT_MODIFIER_START; i <= SLOT_MODIFIER_END; i++) {
       ItemStack page = inventory.getItem(i);
       if (!page.isEmpty() && Page.hasLinkProperties(page)) {
 
+        boolean appliedProperty = false;
         List<String> properties = Page.getLinkProperties(page);
         for (String property : properties) {
-          Page.addLinkProperty(book, property);
+          if (!LinkFlags.isKnown(property)) {
+            continue;
+          }
+          LinkOptions.setFlag(bookTag, property, true);
+          appliedProperty = true;
         }
 
-        page.shrink(1);
+        if (appliedProperty) {
+          page.shrink(1);
+        }
       }
     }
+    ItemStackNbt.setTag(book, bookTag);
 
     setChanged();
     markForUpdate();
+  }
+
+  private static boolean hasKnownLinkProperty(ItemStack page) {
+    for (String property : Page.getLinkProperties(page)) {
+      if (LinkFlags.isKnown(property)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -218,8 +240,14 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    */
   public void setBookTitle(@NotNull Player player, @NotNull String title) {
     ItemStack book = getBook();
-    if (!isModifiableLinkbook(book)) return;
-    ItemStackNbt.setHoverName(book, Component.literal(title));
+    if (!isModifiableBook(book)) return;
+    if (book.getItem() instanceof AgebookItem agebookItem) {
+      agebookItem.setDisplayName(book, title);
+    } else if (book.getItem() instanceof LinkbookItem linkbookItem) {
+      linkbookItem.setDisplayName(book, title);
+    } else {
+      ItemStackNbt.setHoverName(book, Component.literal(title));
+    }
     setChanged();
     markForUpdate();
   }
@@ -229,8 +257,8 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    */
   public boolean getLinkFlag(@NotNull String flagId) {
     ItemStack book = getBook();
-    if (!isModifiableLinkbook(book)) return false;
-    return Page.hasLinkProperty(book, flagId);
+    if (!isModifiableBook(book)) return false;
+    return LinkOptions.getFlag(ItemStackNbt.getTag(book), flagId);
   }
 
   /**
@@ -238,13 +266,11 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    */
   public void setLinkFlag(@NotNull String flagId, boolean value) {
     ItemStack book = getBook();
-    if (!isModifiableLinkbook(book)) return;
+    if (!isModifiableBook(book) || !LinkFlags.isKnown(flagId)) return;
 
-    if (value) {
-      Page.addLinkProperty(book, flagId);
-    } else {
-      Page.removeLinkProperty(book, flagId);
-    }
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(book);
+    LinkOptions.setFlag(tag, flagId, value);
+    ItemStackNbt.setTag(book, tag);
     setChanged();
     markForUpdate();
   }
@@ -257,13 +283,14 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
     ItemStack book = getBook();
     if (book.isEmpty()) return "";
 
-    LinkOptions options = LinkOptions.fromItemStack(book);
-    if (options == null) return "";
+    CompoundTag tag = ItemStackNbt.getTag(book);
+    if (tag == null) return "";
 
-    ResourceKey<Level> dimKey = options.getDimension();
-    if (dimKey == null) return "";
+    ResourceKey<Level> dimKey = LinkOptions.getDimension(tag);
+    if (dimKey != null) return dimKey.location().toString();
 
-    return dimKey.location().toString();
+    Integer dimensionUID = LinkOptions.getDimensionUID(tag);
+    return dimensionUID != null ? String.valueOf(dimensionUID) : "";
   }
 
   /**
@@ -274,10 +301,8 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
     ItemStack book = getBook();
     if (book.isEmpty() || !(book.getItem() instanceof AgebookItem)) return "";
 
-    CompoundTag tag = ItemStackNbt.getTag(book);
-    if (tag == null || !tag.contains("Seed")) return "";
-
-    return String.valueOf(tag.getLong("Seed"));
+    OptionalLong seed = AgeSeed.read(book);
+    return seed.isPresent() ? String.valueOf(seed.getAsLong()) : "";
   }
 
   /**
@@ -285,20 +310,17 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    */
   public void setItemSeed(@NotNull Player player, @NotNull String seedStr) {
     ItemStack book = getBook();
-    if (book.isEmpty() || !(book.getItem() instanceof AgebookItem)) return;
+    if (!isUnwrittenAgebook(book)) return;
 
-    CompoundTag tag = ItemStackNbt.getOrCreateTag(book);
     if (seedStr.isEmpty()) {
-      tag.remove("Seed");
+      AgeSeed.clear(book);
     } else {
       try {
-        long seed = Long.parseLong(seedStr);
-        tag.putLong("Seed", seed);
+        AgeSeed.write(book, Long.parseLong(seedStr));
       } catch (NumberFormatException ignored) {
-
+        return;
       }
     }
-    ItemStackNbt.setTag(book, tag);
     setChanged();
     markForUpdate();
   }
@@ -307,8 +329,13 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    * Checks if the book has a seed (only Agebooks).
    */
   public boolean hasItemSeed() {
-    ItemStack book = getBook();
-    return !book.isEmpty() && book.getItem() instanceof AgebookItem;
+    return isUnwrittenAgebook(getBook());
+  }
+
+  private static boolean isUnwrittenAgebook(ItemStack book) {
+    return !book.isEmpty()
+        && book.getItem() instanceof AgebookItem
+        && LinkOptions.getDimensionUID(ItemStackNbt.getTag(book)) == null;
   }
 
   /**
@@ -318,10 +345,7 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
     ItemStack book = getBook();
     if (book.isEmpty()) return false;
 
-    LinkOptions options = LinkOptions.fromItemStack(book);
-    if (options == null) return false;
-
-    return options.isDead();
+    return LinkOptions.isDead(ItemStackNbt.getTag(book));
   }
 
   /**
@@ -329,13 +353,11 @@ public class LinkModifierBlockEntity extends MystcraftBlockEntity implements Men
    */
   public void recycleDimension() {
     ItemStack book = getBook();
-    if (!isModifiableLinkbook(book)) return;
+    if (!isModifiableBook(book)) return;
 
-    LinkOptions options = LinkOptions.fromItemStack(book);
-    if (options == null) return;
-
-    options.setDead(true);
-    options.toItemStack(book);
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(book);
+    LinkOptions.setDead(tag, true);
+    ItemStackNbt.setTag(book, tag);
     setChanged();
     markForUpdate();
   }

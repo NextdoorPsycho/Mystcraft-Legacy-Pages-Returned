@@ -1,6 +1,6 @@
 plugins {
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
-    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+    id 'net.minecraftforge.gradle' version '6.0.54'
+    id 'org.spongepowered.mixin' version '0.7.38'
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
@@ -88,6 +88,11 @@ dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
 }
 
+mixin {
+    add sourceSets.main, 'mixin.refmap.json'
+    config 'mystcraft.mixins.json'
+}
+
 shadowJar {
     configurations = [project.configurations.shadow]
 
@@ -125,6 +130,7 @@ tasks.named('processResources', ProcessResources) {
     from(project(':common').sourceSets.main.resources) {
 
         exclude 'META-INF/accesstransformer.cfg'
+        exclude 'mystcraft.accesswidener'
     }
     from sourceSets.main.resources
 
@@ -146,10 +152,6 @@ tasks.named('processResources', ProcessResources) {
 
     filesMatching(['pack.mcmeta', 'META-INF/mods.toml']) {
         expand expandProps
-    }
-
-    filesMatching('pack.mcmeta') {
-        filter { it.replace('"pack_format": 18', '"pack_format": 15') }
     }
 
     inputs.properties(expandProps)
@@ -179,7 +181,8 @@ jar {
                 'Implementation-Title'  : project.name,
                 'Implementation-Version': project.jar.archiveVersion,
                 'Implementation-Vendor' : mod_author,
-                'Built-On-Minecraft'    : minecraft_version_1_20_1
+                'Built-On-Minecraft'    : minecraft_version_1_20_1,
+                'MixinConfigs'          : 'mystcraft.mixins.json'
         ])
     }
 }

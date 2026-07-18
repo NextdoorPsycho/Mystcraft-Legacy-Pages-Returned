@@ -1,0 +1,26 @@
+{
+  "category": "feature_large",
+  "card_rank": 3,
+  "instability_cost": 0.0,
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Void",
+    "Weave"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "ravines_enabled",
+      "value": true
+    },
+    {
+      "type": "register_terrain_alteration",
+      "id": "mystcraft:ravines",
+      "params": {
+        "rate": 50,
+        "fill_block": "minecraft:air"
+      }
+    }
+  ]
+}

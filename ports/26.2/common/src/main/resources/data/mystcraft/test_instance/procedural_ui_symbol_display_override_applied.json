@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:procedural_ui_symbol_display_override_applied",
+  "max_ticks": 60,
+  "structure": "minecraft:empty"
+}

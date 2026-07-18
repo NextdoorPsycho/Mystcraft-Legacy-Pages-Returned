@@ -129,6 +129,10 @@ public class VerticalTendrilsPopulator implements IPopulate {
                                int length, double wobbleX, double wobbleZ,
                                int baseThickness,
                                int chunkMinX, int chunkMaxX, int chunkMinZ, int chunkMaxZ) {
+    if (startX < chunkMinX - 16 || startX > chunkMaxX + 16
+        || startZ < chunkMinZ - 16 || startZ > chunkMaxZ + 16) {
+      return;
+    }
     int startY;
     if (fromCeiling) {
       startY = findCeilingPosition(world, startX, startZ, pathSeed, chunkMinX, chunkMaxX, chunkMinZ, chunkMaxZ);

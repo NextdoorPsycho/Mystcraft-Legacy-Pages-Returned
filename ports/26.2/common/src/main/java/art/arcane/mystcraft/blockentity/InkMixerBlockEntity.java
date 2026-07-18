@@ -1,0 +1,415 @@
+package art.arcane.mystcraft.blockentity;
+
+import art.arcane.mystcraft.util.NbtCompat;
+
+import art.arcane.mystcraft.data.InkAffinity;
+import art.arcane.mystcraft.data.InkBlend;
+import art.arcane.mystcraft.data.InkEffects;
+import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.item.PageItem;
+import art.arcane.mystcraft.menu.InkMixerMenu;
+import art.arcane.mystcraft.registry.ModBlockEntities;
+import art.arcane.mystcraft.registry.ModFluids;
+import art.arcane.mystcraft.registry.ModTags;
+import art.arcane.mystcraft.util.ItemStackNbt;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.Container;
+import net.minecraft.world.Containers;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+
+/**
+ * Block entity for the Ink Mixer. Handles mixing of inks and dyes to create
+ * link panels with properties.
+ * <p>
+ * Slots: 0 - Ink input (fluid containers) 1 - Paper input 2 - Empty container
+ * output
+ */
+public class InkMixerBlockEntity extends MystcraftBlockEntity implements MenuProvider {
+
+  public static final int SLOT_INK_IN = 0;
+  public static final int SLOT_PAPER = 1;
+  public static final int SLOT_INK_OUT = 2;
+  private static final String TAG_INVENTORY = "inventory";
+  private static final String TAG_HAS_INK = "ink";
+  private static final String TAG_PROBABILITIES = "probabilities";
+  private static final String TAG_BLEND = "blend";
+  private static final String TAG_SEED = "seed";
+  private final SimpleContainer inventory = new SimpleContainer(3) {
+    @Override
+    public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
+      if (slot == SLOT_INK_IN) {
+        return isValidInkContainer(stack);
+      }
+      if (slot == SLOT_PAPER) {
+        return isBlankPage(stack);
+      }
+      return false;
+    }
+
+    @Override
+    public void setChanged() {
+      super.setChanged();
+      InkMixerBlockEntity.this.setChanged();
+      InkMixerBlockEntity.this.markForUpdate();
+    }
+  };
+  private final InkBlend blend = new InkBlend();
+  private boolean hasInk = false;
+  private long nextSeed;
+
+  public InkMixerBlockEntity(BlockPos pos, BlockState blockState) {
+    super(ModBlockEntities.INK_MIXER.get(), pos, blockState);
+    this.nextSeed = new Random().nextLong();
+  }
+
+  private static int computeBlendedInkTint(Map<String, Float> probabilities) {
+    if (probabilities == null || probabilities.isEmpty()) {
+      return 0;
+    }
+    float r = 0f, g = 0f, b = 0f, total = 0f;
+    for (Map.Entry<String, Float> entry : probabilities.entrySet()) {
+      InkEffects.PropertyColor color = InkEffects.getPropertyColor(entry.getKey());
+      if (color == null) continue;
+      float weight = Math.max(0f, entry.getValue());
+      r += color.r() * weight;
+      g += color.g() * weight;
+      b += color.b() * weight;
+      total += weight;
+    }
+    if (total <= 0f) {
+      return 0;
+    }
+    int ri = Math.min(255, Math.round((r / total) * 255f)) & 0xFF;
+    int gi = Math.min(255, Math.round((g / total) * 255f)) & 0xFF;
+    int bi = Math.min(255, Math.round((b / total) * 255f)) & 0xFF;
+    return (ri << 16) | (gi << 8) | bi;
+  }
+
+  /**
+   * Gets the inventory container for external access.
+   */
+  public Container getInventory() {
+    return inventory;
+  }
+
+  @Override
+  protected void writeNbt(CompoundTag tag) {
+    super.writeNbt(tag);
+    ListTag itemList = new ListTag();
+    for (int i = 0; i < inventory.getContainerSize(); i++) {
+      ItemStack stack = inventory.getItem(i);
+      if (!stack.isEmpty()) {
+        CompoundTag itemTag = new CompoundTag();
+        itemTag.putInt("Slot", i);
+        itemTag.merge(ItemStackNbt.save(stack));
+        itemList.add(itemTag);
+      }
+    }
+    tag.put(TAG_INVENTORY, itemList);
+    tag.putBoolean(TAG_HAS_INK, hasInk);
+    tag.putLong(TAG_SEED, nextSeed);
+
+    if (!blend.isEmpty()) {
+      tag.put(TAG_BLEND, blend.toNbt());
+    }
+
+    Map<String, Float> linkProps = blend.linkPropertyWeights();
+    if (!linkProps.isEmpty()) {
+      CompoundTag probs = new CompoundTag();
+      for (Map.Entry<String, Float> entry : linkProps.entrySet()) {
+        probs.putFloat(entry.getKey(), entry.getValue());
+      }
+      tag.put(TAG_PROBABILITIES, probs);
+    }
+  }
+
+  @Override
+  protected void readNbt(CompoundTag tag) {
+    super.readNbt(tag);
+    inventory.clearContent();
+    ListTag itemList = tag.getListOrEmpty(TAG_INVENTORY);
+    for (int i = 0; i < itemList.size(); i++) {
+      CompoundTag itemTag = itemList.getCompoundOrEmpty(i);
+      int slot = itemTag.getIntOr("Slot", 0);
+      if (slot >= 0 && slot < inventory.getContainerSize()) {
+        CompoundTag itemData = NbtCompat.contains(itemTag, "Item", Tag.TAG_COMPOUND) ? itemTag.getCompoundOrEmpty("Item") : itemTag;
+        inventory.setItem(slot, ItemStackNbt.load(itemData));
+      }
+    }
+    hasInk = tag.getBooleanOr(TAG_HAS_INK, false);
+    nextSeed = tag.getLongOr(TAG_SEED, 0L);
+
+    blend.clear();
+    if (NbtCompat.contains(tag, TAG_BLEND, Tag.TAG_COMPOUND)) {
+      blend.fromNbt(tag.getCompoundOrEmpty(TAG_BLEND));
+    } else if (NbtCompat.contains(tag, TAG_PROBABILITIES, Tag.TAG_COMPOUND)) {
+      CompoundTag probs = tag.getCompoundOrEmpty(TAG_PROBABILITIES);
+      Map<String, Float> linkProps = new HashMap<>();
+      for (String key : probs.keySet()) {
+        linkProps.put(key, probs.getFloatOr(key, 0.0F));
+      }
+      if (!linkProps.isEmpty()) {
+        InkAffinity.Entry legacy = new InkAffinity.Entry(
+            1f, 0, Map.of(), Map.of(), Map.of(), linkProps);
+        blend.add(legacy, 1);
+      }
+    }
+  }
+
+  /**
+   * Called every tick to process ink from containers.
+   */
+  public void tick() {
+    if (level == null || level.isClientSide()) {
+      return;
+    }
+
+    if (!hasInk && !inventory.getItem(SLOT_INK_IN).isEmpty()) {
+      tryFillFromContainer();
+    }
+  }
+
+  private void tryFillFromContainer() {
+    ItemStack container = inventory.getItem(SLOT_INK_IN);
+    if (container.isEmpty()) {
+      return;
+    }
+
+    if (!isValidInkContainer(container)) {
+      return;
+    }
+
+    ItemStackTemplate remainder = container.getItem().getCraftingRemainder();
+    ItemStack emptyContainer = remainder != null ? remainder.create() : new ItemStack(Items.BUCKET);
+
+    ItemStack currentOutput = inventory.getItem(SLOT_INK_OUT);
+    if (!currentOutput.isEmpty()) {
+      if (!ItemStackNbt.isSameItemSameTags(currentOutput, emptyContainer)) {
+        return;
+      }
+      if (currentOutput.getCount() >= currentOutput.getMaxStackSize()) {
+        return;
+      }
+    }
+
+    hasInk = true;
+    container.shrink(1);
+    if (container.isEmpty()) {
+      inventory.setItem(SLOT_INK_IN, ItemStack.EMPTY);
+    }
+
+    if (currentOutput.isEmpty()) {
+      inventory.setItem(SLOT_INK_OUT, emptyContainer);
+    } else {
+      currentOutput.grow(1);
+    }
+
+    setChanged();
+    markForUpdate();
+  }
+
+  private boolean isValidInkFluid(Fluid fluid) {
+    return fluid == ModFluids.BLACK_INK_SOURCE.get() ||
+        fluid == ModFluids.BLACK_INK_FLOWING.get();
+  }
+
+  private boolean isValidInkContainer(ItemStack stack) {
+    if (stack.isEmpty()) {
+      return false;
+    }
+
+    return stack.is(ModTags.Items.INK_BUCKETS);
+  }
+
+  private boolean isBlankPage(ItemStack stack) {
+    return !stack.isEmpty() && stack.getItem() instanceof PageItem && Page.isBlank(stack);
+  }
+
+  /**
+   * Checks if an item can be crafted.
+   */
+  public boolean canBuildItem() {
+    ItemStack paper = inventory.getItem(SLOT_PAPER);
+    return isBlankPage(paper) && hasInk;
+  }
+
+  /**
+   * Gets the item that would be crafted.
+   */
+  @NotNull
+  public ItemStack getCraftedItem() {
+    if (!canBuildItem()) {
+      return ItemStack.EMPTY;
+    }
+    return Page.createLinkPage();
+  }
+
+  /**
+   * Builds the link panel and gives it to the player.
+   */
+  public void buildItem(@NotNull ItemStack output, @NotNull Player player) {
+    if (!canBuildItem()) {
+      return;
+    }
+
+    Random rand = new Random(nextSeed);
+    Map<String, Float> linkProps = blend.linkPropertyWeights();
+    for (Map.Entry<String, Float> entry : linkProps.entrySet()) {
+      String property = entry.getKey();
+      float probability = entry.getValue();
+      if (rand.nextFloat() < probability) {
+        Page.addLinkProperty(output, property);
+      }
+    }
+
+    int blendedTint = computeBlendedInkTint(linkProps);
+    if (blendedTint != 0) {
+      Page.setInkTint(output, blendedTint);
+    }
+
+    if (!blend.isEmpty()) {
+      Page.setAffinitySnapshot(output, blend.toNbt());
+    }
+
+    nextSeed = rand.nextLong();
+    hasInk = false;
+    blend.clear();
+
+    inventory.getItem(SLOT_PAPER).shrink(1);
+
+    setChanged();
+    markForUpdate();
+  }
+
+  /**
+   * Adds items to modify ink properties. Items with registered ink effects will
+   * modify the probabilities of properties.
+   *
+   * @param stack  The item stack to add
+   * @param amount The number of items to consume
+   * @return The remaining items that weren't consumed
+   */
+  @NotNull
+  public ItemStack addItems(@NotNull ItemStack stack, int amount) {
+    if (!hasInk || stack.isEmpty()) {
+      return stack;
+    }
+
+    InkAffinity.Entry affinity = InkAffinity.getAffinity(stack);
+    if (affinity == null || affinity.isEmpty()) {
+
+      Map<String, Float> legacy = InkEffects.getItemEffects(stack);
+      if (legacy == null || legacy.isEmpty()) {
+        return stack;
+      }
+      affinity = new InkAffinity.Entry(1f, 0, Map.of(), Map.of(), Map.of(), legacy);
+    }
+
+    int toConsume = Math.min(amount, stack.getCount());
+    if (toConsume <= 0) return stack;
+    blend.add(affinity, toConsume);
+
+    ItemStack remainder = stack.copy();
+    remainder.shrink(toConsume);
+
+    setChanged();
+    markForUpdate();
+
+    return remainder;
+  }
+
+  /**
+   * Checks if an item can be added to the ink to modify properties.
+   */
+  public boolean canAddItem(@NotNull ItemStack stack) {
+    if (!hasInk || stack.isEmpty()) {
+      return false;
+    }
+    return InkAffinity.hasAffinity(stack) || InkEffects.hasEffects(stack);
+  }
+
+  /**
+   * Gets whether the mixer has ink.
+   */
+  public boolean hasInk() {
+    return hasInk;
+  }
+
+  /**
+   * Sets whether the mixer has ink.
+   */
+  public void setHasInk(boolean hasInk) {
+    this.hasInk = hasInk;
+    if (!hasInk) {
+      blend.clear();
+    }
+    setChanged();
+  }
+
+  /**
+   * Gets the current ink probabilities (link-property weights only). Backed by
+   * the affinity blend; mutating the returned map has no effect.
+   */
+  public Map<String, Float> getInkProbabilities() {
+    return new HashMap<>(blend.linkPropertyWeights());
+  }
+
+  /**
+   * Read-only view of the full affinity blend (for tooltips and tests).
+   */
+  @NotNull
+  public InkBlend getBlend() {
+    return blend;
+  }
+
+  /**
+   * Gets drops for when the block is broken.
+   */
+  public List<ItemStack> getDrops() {
+    List<ItemStack> drops = new ArrayList<>();
+    for (int i = 0; i < inventory.getContainerSize(); i++) {
+      ItemStack stack = inventory.getItem(i);
+      if (!stack.isEmpty()) {
+        drops.add(stack.copy());
+      }
+    }
+    return drops;
+  }
+
+  @Override
+  public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+    if (level != null) {
+      for (ItemStack drop : getDrops()) {
+        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), drop);
+      }
+    }
+    super.preRemoveSideEffects(pos, state);
+  }
+
+  @Override
+  @NotNull
+  public Component getDisplayName() {
+    return Component.translatable("container.mystcraft.ink_mixer");
+  }
+
+  @Override
+  public AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
+    return new InkMixerMenu(containerId, playerInventory, this);
+  }
+}

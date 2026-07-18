@@ -1,0 +1,18 @@
+{
+  "category": "color",
+  "card_rank": 0,
+  "instability_cost": 0.0,
+  "poem": [
+    "Color",
+    "Hue",
+    "Light",
+    "Form"
+  ],
+  "can_duplicate": true,
+  "logic": [
+    {
+      "type": "push_color",
+      "value": 255
+    }
+  ]
+}

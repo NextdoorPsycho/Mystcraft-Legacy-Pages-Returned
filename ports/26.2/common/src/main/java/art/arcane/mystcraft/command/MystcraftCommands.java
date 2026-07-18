@@ -1,0 +1,2202 @@
+package art.arcane.mystcraft.command;
+
+import art.arcane.mystcraft.Mystcraft;
+import art.arcane.mystcraft.api.symbol.IAgeSymbol;
+import art.arcane.mystcraft.api.symbol.SymbolCategory;
+import art.arcane.mystcraft.api.world.logic.IPopulate;
+import art.arcane.mystcraft.client.gui.procedural.symbol.SymbolPageTextureFactory;
+import art.arcane.mystcraft.config.MystcraftConfig;
+import art.arcane.mystcraft.data.Page;
+import art.arcane.mystcraft.datapack.symbol.PopulatorRegistry;
+import art.arcane.mystcraft.datapack.symbol.TerrainAlterationRegistry;
+import art.arcane.mystcraft.entity.MeteorEntity;
+import art.arcane.mystcraft.event.AgeDataSyncHandler;
+import art.arcane.mystcraft.grammar.AgeBuilder;
+import art.arcane.mystcraft.item.AgebookItem;
+import art.arcane.mystcraft.registry.ModItems;
+import art.arcane.mystcraft.symbol.SymbolRegistry;
+import art.arcane.mystcraft.util.ItemStackNbt;
+import art.arcane.mystcraft.util.ServerPlayerTeleport;
+import art.arcane.mystcraft.world.AgeData;
+import art.arcane.mystcraft.world.AgeDefinition;
+import art.arcane.mystcraft.world.AgeDimensionFactory;
+import art.arcane.mystcraft.world.AgeDirectorImpl;
+import art.arcane.mystcraft.world.AgeManager;
+import art.arcane.mystcraft.world.AgeSeed;
+import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
+import art.arcane.mystcraft.world.gen.populate.StarFissurePopulator;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+
+/**
+ * Mystcraft commands for managing ages and symbols. All command logic is
+ * platform-independent (Brigadier is vanilla).
+ */
+public class MystcraftCommands {
+
+  private static final SuggestionProvider<CommandSourceStack> SYMBOL_SUGGESTIONS = (context, builder) -> {
+    Collection<IAgeSymbol> symbols = SymbolRegistry.getAll();
+    Set<Identifier> symbolIds = new java.util.HashSet<>();
+    for (IAgeSymbol symbol : symbols) {
+      symbolIds.add(symbol.getRegistryName());
+    }
+    return SharedSuggestionProvider.suggestResource(symbolIds, builder);
+  };
+
+  private static final SuggestionProvider<CommandSourceStack> PRESET_SUGGESTIONS = (context, builder) -> {
+    return SharedSuggestionProvider.suggest(AgePresets.PRESET_NAMES, builder);
+  };
+
+  private static final SuggestionProvider<CommandSourceStack> AGE_SUGGESTIONS = (context, builder) -> {
+    AgeManager ageManager = AgeManager.get(context.getSource().getServer());
+    java.util.List<String> ageIds = new java.util.ArrayList<>();
+    for (Integer uid : ageManager.getAllAgeUIDs()) {
+      ageIds.add(String.valueOf(uid));
+    }
+    return SharedSuggestionProvider.suggest(ageIds, builder);
+  };
+
+  private static final SuggestionProvider<CommandSourceStack> POPULATOR_SUGGESTIONS = (context, builder) -> {
+    return SharedSuggestionProvider.suggestResource(PopulatorRegistry.getAll().keySet(), builder);
+  };
+
+  private static final SuggestionProvider<CommandSourceStack> CATEGORY_SUGGESTIONS = (context, builder) -> {
+    List<String> categories = new ArrayList<>();
+    for (SymbolCategory category : SymbolCategory.values()) {
+      categories.add(category.name().toLowerCase());
+    }
+    return SharedSuggestionProvider.suggest(categories, builder);
+  };
+  private static final String[] RANDOM_GRADIENT_SYMBOLS = {
+      "mystcraft:gradient_sunset", "mystcraft:gradient_dawn",
+      "mystcraft:gradient_dusk", "mystcraft:gradient_aurora",
+      "mystcraft:gradient_blood_sky"
+  };
+  private static final String[] RANDOM_CLOUD_MODIFIERS = {
+      "mystcraft:clouds_low", "mystcraft:clouds_high", "mystcraft:clouds_none"
+  };
+  private static final String[] RANDOM_HORIZON_MODIFIERS = {
+      "mystcraft:horizon_low", "mystcraft:horizon_high"
+  };
+
+  /**
+   * Registers all Mystcraft commands with the given dispatcher.
+   */
+  public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
+    dispatcher.register(Commands.literal("mystcraft")
+
+        .then(Commands.literal("age")
+            .then(Commands.literal("list")
+                .requires(source -> true)
+                .executes(MystcraftCommands::listAges))
+            .then(Commands.literal("info")
+                .requires(source -> true)
+                .then(Commands.argument("ageId", IntegerArgumentType.integer(0))
+                    .suggests(AGE_SUGGESTIONS)
+                    .executes(MystcraftCommands::ageInfo)))
+            .then(Commands.literal("tp")
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                .then(Commands.argument("ageId", IntegerArgumentType.integer(0))
+                    .suggests(AGE_SUGGESTIONS)
+                    .executes(MystcraftCommands::teleportToAge)))
+            .then(Commands.literal("create")
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                .executes(MystcraftCommands::createAge)
+                .then(Commands.literal("preset")
+                    .then(Commands.argument("name", StringArgumentType.string())
+                        .suggests(PRESET_SUGGESTIONS)
+                        .executes(context -> createAgeFromPreset(context, false))
+                        .then(Commands.literal("tp")
+                            .executes(context -> createAgeFromPreset(context, true)))))
+                .then(Commands.literal("symbols")
+                    .then(Commands.argument("symbols", StringArgumentType.string())
+                        .executes(context -> createAgeFromSymbols(context, false, null))
+                        .then(Commands.literal("tp")
+                            .executes(context -> createAgeFromSymbols(context, true, null)))
+                        .then(Commands.literal("name")
+                            .then(Commands.argument("ageName", StringArgumentType.greedyString())
+                                .executes(context -> createAgeFromSymbols(context, false,
+                                    StringArgumentType.getString(context, "ageName")))
+                                .then(Commands.literal("tp")
+                                    .executes(context -> createAgeFromSymbols(context, true,
+                                        StringArgumentType.getString(context, "ageName"))))))))))
+
+        .then(Commands.literal("give")
+            .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+            .then(Commands.literal("page")
+                .then(Commands.literal("blank")
+                    .executes(MystcraftCommands::debugGiveBlankPage))
+                .then(Commands.literal("link")
+                    .executes(context -> debugGiveLinkPanel(context, ""))
+                    .then(Commands.argument("property", StringArgumentType.string())
+                        .executes(context -> debugGiveLinkPanel(context,
+                            StringArgumentType.getString(context, "property")))))
+                .then(Commands.literal("symbol")
+                    .then(Commands.argument("symbolId", StringArgumentType.string())
+                        .suggests(SYMBOL_SUGGESTIONS)
+                        .executes(context -> debugGiveSymbolPage(context, 1))
+                        .then(Commands.argument("count", IntegerArgumentType.integer(1, 64))
+                            .executes(context -> debugGiveSymbolPage(context,
+                                IntegerArgumentType.getInteger(context, "count")))))))
+            .then(Commands.literal("book")
+                .then(Commands.literal("random")
+                    .executes(context -> giveRandomBook(context, 5))
+                    .then(Commands.argument("symbolCount", IntegerArgumentType.integer(1, 1000))
+                        .executes(context -> giveRandomBook(context,
+                            IntegerArgumentType.getInteger(context, "symbolCount")))))
+                .then(Commands.literal("preset")
+                    .then(Commands.argument("name", StringArgumentType.string())
+                        .suggests(PRESET_SUGGESTIONS)
+                        .executes(MystcraftCommands::givePresetBook)))
+                .then(Commands.literal("age")
+                    .then(Commands.argument("ageId", IntegerArgumentType.integer(1))
+                        .suggests(AGE_SUGGESTIONS)
+                        .executes(MystcraftCommands::giveAgebook)))
+                .then(Commands.literal("custom")
+                    .then(Commands.argument("symbols", StringArgumentType.string())
+                        .executes(context -> debugGiveAgebookFromSymbols(context, null))
+                        .then(Commands.argument("name", StringArgumentType.greedyString())
+                            .executes(context -> debugGiveAgebookFromSymbols(context,
+                                StringArgumentType.getString(context, "name"))))))))
+
+        .then(Commands.literal("symbol")
+            .then(Commands.literal("list")
+                .requires(source -> true)
+                .executes(MystcraftCommands::listSymbols)
+                .then(Commands.argument("category", StringArgumentType.string())
+                    .suggests(CATEGORY_SUGGESTIONS)
+                    .executes(MystcraftCommands::listSymbolsByCategory)))
+            .then(Commands.literal("info")
+                .requires(source -> true)
+                .then(Commands.argument("symbolId", StringArgumentType.string())
+                    .suggests(SYMBOL_SUGGESTIONS)
+                    .executes(MystcraftCommands::symbolInfo)))
+            .then(Commands.literal("dump")
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                .executes(MystcraftCommands::dumpSymbolPages)))
+
+        .then(Commands.literal("world")
+            .then(Commands.literal("regen")
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                .executes(context -> regenChunks(context, 1))
+                .then(Commands.argument("radius", IntegerArgumentType.integer(1, 8))
+                    .executes(context -> regenChunks(context,
+                        IntegerArgumentType.getInteger(context, "radius")))))
+            .then(Commands.literal("time")
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                .then(Commands.literal("set")
+                    .then(Commands.argument("ticks", IntegerArgumentType.integer(0))
+                        .executes(MystcraftCommands::setTime)))
+                .then(Commands.literal("add")
+                    .then(Commands.argument("ticks", IntegerArgumentType.integer())
+                        .executes(MystcraftCommands::addTime))))
+            .then(Commands.literal("weather")
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                .then(Commands.literal("clear")
+                    .executes(context -> setWeather(context, "clear")))
+                .then(Commands.literal("rain")
+                    .executes(context -> setWeather(context, "rain")))
+                .then(Commands.literal("thunder")
+                    .executes(context -> setWeather(context, "thunder"))))
+            .then(Commands.literal("spawn")
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                .then(Commands.literal("meteor")
+                    .executes(context -> spawnMeteor(context, 2))
+                    .then(Commands.argument("scale", IntegerArgumentType.integer(1, 10))
+                        .executes(context -> spawnMeteor(context,
+                            IntegerArgumentType.getInteger(context, "scale")))))))
+
+        .then(Commands.literal("instability")
+            .then(Commands.literal("info")
+                .requires(source -> true)
+                .executes(MystcraftCommands::debugInstability)
+                .then(Commands.argument("ageId", IntegerArgumentType.integer(1))
+                    .suggests(AGE_SUGGESTIONS)
+                    .executes(MystcraftCommands::debugAgeInfoById)))
+            .then(Commands.literal("toggle")
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                .executes(MystcraftCommands::toggleInstabilityCurrent)
+                .then(Commands.argument("ageId", IntegerArgumentType.integer(1))
+                    .suggests(AGE_SUGGESTIONS)
+                    .executes(MystcraftCommands::toggleInstabilityAge)
+                    .then(Commands.argument("enabled", BoolArgumentType.bool())
+                        .executes(MystcraftCommands::toggleInstabilityAgeExplicit))))
+            .then(Commands.literal("set")
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                .then(Commands.argument("value", FloatArgumentType.floatArg(0.0f, 1000.0f))
+                    .executes(MystcraftCommands::setInstabilityCurrent)
+                    .then(Commands.argument("ageId", IntegerArgumentType.integer(1))
+                        .suggests(AGE_SUGGESTIONS)
+                        .executes(MystcraftCommands::setInstabilityAge))))
+            .then(Commands.literal("reprofile")
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                .executes(MystcraftCommands::reprofileCurrent)
+                .then(Commands.argument("ageId", IntegerArgumentType.integer(1))
+                    .suggests(AGE_SUGGESTIONS)
+                    .executes(MystcraftCommands::reprofileAge))))
+
+        .then(Commands.literal("feature")
+            .then(Commands.literal("starfissure")
+                .then(Commands.literal("locate")
+                    .requires(source -> true)
+                    .executes(context -> debugStarFissureLocate(context, 8))
+                    .then(Commands.argument("radius", IntegerArgumentType.integer(1, 64))
+                        .executes(context -> debugStarFissureLocate(context,
+                            IntegerArgumentType.getInteger(context, "radius")))))
+                .then(Commands.literal("spawn")
+                    .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                    .executes(MystcraftCommands::debugStarFissureSpawn)))
+            .then(Commands.literal("populator")
+                .then(Commands.literal("run")
+                    .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                    .then(Commands.argument("id", StringArgumentType.string())
+                        .suggests(POPULATOR_SUGGESTIONS)
+                        .executes(context -> debugRunPopulator(context, ""))
+                        .then(Commands.argument("params", StringArgumentType.greedyString())
+                            .executes(context -> debugRunPopulator(context,
+                                StringArgumentType.getString(context, "params"))))))))
+
+        .then(Commands.literal("diag")
+            .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+            .then(Commands.literal("dump")
+                .then(Commands.literal("age")
+                    .executes(MystcraftCommands::dumpCurrentAgeToFile)
+                    .then(Commands.argument("ageId", IntegerArgumentType.integer(0))
+                        .suggests(AGE_SUGGESTIONS)
+                        .executes(MystcraftCommands::dumpAgeToFile)))
+                .then(Commands.literal("symbols")
+                    .then(Commands.argument("symbols", StringArgumentType.greedyString())
+                        .executes(MystcraftCommands::dumpSymbolsToFile))))
+            .then(Commands.literal("registry")
+                .then(Commands.literal("symbols")
+                    .executes(MystcraftCommands::debugRegistrySymbols))
+                .then(Commands.literal("populators")
+                    .executes(MystcraftCommands::debugRegistryPopulators))
+                .then(Commands.literal("terrain")
+                    .executes(MystcraftCommands::debugRegistryTerrain)))
+            .then(Commands.literal("pocket")
+                .then(Commands.literal("skin")
+                    .then(Commands.argument("playerName", StringArgumentType.string())
+                        .executes(MystcraftCommands::debugPocketSkin))))
+            .then(Commands.literal("portal")
+                .executes(MystcraftCommands::diagPortal)))
+
+        .then(Commands.literal("where")
+            .requires(source -> true)
+            .executes(MystcraftCommands::whereAmI)));
+  }
+
+  private static int listAges(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    AgeManager ageManager = AgeManager.get(source.getServer());
+    java.util.List<Integer> ageIds = new java.util.ArrayList<>();
+    for (Integer uid : ageManager.getAllAgeUIDs()) {
+      ageIds.add(uid);
+    }
+
+    if (ageIds.isEmpty()) {
+      source.sendSuccess(() -> Component.literal("No ages have been created yet."), false);
+      return 0;
+    }
+
+    source.sendSuccess(() -> Component.literal("=== Known Ages ==="), false);
+    for (Integer ageId : ageIds) {
+      Identifier dimLoc = ageManager.getDimension(ageId);
+
+      String ageName = "Unnamed";
+      ServerLevel level = ageManager.getAgeLevel(source.getServer(), ageId);
+      if (level != null) {
+        AgeData ageData = AgeData.getIfPresent(level);
+        if (ageData != null && ageData.getAgeName() != null) {
+          ageName = ageData.getAgeName();
+        }
+      }
+      final String finalName = ageName;
+      source.sendSuccess(() -> Component.literal(String.format(
+          "  Age %d: %s (%s)", ageId, finalName, dimLoc
+      )), false);
+    }
+
+    return ageIds.size();
+  }
+
+  private static int teleportToAge(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    int ageId = IntegerArgumentType.getInteger(context, "ageId");
+
+    ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(source.getServer(), ageId);
+    if (ageLevel == null) {
+      source.sendFailure(Component.literal("Failed to access age " + ageId));
+      return 0;
+    }
+
+    BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
+    ServerPlayerTeleport.teleport(player, ageLevel, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5,
+        player.getYRot(), player.getXRot());
+
+    source.sendSuccess(() -> Component.literal("Teleported to Age " + ageId), true);
+    return 1;
+  }
+
+  private static int ageInfo(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    int ageId = IntegerArgumentType.getInteger(context, "ageId");
+
+    AgeManager ageManager = AgeManager.get(source.getServer());
+    Identifier dimLoc = ageManager.getDimension(ageId);
+
+    if (dimLoc == null) {
+      source.sendFailure(Component.literal("Age " + ageId + " not found."));
+      return 0;
+    }
+
+    String ageName = "Unnamed";
+    ServerLevel level = ageManager.getAgeLevel(source.getServer(), ageId);
+    if (level != null) {
+      AgeData ageData = AgeData.getIfPresent(level);
+      if (ageData != null && ageData.getAgeName() != null) {
+        ageName = ageData.getAgeName();
+      }
+    }
+
+    final String finalName = ageName;
+    source.sendSuccess(() -> Component.literal("=== Age " + ageId + " ==="), false);
+    source.sendSuccess(() -> Component.literal("  Name: " + finalName), false);
+    source.sendSuccess(() -> Component.literal("  Dimension: " + dimLoc), false);
+
+    if (level != null) {
+      source.sendSuccess(() -> Component.literal("  Status: Loaded"), false);
+      source.sendSuccess(() -> Component.literal("  Players: " + level.players().size()), false);
+    } else {
+      source.sendSuccess(() -> Component.literal("  Status: Not loaded"), false);
+    }
+
+    return 1;
+  }
+
+  private static int createAge(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+
+    AgeManager ageManager = AgeManager.get(source.getServer());
+    int newAgeId = ageManager.allocateUID();
+    long worldSeed = source.getServer().getWorldGenSettings().options().seed();
+    long seed = AgeSeed.deriveForAllocatedAge(worldSeed, newAgeId);
+    AgeBuilder builder = AgeBuilder.random(seed);
+    AgeDirectorImpl director = builder.build();
+    if (MystcraftConfig.microDimensionsEnabled.get() && !director.isPersonalPocket()) {
+      director.setMicroDimensions(
+          true,
+          MystcraftConfig.microDimensionRadiusChunks.get(),
+          MystcraftConfig.microDimensionExtraChunks.get()
+      );
+    }
+
+    java.util.UUID ageUUID = java.util.UUID.randomUUID();
+    Identifier dimension = Identifier.fromNamespaceAndPath(Mystcraft.MOD_ID, "mystcraft_age_" + newAgeId
+    );
+    AgeDefinition definition = AgeDefinition.fromDirector(List.of(), director);
+    ageManager.registerAge(newAgeId, dimension, ageUUID, definition);
+
+    ServerLevel ageLevel = AgeDimensionFactory.createAgeDimension(
+        source.getServer(), newAgeId, ageUUID, director
+    );
+    if (ageLevel == null) {
+      ageManager.unregisterAge(newAgeId);
+      source.sendFailure(Component.literal("Failed to create new age."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.get(ageLevel);
+    ageData.setAgeUID(newAgeId);
+    ageData.setAgeUUID(ageUUID);
+    ageData.setAgeName("Random Age");
+    ageData.addAuthor(player.getGameProfile().name());
+    ageData.copyFromDirector(director);
+    BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
+    ageData.setSpawn(spawn.getX(), spawn.getY(), spawn.getZ());
+    AgeDimensionFactory.applyMicroDimensionBorder(ageLevel, ageData);
+
+    source.sendSuccess(() -> Component.literal("Created Age " + newAgeId), true);
+    return 1;
+  }
+
+  private static int listSymbols(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    Collection<IAgeSymbol> allSymbols = SymbolRegistry.getAll();
+
+    source.sendSuccess(() -> Component.literal("=== Registered Symbols (" + allSymbols.size() + ") ==="), false);
+
+    java.util.Map<String, java.util.List<Identifier>> byCategory = new java.util.HashMap<>();
+    for (IAgeSymbol symbol : allSymbols) {
+      String category = symbol.getCategory().name().toLowerCase();
+      byCategory.computeIfAbsent(category, k -> new java.util.ArrayList<>()).add(symbol.getRegistryName());
+    }
+
+    for (Map.Entry<String, List<Identifier>> entry : byCategory.entrySet()) {
+      source.sendSuccess(() -> Component.literal("  " + entry.getKey() + ": " + entry.getValue().size()), false);
+    }
+
+    return allSymbols.size();
+  }
+
+  private static int listSymbolsByCategory(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    String rawCategory = StringArgumentType.getString(context, "category");
+    SymbolCategory category = parseSymbolCategory(rawCategory);
+    if (category == null) {
+      source.sendFailure(Component.literal("Unknown category: " + rawCategory));
+      return 0;
+    }
+
+    List<Identifier> ids = new ArrayList<>();
+    for (IAgeSymbol symbol : SymbolRegistry.getAll()) {
+      if (symbol.getCategory() == category) {
+        ids.add(symbol.getRegistryName());
+      }
+    }
+    ids.sort(Identifier::compareTo);
+
+    source.sendSuccess(() -> Component.literal("=== Symbols: " + category.name().toLowerCase() + " (" + ids.size() + ") ==="), false);
+    for (Identifier id : ids) {
+      source.sendSuccess(() -> Component.literal("  " + id), false);
+    }
+    return ids.size();
+  }
+
+  private static int symbolInfo(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    String symbolIdStr = StringArgumentType.getString(context, "symbolId");
+    Identifier symbolId = Identifier.parse(symbolIdStr);
+
+    IAgeSymbol symbol = SymbolRegistry.get(symbolId);
+    if (symbol == null) {
+      source.sendFailure(Component.literal("Symbol not found: " + symbolIdStr));
+      return 0;
+    }
+
+    source.sendSuccess(() -> Component.literal("=== Symbol: " + symbolId + " ==="), false);
+    source.sendSuccess(() -> Component.literal("  Category: " + symbol.getCategory()), false);
+    source.sendSuccess(() -> Component.literal("  Cost: " + symbol.getInstabilityCost()), false);
+
+    return 1;
+  }
+
+  private static int dumpSymbolPages(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    Collection<IAgeSymbol> all = SymbolRegistry.getAll();
+    if (all.isEmpty()) {
+      source.sendFailure(Component.literal("Symbol registry is empty — nothing to dump."));
+      return 0;
+    }
+
+    Path root = source.getServer().getServerDirectory()
+        .resolve("mystcraft_dumps").resolve("symbols");
+    try {
+      Files.createDirectories(root);
+    } catch (IOException e) {
+      source.sendFailure(Component.literal("Failed to create dump directory: " + e.getMessage()));
+      return 0;
+    }
+
+    source.sendSuccess(
+        () -> Component.literal("Dumping " + all.size() + " symbol pages to " + root + " ..."),
+        false);
+
+    int written = 0;
+    int failed = 0;
+    long start = System.nanoTime();
+
+    for (IAgeSymbol symbol : all) {
+      Identifier id = symbol.getRegistryName();
+
+      String safePath = id.getPath().replace('/', '_');
+      Path nsDir = root.resolve(id.getNamespace());
+      Path file = nsDir.resolve(safePath + ".png");
+      try {
+        Files.createDirectories(nsDir);
+        if (writeSymbolPng(symbol, file)) {
+          written++;
+        } else {
+          failed++;
+        }
+      } catch (LinkageError | RuntimeException e) {
+
+        if (isClientOnlyClassLoadFailure(e)) {
+          source.sendFailure(Component.literal(
+              "Symbol PNG dump unavailable on this runtime (no GL/blaze3d): " + e.getMessage()));
+          return 0;
+        }
+        failed++;
+        Mystcraft.LOGGER.warn("[SymbolDump] Failed to write {}: {}", file, e.toString());
+      } catch (IOException e) {
+        failed++;
+        Mystcraft.LOGGER.warn("[SymbolDump] I/O error writing {}: {}", file, e.toString());
+      }
+    }
+
+    long durationMs = (System.nanoTime() - start) / 1_000_000L;
+    final int writtenF = written;
+    final int failedF = failed;
+    source.sendSuccess(
+        () -> Component.literal("Wrote " + writtenF + " symbol PNGs (" + failedF
+            + " failed) in " + durationMs + " ms"),
+        true);
+    return written;
+  }
+
+  private static boolean writeSymbolPng(IAgeSymbol symbol, Path file) throws IOException {
+    com.mojang.blaze3d.platform.NativeImage image = SymbolPageTextureFactory.composeSymbolPageImage(symbol);
+    try {
+      image.writeToFile(file);
+      return true;
+    } finally {
+      image.close();
+    }
+  }
+
+  private static boolean isClientOnlyClassLoadFailure(Throwable t) {
+    if (t == null) return false;
+    if (t instanceof LinkageError) return true;
+    String msg = t.getMessage();
+    if (msg != null
+        && (msg.contains("Cannot load class")
+        || msg.contains("in environment type")
+        || msg.contains("Attempted to load class"))) {
+      return true;
+    }
+    Throwable cause = t.getCause();
+    return cause != null && cause != t && isClientOnlyClassLoadFailure(cause);
+  }
+
+  private static int debugInstability(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    Level level = player.level();
+
+    if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+      source.sendFailure(Component.literal("Not in a Mystcraft age."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.getIfPresent((ServerLevel) level);
+    if (ageData == null) {
+      source.sendFailure(Component.literal("No age data found."));
+      return 0;
+    }
+
+    source.sendSuccess(() -> Component.literal("=== Age Instability ==="), false);
+    source.sendSuccess(() -> Component.literal("  Current: " + String.format("%.2f", ageData.getInstability())), false);
+    source.sendSuccess(() -> Component.literal("  UID: " + ageData.getAgeUID()), false);
+
+    return 1;
+  }
+
+  private static int debugAgeInfoCurrent(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+    return debugAgeInfoForLevel(source, level, null);
+  }
+
+  private static int debugAgeInfoById(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    int ageId = IntegerArgumentType.getInteger(context, "ageId");
+    AgeManager ageManager = AgeManager.get(source.getServer());
+    ServerLevel level = ageManager.getAgeLevel(source.getServer(), ageId);
+    if (level == null) {
+      source.sendFailure(Component.literal("Age " + ageId + " not loaded."));
+      return 0;
+    }
+    return debugAgeInfoForLevel(source, level, ageId);
+  }
+
+  private static int debugAgeInfoForLevel(CommandSourceStack source, ServerLevel level, Integer expectedAgeId) {
+    Identifier dimId = level.dimension().identifier();
+    AgeData ageData = AgeData.getIfPresent(level);
+    AgeChunkGenerator generator = getAgeGenerator(level);
+    AgeDirectorImpl director = generator != null ? generator.getDirector() : null;
+
+    int ageUID = ageData != null ? ageData.getAgeUID() : (expectedAgeId != null ? expectedAgeId : -1);
+    String ageName = ageData != null ? ageData.getAgeName() : "Unknown";
+    float instability = ageData != null ? ageData.getInstability() : 0.0f;
+
+    source.sendSuccess(() -> Component.literal("=== Age Debug ==="), false);
+    source.sendSuccess(() -> Component.literal("  UID: " + ageUID), false);
+    source.sendSuccess(() -> Component.literal("  Name: " + ageName), false);
+    source.sendSuccess(() -> Component.literal("  Dimension: " + dimId), false);
+    source.sendSuccess(() -> Component.literal("  Instability: " + String.format("%.2f", instability)), false);
+    if (generator != null) {
+      source.sendSuccess(() -> Component.literal("  Seed: " + generator.getAgeSeed()), false);
+    }
+    if (director != null) {
+      source.sendSuccess(() -> Component.literal("  Terrain: " + director.getTerrainType()), false);
+      source.sendSuccess(() -> Component.literal("  BiomeController: " + director.getBiomeController()), false);
+      source.sendSuccess(() -> Component.literal("  Weather: " + director.getWeatherType()), false);
+      source.sendSuccess(() -> Component.literal("  Lighting: " + director.getLightingType()), false);
+      source.sendSuccess(() -> Component.literal("  StarFissure: " + director.isStarFissureEnabled()), false);
+      source.sendSuccess(() -> Component.literal("  FloatingIslands: " + director.areFloatingIslandsEnabled()), false);
+      source.sendSuccess(() -> Component.literal("  Caves: " + director.areCavesEnabled()), false);
+      source.sendSuccess(() -> Component.literal("  Ravines: " + director.areRavinesEnabled()), false);
+    }
+    return 1;
+  }
+
+  private static int debugRegistrySymbols(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    Collection<IAgeSymbol> symbols = SymbolRegistry.getAll();
+    source.sendSuccess(() -> Component.literal("=== Registry: Symbols (" + symbols.size() + ") ==="), false);
+    java.util.Map<String, Integer> byCategory = new java.util.HashMap<>();
+    for (IAgeSymbol symbol : symbols) {
+      String key = symbol.getCategory().name().toLowerCase();
+      byCategory.put(key, byCategory.getOrDefault(key, 0) + 1);
+    }
+    for (Map.Entry<String, Integer> entry : byCategory.entrySet()) {
+      source.sendSuccess(() -> Component.literal("  " + entry.getKey() + ": " + entry.getValue()), false);
+    }
+    return symbols.size();
+  }
+
+  private static int debugRegistryPopulators(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    List<Identifier> ids = new ArrayList<>(PopulatorRegistry.getAll().keySet());
+    ids.sort(Identifier::compareTo);
+    source.sendSuccess(() -> Component.literal("=== Registry: Populators (" + ids.size() + ") ==="), false);
+    for (Identifier id : ids) {
+      source.sendSuccess(() -> Component.literal("  " + id), false);
+    }
+    return ids.size();
+  }
+
+  private static int debugRegistryTerrain(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    List<Identifier> ids = new ArrayList<>(TerrainAlterationRegistry.getAll().keySet());
+    ids.sort(Identifier::compareTo);
+    source.sendSuccess(() -> Component.literal("=== Registry: Terrain Alterations (" + ids.size() + ") ==="), false);
+    for (Identifier id : ids) {
+      source.sendSuccess(() -> Component.literal("  " + id), false);
+    }
+    return ids.size();
+  }
+
+  private static int debugGiveBlankPage(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ItemStack page = Page.createPage();
+    giveItem(player, page);
+    source.sendSuccess(() -> Component.literal("Gave blank page"), false);
+    return 1;
+  }
+
+  private static int debugGiveLinkPanel(CommandContext<CommandSourceStack> context, String property) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ItemStack page = property == null || property.isBlank()
+        ? Page.createLinkPage()
+        : Page.createLinkPage(property);
+    giveItem(player, page);
+    source.sendSuccess(() -> Component.literal("Gave link panel page" + (property == null || property.isBlank() ? "" : " (" + property + ")")), false);
+    return 1;
+  }
+
+  private static int debugGiveSymbolPage(CommandContext<CommandSourceStack> context, int count) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    String raw = StringArgumentType.getString(context, "symbolId");
+    Identifier id = Identifier.tryParse(raw);
+    if (id == null || SymbolRegistry.get(id) == null) {
+      source.sendFailure(Component.literal("Unknown symbol: " + raw));
+      return 0;
+    }
+    for (int i = 0; i < count; i++) {
+      giveItem(player, Page.createSymbolPage(id));
+    }
+    source.sendSuccess(() -> Component.literal("Gave " + count + " symbol page(s): " + id), false);
+    return 1;
+  }
+
+  private static int debugGiveAgebookFromSymbols(CommandContext<CommandSourceStack> context, String name) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    String rawSymbols = StringArgumentType.getString(context, "symbols");
+    List<Identifier> symbols = parseSymbolList(source, rawSymbols);
+    if (symbols.isEmpty()) {
+      source.sendFailure(Component.literal("No valid symbols found."));
+      return 0;
+    }
+    String title = name != null && !name.isBlank() ? name : "Custom Agebook";
+
+    List<ItemStack> pages = new ArrayList<>();
+    pages.add(Page.createLinkPage());
+    for (Identifier id : symbols) {
+      pages.add(Page.createSymbolPage(id));
+    }
+
+    ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
+    AgebookItem.create(agebook, player, pages, title);
+    giveItem(player, agebook);
+
+    source.sendSuccess(() -> Component.literal("Gave agebook '" + title + "' with " + (pages.size() - 1) + " symbols"), false);
+    return 1;
+  }
+
+  private static int dumpSymbolsToFile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    String rawSymbols = StringArgumentType.getString(context, "symbols");
+    List<Identifier> symbols = parseSymbolList(source, rawSymbols);
+    if (symbols.isEmpty()) {
+      source.sendFailure(Component.literal("No valid symbols found."));
+      return 0;
+    }
+
+    StringBuilder out = new StringBuilder();
+    out.append("# Mystcraft Symbols Dump\n");
+    out.append("count: ").append(symbols.size()).append("\n\n");
+    for (Identifier id : symbols) {
+      IAgeSymbol symbol = SymbolRegistry.get(id);
+      out.append("- ").append(id);
+      if (symbol != null) {
+        out.append(" | category=").append(symbol.getCategory().name().toLowerCase());
+        out.append(" | instability=").append(symbol.getInstabilityCost());
+      }
+      out.append("\n");
+    }
+
+    Path file = writeDumpFile(source, "symbols_dump.txt", out.toString());
+    if (file == null) {
+      return 0;
+    }
+    source.sendSuccess(() -> Component.literal("Wrote symbols dump to " + file.toAbsolutePath()), false);
+    return 1;
+  }
+
+  private static int dumpCurrentAgeToFile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+    return dumpAgeLevelToFile(source, level, null);
+  }
+
+  private static int dumpAgeToFile(CommandContext<CommandSourceStack> context) {
+    CommandSourceStack source = context.getSource();
+    int ageId = IntegerArgumentType.getInteger(context, "ageId");
+    AgeManager ageManager = AgeManager.get(source.getServer());
+    ServerLevel level = ageManager.getAgeLevel(source.getServer(), ageId);
+    if (level == null) {
+      source.sendFailure(Component.literal("Age " + ageId + " not loaded."));
+      return 0;
+    }
+    return dumpAgeLevelToFile(source, level, ageId);
+  }
+
+  private static int dumpAgeLevelToFile(CommandSourceStack source, ServerLevel level, Integer expectedAgeId) {
+    Identifier dimId = level.dimension().identifier();
+    AgeData ageData = AgeData.getIfPresent(level);
+    AgeChunkGenerator generator = getAgeGenerator(level);
+    AgeDirectorImpl director = generator != null ? generator.getDirector() : null;
+
+    int ageUID = ageData != null ? ageData.getAgeUID() : (expectedAgeId != null ? expectedAgeId : -1);
+    String ageName = ageData != null ? ageData.getAgeName() : "Unknown";
+
+    StringBuilder out = new StringBuilder();
+    out.append("# Mystcraft Age Dump\n");
+    out.append("uid: ").append(ageUID).append("\n");
+    out.append("name: ").append(ageName).append("\n");
+    out.append("dimension: ").append(dimId).append("\n");
+    if (generator != null) {
+      out.append("seed: ").append(generator.getAgeSeed()).append("\n");
+    }
+    if (ageData != null) {
+      out.append("instability: ").append(String.format("%.2f", ageData.getInstability())).append("\n");
+      out.append("weather: ").append(ageData.getWeatherType()).append("\n");
+      out.append("lighting: ").append(ageData.getLightingType()).append("\n");
+      out.append("biome_controller: ").append(ageData.getBiomeController()).append("\n");
+      out.append("pages: ").append(ageData.getPages().size()).append("\n");
+
+      out.append("\n# Pages\n");
+      int idx = 0;
+      for (ItemStack page : ageData.getPages()) {
+        idx++;
+        if (Page.isLinkPanel(page)) {
+          out.append(idx).append(". linkpanel");
+          List<String> props = Page.getLinkProperties(page);
+          if (!props.isEmpty()) {
+            out.append(" [").append(String.join(",", props)).append("]");
+          }
+          out.append("\n");
+          continue;
+        }
+        Identifier sym = Page.getSymbol(page);
+        if (sym != null) {
+          out.append(idx).append(". symbol ").append(sym).append("\n");
+        } else {
+          out.append(idx).append(". page\n");
+        }
+      }
+    }
+
+    if (director != null) {
+      out.append("\n# Director Flags\n");
+      out.append("terrain_type: ").append(director.getTerrainType()).append("\n");
+      out.append("has_sea: ").append(director.hasSea()).append("\n");
+      out.append("star_fissure_enabled: ").append(director.isStarFissureEnabled()).append("\n");
+      out.append("floating_islands_enabled: ").append(director.areFloatingIslandsEnabled()).append("\n");
+      out.append("caves_enabled: ").append(director.areCavesEnabled()).append("\n");
+      out.append("ravines_enabled: ").append(director.areRavinesEnabled()).append("\n");
+    }
+
+    String filename = "age_" + ageUID + "_dump.txt";
+    Path file = writeDumpFile(source, filename, out.toString());
+    if (file == null) {
+      return 0;
+    }
+    source.sendSuccess(() -> Component.literal("Wrote age dump to " + file.toAbsolutePath()), false);
+    return 1;
+  }
+
+  private static int debugStarFissureLocate(CommandContext<CommandSourceStack> context, int radius) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+
+    AgeChunkGenerator generator = getAgeGenerator(level);
+    long seed = generator != null ? generator.getAgeSeed() : level.getSeed();
+    AgeDirectorImpl director = generator != null ? generator.getDirector() : null;
+    JsonObject params = director != null ? director.getStarFissureParams() : new JsonObject();
+
+    StarFissurePopulator populator = new StarFissurePopulator(seed, params);
+    BlockPos playerPos = player.blockPosition();
+    int baseChunkX = playerPos.getX() >> 4;
+    int baseChunkZ = playerPos.getZ() >> 4;
+
+    BlockPos best = null;
+    double bestDist = Double.MAX_VALUE;
+
+    for (int dx = -radius; dx <= radius; dx++) {
+      for (int dz = -radius; dz <= radius; dz++) {
+        int cx = baseChunkX + dx;
+        int cz = baseChunkZ + dz;
+        BlockPos candidate = populator.findCandidateInChunk(level, cx, cz);
+        if (candidate == null) {
+          continue;
+        }
+        double dist = candidate.distSqr(playerPos);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = candidate;
+        }
+      }
+    }
+
+    source.sendSuccess(() -> Component.literal("=== Star Fissure Locate ==="), false);
+    source.sendSuccess(() -> Component.literal("  Radius (chunks): " + radius), false);
+    source.sendSuccess(() -> Component.literal("  Seed: " + seed), false);
+    if (best == null) {
+      source.sendSuccess(() -> Component.literal("  Result: none found"), false);
+      return 0;
+    }
+    BlockPos result = best;
+    source.sendSuccess(() -> Component.literal("  Result: " + result.getX() + ", " + result.getY() + ", " + result.getZ()), false);
+    return 1;
+  }
+
+  private static int debugStarFissureSpawn(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+
+    AgeChunkGenerator generator = getAgeGenerator(level);
+    long seed = generator != null ? generator.getAgeSeed() : level.getSeed();
+    AgeDirectorImpl director = generator != null ? generator.getDirector() : null;
+    JsonObject params = director != null ? director.getStarFissureParams() : new JsonObject();
+
+    StarFissurePopulator populator = new StarFissurePopulator(seed, params);
+    BlockPos pos = player.blockPosition();
+    int surfaceY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
+    BlockPos centerPos = new BlockPos(pos.getX(), surfaceY, pos.getZ());
+    populator.forceGenerate(level, centerPos);
+
+    source.sendSuccess(() -> Component.literal("=== Star Fissure Spawn ==="), false);
+    source.sendSuccess(() -> Component.literal("  Center: " + centerPos.getX() + ", " + centerPos.getY() + ", " + centerPos.getZ()), false);
+    return 1;
+  }
+
+  private static int debugRunPopulator(CommandContext<CommandSourceStack> context, String rawParams) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+
+    String idRaw = StringArgumentType.getString(context, "id");
+    Identifier id = Identifier.tryParse(idRaw);
+    if (id == null) {
+      source.sendFailure(Component.literal("Invalid populator id: " + idRaw));
+      return 0;
+    }
+
+    JsonObject params = parseParams(source, rawParams);
+    long seed = getSeedForLevel(level);
+    IPopulate populator = PopulatorRegistry.create(id, params, seed);
+    if (populator == null) {
+      source.sendFailure(Component.literal("Unknown populator: " + id));
+      return 0;
+    }
+
+    BlockPos playerPos = player.blockPosition();
+    int chunkX = playerPos.getX() >> 4;
+    int chunkZ = playerPos.getZ() >> 4;
+    BlockPos chunkPos = new BlockPos(chunkX << 4, 0, chunkZ << 4);
+    long chunkSeed = (long) chunkX * 341873128712L + (long) chunkZ * 132897987541L + seed;
+    RandomSource random = RandomSource.create(chunkSeed);
+
+    populator.populate(level, random, chunkPos);
+
+    source.sendSuccess(() -> Component.literal("=== Populator Run ==="), false);
+    source.sendSuccess(() -> Component.literal("  Populator: " + id), false);
+    source.sendSuccess(() -> Component.literal("  Chunk: " + chunkX + ", " + chunkZ), false);
+    return 1;
+  }
+
+  private static int debugPocketSkin(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+    String playerName = StringArgumentType.getString(context, "playerName");
+
+    if (!art.arcane.mystcraft.world.PersonalPocketDimension.isPersonalPocket(level)) {
+      source.sendFailure(Component.literal("You must be in a personal pocket dimension to use this command."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.getIfPresent(level);
+    if (ageData == null) {
+      source.sendFailure(Component.literal("No age data found for this dimension."));
+      return 0;
+    }
+
+    source.sendSuccess(() -> Component.literal("Fetching skin for player: " + playerName + "..."), false);
+
+    java.util.Map<AgeData.PocketHeadFace, java.util.List<String>> headBlocks =
+        art.arcane.mystcraft.util.PocketHeadUtils.buildPocketHeadBlocksByName(
+            source.getServer(), playerName);
+
+    if (headBlocks == null) {
+      source.sendFailure(Component.literal("Failed to fetch skin for player: " + playerName));
+      source.sendFailure(Component.literal("The player may not exist or has no skin."));
+      return 0;
+    }
+
+    for (AgeData.PocketHeadFace face : AgeData.PocketHeadFace.values()) {
+      java.util.List<String> blocks = headBlocks.get(face);
+      if (blocks != null) {
+        ageData.setPocketHeadBlocks(face, blocks);
+      }
+    }
+
+    if (level.getChunkSource().getGenerator() instanceof AgeChunkGenerator ageGen) {
+      ageGen.refreshPocketHeadBlocks(level);
+    }
+
+    int placed = art.arcane.mystcraft.world.PersonalPocketDimension.reskinPocket(level);
+
+    source.sendSuccess(() -> Component.literal("=== Pocket Skin Debug ==="), false);
+    source.sendSuccess(() -> Component.literal("  Player: " + playerName), false);
+    source.sendSuccess(() -> Component.literal("  Blocks updated: " + placed), false);
+    source.sendSuccess(() -> Component.literal("  Skin applied successfully!"), false);
+
+    return 1;
+  }
+
+  private static JsonObject parseParams(CommandSourceStack source, String rawParams) {
+    if (rawParams == null || rawParams.isBlank()) {
+      return new JsonObject();
+    }
+    try {
+      return JsonParser.parseString(rawParams).getAsJsonObject();
+    } catch (IllegalStateException | JsonSyntaxException e) {
+      source.sendFailure(Component.literal("Invalid params JSON, using defaults: " + e.getMessage()));
+      return new JsonObject();
+    }
+  }
+
+  private static long getSeedForLevel(ServerLevel level) {
+    AgeChunkGenerator generator = getAgeGenerator(level);
+    if (generator != null) {
+      return generator.getAgeSeed();
+    }
+    return level.getSeed();
+  }
+
+  private static AgeChunkGenerator getAgeGenerator(ServerLevel level) {
+    if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+      return null;
+    }
+    if (level.getChunkSource().getGenerator() instanceof AgeChunkGenerator ageGen) {
+      return ageGen;
+    }
+    return null;
+  }
+
+  private static SymbolCategory parseSymbolCategory(String raw) {
+    if (raw == null) {
+      return null;
+    }
+    try {
+      return SymbolCategory.valueOf(raw.trim().toUpperCase());
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+  }
+
+  private static List<Identifier> parseSymbolList(CommandSourceStack source, String raw) {
+    List<Identifier> result = new ArrayList<>();
+    if (raw == null || raw.isBlank()) {
+      return result;
+    }
+    String[] tokens = raw.split("[,\\s]+");
+    for (String token : tokens) {
+      if (token.isBlank()) {
+        continue;
+      }
+      Identifier id = Identifier.tryParse(token.trim());
+      if (id == null) {
+        source.sendFailure(Component.literal("Invalid symbol id: " + token));
+        continue;
+      }
+      if (SymbolRegistry.get(id) == null) {
+        source.sendFailure(Component.literal("Unknown symbol: " + id));
+        continue;
+      }
+      result.add(id);
+    }
+    return result;
+  }
+
+  private static List<Identifier> collectPresetSymbols(AgePresets.Preset preset, RandomSource random) {
+    List<Identifier> symbols = new ArrayList<>();
+    for (String symbolId : preset.fixedSymbols()) {
+      Identifier id = Identifier.parse(symbolId);
+      if (SymbolRegistry.get(id) != null) {
+        symbols.add(id);
+      }
+    }
+
+    for (AgePresets.RandomPool pool : preset.randomPools()) {
+      List<String> available = new ArrayList<>(pool.options());
+      Collections.shuffle(available, new java.util.Random(random.nextLong()));
+      int count = Math.min(pool.pickCount(), available.size());
+      for (int i = 0; i < count; i++) {
+        Identifier id = Identifier.parse(available.get(i));
+        if (SymbolRegistry.get(id) != null) {
+          symbols.add(id);
+        }
+      }
+    }
+    return symbols;
+  }
+
+  private static void giveItem(ServerPlayer player, ItemStack item) {
+    if (!player.getInventory().add(item)) {
+      player.drop(item, false);
+    }
+  }
+
+  private static Path writeDumpFile(CommandSourceStack source, String filename, String content) {
+    Path dir = source.getServer().getServerDirectory().resolve("mystcraft_dumps");
+    try {
+      Files.createDirectories(dir);
+      Path file = dir.resolve(filename);
+      Files.writeString(file, content, StandardCharsets.UTF_8);
+      return file;
+    } catch (IOException e) {
+      source.sendFailure(Component.literal("Failed to write dump file: " + e.getMessage()));
+      return null;
+    }
+  }
+
+  private static int whereAmI(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    Level level = player.level();
+    Identifier dimId = level.dimension().identifier();
+
+    if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+      source.sendSuccess(() -> Component.literal("You are NOT in a Mystcraft age."), false);
+      source.sendSuccess(() -> Component.literal("  Dimension: " + dimId), false);
+      return 0;
+    }
+
+    AgeData ageData = AgeData.getIfPresent((ServerLevel) level);
+    int ageUID = ageData != null ? ageData.getAgeUID() : -1;
+    String ageName = ageData != null && ageData.getAgeName() != null ? ageData.getAgeName() : "Unnamed";
+    float instability = ageData != null ? ageData.getInstability() : 0;
+
+    source.sendSuccess(() -> Component.literal("=== Mystcraft Age ==="), false);
+    source.sendSuccess(() -> Component.literal("  Age UID: " + ageUID), false);
+    source.sendSuccess(() -> Component.literal("  Name: " + ageName), false);
+    source.sendSuccess(() -> Component.literal("  Dimension ID: " + dimId), false);
+    source.sendSuccess(() -> Component.literal("  Instability: " + String.format("%.2f", instability)), false);
+
+    if (ageData != null) {
+      List<ItemStack> pages = ageData.getPages();
+      int symbolCount = 0;
+      for (ItemStack page : pages) {
+        if (art.arcane.mystcraft.data.Page.getSymbol(page) != null) {
+          symbolCount++;
+        }
+      }
+      int finalSymbolCount = symbolCount;
+      source.sendSuccess(() -> Component.literal("  Pages: " + pages.size() + " (" + finalSymbolCount + " symbols)"), false);
+    }
+
+    return 1;
+  }
+
+  private static int giveRandomBook(CommandContext<CommandSourceStack> context, int symbolCount) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    RandomSource random = player.getRandom();
+
+    ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
+
+    List<ItemStack> pages = new ArrayList<>();
+    pages.add(Page.createLinkPage());
+    java.util.Set<Identifier> seen = new java.util.HashSet<>();
+
+    int budget = symbolCount;
+
+    IAgeSymbol terrain = pickWeightedTerrain(random);
+    if (budget > 0 && addSymbolPage(pages, seen, terrain)) {
+      budget--;
+    }
+
+    IAgeSymbol controller = pickUniformFromCategory(SymbolCategory.BIOME_CONTROLLER, random);
+    if (budget > 0 && addSymbolPage(pages, seen, controller)) {
+      budget--;
+    }
+
+    if (budget > 0) {
+      IAgeSymbol biome = pickWeightedBiome(random);
+      if (addSymbolPage(pages, seen, biome)) {
+        budget--;
+      }
+    }
+
+    if (budget > 0 && random.nextFloat() < 0.5f) {
+      IAgeSymbol biome = pickWeightedBiome(random);
+      if (addSymbolPage(pages, seen, biome)) {
+        budget--;
+      }
+    }
+
+    if (budget > 0 && random.nextFloat() < 0.35f) {
+      if (addRandomSymbolFromPool(pages, seen, RANDOM_GRADIENT_SYMBOLS, random)) {
+        budget--;
+      }
+    }
+
+    if (budget > 0 && random.nextFloat() < 0.35f) {
+      if (addRandomSymbolFromPool(pages, seen, RANDOM_CLOUD_MODIFIERS, random)) {
+        budget--;
+      }
+    }
+
+    if (budget > 0 && random.nextFloat() < 0.15f) {
+      if (addRandomSymbolFromPool(pages, seen, RANDOM_HORIZON_MODIFIERS, random)) {
+        budget--;
+      }
+    }
+
+    if (budget > 0) {
+      IAgeSymbol weather = pickUniformFromCategory(SymbolCategory.WEATHER, random);
+      if (addSymbolPage(pages, seen, weather)) {
+        budget--;
+      }
+    }
+
+    if (budget > 0) {
+      IAgeSymbol lighting = pickWeightedFromCategory(SymbolCategory.LIGHTING, random, MystcraftCommands::lightingWeight);
+      if (addSymbolPage(pages, seen, lighting)) {
+        budget--;
+      }
+    }
+
+    int featureLargeCount = pickCountWeighted(random, new int[]{0, 0, 1, 1, 1, 2, 2, 3, 3});
+    budget = addCategorySymbols(pages, seen, SymbolCategory.FEATURE_LARGE, random, featureLargeCount, budget,
+        MystcraftCommands::featureLargeWeight);
+
+    int featureMediumCount = random.nextInt(3);
+    budget = addCategorySymbols(pages, seen, SymbolCategory.FEATURE_MEDIUM, random, featureMediumCount, budget, null);
+    int featureSmallCount = random.nextInt(3);
+    budget = addCategorySymbols(pages, seen, SymbolCategory.FEATURE_SMALL, random, featureSmallCount, budget, null);
+
+    int structureCount = pickCountWeighted(random, new int[]{1, 1, 2, 2, 3, 3, 4});
+    budget = addCategorySymbols(pages, seen, SymbolCategory.STRUCTURE, random, structureCount, budget, null);
+
+    int environmentCount = random.nextInt(3);
+    budget = addCategorySymbols(pages, seen, SymbolCategory.ENVIRONMENT, random, environmentCount, budget, MystcraftCommands::environmentWeight);
+
+    int visualCount = pickCountWeighted(random, new int[]{1, 1, 2});
+    budget = addCategorySymbols(pages, seen, SymbolCategory.VISUAL_EFFECT, random, visualCount, budget, null);
+
+    int oreCount = pickCountWeighted(random, new int[]{0, 1, 1, 2});
+    budget = addOreSymbols(pages, seen, random, oreCount, budget);
+
+    if (budget > 0 && !seen.contains(Identifier.fromNamespaceAndPath("mystcraft", "star_fissure"))) {
+      if (random.nextBoolean()) {
+        IAgeSymbol starFissure = SymbolRegistry.get(Identifier.fromNamespaceAndPath("mystcraft", "star_fissure"));
+        if (addSymbolPage(pages, seen, starFissure)) {
+          budget--;
+        }
+      }
+    }
+
+    int specialCount = random.nextInt(2);
+    budget = addCategorySymbols(pages, seen, SymbolCategory.SPECIAL, random, specialCount, budget, null);
+
+    if (budget > 0 && random.nextFloat() < 0.6f) {
+      IAgeSymbol modifier = pickRandomTerrainBlock(random);
+      if (addSymbolPage(pages, seen, modifier)) {
+        budget--;
+      }
+    }
+
+    for (int i = 0; i < budget && i < 50; i++) {
+      IAgeSymbol symbol = SymbolRegistry.getRandomWeighted(random);
+      if (symbol != null) {
+        if (addSymbolPage(pages, seen, symbol)) {
+          budget--;
+        }
+      }
+    }
+
+    String[] prefixes = {
+        "Mysterious", "Ancient", "Lost", "Hidden", "Eternal",
+        "Twilight", "Crystal", "Shadow", "Golden", "Silver",
+        "Crimson", "Jade", "Sapphire", "Amber", "Emerald",
+        "Copper", "Aurora", "Midnight", "Ivory", "Cobalt"
+    };
+    String[] suffixes = {
+        "Realm", "World", "Domain", "Land", "Age",
+        "Dimension", "Expanse", "Haven", "Void", "Sanctuary",
+        "Horizon", "Depths", "Reach", "Wastes", "Pinnacle"
+    };
+    String ageName = prefixes[random.nextInt(prefixes.length)] + " " + suffixes[random.nextInt(suffixes.length)];
+
+    AgebookItem.create(agebook, player, pages, ageName);
+
+    if (!player.getInventory().add(agebook)) {
+      player.drop(agebook, false);
+    }
+
+    int totalSymbols = pages.size() - 1;
+    source.sendSuccess(() -> Component.literal("Created random Descriptive Book '" + ageName + "' with " + totalSymbols + " symbols"), true);
+
+    return 1;
+  }
+
+  private static void addRandomSymbolFromPool(List<ItemStack> pages, String[] pool, RandomSource random) {
+    String chosen = pool[random.nextInt(pool.length)];
+    Identifier id = Identifier.parse(chosen);
+    if (SymbolRegistry.get(id) != null) {
+      pages.add(Page.createSymbolPage(id));
+    }
+  }
+
+  private static boolean addRandomSymbolFromPool(List<ItemStack> pages, java.util.Set<Identifier> seen,
+                                                 String[] pool, RandomSource random) {
+    String chosen = pool[random.nextInt(pool.length)];
+    Identifier id = Identifier.parse(chosen);
+    IAgeSymbol symbol = SymbolRegistry.get(id);
+    if (symbol == null) return false;
+    return addSymbolPage(pages, seen, symbol);
+  }
+
+  private static boolean addSymbolPage(List<ItemStack> pages, java.util.Set<Identifier> seen, IAgeSymbol symbol) {
+    if (symbol == null) return false;
+    Identifier id = symbol.getRegistryName();
+    if (!symbol.canDuplicate() && seen.contains(id)) return false;
+    pages.add(Page.createSymbolPage(id));
+    seen.add(id);
+    return true;
+  }
+
+  private static IAgeSymbol pickUniformFromCategory(SymbolCategory category, RandomSource random) {
+    List<IAgeSymbol> list = SymbolRegistry.getByCategory(category);
+    List<IAgeSymbol> filtered = new ArrayList<>();
+    for (IAgeSymbol symbol : list) {
+      if (!symbol.allowInRandomGeneration()) continue;
+      if (SymbolRegistry.isBlacklisted(symbol.getRegistryName())) continue;
+      filtered.add(symbol);
+    }
+    if (filtered.isEmpty()) return null;
+    return filtered.get(random.nextInt(filtered.size()));
+  }
+
+  private static IAgeSymbol pickWeightedFromCategory(SymbolCategory category, RandomSource random,
+                                                     java.util.function.ToIntFunction<IAgeSymbol> weightFn) {
+    List<IAgeSymbol> list = SymbolRegistry.getByCategory(category);
+    List<IAgeSymbol> weighted = new ArrayList<>();
+    for (IAgeSymbol symbol : list) {
+      if (!symbol.allowInRandomGeneration()) continue;
+      if (SymbolRegistry.isBlacklisted(symbol.getRegistryName())) continue;
+      int weight = Math.max(0, weightFn.applyAsInt(symbol));
+      for (int i = 0; i < weight; i++) {
+        weighted.add(symbol);
+      }
+    }
+    if (weighted.isEmpty()) return null;
+    return weighted.get(random.nextInt(weighted.size()));
+  }
+
+  private static IAgeSymbol pickWeightedTerrain(RandomSource random) {
+    List<IAgeSymbol> list = SymbolRegistry.getByCategory(SymbolCategory.TERRAIN);
+    List<IAgeSymbol> weighted = new ArrayList<>();
+    for (IAgeSymbol symbol : list) {
+      if (!symbol.allowInRandomGeneration()) continue;
+      if (SymbolRegistry.isBlacklisted(symbol.getRegistryName())) continue;
+      int weight = terrainWeight(symbol);
+      for (int i = 0; i < weight; i++) {
+        weighted.add(symbol);
+      }
+    }
+    if (weighted.isEmpty()) return null;
+    return weighted.get(random.nextInt(weighted.size()));
+  }
+
+  private static IAgeSymbol pickWeightedBiome(RandomSource random) {
+    List<IAgeSymbol> list = SymbolRegistry.getByCategory(SymbolCategory.BIOME);
+    List<IAgeSymbol> weighted = new ArrayList<>();
+    for (IAgeSymbol symbol : list) {
+      if (!symbol.allowInRandomGeneration()) continue;
+      if (SymbolRegistry.isBlacklisted(symbol.getRegistryName())) continue;
+      int weight = biomeWeight(symbol);
+      for (int i = 0; i < weight; i++) {
+        weighted.add(symbol);
+      }
+    }
+    if (weighted.isEmpty()) return null;
+    return weighted.get(random.nextInt(weighted.size()));
+  }
+
+  private static int biomeWeight(IAgeSymbol symbol) {
+    String path = symbol.getRegistryName().getPath();
+    if (path.contains("ocean")) return 1;
+    if (path.contains("nether") || path.contains("crimson") || path.contains("warped")
+        || path.contains("basalt") || path.contains("soul")) return 1;
+    if (path.contains("end")) return 1;
+    return 5;
+  }
+
+  private static int terrainWeight(IAgeSymbol symbol) {
+    String path = symbol.getRegistryName().getPath();
+    if (path.contains("normal")) return 0;
+    if (path.contains("void")) return 1;
+    return 2;
+  }
+
+  private static int lightingWeight(IAgeSymbol symbol) {
+    String path = symbol.getRegistryName().getPath();
+    if (path.contains("dark")) return 1;
+    return 3;
+  }
+
+  private static int environmentWeight(IAgeSymbol symbol) {
+    String path = symbol.getRegistryName().getPath();
+    if (path.contains("lightning") || path.contains("meteors")) return 1;
+    return 3;
+  }
+
+  private static int featureLargeWeight(IAgeSymbol symbol) {
+    String path = symbol.getRegistryName().getPath();
+    if (path.startsWith("floating_islands") || path.equals("skylands"))
+      return 1;
+    return 3;
+  }
+
+  private static int pickCountWeighted(RandomSource random, int[] options) {
+    return options[random.nextInt(options.length)];
+  }
+
+  private static int addCategorySymbols(List<ItemStack> pages, java.util.Set<Identifier> seen,
+                                        SymbolCategory category, RandomSource random, int count, int budget,
+                                        java.util.function.ToIntFunction<IAgeSymbol> weightFn) {
+    if (count <= 0 || budget <= 0) return budget;
+    List<IAgeSymbol> pool = SymbolRegistry.getByCategory(category);
+    List<IAgeSymbol> candidates = new ArrayList<>();
+    for (IAgeSymbol symbol : pool) {
+      if (!symbol.allowInRandomGeneration()) continue;
+      if (SymbolRegistry.isBlacklisted(symbol.getRegistryName())) continue;
+      candidates.add(symbol);
+    }
+    if (candidates.isEmpty()) return budget;
+    for (int i = 0; i < count && budget > 0; i++) {
+      IAgeSymbol pick = (weightFn == null)
+          ? candidates.get(random.nextInt(candidates.size()))
+          : pickWeightedFromCategory(category, random, weightFn);
+      if (addSymbolPage(pages, seen, pick)) {
+        budget--;
+      }
+    }
+    return budget;
+  }
+
+  private static int addOreSymbols(List<ItemStack> pages, java.util.Set<Identifier> seen,
+                                   RandomSource random, int count, int budget) {
+    if (count <= 0 || budget <= 0) return budget;
+    List<IAgeSymbol> pool = new ArrayList<>();
+    for (IAgeSymbol symbol : SymbolRegistry.getByCategory(SymbolCategory.FEATURE_MEDIUM)) {
+      String path = symbol.getRegistryName().getPath();
+      if (path.startsWith("extra_") || path.startsWith("no_") || path.equals("dense_ores")) {
+        pool.add(symbol);
+      }
+    }
+    if (pool.isEmpty()) return budget;
+    for (int i = 0; i < count && budget > 0; i++) {
+      IAgeSymbol pick = pickWeightedOre(pool, random);
+      if (addSymbolPage(pages, seen, pick)) {
+        budget--;
+      }
+    }
+    return budget;
+  }
+
+  private static IAgeSymbol pickWeightedOre(List<IAgeSymbol> pool, RandomSource random) {
+    List<IAgeSymbol> weighted = new ArrayList<>();
+    for (IAgeSymbol symbol : pool) {
+      String path = symbol.getRegistryName().getPath();
+      int weight = (path.equals("no_ores") || path.startsWith("no_")) ? 1 : 3;
+      for (int i = 0; i < weight; i++) {
+        weighted.add(symbol);
+      }
+    }
+    if (weighted.isEmpty()) return null;
+    return weighted.get(random.nextInt(weighted.size()));
+  }
+
+  private static IAgeSymbol pickFromPool(String[] pool, int[] weights, RandomSource random) {
+    int total = 0;
+    for (int w : weights) total += w;
+    int roll = random.nextInt(total);
+    int cumulative = 0;
+    for (int i = 0; i < pool.length; i++) {
+      cumulative += weights[i];
+      if (roll < cumulative) {
+        return SymbolRegistry.get(Identifier.parse(pool[i]));
+      }
+    }
+    return SymbolRegistry.get(Identifier.parse(pool[0]));
+  }
+
+  private static IAgeSymbol pickRandomTerrainBlock(RandomSource random) {
+    List<IAgeSymbol> pool = new ArrayList<>();
+    for (IAgeSymbol symbol : SymbolRegistry.getByCategory(SymbolCategory.MODIFIER)) {
+      if (!symbol.getRegistryName().getPath().startsWith("block_minecraft_"))
+        continue;
+      pool.add(symbol);
+    }
+    if (pool.isEmpty()) return null;
+    return pool.get(random.nextInt(pool.size()));
+  }
+
+  private static int giveAgebook(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    int ageId = IntegerArgumentType.getInteger(context, "ageId");
+
+    AgeManager ageManager = AgeManager.get(source.getServer());
+    Identifier dimLoc = ageManager.getDimension(ageId);
+
+    if (dimLoc == null) {
+      source.sendFailure(Component.literal("Age " + ageId + " does not exist. Use '/mystcraft age create' to create a new age first, or '/mystcraft give randombook' to create a book that generates a new age on first use."));
+      return 0;
+    }
+
+    ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(source.getServer(), ageId);
+    if (ageLevel == null) {
+      source.sendFailure(Component.literal("Failed to load age " + ageId));
+      return 0;
+    }
+
+    art.arcane.mystcraft.world.AgeData ageData = art.arcane.mystcraft.world.AgeData.getIfPresent(ageLevel);
+    String ageName = ageData != null && ageData.getAgeName() != null ? ageData.getAgeName() : "Age " + ageId;
+    BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
+
+    ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
+    ItemStackNbt.setTag(agebook, new net.minecraft.nbt.CompoundTag());
+
+    CompoundTag tag = ItemStackNbt.getOrCreateTag(agebook);
+    art.arcane.mystcraft.data.LinkOptions.setDimensionUID(tag, ageId);
+    art.arcane.mystcraft.data.LinkOptions.setSpawn(tag, spawn);
+    art.arcane.mystcraft.data.LinkOptions.setDisplayName(tag, ageName);
+    ItemStackNbt.setTag(agebook, tag);
+
+    if (ageData != null) {
+      List<ItemStack> pages = ageData.getPages();
+      if (pages != null && !pages.isEmpty()) {
+        AgebookItem item = (AgebookItem) agebook.getItem();
+        item.addPages(agebook, pages);
+      }
+    }
+
+    if (!player.getInventory().add(agebook)) {
+      player.drop(agebook, false);
+    }
+
+    source.sendSuccess(() -> Component.literal("Created Descriptive Book for Age " + ageId + " ('" + ageName + "')"), true);
+    return 1;
+  }
+
+  private static int givePresetBook(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    String presetName = StringArgumentType.getString(context, "name");
+
+    AgePresets.Preset preset = AgePresets.getPreset(presetName);
+    if (preset == null) {
+      source.sendFailure(Component.literal("Unknown preset: " + presetName));
+      source.sendFailure(Component.literal("Available: " + String.join(", ", AgePresets.PRESET_NAMES)));
+      return 0;
+    }
+
+    RandomSource random = player.getRandom();
+
+    List<ItemStack> pages = new ArrayList<>();
+    pages.add(Page.createLinkPage());
+
+    for (String symbolId : preset.fixedSymbols()) {
+      Identifier id = Identifier.parse(symbolId);
+      if (SymbolRegistry.get(id) != null) {
+        pages.add(Page.createSymbolPage(id));
+      } else {
+        Mystcraft.LOGGER.warn("[Preset] Unknown fixed symbol: {}", symbolId);
+      }
+    }
+
+    for (AgePresets.RandomPool pool : preset.randomPools()) {
+      List<String> available = new ArrayList<>(pool.options());
+      Collections.shuffle(available, new java.util.Random(random.nextLong()));
+      int count = Math.min(pool.pickCount(), available.size());
+      for (int i = 0; i < count; i++) {
+        Identifier id = Identifier.parse(available.get(i));
+        if (SymbolRegistry.get(id) != null) {
+          pages.add(Page.createSymbolPage(id));
+        } else {
+          Mystcraft.LOGGER.warn("[Preset] Unknown pool symbol: {}", available.get(i));
+        }
+      }
+    }
+
+    ItemStack agebook = new ItemStack(ModItems.AGEBOOK.get());
+    AgebookItem.create(agebook, player, pages, preset.displayName());
+
+    if (!player.getInventory().add(agebook)) {
+      player.drop(agebook, false);
+    }
+
+    int symbolCount = pages.size() - 1;
+    source.sendSuccess(() -> Component.literal("Created preset book '" + preset.displayName() + "' with " + symbolCount + " symbols"), true);
+    return 1;
+  }
+
+  private static int createAgeFromPreset(CommandContext<CommandSourceStack> context, boolean teleport) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    String presetName = StringArgumentType.getString(context, "name");
+
+    AgePresets.Preset preset = AgePresets.getPreset(presetName);
+    if (preset == null) {
+      source.sendFailure(Component.literal("Unknown preset: " + presetName));
+      source.sendFailure(Component.literal("Available: " + String.join(", ", AgePresets.PRESET_NAMES)));
+      return 0;
+    }
+
+    List<Identifier> symbols = collectPresetSymbols(preset, player.getRandom());
+    return createAgeFromSymbolsInternal(source, player, symbols, preset.displayName(), teleport);
+  }
+
+  private static int createAgeFromSymbols(CommandContext<CommandSourceStack> context, boolean teleport, String name) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    String rawSymbols = StringArgumentType.getString(context, "symbols");
+    List<Identifier> symbols = parseSymbolList(source, rawSymbols);
+    if (symbols.isEmpty()) {
+      source.sendFailure(Component.literal("No valid symbols found."));
+      return 0;
+    }
+    String ageName = name != null && !name.isBlank() ? name : "Custom Age";
+    return createAgeFromSymbolsInternal(source, player, symbols, ageName, teleport);
+  }
+
+  private static int createAgeFromSymbolsInternal(CommandSourceStack source, ServerPlayer player,
+                                                  List<Identifier> symbolIds, String ageName,
+                                                  boolean teleport) {
+    List<IAgeSymbol> symbols = new ArrayList<>();
+    List<Identifier> appliedSymbolIds = new ArrayList<>();
+    List<ItemStack> pages = new ArrayList<>();
+    for (Identifier id : symbolIds) {
+      IAgeSymbol symbol = SymbolRegistry.get(id);
+      if (symbol != null) {
+        symbols.add(symbol);
+        appliedSymbolIds.add(id);
+        pages.add(Page.createSymbolPage(id));
+      }
+    }
+    if (symbols.isEmpty()) {
+      source.sendFailure(Component.literal("No valid symbols to build age."));
+      return 0;
+    }
+
+    long seed = AgeSeed.deriveFromSymbolIds(appliedSymbolIds);
+    AgeBuilder builder = new AgeBuilder(symbols, seed);
+    AgeDirectorImpl director = builder.build();
+    if (MystcraftConfig.microDimensionsEnabled.get() && !director.isPersonalPocket()) {
+      director.setMicroDimensions(
+          true,
+          MystcraftConfig.microDimensionRadiusChunks.get(),
+          MystcraftConfig.microDimensionExtraChunks.get()
+      );
+    }
+
+    AgeManager ageManager = AgeManager.get(source.getServer());
+    int ageUID = ageManager.allocateUID();
+    java.util.UUID ageUUID = java.util.UUID.randomUUID();
+    Identifier dimLoc = Identifier.fromNamespaceAndPath(Mystcraft.MOD_ID, "mystcraft_age_" + ageUID);
+    AgeDefinition definition = AgeDefinition.fromDirector(appliedSymbolIds, director);
+    ageManager.registerAge(ageUID, dimLoc, ageUUID, definition);
+
+    ServerLevel ageLevel = AgeDimensionFactory.createAgeDimension(
+        source.getServer(), ageUID, ageUUID, director);
+
+    if (ageLevel == null) {
+      ageManager.unregisterAge(ageUID);
+      source.sendFailure(Component.literal("Failed to create age."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.get(ageLevel);
+    ageData.setAgeUID(ageUID);
+    ageData.setAgeUUID(ageUUID);
+    ageData.setAgeName(ageName);
+    ageData.addAuthor(player.getGameProfile().name());
+    ageData.setPages(pages);
+    ageData.copyFromDirector(director);
+
+    BlockPos spawn = AgeDimensionFactory.getAgeSpawn(ageLevel);
+    ageData.setSpawn(spawn.getX(), spawn.getY(), spawn.getZ());
+    AgeDimensionFactory.applyMicroDimensionBorder(ageLevel, ageData);
+
+    source.sendSuccess(() -> Component.literal("Created age " + ageUID + " (" + ageName + ")"), true);
+
+    if (teleport) {
+      AgeDataSyncHandler.syncAgeDataToPlayer(player, ageLevel);
+      ServerPlayerTeleport.teleport(player, ageLevel, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5,
+          player.getYRot(), player.getXRot());
+      source.sendSuccess(() -> Component.literal("Teleported to age " + ageUID), true);
+    }
+
+    return 1;
+  }
+
+  private static int toggleInstabilityCurrent(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    Level level = player.level();
+
+    if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+      source.sendFailure(Component.literal("Not in a Mystcraft age."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.getIfPresent((ServerLevel) level);
+    if (ageData == null) {
+      source.sendFailure(Component.literal("No age data found."));
+      return 0;
+    }
+
+    float current = ageData.getInstability();
+    if (current > 0) {
+      ageData.setInstability(0);
+      source.sendSuccess(() -> Component.literal("Instability disabled for current Age"), true);
+    } else {
+      ageData.setInstability(50.0f);
+      source.sendSuccess(() -> Component.literal("Instability enabled for current Age (set to 50)"), true);
+    }
+
+    return 1;
+  }
+
+  private static int toggleInstabilityAge(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    int ageId = IntegerArgumentType.getInteger(context, "ageId");
+
+    ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(source.getServer(), ageId);
+    if (ageLevel == null) {
+      source.sendFailure(Component.literal("Age " + ageId + " not found."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.getIfPresent(ageLevel);
+    if (ageData == null) {
+      source.sendFailure(Component.literal("No age data found for Age " + ageId + "."));
+      return 0;
+    }
+
+    float current = ageData.getInstability();
+    if (current > 0) {
+      ageData.setInstability(0);
+      source.sendSuccess(() -> Component.literal("Instability disabled for Age " + ageId), true);
+    } else {
+      ageData.setInstability(50.0f);
+      source.sendSuccess(() -> Component.literal("Instability enabled for Age " + ageId + " (set to 50)"), true);
+    }
+
+    return 1;
+  }
+
+  private static int toggleInstabilityAgeExplicit(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    int ageId = IntegerArgumentType.getInteger(context, "ageId");
+    boolean enabled = BoolArgumentType.getBool(context, "enabled");
+
+    ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(source.getServer(), ageId);
+    if (ageLevel == null) {
+      source.sendFailure(Component.literal("Age " + ageId + " not found."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.getIfPresent(ageLevel);
+    if (ageData == null) {
+      source.sendFailure(Component.literal("No age data found for Age " + ageId + "."));
+      return 0;
+    }
+
+    if (enabled) {
+      if (ageData.getInstability() <= 0) {
+        ageData.setInstability(50.0f);
+      }
+      source.sendSuccess(() -> Component.literal("Instability enabled for Age " + ageId), true);
+    } else {
+      ageData.setInstability(0);
+      source.sendSuccess(() -> Component.literal("Instability disabled for Age " + ageId), true);
+    }
+
+    return 1;
+  }
+
+  private static int setInstabilityCurrent(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    Level level = player.level();
+
+    if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+      source.sendFailure(Component.literal("Not in a Mystcraft age."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.getIfPresent((ServerLevel) level);
+    if (ageData == null) {
+      source.sendFailure(Component.literal("No age data found."));
+      return 0;
+    }
+
+    float value = FloatArgumentType.getFloat(context, "value");
+    float oldValue = ageData.getInstability();
+    ageData.setInstability(value);
+
+    source.sendSuccess(() -> Component.literal(String.format(
+        "Instability: %.2f -> %.2f", oldValue, value)), true);
+    return 1;
+  }
+
+  private static int setInstabilityAge(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    float value = FloatArgumentType.getFloat(context, "value");
+    int ageId = IntegerArgumentType.getInteger(context, "ageId");
+
+    ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(source.getServer(), ageId);
+    if (ageLevel == null) {
+      source.sendFailure(Component.literal("Age " + ageId + " not found."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.getIfPresent(ageLevel);
+    if (ageData == null) {
+      source.sendFailure(Component.literal("No age data found for Age " + ageId + "."));
+      return 0;
+    }
+
+    float oldValue = ageData.getInstability();
+    ageData.setInstability(value);
+
+    source.sendSuccess(() -> Component.literal(String.format(
+        "Age %d instability: %.2f -> %.2f", ageId, oldValue, value)), true);
+    return 1;
+  }
+
+  private static int regenChunks(CommandContext<CommandSourceStack> context, int radius) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+
+    if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+      source.sendFailure(Component.literal("Not in a Mystcraft age. Chunk regeneration only works in Ages."));
+      return 0;
+    }
+
+    BlockPos playerPos = player.blockPosition();
+    ChunkPos centerChunk = ChunkPos.containing(playerPos);
+
+    int regenerated = 0;
+    for (int dx = -radius; dx <= radius; dx++) {
+      for (int dz = -radius; dz <= radius; dz++) {
+        ChunkPos chunkPos = new ChunkPos(centerChunk.x() + dx, centerChunk.z() + dz);
+
+        for (int x = 0; x < 16; x++) {
+          for (int z = 0; z < 16; z++) {
+            int surfaceY = level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE,
+                chunkPos.getBlockAt(x, 0, z)).getY();
+            for (int y = 1; y < Math.min(surfaceY + 10, level.getMaxY()); y++) {
+              BlockPos pos = chunkPos.getBlockAt(x, y, z);
+              if (!level.getBlockState(pos).is(net.minecraft.world.level.block.Blocks.BEDROCK)) {
+                level.removeBlock(pos, false);
+              }
+            }
+          }
+        }
+        regenerated++;
+      }
+    }
+
+    int finalRegenerated = regenerated;
+    source.sendSuccess(() -> Component.literal("Cleared " + finalRegenerated + " chunks"), true);
+    source.sendSuccess(() -> Component.literal("Note: For full regeneration, re-enter the Age"), false);
+
+    return regenerated;
+  }
+
+  private static int setTime(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+
+    if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+      source.sendFailure(Component.literal("Not in a Mystcraft age."));
+      return 0;
+    }
+
+    int ticks = IntegerArgumentType.getInteger(context, "ticks");
+    setDefaultClockTime(level, ticks);
+
+    source.sendSuccess(() -> Component.literal("Set time to " + ticks + " ticks"), true);
+    return 1;
+  }
+
+  private static int addTime(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+
+    if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+      source.sendFailure(Component.literal("Not in a Mystcraft age."));
+      return 0;
+    }
+
+    int ticks = IntegerArgumentType.getInteger(context, "ticks");
+    long newTime = level.getDefaultClockTime() + ticks;
+    setDefaultClockTime(level, newTime);
+
+    source.sendSuccess(() -> Component.literal("Added " + ticks + " ticks (new time: " + newTime + ")"), true);
+    return 1;
+  }
+
+  private static void setDefaultClockTime(ServerLevel level, long ticks) {
+    level.dimensionType().defaultClock().ifPresent(
+        clock -> level.clockManager().setTotalTicks(clock, ticks)
+    );
+  }
+
+  private static int setWeather(CommandContext<CommandSourceStack> context, String weatherType) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+
+    if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+      source.sendFailure(Component.literal("Not in a Mystcraft age."));
+      return 0;
+    }
+
+    int duration = 6000;
+
+    switch (weatherType) {
+      case "clear" -> {
+        level.getServer().setWeatherParameters(duration, 0, false, false);
+        source.sendSuccess(() -> Component.literal("Weather set to clear"), true);
+      }
+      case "rain" -> {
+        level.getServer().setWeatherParameters(0, duration, true, false);
+        source.sendSuccess(() -> Component.literal("Weather set to rain"), true);
+      }
+      case "thunder" -> {
+        level.getServer().setWeatherParameters(0, duration, true, true);
+        source.sendSuccess(() -> Component.literal("Weather set to thunder"), true);
+      }
+      default -> {
+        source.sendFailure(Component.literal("Unknown weather type: " + weatherType));
+        return 0;
+      }
+    }
+
+    return 1;
+  }
+
+  private static int spawnMeteor(CommandContext<CommandSourceStack> context, int scale) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+
+    Vec3 eyePos = player.getEyePosition();
+    Vec3 lookVec = player.getLookAngle();
+    Vec3 targetPos = eyePos.add(lookVec.scale(50));
+
+    HitResult hitResult = level.clip(new net.minecraft.world.level.ClipContext(
+        eyePos, targetPos,
+        net.minecraft.world.level.ClipContext.Block.OUTLINE,
+        net.minecraft.world.level.ClipContext.Fluid.NONE,
+        player));
+
+    Vec3 spawnPos;
+    if (hitResult.getType() == HitResult.Type.BLOCK) {
+
+      spawnPos = hitResult.getLocation().add(0, 30 + scale * 5, 0);
+    } else {
+
+      spawnPos = targetPos.add(0, 50, 0);
+    }
+
+    MeteorEntity meteor = new MeteorEntity(level, spawnPos.x, spawnPos.y, spawnPos.z, scale);
+    level.addFreshEntity(meteor);
+
+    source.sendSuccess(() -> Component.literal("Spawned meteor (size " + scale + ") at " +
+        String.format("%.1f, %.1f, %.1f", spawnPos.x, spawnPos.y, spawnPos.z)), true);
+    return 1;
+  }
+
+  private static int reprofileCurrent(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = player.level();
+
+    if (!AgeDimensionFactory.isMystcraftAge(level.dimension())) {
+      source.sendFailure(Component.literal("Not in a Mystcraft age."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.getIfPresent(level);
+    if (ageData == null) {
+      source.sendFailure(Component.literal("No age data found."));
+      return 0;
+    }
+
+    return reprofileAge(source, ageData, level, ageData.getAgeUID());
+  }
+
+  private static int reprofileAge(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    int ageId = IntegerArgumentType.getInteger(context, "ageId");
+
+    ServerLevel ageLevel = AgeDimensionFactory.getOrCreateAgeDimension(source.getServer(), ageId);
+    if (ageLevel == null) {
+      source.sendFailure(Component.literal("Age " + ageId + " not found."));
+      return 0;
+    }
+
+    AgeData ageData = AgeData.getIfPresent(ageLevel);
+    if (ageData == null) {
+      source.sendFailure(Component.literal("No age data found for Age " + ageId + "."));
+      return 0;
+    }
+
+    return reprofileAge(source, ageData, ageLevel, ageId);
+  }
+
+  private static int reprofileAge(CommandSourceStack source, AgeData ageData, ServerLevel level, int ageId) {
+    float oldInstability = ageData.getInstability();
+
+    List<ItemStack> pages = ageData.getPages();
+    if (pages.isEmpty()) {
+      source.sendFailure(Component.literal("Age has no pages to reprofile."));
+      return 0;
+    }
+
+    List<Identifier> symbols = new java.util.ArrayList<>();
+    for (ItemStack page : pages) {
+      Identifier symbol = art.arcane.mystcraft.data.Page.getSymbol(page);
+      if (symbol != null) {
+        symbols.add(symbol);
+      }
+    }
+
+    AgeDirectorImpl director = new AgeDirectorImpl(level.getSeed());
+    float calculatedInstability = 0;
+    for (Identifier symbolId : symbols) {
+      art.arcane.mystcraft.api.symbol.IAgeSymbol symbol = art.arcane.mystcraft.symbol.SymbolRegistry.get(symbolId);
+      if (symbol != null) {
+        calculatedInstability += symbol.getInstabilityCost();
+      }
+    }
+
+    final float newInstability = calculatedInstability;
+
+    ageData.setInstability(newInstability);
+
+    ageData.clearDeckOrders();
+
+    source.sendSuccess(() -> Component.literal(String.format(
+        "Reprofiled Age %d: instability %.2f -> %.2f", ageId, oldInstability, newInstability)), true);
+
+    return 1;
+  }
+
+  /**
+   * /mystcraft diag portal — dumps the state of the Mystcraft block the player
+   * is currently looking at. Used to diagnose portal frame issues live.
+   */
+  private static void appendPerAxisDiag(StringBuilder sb, ServerLevel level, BlockPos seed) {
+    boolean foundClosed = false;
+    for (Direction.Axis axis : Direction.Axis.values()) {
+      art.arcane.mystcraft.portal.PortalUtils.FrameDiagnosis diag =
+          art.arcane.mystcraft.portal.PortalUtils.diagnoseFrameOnAxis(level, seed, axis);
+      sb.append("[").append(axis).append("] ");
+      if (diag == null) {
+        sb.append("no air neighbors on this axis.\n");
+      } else if (diag.leaked()) {
+        sb.append("LEAKED: ").append(diag.airCellCount()).append("+ air cells (frame open on this axis).\n");
+        sb.append("    Reach bounds: ").append(diag.boundsMin()).append(" → ").append(diag.boundsMax()).append("\n");
+        if (!diag.sampleLeaks().isEmpty()) {
+          sb.append("    Leak samples (gap is near these):\n");
+          for (BlockPos leak : diag.sampleLeaks()) {
+            sb.append("      • ").append(leak).append("\n");
+          }
+        }
+      } else {
+        foundClosed = true;
+        sb.append("CLOSED: ").append(diag.airCellCount()).append(" air cells (interior sealed).\n");
+        sb.append("    Interior bounds: ").append(diag.boundsMin()).append(" → ").append(diag.boundsMax()).append("\n");
+      }
+    }
+    if (foundClosed) {
+      sb.append("Result: portal will fire on the CLOSED axis above.\n");
+    } else {
+      sb.append("Result: NO axis closes — portal cannot fire. Seal the frame on at least one axis.\n");
+    }
+  }
+
+  private static int diagPortal(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    ServerPlayer player = source.getPlayerOrException();
+    ServerLevel level = (ServerLevel) player.level();
+
+    HitResult hit = player.pick(8.0, 0.0f, false);
+    if (hit.getType() != HitResult.Type.BLOCK) {
+      source.sendFailure(Component.literal("Aim at a Mystcraft block (Crystal / Book Receptacle / Link Portal) and re-run."));
+      return 0;
+    }
+    BlockPos pos = ((net.minecraft.world.phys.BlockHitResult) hit).getBlockPos();
+    BlockState state = level.getBlockState(pos);
+    Block block = state.getBlock();
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("=== Mystcraft Diag at ").append(pos).append(" ===\n");
+    sb.append("BlockState: ").append(state).append("\n");
+
+    if (block instanceof art.arcane.mystcraft.block.CrystalBlock) {
+      sb.append("Type: CrystalBlock\n");
+      sb.append("ACTIVE = ").append(state.getValue(art.arcane.mystcraft.block.CrystalBlock.ACTIVE)).append("\n");
+
+      BlockEntity receptacle = art.arcane.mystcraft.portal.PortalUtils.findReceptacle(level, pos);
+      sb.append("Connected Receptacle: ").append(receptacle == null ? "NONE" : receptacle.getBlockPos()).append("\n");
+
+      sb.append("--- Frame Diagnosis (per axis) ---\n");
+      appendPerAxisDiag(sb, level, pos);
+    } else if (block instanceof art.arcane.mystcraft.block.BookReceptacleBlock) {
+      sb.append("Type: BookReceptacleBlock\n");
+      sb.append("FACING = ").append(state.getValue(art.arcane.mystcraft.block.BookReceptacleBlock.FACING)).append("\n");
+      BlockEntity be = level.getBlockEntity(pos);
+      if (be instanceof art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity recept) {
+        sb.append("BE: present\n");
+        sb.append("HasBook: ").append(recept.hasBook()).append("\n");
+        if (recept.hasBook()) {
+          ItemStack book = recept.getBook();
+          sb.append("Book: ").append(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(book.getItem())).append("\n");
+          sb.append("ValidActivator: ").append(art.arcane.mystcraft.blockentity.BookReceptacleBlockEntity.isValidPortalActivator(book)).append("\n");
+        }
+        sb.append("PortalColor: 0x").append(Integer.toHexString(recept.getPortalColor())).append("\n");
+      } else {
+        sb.append("BE: ABSENT (").append(be == null ? "null" : be.getClass().getSimpleName()).append(")\n");
+      }
+
+      Direction facing = state.getValue(art.arcane.mystcraft.block.BookReceptacleBlock.FACING);
+      BlockPos crystalPos = pos.relative(facing.getOpposite());
+      BlockState crystalState = level.getBlockState(crystalPos);
+      sb.append("Preferred Axis (from FACING): ").append(facing.getAxis()).append("\n");
+      sb.append("--- Frame Diagnosis (seed Crystal at ").append(crystalPos).append(") ---\n");
+      if (!crystalState.is(art.arcane.mystcraft.portal.PortalUtils.getFrameBlock())) {
+        sb.append("FAILURE: receptacle is mounted on ").append(crystalState.getBlock().getDescriptionId())
+            .append(" — must be a Crystal Block to ignite.\n");
+      } else {
+        appendPerAxisDiag(sb, level, crystalPos);
+      }
+    } else if (block instanceof art.arcane.mystcraft.block.LinkPortalBlock) {
+      sb.append("Type: LinkPortalBlock\n");
+      sb.append("AXIS = ").append(state.getValue(art.arcane.mystcraft.block.LinkPortalBlock.AXIS)).append("\n");
+      BlockEntity receptacle = art.arcane.mystcraft.portal.PortalUtils.findReceptacle(level, pos);
+      sb.append("Connected Receptacle: ").append(receptacle == null ? "NONE" : receptacle.getBlockPos()).append("\n");
+    } else {
+      sb.append("Type: NOT a Mystcraft portal block\n");
+      sb.append("Aim at a Crystal / Book Receptacle / Link Portal block instead.\n");
+    }
+
+    String[] lines = sb.toString().split("\n");
+    for (String line : lines) {
+      source.sendSuccess(() -> Component.literal(line), false);
+    }
+    Mystcraft.LOGGER.info("[Diag] {}", sb.toString().replace('\n', ' '));
+    return 1;
+  }
+}

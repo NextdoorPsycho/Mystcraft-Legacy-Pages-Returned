@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:age_creation_safe_story_death_returns_to_entry",
+  "max_ticks": 120,
+  "structure": "minecraft:empty"
+}

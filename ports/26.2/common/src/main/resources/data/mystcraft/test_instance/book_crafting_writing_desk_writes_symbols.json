@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:book_crafting_writing_desk_writes_symbols",
+  "max_ticks": 60,
+  "structure": "minecraft:empty"
+}

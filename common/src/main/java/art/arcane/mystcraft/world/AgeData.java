@@ -29,6 +29,7 @@ public class AgeData extends SavedData {
   private static final String TAG_AUTHORS = "Authors";
   private static final String TAG_PAGES = "Pages";
   private static final String TAG_INSTABILITY = "Instability";
+  private static final String TAG_GENERATION_SEED = "GenerationSeed";
   private static final String TAG_CREATED_TIME = "CreatedTime";
   private static final String TAG_SPAWN_SET = "SpawnSet";
   private static final String TAG_SPAWN_X = "SpawnX";
@@ -86,6 +87,8 @@ public class AgeData extends SavedData {
   private UUID ageUUID;
   private String ageName = "";
   private float instability = 0.0f;
+  private long generationSeed;
+  private boolean generationSeedSet;
   private long createdTime;
   private boolean spawnSet = false;
   private int spawnX, spawnY, spawnZ;
@@ -173,12 +176,20 @@ public class AgeData extends SavedData {
   private void loadFromTag(CompoundTag tag) {
     this.ageUID = tag.getInt(TAG_AGE_UID);
     if (tag.contains(TAG_AGE_UUID)) {
-      this.ageUUID = UUID.fromString(tag.getString(TAG_AGE_UUID));
-    } else {
-      this.ageUUID = UUID.randomUUID();
+      try {
+        this.ageUUID = UUID.fromString(tag.getString(TAG_AGE_UUID));
+      } catch (IllegalArgumentException e) {
+        Mystcraft.LOGGER.warn(
+            "Age {} has invalid persisted UUID '{}'; assigning a replacement",
+            this.ageUID,
+            tag.getString(TAG_AGE_UUID)
+        );
+      }
     }
     this.ageName = tag.getString(TAG_AGE_NAME);
     this.instability = tag.getFloat(TAG_INSTABILITY);
+    this.generationSeedSet = tag.contains(TAG_GENERATION_SEED, Tag.TAG_ANY_NUMERIC);
+    this.generationSeed = this.generationSeedSet ? tag.getLong(TAG_GENERATION_SEED) : 0L;
     this.createdTime = tag.getLong(TAG_CREATED_TIME);
 
     this.authors.clear();
@@ -302,6 +313,9 @@ public class AgeData extends SavedData {
     tag.putString(TAG_AGE_UUID, ageUUID.toString());
     tag.putString(TAG_AGE_NAME, ageName);
     tag.putFloat(TAG_INSTABILITY, instability);
+    if (generationSeedSet) {
+      tag.putLong(TAG_GENERATION_SEED, generationSeed);
+    }
     tag.putLong(TAG_CREATED_TIME, createdTime);
 
     ListTag authorsList = new ListTag();
@@ -483,6 +497,29 @@ public class AgeData extends SavedData {
 
   public void addInstability(float amount) {
     setInstability(this.instability + amount);
+  }
+
+  /**
+   * Returns whether this Age has an explicitly persisted generation seed.
+   */
+  public boolean hasGenerationSeed() {
+    return generationSeedSet;
+  }
+
+  /**
+   * Returns the persisted generation seed, or zero for legacy data without it.
+   */
+  public long getGenerationSeed() {
+    return generationSeed;
+  }
+
+  /**
+   * Persists the seed shared by the chunk generator and symbol logic.
+   */
+  public void setGenerationSeed(long generationSeed) {
+    this.generationSeed = generationSeed;
+    this.generationSeedSet = true;
+    setDirty();
   }
 
   public long getCreatedTime() {
@@ -704,6 +741,8 @@ public class AgeData extends SavedData {
    * symbols to persist the Age configuration.
    */
   public void copyFromDirector(AgeDirectorImpl director) {
+    this.generationSeed = director.getSeed();
+    this.generationSeedSet = true;
     this.weatherType = director.getWeatherType();
     this.lightingType = director.getLightingType();
     this.biomeController = director.getBiomeController();

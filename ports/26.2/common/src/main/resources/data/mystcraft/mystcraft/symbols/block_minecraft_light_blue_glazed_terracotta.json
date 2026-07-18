@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 2,
+  "instability_cost": 4.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Earth",
+    "Crafted"
+  ],
+  "display_name": "Light Blue Glazed Terracotta Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:light_blue_glazed_terracotta"
+    },
+    {
+      "type": "add_instability",
+      "value": 4.0
+    }
+  ]
+}

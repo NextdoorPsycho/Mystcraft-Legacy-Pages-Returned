@@ -1,55 +1,40 @@
 package art.arcane.mystcraft.util;
 
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.util.Objects;
 
 /**
- * Reflection-based access to client-only classes to keep common code
- * server-safe.
+ * Server-safe boundary for the small slice of client state used by common
+ * packet handlers. Loader client initializers install a direct bridge;
+ * dedicated servers keep the unavailable implementation and never load a
+ * Minecraft client class.
  */
 public final class ClientAccess {
 
-  private static Method getInstanceMethod;
-  private static Field levelField;
+  private static final ClientBridge UNAVAILABLE = () -> null;
+  private static volatile ClientBridge bridge = UNAVAILABLE;
 
   private ClientAccess() {
   }
 
-  @Nullable
-  public static Object getMinecraftInstance() {
-    try {
-      Class<?> mcClass = Class.forName("net.minecraft.client.Minecraft");
-      if (getInstanceMethod == null) {
-        getInstanceMethod = ReflectionCompat.findMethod(mcClass, "getInstance", mcClass);
-      }
-      return getInstanceMethod.invoke(null);
-    } catch (ReflectiveOperationException e) {
-      return null;
-    }
+  public static void install(ClientBridge clientBridge) {
+    bridge = Objects.requireNonNull(clientBridge, "clientBridge");
+  }
+
+  public static void clear() {
+    bridge = UNAVAILABLE;
   }
 
   @Nullable
-  public static Object getClientLevel() {
-    Object minecraft = getMinecraftInstance();
-    if (minecraft == null) {
-      return null;
-    }
-    try {
-      if (levelField == null) {
-        Class<?> levelType = ReflectionCompat.getClassIfPresent("net.minecraft.client.multiplayer.ClientLevel");
-        levelField = ReflectionCompat.findField(minecraft.getClass(), "level", levelType);
-        if (levelField == null && levelType != null) {
-          levelField = ReflectionCompat.findFieldByType(minecraft.getClass(), levelType);
-        }
-        if (levelField == null) {
-          return null;
-        }
-      }
-      return levelField.get(minecraft);
-    } catch (ReflectiveOperationException e) {
-      return null;
-    }
+  public static Level getClientLevel() {
+    return bridge.level();
+  }
+
+  @FunctionalInterface
+  public interface ClientBridge {
+    @Nullable
+    Level level();
   }
 }

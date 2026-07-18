@@ -1,7 +1,7 @@
 {
   "parent": "builtin/entity",
   "textures": {
-    "particle": "mystcraft:items/guidebook"
+    "particle": "mystcraft:items/unlinked"
   },
   "display": {
     "gui": {

@@ -9,7 +9,6 @@ import art.arcane.mystcraft.datapack.grammar.MystcraftGrammarReloadListener;
 import art.arcane.mystcraft.datapack.symbol.MystcraftSymbolReloadListener;
 import art.arcane.mystcraft.event.*;
 import art.arcane.mystcraft.forge.MystcraftForgeRegistries;
-import art.arcane.mystcraft.instability.InstabilityManager;
 import art.arcane.mystcraft.network.ForgeMystcraftNetwork_1_20_1;
 import art.arcane.mystcraft.network.SymbolSyncPacket;
 import art.arcane.mystcraft.network.SyncAgeDataPacket.ClientAgeDataCache;
@@ -59,7 +58,6 @@ import net.minecraftforge.event.server.ServerAboutToStartEvent;
 import net.minecraftforge.event.village.VillagerTradesEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -81,23 +79,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
       new ResourceLocation("minecraft", "village/snowy/houses"),
       new ResourceLocation("minecraft", "village/taiga/houses")
   };
-
-  private static Field findField(Class<?> clazz, String name) {
-    for (Field field : clazz.getDeclaredFields()) {
-      if (field.getName().equals(name)) {
-        return field;
-      }
-    }
-    for (Field field : clazz.getDeclaredFields()) {
-      if (field.getType() == List.class && name.equals("rawTemplates")) {
-        return field;
-      }
-      if (field.getType() == ObjectArrayList.class && name.equals("templates")) {
-        return field;
-      }
-    }
-    return null;
-  }
 
   @Override
   public void registerServerEvents() {
@@ -166,8 +147,6 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
     if (!(event.level instanceof ServerLevel serverLevel)) return;
 
     AgeEffectsHandler.onLevelTick(serverLevel);
-
-    InstabilityManager.onLevelTick(serverLevel);
 
     PersonalPocketEscapeHandler.tickProxyCleanup(serverLevel);
   }
@@ -264,33 +243,15 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
             ARCHIVIST_HOUSE_TEMPLATE, emptyProcessor
         ).apply(StructureTemplatePool.Projection.RIGID);
 
-        Field rawTemplatesField = findField(StructureTemplatePool.class, "rawTemplates");
-        Field templatesField = findField(StructureTemplatePool.class, "templates");
-
-        if (rawTemplatesField == null || templatesField == null) {
-          Mystcraft.LOGGER.warn("[Mystcraft] Could not find pool fields for {}", poolId);
-          continue;
-        }
-
-        rawTemplatesField.setAccessible(true);
-        templatesField.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        List<Pair<StructurePoolElement, Integer>> rawTemplates =
-            (List<Pair<StructurePoolElement, Integer>>) rawTemplatesField.get(pool);
-        @SuppressWarnings("unchecked")
-        ObjectArrayList<StructurePoolElement> templates =
-            (ObjectArrayList<StructurePoolElement>) templatesField.get(pool);
-
-        List<Pair<StructurePoolElement, Integer>> newRawTemplates = new ArrayList<>(rawTemplates);
+        List<Pair<StructurePoolElement, Integer>> newRawTemplates = new ArrayList<>(pool.rawTemplates);
         newRawTemplates.add(Pair.of(element, 2));
-        rawTemplatesField.set(pool, newRawTemplates);
+        pool.rawTemplates = newRawTemplates;
 
-        ObjectArrayList<StructurePoolElement> newTemplates = new ObjectArrayList<>(templates);
+        ObjectArrayList<StructurePoolElement> newTemplates = new ObjectArrayList<>(pool.templates);
         for (int i = 0; i < 2; i++) {
           newTemplates.add(element);
         }
-        templatesField.set(pool, newTemplates);
+        pool.templates = newTemplates;
 
         injected++;
       } catch (Exception e) {
@@ -389,7 +350,7 @@ public class ForgeEventHelper_1_20_1 implements IEventHelper {
 
     Mystcraft.LOGGER.debug("[LecternHandler] Right-click on lectern at {}, isClientSide={}", pos, level.isClientSide);
 
-    var result = MystcraftLecternHelper.handleLecternInteraction(
+    MystcraftLecternHelper.LecternInteractionResult result = MystcraftLecternHelper.handleLecternInteraction(
         level, pos, state, event.getEntity(), event.getHand(),
         (lectern, book, pageCount) -> {
 

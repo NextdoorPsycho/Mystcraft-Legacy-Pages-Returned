@@ -1,0 +1,26 @@
+{
+  "category": "feature_large",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "poem": [
+    "World",
+    "Chaos",
+    "Shift",
+    "Mask"
+  ],
+  "logic": [
+    {
+      "type": "register_populator",
+      "id": "mystcraft:block_shuffle_global",
+      "params": {
+        "chance": 1.0,
+        "min_y": -999999,
+        "max_y": -999999
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

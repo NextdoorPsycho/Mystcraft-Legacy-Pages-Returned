@@ -1,0 +1,28 @@
+{
+  "items": [
+    "minecraft:nether_star"
+  ],
+  "amount_per_item": 1.0,
+  "tier_bonus": 2,
+  "symbol_weights": {
+    "mystcraft:biome_nether_wastes": 0.5,
+    "mystcraft:biome_warped_forest": 0.3,
+    "mystcraft:biome_crimson_forest": 0.3
+  },
+  "category_weights": {
+    "feature_large": 0.4,
+    "structure": 0.3,
+    "special": 0.5
+  },
+  "poem_token_weights": {
+    "Beyond": 0.4,
+    "Star": 0.5,
+    "Power": 0.3
+  },
+  "link_property_weights": {
+    "intra_linking": 0.1,
+    "generate_platform": 0.1,
+    "maintain_momentum": 0.1,
+    "following": 0.1
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:book_travel_portal_color_uniform_across_all_portal_blocks",
+  "max_ticks": 80,
+  "structure": "minecraft:empty"
+}

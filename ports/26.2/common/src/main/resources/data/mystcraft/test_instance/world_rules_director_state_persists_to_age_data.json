@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:world_rules_director_state_persists_to_age_data",
+  "max_ticks": 40,
+  "structure": "minecraft:empty"
+}

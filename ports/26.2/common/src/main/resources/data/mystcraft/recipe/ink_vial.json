@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "group": "mystcraft:ink_vial",
+  "ingredients": [
+    "#mystcraft:ink_sacs",
+    "minecraft:lapis_lazuli",
+    "minecraft:potion"
+  ],
+  "result": {
+    "id": "mystcraft:inkvial"
+  }
+}

@@ -224,24 +224,31 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
       return stack;
     }
 
+    int insertIndex = Math.max(0, Math.min(index, pages.size()));
+    boolean insertedAny = false;
     while (stack.getCount() > 0) {
       if (maxSymbols >= 0 && pages.size() >= maxSymbols) {
         break;
       }
       ItemStack clone = stack.copy();
       clone.setCount(1);
-      pages.add(Math.min(index, pages.size()), clone);
+      pages.add(insertIndex, clone);
       stack.shrink(1);
-      index++;
+      insertIndex++;
+      insertedAny = true;
     }
 
-    setChanged();
-    markForUpdate();
-    return ItemStack.EMPTY;
+    if (insertedAny) {
+      setChanged();
+      markForUpdate();
+    }
+    return stack.isEmpty() ? ItemStack.EMPTY : stack;
   }
 
   /**
-   * Inserts pages from a folder.
+   * Transfers as many pages as possible between this binder and a folder.
+   *
+   * @return the same folder stack, retaining every page that could not move
    */
   @NotNull
   public ItemStack insertFromFolder(@NotNull ItemStack folder, int index) {
@@ -251,28 +258,34 @@ public class BookBinderBlockEntity extends MystcraftBlockEntity implements MenuP
 
     List<ItemStack> folderPages = FolderItem.getPages(folder);
     if (folderPages.isEmpty()) {
-
+      List<ItemStack> binderRemainder = new ArrayList<>();
       for (ItemStack page : pages) {
-        FolderItem.addPage(folder, page);
+        if (!FolderItem.addPage(folder, page)) {
+          binderRemainder.add(page);
+        }
       }
       pages.clear();
+      pages.addAll(binderRemainder);
     } else {
-
+      int insertIndex = Math.max(0, Math.min(index, pages.size()));
+      List<ItemStack> folderRemainder = new ArrayList<>();
       for (ItemStack page : folderPages) {
         if (!page.isEmpty()) {
-          ItemStack remainder = insertPage(page, index);
-          if (remainder.isEmpty()) {
-            index++;
+          int originalCount = page.getCount();
+          ItemStack remainder = insertPage(page, insertIndex);
+          int insertedCount = originalCount - remainder.getCount();
+          insertIndex += insertedCount;
+          if (!remainder.isEmpty()) {
+            folderRemainder.add(remainder.copy());
           }
         }
       }
-
-      FolderItem.clearPages(folder);
+      FolderItem.setPages(folder, folderRemainder);
     }
 
     setChanged();
     markForUpdate();
-    return ItemStack.EMPTY;
+    return folder;
   }
 
   /**

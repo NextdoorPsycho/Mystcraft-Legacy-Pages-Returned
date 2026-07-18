@@ -1,0 +1,33 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 5.0,
+  "poem": [
+    "Terrain",
+    "Form",
+    "Tradition",
+    "Spur"
+  ],
+  "logic": [
+    {
+      "type": "set_terrain_type",
+      "value": "amplified"
+    },
+    {
+      "type": "set_average_ground_level",
+      "value": 96
+    },
+    {
+      "type": "set_sea_level",
+      "value": 63
+    },
+    {
+      "type": "set_has_sea",
+      "value": true
+    },
+    {
+      "type": "add_instability",
+      "value": 5.0
+    }
+  ]
+}

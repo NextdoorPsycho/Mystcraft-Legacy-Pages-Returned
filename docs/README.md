@@ -22,6 +22,8 @@ Quick links:
   Example symbols.
 - `ScriptedTerrain-Tips.md`
   Practical usage tips.
+- `JProfiler-Worldgen-Validation.md`
+  Repeatable manual performance gate for Age generation and revisits.
 
 Templates:
 

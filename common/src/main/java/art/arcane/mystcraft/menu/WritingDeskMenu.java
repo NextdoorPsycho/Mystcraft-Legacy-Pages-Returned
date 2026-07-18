@@ -72,7 +72,12 @@ public class WritingDeskMenu extends AbstractContainerMenu {
       addSlot(new Slot(tabContainer, i, 37, 14 + i * 37 + Y_SHIFT));
     }
 
-    addSlot(new Slot(mainContainer, WritingDeskBlockEntity.SLOT_WRITING, 8 + X_SHIFT, 60 + Y_SHIFT));
+    addSlot(new Slot(mainContainer, WritingDeskBlockEntity.SLOT_WRITING, 8 + X_SHIFT, 60 + Y_SHIFT) {
+      @Override
+      public int getMaxStackSize() {
+        return 1;
+      }
+    });
 
     addSlot(new Slot(mainContainer, WritingDeskBlockEntity.SLOT_PAPER, 8 + X_SHIFT, 8 + Y_SHIFT));
 

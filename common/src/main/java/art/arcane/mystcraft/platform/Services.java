@@ -13,9 +13,7 @@ public final class Services {
 
   public static final IPlatformHelper PLATFORM = load(IPlatformHelper.class);
   public static final IRegistrationHelper REGISTRATION = load(IRegistrationHelper.class);
-  public static final INetworkHelper NETWORK = load(INetworkHelper.class);
   public static final IEventHelper EVENTS = load(IEventHelper.class);
-  public static final IClientHelper CLIENT = load(IClientHelper.class);
   public static final IVersionHelper VERSION = load(IVersionHelper.class);
   public static final IAdvancementTriggerFactory ADVANCEMENTS = load(IAdvancementTriggerFactory.class);
   public static final IRegistryHelper REGISTRY = load(IRegistryHelper.class);

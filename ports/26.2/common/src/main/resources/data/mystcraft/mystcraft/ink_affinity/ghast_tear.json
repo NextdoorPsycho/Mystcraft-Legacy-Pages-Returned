@@ -1,0 +1,9 @@
+{
+  "items": [
+    "minecraft:ghast_tear"
+  ],
+  "amount_per_item": 1.0,
+  "link_property_weights": {
+    "relative": 0.15
+  }
+}

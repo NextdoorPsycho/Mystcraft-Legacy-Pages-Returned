@@ -1,0 +1,21 @@
+{
+  "category": "biome",
+  "card_rank": 6,
+  "instability_cost": 0.0,
+  "poem": [
+    "Nature",
+    "Nurture",
+    "Encourage",
+    "Deep"
+  ],
+  "logic": [
+    {
+      "type": "add_biome",
+      "biome": "minecraft:deep_lukewarm_ocean"
+    },
+    {
+      "type": "set_average_ground_level",
+      "value": 30
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "items": [
+    "minecraft:diamond"
+  ],
+  "tags": [
+    "c:gems/diamond"
+  ],
+  "amount_per_item": 1.0,
+  "tier_bonus": 0,
+  "symbol_weights": {
+    "mystcraft:dense_ores": 0.6,
+    "mystcraft:biome_dripstone_caves": 0.3,
+    "mystcraft:biome_deep_dark": 0.2
+  },
+  "category_weights": {
+    "feature_medium": 0.3,
+    "feature_large": 0.15
+  },
+  "poem_token_weights": {
+    "Stone": 0.2,
+    "Deep": 0.25,
+    "Beneath": 0.2
+  },
+  "link_property_weights": {
+    "intra_linking": 0.1,
+    "maintain_momentum": 0.05,
+    "generate_platform": 0.05
+  }
+}

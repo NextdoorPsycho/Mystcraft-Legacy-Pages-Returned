@@ -1,0 +1,30 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 0.0,
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Stone",
+    "Pierce"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "spikes_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:spikes",
+      "params": {
+        "count": 1,
+        "min_height": 10,
+        "max_height": 30,
+        "cold_temperature": 0.15,
+        "chance": 0.08
+      }
+    }
+  ],
+  "allow_random": false
+}

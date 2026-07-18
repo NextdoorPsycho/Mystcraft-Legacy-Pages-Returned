@@ -1,0 +1,23 @@
+{
+  "category": "modifier",
+  "card_rank": 3,
+  "instability_cost": 15.0,
+  "poem": [
+    "Modifier",
+    "Constraint",
+    "Earth",
+    "Refined"
+  ],
+  "display_name": "Lapis Block Terrain",
+  "allow_random": false,
+  "logic": [
+    {
+      "type": "set_terrain_block",
+      "block": "minecraft:lapis_block"
+    },
+    {
+      "type": "add_instability",
+      "value": 15.0
+    }
+  ]
+}

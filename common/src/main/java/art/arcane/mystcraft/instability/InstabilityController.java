@@ -3,6 +3,7 @@ package art.arcane.mystcraft.instability;
 import art.arcane.mystcraft.api.instability.IEnvironmentalEffect;
 import art.arcane.mystcraft.api.instability.IInstabilityProvider;
 import art.arcane.mystcraft.api.instability.InstabilityDirector;
+import art.arcane.mystcraft.config.MystcraftConfig;
 import art.arcane.mystcraft.world.AgeData;
 import com.google.common.collect.HashMultiset;
 import net.minecraft.server.level.ServerLevel;
@@ -177,24 +178,50 @@ public class InstabilityController implements InstabilityDirector {
   }
 
   /**
-   * Processes instability effects for a chunk.
+   * Processes every active instability effect once per level tick, selecting a
+   * loaded chunk for effects that need local terrain context. The previous
+   * caller invoked every effect once for each of up to 81 nearby chunks,
+   * multiplying player-targeted lightning, meteors, explosions, and potion
+   * effects by the view-area size.
    *
-   * @param chunk The chunk to process
+   * @param chunks loaded chunks near players
    */
-  public void tick(LevelChunk chunk) {
+  public void tick(List<LevelChunk> chunks) {
     validate();
 
-    if (!enabled || effects.isEmpty()) {
+    if (!enabled || effects.isEmpty() || chunks.isEmpty()) {
       return;
     }
 
     float instability = ageData.getInstability();
+    float multiplier = Math.max(0.0f,
+        Math.min(10.0f, MystcraftConfig.instabilityMultiplier.get().floatValue()));
+    int guaranteedRuns = (int) Math.floor(multiplier);
+    float fractionalRun = multiplier - guaranteedRuns;
     for (IEnvironmentalEffect effect : effects) {
-      try {
-        effect.tick(level, chunk, instability);
-      } catch (Exception e) {
-        LOGGER.error("Error ticking instability effect: {}", e.getMessage());
+      for (int run = 0; run < guaranteedRuns; run++) {
+        tickEffect(effect, chunks, instability);
       }
+      if (fractionalRun > 0.0f && level.random.nextFloat() < fractionalRun) {
+        tickEffect(effect, chunks, instability);
+      }
+    }
+  }
+
+  /**
+   * Compatibility adapter for focused tests and integrations that tick a
+   * single chunk directly.
+   */
+  public void tick(LevelChunk chunk) {
+    tick(List.of(chunk));
+  }
+
+  private void tickEffect(IEnvironmentalEffect effect, List<LevelChunk> chunks, float instability) {
+    LevelChunk chunk = chunks.get(level.random.nextInt(chunks.size()));
+    try {
+      effect.tick(level, chunk, instability);
+    } catch (Exception e) {
+      LOGGER.error("Error ticking instability effect", e);
     }
   }
 

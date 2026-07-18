@@ -1,0 +1,55 @@
+{
+  "category": "terrain",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "display_name": "Pillar Forest",
+  "poem": [
+    "Column",
+    "Dense",
+    "Stand",
+    "Stone"
+  ],
+  "logic": [
+    {
+      "type": "register_terrain_generator",
+      "id": "mystcraft:scripted",
+      "params": {
+        "name": "pillar_forest",
+        "density": {
+          "op": "mul",
+          "a": {
+            "op": "sub",
+            "a": {
+              "op": "noise3",
+              "scale": 0.08,
+              "octaves": 3,
+              "seed": 9924
+            },
+            "b": 0.4
+          },
+          "b": {
+            "op": "mul",
+            "a": {
+              "op": "step",
+              "edge": 10,
+              "value": {
+                "var": "y"
+              }
+            },
+            "b": {
+              "op": "step",
+              "edge": {
+                "var": "y"
+              },
+              "value": 200
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

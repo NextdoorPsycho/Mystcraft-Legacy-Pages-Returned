@@ -1,0 +1,29 @@
+{
+  "category": "structure",
+  "card_rank": 2,
+  "instability_cost": 3.0,
+  "poem": [
+    "Civilization",
+    "Death",
+    "Bone",
+    "Ancient"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "nether_fossils_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:nether_fossils",
+      "params": {
+        "rarity": 16
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 3.0
+    }
+  ]
+}

@@ -2,8 +2,6 @@ package art.arcane.mystcraft.block;
 
 import art.arcane.mystcraft.blockentity.BookBinderBlockEntity;
 import art.arcane.mystcraft.platform.Services;
-import art.arcane.mystcraft.util.CodecCompat;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
@@ -36,8 +34,6 @@ import java.util.List;
 public class BookBinderBlock extends BaseEntityBlock {
 
   public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-  public static final MapCodec<BookBinderBlock> CODEC = CodecCompat.simpleCodec(BookBinderBlock::new);
-
   public BookBinderBlock(Properties properties) {
     super(properties);
     registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
@@ -46,10 +42,6 @@ public class BookBinderBlock extends BaseEntityBlock {
   @Override
   protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
     builder.add(FACING);
-  }
-
-  protected MapCodec<? extends BaseEntityBlock> codec() {
-    return CODEC;
   }
 
   @Override

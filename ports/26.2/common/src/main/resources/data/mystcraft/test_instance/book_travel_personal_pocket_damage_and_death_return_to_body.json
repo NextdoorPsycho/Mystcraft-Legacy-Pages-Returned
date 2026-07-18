@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:book_travel_personal_pocket_damage_and_death_return_to_body",
+  "max_ticks": 120,
+  "structure": "minecraft:empty"
+}

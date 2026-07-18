@@ -55,7 +55,13 @@ public class AgeReturnData extends SavedData {
       if (!entry.contains(TAG_PLAYER) || !entry.contains(TAG_AGE) || !entry.contains(TAG_LINK)) {
         continue;
       }
-      UUID playerId = UUID.fromString(entry.getString(TAG_PLAYER));
+      UUID playerId;
+      try {
+        playerId = UUID.fromString(entry.getString(TAG_PLAYER));
+      } catch (IllegalArgumentException e) {
+        Mystcraft.LOGGER.warn("Ignoring malformed return-link player UUID at index {}", i);
+        continue;
+      }
       int ageUID = entry.getInt(TAG_AGE);
       CompoundTag link = entry.getCompound(TAG_LINK);
       returnLinks.computeIfAbsent(playerId, key -> new HashMap<>())

@@ -1,0 +1,38 @@
+{
+  "category": "feature_medium",
+  "card_rank": 3,
+  "instability_cost": 7.0,
+  "display_name": "Sky Tentacles",
+  "poem": [
+    "Terrain",
+    "Transform",
+    "Dangle",
+    "Above"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "vertical_tendrils_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:vertical_tendrils",
+      "params": {
+        "count": 1,
+        "min_length": 50,
+        "max_length": 130,
+        "ceiling_chance": 0.8,
+        "chance": 0.1,
+        "neighbor_range": 3,
+        "min_thickness": 3,
+        "max_thickness": 8,
+        "wobble_range": 0.4
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 7.0
+    }
+  ]
+}

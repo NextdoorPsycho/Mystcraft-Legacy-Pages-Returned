@@ -1,0 +1,26 @@
+{
+  "category": "modifier",
+  "card_rank": 3,
+  "instability_cost": 2.0,
+  "poem": [
+    "Earth",
+    "Vein",
+    "Abundance",
+    "Wealth"
+  ],
+  "logic": [
+    {
+      "type": "register_populator",
+      "id": "mystcraft:single_ore",
+      "params": {
+        "ore_block": "minecraft:coal_ore",
+        "deepslate_block": "minecraft:deepslate_coal_ore",
+        "vein_size": 8,
+        "veins_per_chunk": 4,
+        "min_y": -64,
+        "max_y": 64,
+        "identifier": "extra_coal_ore"
+      }
+    }
+  ]
+}

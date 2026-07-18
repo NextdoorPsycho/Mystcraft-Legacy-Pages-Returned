@@ -3,7 +3,9 @@ package art.arcane.mystcraft.blockentity;
 import art.arcane.mystcraft.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Block entity for individual {@code LinkPortalBlock} cells inside a lit
@@ -27,7 +29,7 @@ import net.minecraft.world.level.block.state.BlockState;
  *
  * <p>All three fields persist in NBT and sync to client through the standard
  * {@link MystcraftBlockEntity#getUpdatePacket()} pipeline. Default values are
- * benign (white, ZERO, empty) so a freshly-loaded portal cell pre-stamping
+ * benign (white, no receptacle, empty) so a freshly-loaded portal cell pre-stamping
  * still renders sensibly while the receptacle re-fires.
  */
 public class LinkPortalBlockEntity extends MystcraftBlockEntity {
@@ -39,8 +41,9 @@ public class LinkPortalBlockEntity extends MystcraftBlockEntity {
   /** The receptacle's resolved colour at fire time. {@code -1} means "not stamped yet". */
   private int portalColor = -1;
 
-  /** {@link BlockPos#ZERO} when not stamped (treat as "unknown"). */
-  private BlockPos receptaclePos = BlockPos.ZERO;
+  /** {@code null} when not stamped. BlockPos.ZERO is a valid world position. */
+  @Nullable
+  private BlockPos receptaclePos;
 
   /** Book NBT snapshot from the source receptacle. Empty when not stamped. */
   private CompoundTag linkData = new CompoundTag();
@@ -79,15 +82,15 @@ public class LinkPortalBlockEntity extends MystcraftBlockEntity {
   // ---------------------------------------------------------------------------
 
   /**
-   * @return the source receptacle position, or {@link BlockPos#ZERO} when not
-   *         stamped.
+   * @return the source receptacle position, or {@code null} when not stamped.
    */
+  @Nullable
   public BlockPos getReceptaclePos() {
     return receptaclePos;
   }
 
-  public void setReceptaclePos(BlockPos pos) {
-    this.receptaclePos = pos != null ? pos.immutable() : BlockPos.ZERO;
+  public void setReceptaclePos(@Nullable BlockPos pos) {
+    this.receptaclePos = pos != null ? pos.immutable() : null;
     setChanged();
   }
 
@@ -117,7 +120,7 @@ public class LinkPortalBlockEntity extends MystcraftBlockEntity {
   // three-field set order.
   // ---------------------------------------------------------------------------
   public void stamp(BlockPos receptaclePos, int color, CompoundTag linkData) {
-    this.receptaclePos = receptaclePos != null ? receptaclePos.immutable() : BlockPos.ZERO;
+    this.receptaclePos = receptaclePos != null ? receptaclePos.immutable() : null;
     this.portalColor = color;
     this.linkData = linkData != null ? linkData.copy() : new CompoundTag();
     markForUpdate();
@@ -131,7 +134,9 @@ public class LinkPortalBlockEntity extends MystcraftBlockEntity {
   protected void writeNbt(CompoundTag tag) {
     super.writeNbt(tag);
     tag.putInt(TAG_COLOR, portalColor);
-    tag.putLong(TAG_RECEPTACLE, receptaclePos.asLong());
+    if (receptaclePos != null) {
+      tag.putLong(TAG_RECEPTACLE, receptaclePos.asLong());
+    }
     if (!linkData.isEmpty()) {
       tag.put(TAG_LINK, linkData.copy());
     }
@@ -141,7 +146,9 @@ public class LinkPortalBlockEntity extends MystcraftBlockEntity {
   protected void readNbt(CompoundTag tag) {
     super.readNbt(tag);
     portalColor = tag.contains(TAG_COLOR) ? tag.getInt(TAG_COLOR) : -1;
-    receptaclePos = tag.contains(TAG_RECEPTACLE) ? BlockPos.of(tag.getLong(TAG_RECEPTACLE)) : BlockPos.ZERO;
+    receptaclePos = tag.contains(TAG_RECEPTACLE, Tag.TAG_LONG)
+        ? BlockPos.of(tag.getLong(TAG_RECEPTACLE))
+        : null;
     linkData = tag.contains(TAG_LINK) ? tag.getCompound(TAG_LINK).copy() : new CompoundTag();
   }
 }

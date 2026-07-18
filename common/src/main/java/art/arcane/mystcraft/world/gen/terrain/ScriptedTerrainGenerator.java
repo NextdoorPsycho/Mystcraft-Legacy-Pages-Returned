@@ -4,10 +4,13 @@ import art.arcane.mystcraft.api.world.AgeDirector;
 import art.arcane.mystcraft.world.gen.terrain.script.ScriptExpression;
 import art.arcane.mystcraft.world.gen.terrain.script.ScriptExpressionParser;
 import art.arcane.mystcraft.world.gen.terrain.script.ScriptRuntime;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.Map;
 
 /**
  * Terrain generator backed by a datapack-defined script expression.
@@ -49,7 +52,7 @@ public class ScriptedTerrainGenerator extends TerrainGeneratorBase {
         new ScriptedTerrainGenerator(director, seed, density, xScale, yScale, zScale, seedOffset, name);
     if (params.has("params") && params.get("params").isJsonObject()) {
       JsonObject values = params.getAsJsonObject("params");
-      for (var entry : values.entrySet()) {
+      for (Map.Entry<String, JsonElement> entry : values.entrySet()) {
         if (entry.getValue().isJsonPrimitive()) {
           try {
             generator.runtime.setParam(entry.getKey(), entry.getValue().getAsDouble());

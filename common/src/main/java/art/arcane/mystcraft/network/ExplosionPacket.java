@@ -3,7 +3,6 @@ package art.arcane.mystcraft.network;
 import art.arcane.mystcraft.util.ClientAccess;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
@@ -55,30 +54,11 @@ public record ExplosionPacket(
 
       if (packet.playSound && packet.type != ExplosionType.SILENT) {
         float volume = Math.min(packet.power, 4.0f);
-        SoundEvent sound = resolveSoundEvent(SoundEvents.GENERIC_EXPLODE);
-        if (sound != null) {
-          level.playLocalSound(packet.x, packet.y, packet.z,
-              sound, SoundSource.BLOCKS,
-              volume, 1.0f + (level.random.nextFloat() - 0.5f) * 0.2f, false);
-        }
+        level.playLocalSound(packet.x, packet.y, packet.z,
+            SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS,
+            volume, 1.0f + (level.random.nextFloat() - 0.5f) * 0.2f, false);
       }
     });
-  }
-
-  private static SoundEvent resolveSoundEvent(Object holderOrEvent) {
-    if (holderOrEvent instanceof SoundEvent soundEvent) {
-      return soundEvent;
-    }
-    try {
-      java.lang.reflect.Method valueMethod = holderOrEvent.getClass().getMethod("value");
-      Object value = valueMethod.invoke(holderOrEvent);
-      if (value instanceof SoundEvent soundEvent) {
-        return soundEvent;
-      }
-    } catch (ReflectiveOperationException ignored) {
-
-    }
-    return null;
   }
 
   private static void spawnExplosionParticles(Level level, ExplosionPacket packet) {

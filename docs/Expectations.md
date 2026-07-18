@@ -1,10 +1,22 @@
 # Things To Expect (Current State)
 
-## Current Limitations
+## Supported Targets
 
-- Some block renderers are not working as intended yet:
-    - Portals, Writing Desks, vanilla Lecterns, and display blocks.
-    - Backend logic works, visuals may be incorrect or missing.
+- Minecraft 1.20.1 on Fabric and Forge uses Java 17.
+- Minecraft 26.2 on Fabric and Forge uses the isolated Java 25 build under
+  `ports/26.2/`.
+- Player usability remains book-first on both targets: write or bind a book,
+  create an Age, then link into it.
+
+## Release Expectations
+
+- Loader-native GameTests are the minimum gate for gameplay, persistence,
+  networking, data loading, and dimension contracts.
+- A real client pass is required for screens, book/portal presentation,
+  resource reloads, and the complete book-to-Age flow.
+- World-generation throughput and allocation claims require a representative
+  JProfiler capture; automated tests establish correctness, not performance.
+- Back up important worlds before testing development jars or data packs.
 
 ## Gameplay Notes
 

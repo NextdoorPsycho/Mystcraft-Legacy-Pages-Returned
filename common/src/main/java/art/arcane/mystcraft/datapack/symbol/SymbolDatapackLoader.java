@@ -119,12 +119,8 @@ public final class SymbolDatapackLoader {
       ResourceLocation symbolId = SymbolRegistry.mystcraftId(symbolPath);
       String displayName = formatDisplayName(fluidId.getPath()) + " Sea";
 
-      SymbolLogic logic = (director, seed) -> {
-        director.setSeaBlock(state.createLegacyBlock());
-        if (instability != 0.0f) {
-          director.addInstability(instability);
-        }
-      };
+      SymbolLogic logic = (director, seed) ->
+          director.setSeaBlock(state.createLegacyBlock());
 
       DataSymbol symbol = new DataSymbol(
           symbolId,

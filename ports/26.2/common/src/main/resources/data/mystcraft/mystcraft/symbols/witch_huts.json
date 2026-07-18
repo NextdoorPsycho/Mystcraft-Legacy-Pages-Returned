@@ -1,0 +1,29 @@
+{
+  "category": "structure",
+  "card_rank": 2,
+  "instability_cost": 3.0,
+  "poem": [
+    "Civilization",
+    "Magic",
+    "Swamp",
+    "Hermit"
+  ],
+  "logic": [
+    {
+      "type": "set_flag",
+      "flag": "witch_huts_enabled",
+      "value": true
+    },
+    {
+      "type": "register_populator",
+      "id": "mystcraft:witch_huts",
+      "params": {
+        "rarity": 32
+      }
+    },
+    {
+      "type": "add_instability",
+      "value": 3.0
+    }
+  ]
+}

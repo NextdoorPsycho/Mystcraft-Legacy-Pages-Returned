@@ -1,0 +1,17 @@
+{
+  "category": "biome",
+  "card_rank": 4,
+  "instability_cost": 2.0,
+  "poem": [
+    "Biome",
+    "Chaos",
+    "Spin",
+    "Map"
+  ],
+  "logic": [
+    {
+      "type": "set_biome_controller",
+      "value": "shuffle"
+    }
+  ]
+}

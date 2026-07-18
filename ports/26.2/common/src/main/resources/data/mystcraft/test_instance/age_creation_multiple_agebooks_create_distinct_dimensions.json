@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:age_creation_multiple_agebooks_create_distinct_dimensions",
+  "max_ticks": 180,
+  "structure": "minecraft:empty"
+}

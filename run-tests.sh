@@ -26,6 +26,12 @@ PLATFORM_PASSED=(0 0)
 PLATFORM_REPORTED=(0 0)
 PLATFORM_DETAILS=("" "")
 
+CLIENT_GATE_EXPECTED=7
+CLIENT_GATE_STATUS=NOT_SELECTED
+CLIENT_GATE_PASSED=0
+CLIENT_GATE_DETAILS="not selected"
+RUN_CLIENT_GATE="${MYSTCRAFT_RUN_CLIENT_GATE:-0}"
+
 usage() {
   echo "Usage: ./run-tests.sh [fast|full|all|core|book_travel|book_crafting|age_creation|world_rules|commands|procedural_ui|suite,suite] [gradle args...]"
   echo ""
@@ -33,8 +39,8 @@ usage() {
   echo "fast: core, book_travel, book_crafting, age_creation, procedural_ui"
   echo "full/all: every suite, including commands and world_rules"
   echo ""
-  echo "Policy: any GameTest failure, skipped test, ignored test, disabled test, fatal server log marker, or missing pass summary fails the run."
-  echo "A post-pass Fabric shutdown exception is reported, but does not fail a run after the GameTest pass summary is present."
+  echo "Policy: any GameTest failure, skipped test, ignored test, disabled test, shutdown exception, fatal server log marker, or missing pass summary fails the run."
+  echo "No client is launched by default. Set MYSTCRAFT_RUN_CLIENT_GATE=1 to add the seven Fabric 26.2 client render assertions when procedural_ui is selected."
 }
 
 suite_count() {
@@ -45,7 +51,7 @@ suite_count() {
     age_creation) echo 5 ;;
     world_rules) echo 2 ;;
     commands) echo 1 ;;
-    procedural_ui) echo 10 ;;
+    procedural_ui) echo 4 ;;
     *) echo 0 ;;
   esac
 }
@@ -130,6 +136,17 @@ suite_list() {
   echo "$output"
 }
 
+suite_selected() {
+  local requested="$1"
+  local suite
+  for suite in "${SELECTED_SUITES[@]}"; do
+    if [[ "$suite" == "$requested" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 progress_bar() {
   local passed="$1"
   local total="$2"
@@ -186,9 +203,9 @@ print_graph() {
   done
 
   echo ""
-  echo -e "${BOLD}Test Status Graph${NC}"
+  echo -e "${BOLD}Dedicated-server Test Status Graph${NC}"
   echo "Selected suites: $(suite_list)"
-  echo "Policy: fail on failed, skipped, ignored, disabled, fatal server log markers, or missing GameTest summaries; report post-pass shutdown exceptions."
+  echo "Policy: fail on failed, skipped, ignored, disabled, shutdown exceptions, fatal server log markers, or missing GameTest summaries."
   printf "Overall  [%s] %d/%d passed, %d failed\n" \
     "$(progress_bar "$total_passed" "$total_expected" "PASS")" \
     "$total_passed" "$total_expected" "$total_failed"
@@ -223,6 +240,15 @@ print_graph() {
       fi
     done
   done
+  if suite_selected procedural_ui && [[ "$RUN_CLIENT_GATE" == "1" ]]; then
+    printf "%-13s %b%-12s%b %d/%d render assertions" \
+      "Fabric 26.2" "$(status_color "$CLIENT_GATE_STATUS")" "$CLIENT_GATE_STATUS" "$NC" \
+      "$CLIENT_GATE_PASSED" "$CLIENT_GATE_EXPECTED"
+    if [[ -n "$CLIENT_GATE_DETAILS" ]]; then
+      printf "  %s" "$CLIENT_GATE_DETAILS"
+    fi
+    printf "\n"
+  fi
   echo ""
 }
 
@@ -234,7 +260,7 @@ print_final_summary() {
   echo ""
   echo -e "${BOLD}Final Platform Statuses${NC}"
   echo "Selected suites: $(suite_list)"
-  echo "Policy: fail on failed, skipped, ignored, disabled, fatal server log markers, or missing GameTest summaries; report post-pass shutdown exceptions."
+  echo "Policy: fail on failed, skipped, ignored, disabled, shutdown exceptions, fatal server log markers, or missing GameTest summaries."
   printf "%-10s %-9s %-8s %-15s %-10s %s\n" \
     "Platform" "Version" "Status" "Selected" "Reported" "Details"
   printf "%-10s %-9s %-8s %-15s %-10s %s\n" \
@@ -258,6 +284,15 @@ print_final_summary() {
       "$passed" "$expected" "$reported" "$details"
   done
 
+  if suite_selected procedural_ui && [[ "$RUN_CLIENT_GATE" == "1" ]]; then
+    echo ""
+    echo -e "${BOLD}Strict Client Assertion Gate${NC}"
+    printf "%-13s %-9s %-12s %-12s %s\n" "Platform" "Version" "Status" "Assertions" "Details"
+    printf "%-13s %-9s %-12s %2d/%-9d %s\n" \
+      "Fabric" "26.2" "$CLIENT_GATE_STATUS" "$CLIENT_GATE_PASSED" \
+      "$CLIENT_GATE_EXPECTED" "$CLIENT_GATE_DETAILS"
+  fi
+
   echo ""
   if [[ "$final_status" -eq 0 ]]; then
     echo -e "${GREEN}Final result: PASS${NC}"
@@ -271,10 +306,10 @@ skip_pattern() {
 }
 
 fatal_log_pattern() {
-  echo '(POI data mismatch|Game test server crashed|FAILED REQUIRED TEST)'
+  echo '(POI data mismatch|Timed out draining .* dynamic Age chunk sources|Game test server crashed|FAILED REQUIRED TEST)'
 }
 
-post_pass_shutdown_pattern() {
+shutdown_exception_pattern() {
   echo 'Exception stopping the server'
 }
 
@@ -310,7 +345,7 @@ analyze_log() {
   passed_count="$(sed -nE 's/.*All ([0-9]+) required tests passed.*/\1/p' "$log_file" | tail -n 1)"
   skip_count="$(grep -Eic "$(skip_pattern)" "$log_file" || true)"
   fatal_count="$(grep -Eic "$(fatal_log_pattern)" "$log_file" || true)"
-  shutdown_count="$(grep -Eic "$(post_pass_shutdown_pattern)" "$log_file" || true)"
+  shutdown_count="$(grep -Eic "$(shutdown_exception_pattern)" "$log_file" || true)"
 
   ANALYZED_REPORTED="${passed_count:-0}"
   ANALYZED_SELECTED_PASSED=0
@@ -337,7 +372,7 @@ analyze_log() {
     return
   fi
 
-  if [[ "$shutdown_count" -gt 0 && "$passed_count" -lt "$expected" ]]; then
+  if [[ "$shutdown_count" -gt 0 ]]; then
     ANALYZED_DETAIL="${shutdown_count} shutdown exception marker(s)"
     return
   fi
@@ -348,22 +383,19 @@ analyze_log() {
     local discovered_suite_count
     expected_suite_count="$(suite_count "$suite")"
     discovered_suite_count="$(sed -nE "s/.*Running test batch '${suite}(:[0-9]+)?' \\(([0-9]+) tests\\).*/\\2/p" "$log_file" | awk '{ total += $1 } END { print total + 0 }')"
-    if [[ "$discovered_suite_count" -lt "$expected_suite_count" ]]; then
+    if [[ "$discovered_suite_count" -ne "$expected_suite_count" ]]; then
       ANALYZED_DETAIL="${suite} discovered ${discovered_suite_count}/${expected_suite_count} tests"
       return
     fi
   done
 
-  if [[ "$passed_count" -lt "$expected" ]]; then
-    ANALYZED_DETAIL="reported ${passed_count}, expected at least ${expected}"
+  if [[ "$passed_count" -ne "$expected" ]]; then
+    ANALYZED_DETAIL="reported ${passed_count}, expected exactly ${expected}"
     return
   fi
 
   ANALYZED_SELECTED_PASSED="$expected"
   ANALYZED_STATUS=PASS
-  if [[ "$shutdown_count" -gt 0 ]]; then
-    ANALYZED_DETAIL="complete; ${shutdown_count} post-pass shutdown exception marker(s)"
-  fi
 }
 
 run_platform() {
@@ -408,7 +440,58 @@ run_platform() {
   print_graph "$expected"
 }
 
+run_client_gate() {
+  local log_file="${LOG_DIR}/fabric-26.2-client.log"
+  local gradle_status
+  local started
+  local passed
+
+  CLIENT_GATE_STATUS=RUNNING
+  CLIENT_GATE_DETAILS="log: ${log_file}"
+  print_graph "$EXPECTED_PER_PLATFORM"
+
+  echo -e "${CYAN}Starting Fabric 26.2 strict client assertions: :fabric:runClientGameTest${NC}"
+  echo ""
+
+  pushd "${SCRIPT_DIR}/ports/26.2" >/dev/null || return 1
+  JAVA_HOME="$JAVA_25_HOME" ./gradlew :fabric:runClientGameTest --no-daemon \
+    "${EXTRA_GRADLE_ARGS[@]}" 2>&1 | tee "$log_file"
+  gradle_status=${PIPESTATUS[0]}
+  popd >/dev/null || return 1
+
+  started="$(grep -Ec '\[ClientGameTest\] START ' "$log_file" || true)"
+  passed="$(grep -Ec '\[ClientGameTest\] PASS ' "$log_file" || true)"
+  CLIENT_GATE_PASSED="$passed"
+
+  if [[ "$gradle_status" -ne 0 ]]; then
+    CLIENT_GATE_STATUS=FAIL
+    CLIENT_GATE_DETAILS="Gradle exited ${gradle_status}; ${passed}/${CLIENT_GATE_EXPECTED} passed; log: ${log_file}"
+  elif [[ "$started" -ne "$CLIENT_GATE_EXPECTED" ]]; then
+    CLIENT_GATE_STATUS=FAIL
+    CLIENT_GATE_DETAILS="started ${started}/${CLIENT_GATE_EXPECTED} assertions; log: ${log_file}"
+  elif [[ "$passed" -ne "$CLIENT_GATE_EXPECTED" ]]; then
+    CLIENT_GATE_STATUS=FAIL
+    CLIENT_GATE_DETAILS="passed ${passed}/${CLIENT_GATE_EXPECTED} assertions; log: ${log_file}"
+  elif grep -Eq '\[ClientGameTest\].*(SKIP|DEFER|IGNORE|DISABLE)' "$log_file"; then
+    CLIENT_GATE_STATUS=FAIL
+    CLIENT_GATE_DETAILS="client assertion skip/defer marker found; log: ${log_file}"
+  else
+    CLIENT_GATE_STATUS=PASS
+    CLIENT_GATE_DETAILS="complete; log: ${log_file}"
+  fi
+
+  print_graph "$EXPECTED_PER_PLATFORM"
+}
+
 select_suites "$REQUESTED_SUITE"
+if [[ "$RUN_CLIENT_GATE" != "0" && "$RUN_CLIENT_GATE" != "1" ]]; then
+  echo -e "${RED}Error: MYSTCRAFT_RUN_CLIENT_GATE must be 0 or 1.${NC}"
+  exit 1
+fi
+if suite_selected procedural_ui && [[ "$RUN_CLIENT_GATE" == "1" ]]; then
+  CLIENT_GATE_STATUS=PENDING
+  CLIENT_GATE_DETAILS="awaiting strict client run"
+fi
 shift || true
 EXTRA_GRADLE_ARGS=("$@")
 
@@ -418,6 +501,21 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   JAVA_17_HOME=$(/usr/libexec/java_home -v 17 2>/dev/null)
   if [[ -z "$JAVA_17_HOME" ]]; then
     echo -e "${RED}Error: Java 17 not found.${NC}"
+    exit 1
+  fi
+  if suite_selected procedural_ui && [[ "$RUN_CLIENT_GATE" == "1" ]]; then
+    JAVA_25_HOME=$(/usr/libexec/java_home -v 25 2>/dev/null)
+    if [[ -z "$JAVA_25_HOME" ]]; then
+      echo -e "${RED}Error: Java 25 is required for the Fabric 26.2 client assertion gate.${NC}"
+      exit 1
+    fi
+  fi
+fi
+
+if suite_selected procedural_ui && [[ "$RUN_CLIENT_GATE" == "1" && -z "${JAVA_25_HOME:-}" ]]; then
+  JAVA_25_HOME="${JAVA_HOME:-}"
+  if [[ -z "$JAVA_25_HOME" ]]; then
+    echo -e "${RED}Error: JAVA_25_HOME or JAVA_HOME is required for the Fabric 26.2 client assertion gate.${NC}"
     exit 1
   fi
 fi
@@ -441,12 +539,19 @@ for ((i = 0; i < ${#PLATFORM_KEYS[@]}; i++)); do
   run_platform "$i" "$EXPECTED_PER_PLATFORM"
 done
 
+if suite_selected procedural_ui && [[ "$RUN_CLIENT_GATE" == "1" ]]; then
+  run_client_gate
+fi
+
 FINAL_STATUS=0
 for ((i = 0; i < ${#PLATFORM_KEYS[@]}; i++)); do
   if [[ "${PLATFORM_STATUS[$i]}" != "PASS" ]]; then
     FINAL_STATUS=1
   fi
 done
+if suite_selected procedural_ui && [[ "$RUN_CLIENT_GATE" == "1" && "$CLIENT_GATE_STATUS" != "PASS" ]]; then
+  FINAL_STATUS=1
+fi
 
 if [[ "$FINAL_STATUS" -eq 0 ]]; then
   echo -e "${GREEN}Tests complete (${REQUESTED_SUITE})${NC}"

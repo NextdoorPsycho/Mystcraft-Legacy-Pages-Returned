@@ -13,9 +13,10 @@ import art.arcane.mystcraft.world.AgeDimensionFactory;
 import art.arcane.mystcraft.world.weather.*;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
@@ -25,8 +26,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,12 +37,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AgeEffectsHandler {
 
-  private static final Random random = new Random();
   private static final float INSTABILITY_DECAY_PER_TICK = 0.01f;
 
-  private static final Map<ResourceKey<Level>, IWeatherController> weatherControllers = new ConcurrentHashMap<>();
+  // Controllers retain their ServerLevel, so dimension keys are not sufficient:
+  // an integrated server restarted in the same JVM would otherwise reuse a
+  // controller bound to the old level. Loader lifecycle hooks clear these maps
+  // at server shutdown.
+  private static final Map<ServerLevel, IWeatherController> weatherControllers =
+      new ConcurrentHashMap<>();
 
-  private static final Map<ResourceKey<Level>, InstabilityController> instabilityControllers = new ConcurrentHashMap<>();
+  private static final Map<ServerLevel, InstabilityController> instabilityControllers =
+      new ConcurrentHashMap<>();
+
+  public static void clearServerState(MinecraftServer server) {
+    weatherControllers.keySet().removeIf(level -> level.getServer() == server);
+    instabilityControllers.keySet().removeIf(level -> level.getServer() == server);
+  }
 
   /**
    * Handles a level tick for a Mystcraft Age. Manages weather, environmental
@@ -92,7 +103,7 @@ public class AgeEffectsHandler {
     String weatherType = ageData.getWeatherType();
 
     IWeatherController controller = weatherControllers.computeIfAbsent(
-        level.dimension(), key -> createWeatherController(weatherType));
+        level, key -> createWeatherController(weatherType));
 
     controller.updateWeather(level);
   }
@@ -117,12 +128,13 @@ public class AgeEffectsHandler {
     if (level.getGameTime() % 20 != 0) return;
 
     if (level.players().isEmpty()) return;
+    RandomSource random = level.random;
 
     if (ageData.areMeteorsEnabled()) {
 
       for (ServerPlayer player : level.players()) {
         if (random.nextFloat() < 0.01f) {
-          spawnMeteorNearPlayer(level, player);
+          spawnMeteorNearPlayer(level, player, random);
         }
       }
     }
@@ -133,7 +145,7 @@ public class AgeEffectsHandler {
         if (random.nextFloat() < 0.15f) {
           int bolts = 1 + random.nextInt(3);
           for (int i = 0; i < bolts; i++) {
-            spawnLightningNearPlayer(level, player);
+            spawnLightningNearPlayer(level, player, random);
           }
         }
       }
@@ -143,7 +155,7 @@ public class AgeEffectsHandler {
 
       for (ServerPlayer player : level.players()) {
         if (random.nextFloat() < 0.005f) {
-          spawnExplosionNearPlayer(level, player);
+          spawnExplosionNearPlayer(level, player, random);
         }
       }
     }
@@ -172,12 +184,13 @@ public class AgeEffectsHandler {
     if (level.players().isEmpty()) return;
 
     InstabilityController controller = instabilityControllers.computeIfAbsent(
-        level.dimension(),
+        level,
         key -> new InstabilityController(level, ageData, level.getSeed()));
 
     if (!controller.isEnabled()) return;
 
     LongOpenHashSet processedChunks = new LongOpenHashSet();
+    ArrayList<LevelChunk> activeChunks = new ArrayList<>();
 
     for (ServerPlayer player : level.players()) {
       int chunkX = player.getBlockX() >> 4;
@@ -193,11 +206,12 @@ public class AgeEffectsHandler {
           }
           LevelChunk chunk = level.getChunkSource().getChunkNow(x, z);
           if (chunk != null) {
-            controller.tick(chunk);
+            activeChunks.add(chunk);
           }
         }
       }
     }
+    controller.tick(activeChunks);
   }
 
   private static void decayInstability(ServerLevel level, AgeData ageData) {
@@ -272,7 +286,7 @@ public class AgeEffectsHandler {
     if (level.players().isEmpty()) {
       return;
     }
-    var border = level.getWorldBorder();
+    net.minecraft.world.level.border.WorldBorder border = level.getWorldBorder();
     for (ServerPlayer player : new java.util.ArrayList<>(level.players())) {
       if (!border.isWithinBounds(player.blockPosition())) {
         teleportToSpawn(player, level);
@@ -297,7 +311,7 @@ public class AgeEffectsHandler {
         net.minecraft.sounds.SoundSource.PLAYERS, 0.5f, 1.2f);
   }
 
-  private static void spawnMeteorNearPlayer(ServerLevel level, ServerPlayer player) {
+  private static void spawnMeteorNearPlayer(ServerLevel level, ServerPlayer player, RandomSource random) {
     double x = player.getX() + (random.nextDouble() - 0.5) * 64;
     double z = player.getZ() + (random.nextDouble() - 0.5) * 64;
     double y = player.getY() + 50 + random.nextDouble() * 30;
@@ -311,7 +325,7 @@ public class AgeEffectsHandler {
     }
   }
 
-  private static void spawnLightningNearPlayer(ServerLevel level, ServerPlayer player) {
+  private static void spawnLightningNearPlayer(ServerLevel level, ServerPlayer player, RandomSource random) {
     double x = player.getX() + (random.nextDouble() - 0.5) * 48;
     double z = player.getZ() + (random.nextDouble() - 0.5) * 48;
     int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING,
@@ -325,7 +339,7 @@ public class AgeEffectsHandler {
     }
   }
 
-  private static void spawnExplosionNearPlayer(ServerLevel level, ServerPlayer player) {
+  private static void spawnExplosionNearPlayer(ServerLevel level, ServerPlayer player, RandomSource random) {
     double x = player.getX() + (random.nextDouble() - 0.5) * 32;
     double z = player.getZ() + (random.nextDouble() - 0.5) * 32;
     int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING,

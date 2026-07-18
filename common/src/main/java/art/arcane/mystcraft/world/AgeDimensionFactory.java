@@ -2,6 +2,8 @@ package art.arcane.mystcraft.world;
 
 import art.arcane.mystcraft.Mystcraft;
 import art.arcane.mystcraft.api.world.logic.IBiomeController;
+import art.arcane.mystcraft.grammar.AgeBuilder;
+import art.arcane.mystcraft.mixin.MappedRegistryAccessor;
 import art.arcane.mystcraft.platform.Services;
 import art.arcane.mystcraft.world.gen.AgeChunkGenerator;
 import art.arcane.mystcraft.world.gen.biome.*;
@@ -14,15 +16,19 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.progress.ChunkProgressListener;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.border.BorderChangeListener;
 import net.minecraft.world.level.border.WorldBorder;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.storage.DerivedLevelData;
@@ -31,17 +37,16 @@ import net.minecraft.world.level.storage.ServerLevelData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 
 /**
- * Factory for dynamically creating Mystcraft Age dimensions at runtime. Uses
- * reflection to access MinecraftServer internals for dimension registration.
- * Access Transformers/Wideners ensure the reflection works at runtime.
+ * Factory for dynamically creating Mystcraft Age dimensions at runtime.
+ * Loader-specific access to the live level map is isolated behind
+ * {@link art.arcane.mystcraft.platform.services.IPlatformHelper}.
  */
 public class AgeDimensionFactory {
 
@@ -64,53 +69,127 @@ public class AgeDimensionFactory {
   private static final ResourceKey<DimensionType> DIM_TYPE_PERSONAL =
       ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Mystcraft.MOD_ID, "age_personal"));
 
-  private static final String FIELD_EXECUTOR = "executor";
-  private static final String FIELD_LEVELS = "levels";
-  private static final String FIELD_STORAGE_SOURCE = "storageSource";
-  private static final String FIELD_FROZEN = "frozen";
   private static final int SPAWN_EDGE_MARGIN = 50;
-
-  @SuppressWarnings("unchecked")
-  private static <T> T getFieldValue(Object obj, String fieldName, Class<T> type) {
-    try {
-      Field field = findField(obj.getClass(), fieldName, type);
-      if (field != null) {
-        field.setAccessible(true);
-        return (T) field.get(obj);
-      }
-    } catch (Exception e) {
-      Mystcraft.LOGGER.error("Failed to get field {} from {}: {}", fieldName, obj.getClass().getName(), e.getMessage());
+  private static final ChunkProgressListener NO_OP_PROGRESS_LISTENER = new ChunkProgressListener() {
+    @Override
+    public void updateSpawnPos(ChunkPos center) {
     }
-    return null;
+
+    @Override
+    public void onStatusChange(ChunkPos chunkPosition, @Nullable ChunkStatus newStatus) {
+    }
+
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void stop() {
+    }
+  };
+
+  private static final long SHUTDOWN_DRAIN_TIMEOUT_NANOS = 30_000_000_000L;
+  private static final long SHUTDOWN_IDLE_WINDOW_NANOS = 1_000_000_000L;
+
+  /**
+   * Stops new work in dynamic Age chunk sources and drains their main-thread
+   * completion queues before vanilla begins saving them. Runtime-created
+   * levels can otherwise still be finishing world generation when the server
+   * starts serializing POI data, which is not safe on either 1.20.1 loader.
+   */
+  public static void prepareForServerStop(@NotNull MinecraftServer server) {
+    List<ServerChunkCache> ageChunkSources = new java.util.ArrayList<>();
+    for (ServerLevel level : server.getAllLevels()) {
+      if (!isMystcraftAge(level.dimension())) {
+        continue;
+      }
+      ServerChunkCache chunkSource = level.getChunkSource();
+      chunkSource.removeTicketsOnClosing();
+      ageChunkSources.add(chunkSource);
+    }
+
+    if (ageChunkSources.isEmpty()) {
+      return;
+    }
+
+    long deadline = System.nanoTime() + SHUTDOWN_DRAIN_TIMEOUT_NANOS;
+    ShutdownDrainState drainState = new ShutdownDrainState(
+        AgeChunkGenerator.generationActivityRevision(),
+        System.nanoTime()
+    );
+    server.managedBlock(() -> {
+      boolean ranTask = false;
+      int pendingTasks = 0;
+      for (ServerChunkCache chunkSource : ageChunkSources) {
+        ranTask |= chunkSource.pollTask();
+        pendingTasks += chunkSource.getPendingTasksCount();
+      }
+      return drainState.update(
+          System.nanoTime(),
+          deadline,
+          ranTask,
+          pendingTasks,
+          AgeChunkGenerator.activeGenerationTaskCount(),
+          AgeChunkGenerator.generationActivityRevision()
+      );
+    });
+
+    int pendingTasks = 0;
+    for (ServerChunkCache chunkSource : ageChunkSources) {
+      pendingTasks += chunkSource.getPendingTasksCount();
+    }
+    int activeGenerationTasks = AgeChunkGenerator.activeGenerationTaskCount();
+    if (!drainState.isQuiescent()) {
+      Mystcraft.LOGGER.warn(
+          "Timed out draining {} dynamic Age chunk sources before shutdown "
+              + "({} main-thread tasks; {} Mystcraft generation tasks active)",
+          ageChunkSources.size(),
+          pendingTasks,
+          activeGenerationTasks
+      );
+    } else {
+      Mystcraft.LOGGER.info(
+          "Drained {} dynamic Age chunk sources after {}ms of stable idle time",
+          ageChunkSources.size(),
+          SHUTDOWN_IDLE_WINDOW_NANOS / 1_000_000L
+      );
+    }
   }
 
-  private static void setFieldValue(Object obj, String fieldName, Object value) {
-    try {
-      Field field = findField(obj.getClass(), fieldName, value.getClass());
-      if (field != null) {
-        field.setAccessible(true);
-        field.set(obj, value);
-      }
-    } catch (Exception e) {
-      Mystcraft.LOGGER.error("Failed to set field {} on {}: {}", fieldName, obj.getClass().getName(), e.getMessage());
-    }
-  }
+  private static final class ShutdownDrainState {
+    private long observedActivityRevision;
+    private long idleSinceNanos;
+    private boolean quiescent;
 
-  private static Field findField(Class<?> clazz, String name, Class<?> type) {
-    Class<?> current = clazz;
-    while (current != null) {
-      for (Field field : current.getDeclaredFields()) {
-        if (field.getName().equals(name)) {
-          return field;
-        }
-
-        if (type != null && type.isAssignableFrom(field.getType())) {
-          return field;
-        }
-      }
-      current = current.getSuperclass();
+    private ShutdownDrainState(long observedActivityRevision, long idleSinceNanos) {
+      this.observedActivityRevision = observedActivityRevision;
+      this.idleSinceNanos = idleSinceNanos;
     }
-    return null;
+
+    private boolean update(
+        long nowNanos,
+        long deadlineNanos,
+        boolean ranTask,
+        int pendingTasks,
+        int activeGenerationTasks,
+        long activityRevision
+    ) {
+      if (ranTask
+          || pendingTasks > 0
+          || activeGenerationTasks > 0
+          || activityRevision != observedActivityRevision) {
+        observedActivityRevision = activityRevision;
+        idleSinceNanos = nowNanos;
+      } else if (nowNanos - idleSinceNanos >= SHUTDOWN_IDLE_WINDOW_NANOS) {
+        quiescent = true;
+        return true;
+      }
+      return nowNanos >= deadlineNanos;
+    }
+
+    private boolean isQuiescent() {
+      return quiescent;
+    }
   }
 
   /**
@@ -123,21 +202,50 @@ public class AgeDimensionFactory {
    */
   @Nullable
   public static ServerLevel createAgeDimension(@NotNull MinecraftServer server, int ageUID, @NotNull UUID ageUUID) {
-    ResourceLocation dimensionId = new ResourceLocation(Mystcraft.MOD_ID, DIMENSION_PREFIX + ageUID);
-    ResourceKey<Level> dimensionKey = ResourceKey.create(Registries.DIMENSION, dimensionId);
+    AgeManager ageManager = AgeManager.get(server);
+    ResourceLocation registeredDimension = ageManager.getDimension(ageUID);
+    boolean newRegistration = registeredDimension == null;
+    AgeDefinition definition;
+    ResourceLocation dimensionId;
 
-    ServerLevel existing = server.getLevel(dimensionKey);
-    if (existing != null) {
-      Mystcraft.LOGGER.info("Age {} already exists, returning existing level", ageUID);
-      return existing;
+    if (newRegistration) {
+      long worldSeed = server.getWorldData().worldGenOptions().seed();
+      AgeDirectorImpl director = AgeBuilder.random(
+          AgeSeed.deriveForAllocatedAge(worldSeed, ageUID)
+      ).build();
+      definition = AgeDefinition.fromDirector(List.of(), director);
+      dimensionId = new ResourceLocation(Mystcraft.MOD_ID, DIMENSION_PREFIX + ageUID);
+      ageManager.registerAge(ageUID, dimensionId, ageUUID, definition);
+    } else {
+      dimensionId = registeredDimension;
+      definition = ageManager.getOrRecoverDefinition(server, ageUID);
+      if (definition == null) {
+        Mystcraft.LOGGER.error(
+            "Refusing to recreate Age {} without a persisted generation definition",
+            ageUID
+        );
+        return null;
+      }
     }
 
-    try {
-      return createAndRegisterWorld(server, dimensionKey, ageUID, ageUUID);
-    } catch (Exception e) {
-      Mystcraft.LOGGER.error("Failed to create Age dimension {}", ageUID, e);
+    AgeDirectorImpl director = definition.buildDirector(server);
+    if (director == null) {
+      if (newRegistration) {
+        ageManager.unregisterAge(ageUID);
+      }
       return null;
     }
+
+    UUID persistentUUID = ageManager.getAgeUUID(ageUID);
+    if (persistentUUID == null) {
+      persistentUUID = ageUUID;
+      ageManager.registerAge(ageUID, dimensionId, persistentUUID, definition);
+    }
+    ServerLevel level = createAgeDimension(server, ageUID, persistentUUID, director);
+    if (level == null && newRegistration) {
+      ageManager.unregisterAge(ageUID);
+    }
+    return level;
   }
 
   /**
@@ -148,36 +256,38 @@ public class AgeDimensionFactory {
     AgeManager ageManager = AgeManager.get(server);
     ResourceLocation dimLoc = ageManager.getDimension(ageUID);
 
-    if (dimLoc != null) {
-
-      ResourceKey<Level> dimensionKey = ResourceKey.create(Registries.DIMENSION, dimLoc);
-      ServerLevel level = server.getLevel(dimensionKey);
-      if (level != null) {
-        return level;
-      }
-
-      UUID ageUUID = UUID.randomUUID();
-      return createAndRegisterWorld(server, dimensionKey, ageUID, ageUUID);
+    if (dimLoc == null) {
+      Mystcraft.LOGGER.error("Cannot load unknown Age {}", ageUID);
+      return null;
     }
 
-    UUID newUUID = UUID.randomUUID();
-    ServerLevel level = createAgeDimension(server, ageUID, newUUID);
+    ResourceKey<Level> dimensionKey = ResourceKey.create(Registries.DIMENSION, dimLoc);
+    ServerLevel level = server.getLevel(dimensionKey);
     if (level != null) {
-      ResourceLocation newDimLoc = new ResourceLocation(Mystcraft.MOD_ID, DIMENSION_PREFIX + ageUID);
-      ageManager.registerAge(ageUID, newDimLoc, newUUID);
+      return level;
     }
-    return level;
-  }
 
-  @Nullable
-  @SuppressWarnings("unchecked")
-  private static ServerLevel createAndRegisterWorld(
-      @NotNull MinecraftServer server,
-      @NotNull ResourceKey<Level> dimensionKey,
-      int ageUID,
-      @NotNull UUID ageUUID
-  ) {
-    return createAndRegisterWorld(server, dimensionKey, ageUID, ageUUID, null);
+    AgeDefinition definition = ageManager.getOrRecoverDefinition(server, ageUID);
+    if (definition == null) {
+      Mystcraft.LOGGER.error(
+          "Refusing to recreate Age {} without a persisted generation definition; no fallback generator will be substituted",
+          ageUID
+      );
+      return null;
+    }
+    AgeDirectorImpl director = definition.buildDirector(server);
+    if (director == null) {
+      return null;
+    }
+
+    UUID ageUUID = ageManager.getAgeUUID(ageUID);
+    if (ageUUID == null) {
+      ageUUID = UUID.nameUUIDFromBytes(
+          (Mystcraft.MOD_ID + ":age:" + ageUID).getBytes(StandardCharsets.UTF_8)
+      );
+      ageManager.registerAge(ageUID, dimLoc, ageUUID, definition);
+    }
+    return createAndRegisterWorld(server, dimensionKey, ageUID, ageUUID, director);
   }
 
   @Nullable
@@ -187,14 +297,13 @@ public class AgeDimensionFactory {
       @NotNull ResourceKey<Level> dimensionKey,
       int ageUID,
       @NotNull UUID ageUUID,
-      @Nullable AgeDirectorImpl director
+      @NotNull AgeDirectorImpl director
   ) {
     try {
 
       Executor executor = net.minecraft.Util.backgroundExecutor();
-      Map<ResourceKey<Level>, ServerLevel> levels = getFieldValue(server, FIELD_LEVELS, Map.class);
-      LevelStorageSource.LevelStorageAccess storageSource = getFieldValue(server, FIELD_STORAGE_SOURCE,
-          LevelStorageSource.LevelStorageAccess.class);
+      Map<ResourceKey<Level>, ServerLevel> levels = Services.PLATFORM.getLevelMap(server);
+      LevelStorageSource.LevelStorageAccess storageSource = Services.PLATFORM.getLevelStorage(server);
 
       if (executor == null || levels == null || storageSource == null) {
         Mystcraft.LOGGER.error("Failed to access MinecraftServer internals for dimension creation");
@@ -213,8 +322,12 @@ public class AgeDimensionFactory {
       ResourceKey<LevelStem> stemKey = ResourceKey.create(Registries.LEVEL_STEM, dimensionKey.location());
       Registry<LevelStem> stemRegistry = server.registryAccess().registryOrThrow(Registries.LEVEL_STEM);
 
-      if (stemRegistry instanceof MappedRegistry<LevelStem> mappedRegistry) {
-        registerDimensionStem(mappedRegistry, stemKey, levelStem);
+      if (!(stemRegistry instanceof MappedRegistry<LevelStem> mappedRegistry)) {
+        Mystcraft.LOGGER.error("Level-stem registry does not support runtime registration");
+        return null;
+      }
+      if (!registerDimensionStem(mappedRegistry, stemKey, levelStem)) {
+        return null;
       }
 
       DerivedLevelData derivedData = new DerivedLevelData(
@@ -224,12 +337,6 @@ public class AgeDimensionFactory {
 
       long seed = BiomeManager.obfuscateSeed(server.getWorldData().worldGenOptions().seed()) + ageUID;
 
-      ChunkProgressListener progressListener = (ChunkProgressListener) Proxy.newProxyInstance(
-          ChunkProgressListener.class.getClassLoader(),
-          new Class<?>[]{ChunkProgressListener.class},
-          (proxy, method, args) -> null
-      );
-
       ServerLevel newLevel = new ServerLevel(
           server,
           executor,
@@ -237,7 +344,7 @@ public class AgeDimensionFactory {
           derivedData,
           dimensionKey,
           levelStem,
-          progressListener,
+          NO_OP_PROGRESS_LISTENER,
           false,
           seed,
           List.of(),
@@ -245,8 +352,8 @@ public class AgeDimensionFactory {
           null
       );
 
-      var overworldBorder = overworld.getWorldBorder();
-      var newBorder = newLevel.getWorldBorder();
+      WorldBorder overworldBorder = overworld.getWorldBorder();
+      WorldBorder newBorder = newLevel.getWorldBorder();
 
       boolean isPersonalPocket = director != null && director.isPersonalPocket();
       boolean isMicroDimension = director != null && director.isMicroDimensionsEnabled();
@@ -281,16 +388,7 @@ public class AgeDimensionFactory {
       }
 
       levels.put(dimensionKey, newLevel);
-
-      try {
-        java.lang.reflect.Method markDirty = MinecraftServer.class.getMethod("markWorldsDirty");
-        markDirty.invoke(server);
-      } catch (NoSuchMethodException e) {
-
-        Mystcraft.LOGGER.debug("markWorldsDirty() not available");
-      } catch (Exception e) {
-        Mystcraft.LOGGER.warn("Failed to mark worlds dirty: {}", e.getMessage());
-      }
+      Services.PLATFORM.markWorldsDirty(server);
 
       art.arcane.mystcraft.event.AgeDeathHandler.configureAgeGameRules(newLevel);
 
@@ -317,12 +415,7 @@ public class AgeDimensionFactory {
   }
 
   @Nullable
-  private static LevelStem createLevelStem(@NotNull MinecraftServer server, int ageUID) {
-    return createLevelStem(server, ageUID, null);
-  }
-
-  @Nullable
-  private static LevelStem createLevelStem(@NotNull MinecraftServer server, int ageUID, @Nullable AgeDirectorImpl director) {
+  private static LevelStem createLevelStem(@NotNull MinecraftServer server, int ageUID, @NotNull AgeDirectorImpl director) {
     try {
 
       Registry<LevelStem> stemRegistry = server.registryAccess().registryOrThrow(Registries.LEVEL_STEM);
@@ -334,75 +427,72 @@ public class AgeDimensionFactory {
       }
 
       BiomeSource biomeSource;
-      if (director != null) {
+      IBiomeController biomeController = director.getBiomeControllerImpl();
+      List<Holder<Biome>> directorBiomes = director.getBiomes();
 
-        IBiomeController biomeController = director.getBiomeControllerImpl();
-        List<Holder<Biome>> directorBiomes = director.getBiomes();
+      if (biomeController != null && biomeController.getBiomes().isEmpty() && !directorBiomes.isEmpty()) {
+        Mystcraft.LOGGER.info("Age {} controller has 0 biomes but director has {}, recreating controller",
+            ageUID, directorBiomes.size());
 
-        if (biomeController != null && biomeController.getBiomes().isEmpty() && !directorBiomes.isEmpty()) {
-          Mystcraft.LOGGER.info("Age {} controller has 0 biomes but director has {}, recreating controller",
-              ageUID, directorBiomes.size());
+        String controllerType = biomeController.getType();
+        biomeController = switch (controllerType) {
+          case "single" ->
+              new BiomeControllerSingle(directorBiomes, director.getSeed());
+          case "tiny" ->
+              new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.TINY);
+          case "small" ->
+              new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.SMALL);
+          case "medium" ->
+              new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.MEDIUM);
+          case "large" ->
+              new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.LARGE);
+          case "huge" ->
+              new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.HUGE);
+          case "tiled" ->
+              new BiomeControllerTiled(directorBiomes, director.getSeed());
+          case "grid" ->
+              new BiomeControllerGrid(directorBiomes, director.getSeed());
+          case "shuffle" ->
+              new BiomeControllerShuffle(directorBiomes, director.getSeed());
+          default ->
+              new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.MEDIUM);
+        };
+        director.registerInterface(biomeController);
+      }
 
-          String controllerType = biomeController.getType();
-          biomeController = switch (controllerType) {
-            case "single" ->
-                new BiomeControllerSingle(directorBiomes, director.getSeed());
-            case "tiny" ->
-                new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.TINY);
-            case "small" ->
-                new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.SMALL);
-            case "medium" ->
-                new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.MEDIUM);
-            case "large" ->
-                new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.LARGE);
-            case "huge" ->
-                new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.HUGE);
-            case "tiled" ->
-                new BiomeControllerTiled(directorBiomes, director.getSeed());
-            case "grid" ->
-                new BiomeControllerGrid(directorBiomes, director.getSeed());
-            case "shuffle" ->
-                new BiomeControllerShuffle(directorBiomes, director.getSeed());
-            default ->
-                new BiomeControllerNoise(directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.MEDIUM);
-          };
-          director.registerInterface(biomeController);
-        }
-
-        if (biomeController != null && !biomeController.getBiomes().isEmpty()) {
-
-          biomeSource = new AgeBiomeSource(biomeController, director.getSeed());
-          Mystcraft.LOGGER.info("Created Age {} with biome controller type: {} ({} biomes)",
-              ageUID, biomeController.getType(), biomeController.getBiomes().size());
-        } else if (!directorBiomes.isEmpty()) {
-
-          Mystcraft.LOGGER.info("Age {} has {} biomes but no controller, creating default noise controller",
-              ageUID, directorBiomes.size());
-          IBiomeController defaultController = new BiomeControllerNoise(
-              directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.MEDIUM);
-          director.registerInterface(defaultController);
-          biomeSource = new AgeBiomeSource(defaultController, director.getSeed());
-        } else {
-
-          Mystcraft.LOGGER.warn("Age {} has no biomes or controller, using overworld biomes", ageUID);
-          biomeSource = overworldStem.generator().getBiomeSource();
-        }
+      if (biomeController != null && !biomeController.getBiomes().isEmpty()) {
+        biomeSource = new AgeBiomeSource(biomeController, director.getSeed());
+        Mystcraft.LOGGER.info("Created Age {} with biome controller type: {} ({} biomes)",
+            ageUID, biomeController.getType(), biomeController.getBiomes().size());
+      } else if (!directorBiomes.isEmpty()) {
+        Mystcraft.LOGGER.info("Age {} has {} biomes but no controller, creating default noise controller",
+            ageUID, directorBiomes.size());
+        IBiomeController defaultController = new BiomeControllerNoise(
+            directorBiomes, director.getSeed(), BiomeControllerNoise.Scale.MEDIUM);
+        director.registerInterface(defaultController);
+        biomeSource = new AgeBiomeSource(defaultController, director.getSeed());
       } else {
-
+        Mystcraft.LOGGER.warn("Age {} has no biomes or controller, using overworld biomes", ageUID);
         biomeSource = overworldStem.generator().getBiomeSource();
       }
+      ChunkGenerator generator = AgeChunkGenerator.fromDirector(director, biomeSource, ageUID);
+      Mystcraft.LOGGER.info("Created Age {} with terrain type: {}", ageUID, director.getTerrainType());
 
-      ChunkGenerator generator;
-      if (director != null) {
-
-        generator = AgeChunkGenerator.fromDirector(director, biomeSource, ageUID);
-        Mystcraft.LOGGER.info("Created Age {} with terrain type: {}", ageUID, director.getTerrainType());
-      } else {
-
-        generator = overworldStem.generator();
+      ResourceKey<DimensionType> dimensionTypeKey = determineDimensionTypeKey(director);
+      Holder<DimensionType> dimensionType = selectDimensionType(server, dimensionTypeKey);
+      if (dimensionType == null) {
+        return null;
       }
-
-      Holder<DimensionType> dimensionType = selectDimensionType(server, director, overworldStem.type());
+      try {
+        AgeDimensionContract.from(dimensionType.value()).requireGeneratorCompatible(
+            "Age " + ageUID + " (" + dimensionTypeKey.location() + ")",
+            generator.getMinY(),
+            generator.getGenDepth()
+        );
+      } catch (IllegalArgumentException | IllegalStateException exception) {
+        Mystcraft.LOGGER.error("Invalid vertical generation contract for Age {}", ageUID, exception);
+        return null;
+      }
 
       return new LevelStem(
           dimensionType,
@@ -414,17 +504,11 @@ public class AgeDimensionFactory {
     }
   }
 
+  @Nullable
   private static Holder<DimensionType> selectDimensionType(
       @NotNull MinecraftServer server,
-      @Nullable AgeDirectorImpl director,
-      @NotNull Holder<DimensionType> defaultType
+      @NotNull ResourceKey<DimensionType> selectedKey
   ) {
-    if (director == null) {
-      return defaultType;
-    }
-
-    ResourceKey<DimensionType> selectedKey = determineDimensionTypeKey(director);
-
     Registry<DimensionType> dimTypeRegistry = server.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE);
     Holder<DimensionType> holder = dimTypeRegistry.getHolder(selectedKey).orElse(null);
 
@@ -433,8 +517,11 @@ public class AgeDimensionFactory {
       return holder;
     }
 
-    Mystcraft.LOGGER.warn("Dimension type {} not found, using default", selectedKey.location());
-    return defaultType;
+    Mystcraft.LOGGER.error(
+        "Required dimension type {} is missing; refusing to create an Age with an incompatible fallback",
+        selectedKey.location()
+    );
+    return null;
   }
 
   private static ResourceKey<DimensionType> determineDimensionTypeKey(@NotNull AgeDirectorImpl director) {
@@ -478,7 +565,7 @@ public class AgeDimensionFactory {
    */
   @Nullable
   public static ServerLevel createAgeDimension(@NotNull MinecraftServer server, int ageUID,
-                                               @NotNull UUID ageUUID, @Nullable AgeDirectorImpl director) {
+                                               @NotNull UUID ageUUID, @NotNull AgeDirectorImpl director) {
     ResourceLocation dimensionId = new ResourceLocation(Mystcraft.MOD_ID, DIMENSION_PREFIX + ageUID);
     ResourceKey<Level> dimensionKey = ResourceKey.create(Registries.DIMENSION, dimensionId);
 
@@ -496,60 +583,26 @@ public class AgeDimensionFactory {
     }
   }
 
-  private static void registerDimensionStem(
+  private static boolean registerDimensionStem(
       MappedRegistry<LevelStem> registry,
       ResourceKey<LevelStem> key,
       LevelStem stem
   ) {
-    try {
-
-      Field frozenField = findField(MappedRegistry.class, FIELD_FROZEN, boolean.class);
-      if (frozenField != null) {
-        frozenField.setAccessible(true);
-        frozenField.set(registry, false);
-      }
-
-      if (!registerWithRegistrationInfo(registry, key, stem)) {
-        registerWithLifecycle(registry, key, stem);
-      }
-
-      if (frozenField != null) {
-        frozenField.set(registry, true);
-      }
-
-    } catch (Exception e) {
-      Mystcraft.LOGGER.error("Failed to register dimension stem", e);
-    }
-  }
-
-  private static boolean registerWithRegistrationInfo(
-      MappedRegistry<LevelStem> registry,
-      ResourceKey<LevelStem> key,
-      LevelStem stem
-  ) {
-    try {
-      Class<?> infoClass = Class.forName("net.minecraft.core.RegistrationInfo");
-      Field builtInField = infoClass.getField("BUILT_IN");
-      Object builtIn = builtInField.get(null);
-      java.lang.reflect.Method register = registry.getClass().getMethod("register", key.getClass(), LevelStem.class, infoClass);
-      register.invoke(registry, key, stem, builtIn);
+    if (registry.containsKey(key)) {
       return true;
-    } catch (ClassNotFoundException e) {
-      return false;
-    } catch (ReflectiveOperationException e) {
-      return false;
     }
-  }
 
-  private static void registerWithLifecycle(
-      MappedRegistry<LevelStem> registry,
-      ResourceKey<LevelStem> key,
-      LevelStem stem
-  ) {
+    MappedRegistryAccessor accessor = (MappedRegistryAccessor) (Object) registry;
+    boolean wasFrozen = accessor.mystcraft$isFrozen();
     try {
-      java.lang.reflect.Method register = registry.getClass().getMethod("register", key.getClass(), LevelStem.class, Lifecycle.class);
-      register.invoke(registry, key, stem, Lifecycle.stable());
-    } catch (ReflectiveOperationException ignored) {
+      accessor.mystcraft$setFrozen(false);
+      registry.register(key, stem, Lifecycle.stable());
+      accessor.mystcraft$setFrozen(wasFrozen);
+      return true;
+    } catch (RuntimeException e) {
+      accessor.mystcraft$setFrozen(wasFrozen);
+      Mystcraft.LOGGER.error("Failed to register dimension stem {}", key.location(), e);
+      return false;
     }
   }
 
@@ -708,8 +761,8 @@ public class AgeDimensionFactory {
 
     for (int y = startY; y > safeMinY; y--) {
       BlockPos pos = new BlockPos(cx, y, cz);
-      var state = level.getBlockState(pos);
-      var aboveState = level.getBlockState(pos.above());
+      BlockState state = level.getBlockState(pos);
+      BlockState aboveState = level.getBlockState(pos.above());
 
       boolean isFluid = !state.getFluidState().isEmpty();
       boolean aboveIsClear = aboveState.isAir() || aboveState.getFluidState().isEmpty();
@@ -754,7 +807,7 @@ public class AgeDimensionFactory {
     }
 
     BlockPos below = pos.below();
-    var groundState = level.getBlockState(below);
+    BlockState groundState = level.getBlockState(below);
 
     if (!groundState.isSolidRender(level, below)) {
       return false;
@@ -764,8 +817,8 @@ public class AgeDimensionFactory {
       return false;
     }
 
-    var feetState = level.getBlockState(pos);
-    var headState = level.getBlockState(pos.above());
+    BlockState feetState = level.getBlockState(pos);
+    BlockState headState = level.getBlockState(pos.above());
 
     if (!feetState.isAir() && !feetState.getCollisionShape(level, pos).isEmpty()) {
       return false;
@@ -833,8 +886,8 @@ public class AgeDimensionFactory {
       BlockPos pos = new BlockPos(x, y, z);
       BlockPos below = pos.below();
 
-      var state = level.getBlockState(pos);
-      var belowState = level.getBlockState(below);
+      BlockState state = level.getBlockState(pos);
+      BlockState belowState = level.getBlockState(below);
 
       if ((state.isAir() || state.getCollisionShape(level, pos).isEmpty()) &&
           belowState.isSolidRender(level, below)) {
@@ -846,8 +899,8 @@ public class AgeDimensionFactory {
       BlockPos pos = new BlockPos(x, y, z);
       BlockPos below = pos.below();
 
-      var state = level.getBlockState(pos);
-      var belowState = level.getBlockState(below);
+      BlockState state = level.getBlockState(pos);
+      BlockState belowState = level.getBlockState(below);
 
       if ((state.isAir() || state.getCollisionShape(level, pos).isEmpty()) &&
           belowState.isSolidRender(level, below)) {

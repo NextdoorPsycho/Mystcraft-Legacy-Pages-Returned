@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "mystcraft:block/blockcrystal"
+    },
+    "active=true": {
+      "model": "mystcraft:block/blockcrystal"
+    }
+  }
+}

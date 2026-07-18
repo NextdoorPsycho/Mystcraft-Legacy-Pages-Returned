@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "mystcraft:world_rules_table_blocks_create_expected_state",
+  "max_ticks": 60,
+  "structure": "minecraft:empty"
+}

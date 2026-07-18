@@ -1,8 +1,8 @@
 package art.arcane.mystcraft.instability.effects;
 
 import art.arcane.mystcraft.api.instability.IEnvironmentalEffect;
-import art.arcane.mystcraft.util.MobEffectCompat;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Mob;
@@ -52,7 +52,7 @@ public class EffectPotionEnemy implements IEnvironmentalEffect {
     if (global) {
 
       if (level.players().isEmpty()) return;
-      var player = level.players().get(0);
+      ServerPlayer player = level.players().get(0);
       area = new AABB(player.blockPosition()).inflate(128, 64, 128);
     } else {
 
@@ -68,9 +68,7 @@ public class EffectPotionEnemy implements IEnvironmentalEffect {
     }
 
     Mob target = mobs.get(level.random.nextInt(mobs.size()));
-    MobEffectInstance instance = MobEffectCompat.createInstance(effect, duration, 0);
-    if (instance != null) {
-      target.addEffect(instance);
-    }
+    MobEffectInstance instance = new MobEffectInstance(effect, duration, 0);
+    target.addEffect(instance);
   }
 }
